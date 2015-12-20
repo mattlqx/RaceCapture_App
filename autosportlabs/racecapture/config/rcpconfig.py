@@ -2,6 +2,7 @@ import json
 from copy import copy
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from kivy.logger import Logger
+from __builtin__ import False
 
 RCP_COMPATIBLE_MAJOR_VERSION = 2
 RCP_MINIMUM_MINOR_VERSION = 8
@@ -771,7 +772,78 @@ class CanConfig(object):
             bauds.append(baud)
         canCfgJson['baud'] = bauds
         return {'canCfg':canCfgJson}        
-            
+
+class CANChannel(BaseChannel):
+    def __init__(self, **kwargs):
+        super(CANChannel, self).__init__(**kwargs)        
+        self.can_channel = 0
+        self.can_id = 0
+        self.bit_offset = 0
+        self.bit_length = 0
+        self.multiplier = 0
+        self.adder = 0
+        self.endian = 0
+        self.conversion_filter_id = 0
+
+    def fromJson(self, json_dict):
+        if json_dict:
+            super(CANChannel, self).fromJson(json_dict)
+            self.can_channel = json_dict.get('chan', self.can_channel)
+            self.can_id = json_dict.get('id', self.can_id)
+            self.bit_offset = json_dict.get('offset', self.bit_offset)
+            self.bit_length = json_dict.get('len', self.bit_length)
+            self.multiplier = json_dict.get('mult', self.multiplier)
+            self.adder = json_dict.get('add', self.adder)
+            self.endian = json_dict.get('endian', self.endian)
+            self.conversion_filter_id = json_dict.get('filt_id', self.conversion_filter_id)
+        return self
+
+    def toJson(self):
+        json_dict = {}
+        super(CANChannel, self).appendJson(json_dict)
+        json_dict['chan'] = self.can_channel
+        json_dict['id'] = self.can_id
+        json_dict['offset'] = self.bit_offset
+        json_dict['len'] = self.bit_length
+        json_dict['mult'] = self.multiplier
+        json_dict['add'] = self.adder
+        json_dict['endian'] = self.endian
+        json_dict['filt_id'] = self.conversion_filter_id
+        return json_dict
+
+CAN_CHANNELS_MAX = 100
+
+class CANChannels(object):
+    
+    def __init__(self, **kwargs):
+        self.channels = []
+        self.enabled = False
+        self.stale = False
+        self.enabled = False
+
+    def fromJson(self, json_dict):
+        config = json_dict.get('canChanCfg')
+        if config:         
+            self.enabled = config.get('en', self.enabled) 
+            channels_json = config.get("chans", None)
+            if channels_json:
+                del self.channels[:]
+                for channel_json in channels_json:
+                    c = CANChannel()
+                    c.fromJson(channel_json)
+                    self.channels.append(c)
+        return self
+
+    def toJson(self):
+        channels_json = []
+        channel_count = len(self.channels)
+        channel_count = channel_count if channel_count <= CAN_CHANNELS_MAX else CAN_CHANNELS_MAX
+        
+        for i in range(channel_count):
+            channels_json.append(self.channels[i].toJson())
+
+        return {'canChanCfg':{'en': 1 if self.enabled else 0, 'chans':channels_json }}
+
 class PidConfig(BaseChannel):
     def __init__(self, **kwargs):
         super(PidConfig, self).__init__(**kwargs)        
@@ -787,7 +859,7 @@ class PidConfig(BaseChannel):
         super(PidConfig, self).appendJson(json_dict)
         json_dict['pid'] = self.pidId
         return json_dict
-
+        
 OBD2_CONFIG_MAX_PIDS = 20
 
 class Obd2Config(object):
@@ -1042,6 +1114,7 @@ class RcpConfig(object):
         self.trackConfig = TrackConfig()
         self.connectivityConfig = ConnectivityConfig()
         self.canConfig = CanConfig()
+        self.can_channels = CANChannels()
         self.obd2Config = Obd2Config()
         self.scriptConfig = LuaScript()
         self.trackDb = TracksDb()
@@ -1058,6 +1131,7 @@ class RcpConfig(object):
                 self.trackConfig.stale or
                 self.connectivityConfig.stale or
                 self.canConfig.stale or
+                self.can_channels.stale or
                 self.obd2Config.stale or
                 self.scriptConfig.stale or
                 self.trackDb.stale)
@@ -1074,6 +1148,7 @@ class RcpConfig(object):
         self.trackConfig.stale = value
         self.connectivityConfig.stale = value
         self.canConfig.stale = value
+        self.can_channels.stale = value
         self.obd2Config.stale = value
         self.scriptConfig.stale = value
         self.trackDb.stale = value
@@ -1128,6 +1203,8 @@ class RcpConfig(object):
                 if canCfgJson:
                     self.canConfig.fromJson(canCfgJson)
                     
+                self.can_channels.fromJson(rcpJson)
+
                 obd2CfgJson = rcpJson.get('obd2Cfg', None)
                 if obd2CfgJson:
                     self.obd2Config.fromJson(obd2CfgJson)
@@ -1162,6 +1239,7 @@ class RcpConfig(object):
                              'gpioCfg':self.gpioConfig.toJson().get('gpioCfg'),
                              'pwmCfg':self.pwmConfig.toJson().get('pwmCfg'),
                              'canCfg':self.canConfig.toJson().get('canCfg'),
+                             'canChanCfg':self.can_channels.toJson().get('canChanCfg'),
                              'obd2Cfg':self.obd2Config.toJson().get('obd2Cfg'),
                              'connCfg':self.connectivityConfig.toJson().get('connCfg'),
                              'trackCfg':self.trackConfig.toJson().get('trackCfg'),
