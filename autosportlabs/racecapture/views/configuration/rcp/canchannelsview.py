@@ -11,10 +11,11 @@ from iconbutton import IconButton
 from settingsview import SettingsSwitch
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
 from autosportlabs.racecapture.config.rcpconfig import *
-from autosportlabs.racecapture.theme.color import ColorScheme
+from autosportlabs.racecapture.views.util.alertview import confirmPopup
 from fieldlabel import FieldLabel
 from utils import *
 from valuefield import FloatValueField
+
 import os
 
 from mappedspinner import MappedSpinner
@@ -329,10 +330,23 @@ class CANChannelsView(BaseConfigView):
             self.update_view_enabled()
             self.dispatch('on_modified')
 
-    def on_delete_channel(self, instance, channel_index):
+    def _delete_can_channel(self, channel_index ):
         del self.can_channels_cfg.channels[channel_index]
         self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
         self.dispatch('on_modified')
+        
+    def on_delete_channel(self, instance, channel_index):
+
+        popup = None 
+        def _on_answer(instance, answer):
+            if answer:
+                self._delete_can_channel(channel_index)
+            popup.dismiss()
+        popup = confirmPopup('Confirm', 'Delete CAN Channel?', _on_answer)
+
+
+
+        
 
     def on_edited(self, *args):
         self.dispatch('on_modified')
