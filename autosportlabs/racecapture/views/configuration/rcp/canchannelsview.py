@@ -6,6 +6,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.switch import Switch
 from kivy.uix.spinner import SpinnerOption
 from kivy.uix.popup import Popup
+from kivy.uix.image import Image
 from kivy.uix.textinput import TextInput
 from iconbutton import IconButton
 from settingsview import SettingsSwitch
@@ -273,11 +274,13 @@ class CANChannelsView(BaseConfigView):
         super(CANChannelsView, self).__init__(**kwargs)
         self.register_event_type('on_config_updated')
         self.can_grid = self.ids.can_grid
+        self._base_dir = kwargs.get('base_dir')
+        
         can_channels_enable = self.ids.can_channels_enable
         can_channels_enable.bind(on_setting=self.on_can_channels_enabled)
         can_channels_enable.setControl(SettingsSwitch())
         self.update_view_enabled()
-        self.can_filters = CANFilters(kwargs.get('base_dir'))
+        self.can_filters = CANFilters(self._base_dir)
 
     def on_modified(self, *args):
         if self.can_channels_cfg:
@@ -336,18 +339,13 @@ class CANChannelsView(BaseConfigView):
         self.dispatch('on_modified')
         
     def on_delete_channel(self, instance, channel_index):
-
         popup = None 
         def _on_answer(instance, answer):
             if answer:
                 self._delete_can_channel(channel_index)
             popup.dismiss()
         popup = confirmPopup('Confirm', 'Delete CAN Channel?', _on_answer)
-
-
-
         
-
     def on_edited(self, *args):
         self.dispatch('on_modified')
 
@@ -357,8 +355,71 @@ class CANChannelsView(BaseConfigView):
     def on_customize_channel(self, instance, channel_index):
         content = CANChannelConfigView(self.can_channels_cfg.channels[channel_index], self.channels, self.max_sample_rate, self.can_filters)
         content.bind(on_channel_edited=self.on_edited)
+        content.bind(on_channel_modified=self.on_edited)
+        content.bind(on_editor_close=lambda *args:popup.dismiss())
         popup = Popup(title="Customize CAN Channel", content=content, size_hint=(0.75, 0.75))
         popup.bind(on_dismiss=self.popup_dismissed)
-        content.bind(on_editor_close=lambda *args:popup.dismiss())
-        content.bind(on_channel_modified=self.on_edited)
         popup.open()
+
+    def on_preset_selected(self):
+        print('preset selected')
+        
+    def load_preset_view(self):
+        content = PresetBrowserView(self._base_dir)
+        content.bind(on_preset_selected=self.on_preset_selected)
+        popup = Popup(title='Select CAN Channel Presets', content=content, size_hint=(0.5, 0.75))
+        popup.bind(on_dismiss=self.popup_dismissed)
+        popup.open()
+
+class PresetItemView(BoxLayout):
+    def __init__(self, preset_id, name, notes, image_path, **kwargs):
+        super(PresetItemView, self).__init__(**kwargs)
+        self.preset_id = id
+        self.ids.title.text = name
+        self.ids.notes.text = notes
+        self.ids.image.source = image_path
+        
+    def load_preset(self):
+        print('load preset')
+
+class PresetBrowserView(BoxLayout):
+    presets = None
+        
+    def __init__(self, base_dir, **kwargs):
+        super(PresetBrowserView, self).__init__(**kwargs)
+        self._base_dir = base_dir
+        self.init_view()
+        
+    def init_view(self):
+        self.load_presets()
+        self.refresh_view()
+        
+    def refresh_view(self):
+        for k,v in self.presets.iteritems():
+            name = v.get('name', '')
+            notes = v.get('notes', '')
+            self.add_preset(k, name, notes)
+    
+    def select_preset(self, *args):
+        print('select preset')
+        
+    def add_preset(self, preset_id, name, notes):
+        image_path = 'resource/can_presets/{}.jpg'.format(preset_id)
+        #image_path = os.path.join(self._base_dir, 'resource', 'can_presets', '{}.jpg'.format(preset_id))
+        print(image_path)
+        preset_view = PresetItemView(preset_id, name, notes, image_path)
+        preset_view.bind(on_select=self.select_preset)
+        self.ids.preset_grid.add_widget(preset_view)
+            
+    def load_presets(self):
+        if self.presets is not None:
+            return
+        try:
+            self.presets = {}
+            can_presets_json = open(os.path.join(self._base_dir, 'resource', 'can_presets', 'can_default_presets.json'))
+            self.presets = json.load(can_presets_json)['presets']
+        except Exception as detail:
+            raise Exception('Error loading CAN filters: ' + str(detail))
+        
+    def on_close(self, *args):
+        pass

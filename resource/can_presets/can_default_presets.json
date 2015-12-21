@@ -1,0 +1,79 @@
+{
+	"updated": "1/1/2015",
+	"presets": {
+		"12345": {
+			"name": "BMW E46",
+			"notes": "Enables basic E46 CAN mappings",
+			"channels": [{
+				"nm": "CHAN1",
+				"ut": "UNITS1",
+				"min": -55,
+				"max": 55,
+				"prec": 2,
+				"sr": 25,
+				"bm": 0,
+				"chan": 0,
+				"id": 1234,
+				"offset": 23,
+				"len": 19,
+				"mult": 1.23,
+				"add": 3,
+				"endian": 0,
+				"filt_id": 3
+			}, {
+				"nm": "CHAN2",
+				"ut": "UNITS2",
+				"min": -66,
+				"max": 66,
+				"prec": 3,
+				"sr": 50,
+				"bm": 1,
+				"chan": 1,
+				"id": 1235,
+				"offset": 24,
+				"len": 20,
+				"mult": 1.24,
+				"add": 4,
+				"endian": 1,
+				"filt_id": 4
+			}]
+		},
+		"6789": {
+			"name": "Megasquirt",
+			"notes": "Simple Dash Mode",
+			"channels": [{
+				"nm": "CHAN1",
+				"ut": "UNITS1",
+				"min": -55,
+				"max": 55,
+				"prec": 2,
+				"sr": 25,
+				"bm": 0,
+				"chan": 0,
+				"id": 1234,
+				"offset": 23,
+				"len": 19,
+				"mult": 1.23,
+				"add": 3,
+				"endian": 0,
+				"filt_id": 3
+			}, {
+				"nm": "CHAN2",
+				"ut": "UNITS2",
+				"min": -66,
+				"max": 66,
+				"prec": 3,
+				"sr": 50,
+				"bm": 1,
+				"chan": 1,
+				"id": 1235,
+				"offset": 24,
+				"len": 20,
+				"mult": 1.24,
+				"add": 4,
+				"endian": 1,
+				"filt_id": 4
+			}]
+		}
+	}
+}
