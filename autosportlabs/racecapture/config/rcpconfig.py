@@ -775,7 +775,8 @@ class CanConfig(object):
 
 class CANChannel(BaseChannel):
     def __init__(self, **kwargs):
-        super(CANChannel, self).__init__(**kwargs)        
+        super(CANChannel, self).__init__(**kwargs)
+        self.bit_mode = False        
         self.can_channel = 0
         self.can_id = 0
         self.bit_offset = 0
@@ -788,6 +789,7 @@ class CANChannel(BaseChannel):
     def fromJson(self, json_dict):
         if json_dict:
             super(CANChannel, self).fromJson(json_dict)
+            self.bit_mode = True if json_dict.get('bm', self.bit_mode) == 1 else False 
             self.can_channel = json_dict.get('chan', self.can_channel)
             self.can_id = json_dict.get('id', self.can_id)
             self.bit_offset = json_dict.get('offset', self.bit_offset)
@@ -801,6 +803,7 @@ class CANChannel(BaseChannel):
     def toJson(self):
         json_dict = {}
         super(CANChannel, self).appendJson(json_dict)
+        json_dict['bm'] = 1 if self.bit_mode == True else 0
         json_dict['chan'] = self.can_channel
         json_dict['id'] = self.can_id
         json_dict['offset'] = self.bit_offset

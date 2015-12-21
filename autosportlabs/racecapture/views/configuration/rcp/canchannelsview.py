@@ -1,4 +1,5 @@
 import kivy
+from valuefield import FloatValueField
 kivy.require('1.9.0')
 from kivy.app import Builder
 from kivy.uix.boxlayout import BoxLayout
@@ -13,6 +14,7 @@ from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.racecapture.theme.color import ColorScheme
 from fieldlabel import FieldLabel
 from utils import *
+from valuefield import FloatValueField
 import os
 
 from mappedspinner import MappedSpinner
@@ -31,40 +33,147 @@ class LargeFieldLabel(FieldLabel):
 class LargeTextInput(TextInput):
     pass
 
+class LargeFloatValueField(FloatValueField):
+    pass
+
 class CANChannelConfigView(BoxLayout):
     
     def __init__(self, can_channel_cfg, channels, max_sample_rate, can_filters, **kwargs):
         super(CANChannelConfigView, self).__init__(**kwargs)
+        self._loaded = False
+        self.register_event_type('on_editor_close')
+        self.register_event_type('on_channel_modified')
         self.can_channel_cfg = can_channel_cfg
         self.channels = channels
         self.max_sample_rate = max_sample_rate
         self.can_filters = can_filters
         self.init_view()
-    
-    def on_sample_rate(self, instance, value):
-        if self.can_channel_cfg:
-            self.can_channel_cfg.sampleRate = instance.getValueFromKey(value)
+        self._loaded = True
 
+    def on_editor_close(self, *args):
+        pass
+
+    def on_channel_modified(self, *args):
+        pass
+    
+    def on_close(self):
+        self.dispatch('on_editor_close')        
+    
+    def on_bit_mode(self, instance, value):
+        if self._loaded:
+            self.can_channel_cfg.bit_mode = self.ids.bitmode.active
+            self.dispatch('on_channel_modified')
+    
+    def on_channel(self, *args):
+        if self._loaded:        
+            self.dispatch('on_channel_modified')
+
+    def on_sample_rate(self, instance, value):
+        if self._loaded:        
+            self.can_channel_cfg.sampleRate = instance.getValueFromKey(value)
+            self.dispatch('on_channel_modified')
+        
+    def on_can_bus_channel(self, instance, value):
+        if self._loaded:
+            self.can_channel_cfg.can_channel = instance.getValueFromKey(value)
+            self.dispatch('on_channel_modified')
+        
+    def on_can_id(self, instance, value):
+        if self._loaded:
+            self.can_channel_cfg.can_id = int(value)
+            self.dispatch('on_channel_modified')
+        
+    def on_bit_offset(self, instance, value):
+        if self._loaded:        
+            self.can_channel_cfg.bit_offset = instance.getValueFromKey(value)
+            self.dispatch('on_channel_modified')
+
+    def on_bit_length(self, instance, value):
+        if self._loaded:
+            self.can_channel_cfg.bit_length = instance.getValueFromKey(value)
+            self.dispatch('on_channel_modified')
+        
+    def on_endian(self, instance, value):
+        if self._loaded:
+            self.can_channel_cfg.endian = instance.getValueFromKey(value)
+            self.dispatch('on_channel_modified')
+        
+    def on_multiplier(self, instance, value):
+        if self._loaded:
+            self.can_channel_cfg.multiplier = float(value)
+            self.dispatch('on_channel_modified')
+        
+    def on_adder(self, instance, value):
+        if self._loaded:
+            self.can_channel_cfg.adder = float(value)
+            self.dispatch('on_channel_modified')
+        
+    def on_filter(self, instance, value):
+        if self._loaded:
+            self.can_channel_cfg.conversion_filter_id = instance.getValueFromKey(value)
+            self.dispatch('on_channel_modified')
+        
     def init_view(self):
         channel_editor = self.ids.chan_id
         channel_editor.on_channels_updated(self.channels)
         channel_editor.setValue(self.can_channel_cfg)
+        channel_editor.bind(on_channel = self.on_channel)
         
         sample_rate_spinner = self.ids.sr
         sample_rate_spinner.set_max_rate(self.max_sample_rate)
         sample_rate_spinner.setFromValue(self.can_channel_cfg.sampleRate)
         
+        self.ids.can_bus_channel.setValueMap({0: '1', 1: '2'}, 0)
+        
         self.ids.endian.setValueMap({0: 'Big (MSB)', 1: 'Small (LSB)'}, 0)
-        self.update_mapping_spinners()
         
         self.ids.filters.setValueMap(self.can_filters.filters, self.can_filters.default_value)
+        
+        
+        self.load_values()
+        self.update_mapping_spinners()
+        
+    def load_values(self):
 
-    def on_bit_mode(self, instance, value):
-        print('bit mode ' + str(value))
-        self.set_mapping_choices(value)
-
+        #Channel Editor        
+        channel_editor = self.ids.chan_id
+        channel_editor.on_channels_updated(self.channels)
+        channel_editor.setValue(self.can_channel_cfg)
+        
+        #Sample Rate
+        sample_rate_spinner = self.ids.sr
+        sample_rate_spinner.set_max_rate(self.max_sample_rate)        
+        sample_rate_spinner.setFromValue(self.can_channel_cfg.sampleRate)
+        
+        #CAN Channel
+        self.ids.can_bus_channel.setFromValue(self.can_channel_cfg.can_channel)
+        
+        #CAN ID
+        self.ids.can_id.text = str(self.can_channel_cfg.can_id)
+        
+        #CAN offset
+        self.ids.offset.text = str(self.can_channel_cfg.bit_offset)
+        
+        #CAN length
+        self.ids.length.text = str(self.can_channel_cfg.bit_length)
+        
+        #Bit Mode
+        self.ids.bitmode.active = self.can_channel_cfg.bit_mode
+        
+        #Endian
+        self.ids.endian.setFromValue(self.can_channel_cfg.endian)
+        
+        #Multiplier
+        self.ids.multiplier.text = str(self.can_channel_cfg.multiplier)
+        
+        #Adder
+        self.ids.adder.text = str(self.can_channel_cfg.adder)
+        
+        #Conversion Filter ID
+        self.ids.filters.setFromValue(self.can_channel_cfg.conversion_filter_id)
+        
     def update_mapping_spinners(self):
-        bit_mode = self.can_channel_cfg.bit_offset % 8 and self.can_channel_cfg.bit_length % 8
+        bit_mode = self.can_channel_cfg.bit_mode
         self.set_mapping_choices(bit_mode)
         
     def set_mapping_choices(self, bit_mode):
@@ -91,7 +200,6 @@ class CANFilters(object):
         if self.filters != None:
             return
         try:
-            print("loading can filters")
             self.filters = {}
             can_filters_json = open(os.path.join(base_dir, 'resource', 'settings', 'can_channel_filters.json'))
             can_filters = json.load(can_filters_json)['can_channel_filters']
@@ -157,6 +265,7 @@ class CANChannelsView(BaseConfigView):
     can_grid = None
     can_channels_settings = None
     can_filters = None
+    _popup = None
     
     def __init__(self, **kwargs):
         Builder.load_file(CAN_CHANNELS_VIEW_KV)
@@ -225,12 +334,13 @@ class CANChannelsView(BaseConfigView):
         self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
         self.dispatch('on_modified')
 
+    def on_edited(self, *args):
+        self.dispatch('on_modified')
+
     def on_customize_channel(self, instance, channel_index):
-        def popup_dismissed():
-            pass
-            
         content = CANChannelConfigView(self.can_channels_cfg.channels[channel_index], self.channels, self.max_sample_rate, self.can_filters)
-        popup = Popup(title="Customize CAN Mapping", content=content, size_hint=(0.75, 0.75))
-        popup.bind(on_dismiss=popup_dismissed)
+        content.bind(on_channel_edited=self.on_edited)
+        popup = Popup(title="Customize CAN Channel", content=content, size_hint=(0.75, 0.75))
+        content.bind(on_editor_close=lambda *args:popup.dismiss())
+        content.bind(on_channel_modified=self.on_edited)
         popup.open()
-        self._popup = popup

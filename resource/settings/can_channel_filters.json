@@ -1,0 +1,13 @@
+{
+    "can_channel_filters": {
+        "0": "None",
+        "1": "KPH to MPH",
+        "2": "MPH to KPH",
+        "3": "Celcius to Fahrenheit",
+        "4": "Fahrenheit to Celcius",
+        "5": "Bar to PSI",
+        "6": "PSI to Bar",
+        "7": "mm to Inch",
+        "8": "Inch to mm"
+    }
+}
