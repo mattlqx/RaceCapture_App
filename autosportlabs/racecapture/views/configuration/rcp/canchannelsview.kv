@@ -158,13 +158,10 @@
     orientation: 'horizontal'
     FieldLabel:
         id: channel_name
-        size_hint_x: 0.15
-    FieldLabel:
-        id: can_bus
-        size_hint_x: 0.05
+        size_hint_x: 0.2
     FieldLabel:
         id: can_id
-        size_hint_x: 0.1
+        size_hint_x: 0.15
     FieldLabel:
         id: can_offset_len
         size_hint_x: 0.2
@@ -221,15 +218,12 @@
 			#spacing: dp(5)
 	        FieldLabel:
 	            text: 'Channel'
-	        	size_hint_x: 0.15          
-            FieldLabel:
-                text: 'Bus'
-                size_hint_x: 0.05
+	        	size_hint_x: 0.20          
             FieldLabel:
                 text: 'ID'
-                size_hint_x: 0.1
+                size_hint_x: 0.15
             FieldLabel:
-                text: 'Offset -> Length'
+                text: 'Offset ( Length )'
                 size_hint_x: 0.2
             FieldLabel:
                 text: 'Formula'
@@ -256,7 +250,7 @@
         	        do_scroll_y:True
         	        GridLayout:
         	            id: can_grid
-        	            padding: [dp(20), dp(20)]
+        	            #padding: [dp(20), dp(20)]
         	            spacing: [dp(10), dp(10)]
         	            size_hint_y: None
         	            height: max(self.minimum_height, scroller.height)

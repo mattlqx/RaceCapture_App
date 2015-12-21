@@ -62,6 +62,7 @@ class CANChannelConfigView(BoxLayout):
     def on_bit_mode(self, instance, value):
         if self._loaded:
             self.can_channel_cfg.bit_mode = self.ids.bitmode.active
+            self.update_mapping_spinners()
             self.dispatch('on_channel_modified')
     
     def on_channel(self, *args):
@@ -252,10 +253,9 @@ class CANChannelView(BoxLayout):
         sample_rate_spinner.setFromValue(self.can_channel_cfg.sampleRate)
         
         self.ids.channel_name.text = '{}'.format(self.can_channel_cfg.name)
-        self.ids.can_bus.text = '{}'.format(self.can_channel_cfg.can_channel)
         self.ids.can_id.text = '{}'.format(self.can_channel_cfg.can_id)
-        self.ids.can_offset_len.text = u'{} -> {}'.format(self.can_channel_cfg.bit_offset, self.can_channel_cfg.bit_length)
-        self.ids.can_formula.text = u'(A \u00D7 {}) + {}'.format(self.can_channel_cfg.multiplier, self.can_channel_cfg.adder)
+        self.ids.can_offset_len.text = u'{} ( {} )'.format(self.can_channel_cfg.bit_offset, self.can_channel_cfg.bit_length)
+        self.ids.can_formula.text = u'\u00D7 {} + {}'.format(self.can_channel_cfg.multiplier, self.can_channel_cfg.adder)
         
                 
 class CANChannelsView(BaseConfigView):
@@ -337,10 +337,14 @@ class CANChannelsView(BaseConfigView):
     def on_edited(self, *args):
         self.dispatch('on_modified')
 
+    def popup_dismissed(self, *args):
+        self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
+        
     def on_customize_channel(self, instance, channel_index):
         content = CANChannelConfigView(self.can_channels_cfg.channels[channel_index], self.channels, self.max_sample_rate, self.can_filters)
         content.bind(on_channel_edited=self.on_edited)
         popup = Popup(title="Customize CAN Channel", content=content, size_hint=(0.75, 0.75))
+        popup.bind(on_dismiss=self.popup_dismissed)
         content.bind(on_editor_close=lambda *args:popup.dismiss())
         content.bind(on_channel_modified=self.on_edited)
         popup.open()
