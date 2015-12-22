@@ -117,7 +117,7 @@ class TrackManager:
         self.tracks_user_dir = '.'
         self.track_user_subdir = '/venues'
         self.set_tracks_user_dir(kwargs.get('user_dir', self.tracks_user_dir) + self.track_user_subdir)
-        self.update_lock = Lock()
+        self._update_lock = Lock()
         self.regions = []
 
         # Tracks are stored as key/object pairs to aid in finding a particular track quickly
@@ -149,7 +149,7 @@ class TrackManager:
                     region = Region()
                     region.fromJson(region_node)
                     self.regions.append(region)
-        except Exception as detail:
+        except Exception:
             Logger.warning('TrackManager: Error loading regions data ' + traceback.format_exc())
 
     @property
@@ -303,14 +303,14 @@ class TrackManager:
         """Method for loading local tracks files in a separate thread
         """
         try:
-            self.update_lock.acquire()
+            self._update_lock.acquire()
             self.load_tracks(progress_cb)
             success_cb()
         except Exception as detail:
             logging.exception('')
             fail_cb(detail)
         finally:
-            self.update_lock.release()
+            self._update_lock.release()
         
     def load_tracks(self, progress_cb=None, success_cb=None, fail_cb=None):
         """Loads tracks from local files. If called with success and fail callbacks it sets up a separate thread
@@ -356,14 +356,14 @@ class TrackManager:
         """Method for updating all tracks in a separate thread
         """
         try:
-            self.update_lock.acquire()
+            self._update_lock.acquire()
             self.refresh(progress_cb)
             success_cb()
         except Exception as detail:
             logging.exception('')
             fail_cb(detail)
         finally:
-            self.update_lock.release()
+            self._update_lock.release()
             
     def refresh(self, progress_cb=None, success_cb=None, fail_cb=None):
         """Refreshes all tracks. If success and fail callbacks are provided, sets up a new thread.

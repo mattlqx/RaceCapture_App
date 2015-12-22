@@ -1,5 +1,6 @@
 import kivy
 kivy.require('1.9.0')
+import os
 from kivy.app import Builder
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.switch import Switch
@@ -12,12 +13,10 @@ from settingsview import SettingsSwitch
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.racecapture.views.util.alertview import confirmPopup
+from autosportlabs.racecapture.resourcecache.resourcemanager import ResourceCache
 from fieldlabel import FieldLabel
 from utils import *
 from valuefield import FloatValueField, IntegerValueField
-
-import os
-
 from mappedspinner import MappedSpinner
 
 CAN_CHANNELS_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/canchannelsview.kv'
@@ -180,7 +179,6 @@ class CANChannelConfigView(BoxLayout):
         return bit_choices
 
 class CANFilters(object):
-    
     filters = None
     default_value = None
     def __init__(self, base_dir, **kwargs):
@@ -368,7 +366,7 @@ class CANChannelsView(BaseConfigView):
         print('preset selected')
         
     def load_preset_view(self):
-        content = PresetBrowserView(self._base_dir)
+        content = PresetBrowserView(self._base_dir, self.settings)
         content.bind(on_preset_selected=self.on_preset_selected)
         content.bind(on_preset_close=lambda *args:popup.dismiss())
         popup = Popup(title='Select CAN Channel Presets', content=content, size_hint=(0.5, 0.75))
@@ -392,45 +390,36 @@ class PresetItemView(BoxLayout):
     
 class PresetBrowserView(BoxLayout):
     presets = None
-        
-    def __init__(self, base_dir, **kwargs):
+    preset_url="http://race-capture.com/api/v1/can_presets"
+    preset_name = 'can_presets'
+    
+    def __init__(self, base_dir, settings, **kwargs):
         super(PresetBrowserView, self).__init__(**kwargs)
         self._base_dir = base_dir
         self.register_event_type('on_preset_close')
+        self.resource_cache = ResourceCache(settings.get_default_data_dir(), self.preset_url, self.preset_name, os.path.join(self._base_dir, 'resource', self.preset_name))
         self.init_view()
         
     def on_preset_close(self):
         pass
     
     def init_view(self):
-        self.load_presets()
         self.refresh_view()
         
     def refresh_view(self):
-        for k,v in self.presets.iteritems():
+        for k,v in self.resource_cache.resources.iteritems():
             name = v.get('name', '')
             notes = v.get('notes', '')
             self.add_preset(k, name, notes)
-    
         
     def add_preset(self, preset_id, name, notes):
-        image_path = os.path.join(self._base_dir, 'resource', 'can_presets', '{}.jpg'.format(preset_id))
+        image_path = self.resource_cache.resource_image_paths.get(preset_id)
         preset_view = PresetItemView(preset_id, name, notes, image_path)
         preset_view.bind(on_preset_selected = self.preset_selected)
         self.ids.preset_grid.add_widget(preset_view)
 
     def preset_selected(self, instance, preset_id):
         print(str(preset_id))
-
-    def load_presets(self):
-        if self.presets is not None:
-            return
-        try:
-            self.presets = {}
-            can_presets_json = open(os.path.join(self._base_dir, 'resource', 'can_presets', 'can_default_presets.json'))
-            self.presets = json.load(can_presets_json)['presets']
-        except Exception as detail:
-            raise Exception('Error loading CAN filters: ' + str(detail))
         
     def on_close(self, *args):
         self.dispatch('on_preset_close')

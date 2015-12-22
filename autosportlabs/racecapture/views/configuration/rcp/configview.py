@@ -194,7 +194,7 @@ class ConfigView(Screen):
         attach_node('Accel/Gyro', None, lambda: ImuChannelsView(rc_api=self.rc_api))
         attach_node('Pulse/Analog Out', None, lambda: AnalogPulseOutputChannelsView(channels=runtime_channels))
         attach_node('CAN Bus', None, lambda: CANConfigView())
-        attach_node('CAN Mapping', None, lambda: CANChannelsView(channels=runtime_channels, base_dir=self.base_dir))
+        attach_node('CAN Mapping', None, lambda: CANChannelsView(settings=self._settings, channels=runtime_channels, base_dir=self.base_dir))
         attach_node('OBDII', None, lambda: OBD2ChannelsView(channels=runtime_channels, base_dir=self.base_dir))
         attach_node('Wireless', None, lambda: WirelessConfigView(base_dir=self.base_dir))
         attach_node('Telemetry', None, lambda: TelemetryConfigView())
