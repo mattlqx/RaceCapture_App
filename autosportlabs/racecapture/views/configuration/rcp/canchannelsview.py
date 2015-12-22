@@ -359,7 +359,8 @@ class CANChannelsView(BaseConfigView):
         self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
     
     def _customize_channel(self, channel_index):
-        content = CANChannelConfigView(self.can_channels_cfg.channels[channel_index], self.channels, self.max_sample_rate, self.can_filters)
+        working_channel_cfg = copy(self.can_channels_cfg.channels[channel_index])
+        content = CANChannelConfigView(working_channel_cfg, self.channels, self.max_sample_rate, self.can_filters)
         content.bind(on_channel_edited=self.on_edited)
         content.bind(on_channel_modified=self.on_edited)
         content.bind(on_editor_close=lambda *args:popup.dismiss())

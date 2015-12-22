@@ -146,10 +146,15 @@
                     size_hint_x: 0.7
                     on_text: root.on_filter(*args)
                                
-        IconButton:
+        BoxLayout:
+            orientation: 'horizontal'
             size_hint_y: 0.1
-            text: "\357\200\214"
-            on_press: root.on_close()
+            IconButton:
+                text: u'\uf00c'
+                on_press: root.on_commit()
+            IconButton:
+                text: u'\uf00d'
+                on_press: root.on_cancel()
 
 <CANChannelView>:
     spacing: dp(10)
