@@ -11,12 +11,11 @@
 <LargeFloatValueField>:
     font_size: self.height * 0.5
 
+<LargeIntegerValueField>:
+    font_size: self.height * 0.5
+    
 <LargeFieldLabel>:
     font_size: self.height * 0.5
-
-<LargeTextInput>:
-    font_size: self.height * 0.5
-    multiline: False
     
 <CANChannelConfigView>:
     BoxLayout:
@@ -63,7 +62,7 @@
                     halign: 'right'
                     text: 'CAN ID'
                     size_hint_x: 0.1
-                LargeTextInput:
+                LargeIntegerValueField:
                     font_size: self.height * 0.5
                     id: can_id
                     size_hint_x: 0.2            

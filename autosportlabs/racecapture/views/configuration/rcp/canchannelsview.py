@@ -1,5 +1,4 @@
 import kivy
-from valuefield import FloatValueField
 kivy.require('1.9.0')
 from kivy.app import Builder
 from kivy.uix.boxlayout import BoxLayout
@@ -15,7 +14,7 @@ from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.racecapture.views.util.alertview import confirmPopup
 from fieldlabel import FieldLabel
 from utils import *
-from valuefield import FloatValueField
+from valuefield import FloatValueField, IntegerValueField
 
 import os
 
@@ -32,7 +31,7 @@ class LargeMappedSpinner(MappedSpinner):
 class LargeFieldLabel(FieldLabel):
     pass
 
-class LargeTextInput(TextInput):
+class LargeIntegerValueField(IntegerValueField):
     pass
 
 class LargeFloatValueField(FloatValueField):
