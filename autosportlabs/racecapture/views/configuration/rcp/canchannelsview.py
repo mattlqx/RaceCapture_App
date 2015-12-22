@@ -250,7 +250,14 @@ class CANChannelView(BoxLayout):
         sign = '-' if self.can_channel_cfg.adder < 0 else '+'
         self.ids.can_formula.text = u'\u00D7 {} {} {}'.format(self.can_channel_cfg.multiplier, sign, abs(self.can_channel_cfg.adder))
         
-                
+class CANPresetResourceCache(ResourceCache):
+    preset_url="http://race-capture.com/api/v1/can_presets"
+    preset_name = 'can_presets'
+    
+    def __init__(self, settings, base_dir, **kwargs):
+        default_preset_dir = os.path.join(base_dir, 'resource', self.preset_name)        
+        super(CANPresetResourceCache, self).__init__(settings, self.preset_url, self.preset_name, default_preset_dir, **kwargs)    
+    
 class CANChannelsView(BaseConfigView):
     DEFAULT_CAN_SAMPLE_RATE = 1    
     can_channels_cfg = None
@@ -272,7 +279,14 @@ class CANChannelsView(BaseConfigView):
         can_channels_enable.setControl(SettingsSwitch())
         self.update_view_enabled()
         self.can_filters = CANFilters(self._base_dir)
+        self._resource_cache = None
 
+    @property
+    def resource_cache(self):
+        if self._resource_cache is None:
+            self._resource_cache = CANPresetResourceCache(self.settings, self._base_dir)
+            return self._resource_cache
+        
     def on_modified(self, *args):
         if self.can_channels_cfg:
             self.can_channels_cfg.stale = True
@@ -300,7 +314,7 @@ class CANChannelsView(BaseConfigView):
                 add_disabled = False
                 
         self.ids.add_can_channel.disabled = add_disabled
-            
+        
     def add_can_channel(self, index, can_channel_cfg, max_sample_rate):
         channel_view = CANChannelView(index, can_channel_cfg, max_sample_rate, self.channels)
         channel_view.bind(on_delete_channel=self.on_delete_channel)
@@ -362,11 +376,11 @@ class CANChannelsView(BaseConfigView):
     def on_customize_channel(self, instance, channel_index):
         self._customize_channel(channel_index)
 
-    def on_preset_selected(self):
-        print('preset selected')
+    def on_preset_selected(self, instance, value):
+        print('preset selected ' + str(value))
         
     def load_preset_view(self):
-        content = PresetBrowserView(self._base_dir, self.settings)
+        content = PresetBrowserView(self.resource_cache)
         content.bind(on_preset_selected=self.on_preset_selected)
         content.bind(on_preset_close=lambda *args:popup.dismiss())
         popup = Popup(title='Select CAN Channel Presets', content=content, size_hint=(0.5, 0.75))
@@ -390,17 +404,18 @@ class PresetItemView(BoxLayout):
     
 class PresetBrowserView(BoxLayout):
     presets = None
-    preset_url="http://race-capture.com/api/v1/can_presets"
-    preset_name = 'can_presets'
     
-    def __init__(self, base_dir, settings, **kwargs):
+    def __init__(self, resource_cache, **kwargs):
         super(PresetBrowserView, self).__init__(**kwargs)
-        self._base_dir = base_dir
         self.register_event_type('on_preset_close')
-        self.resource_cache = ResourceCache(settings.get_default_data_dir(), self.preset_url, self.preset_name, os.path.join(self._base_dir, 'resource', self.preset_name))
+        self.register_event_type('on_preset_selected')
+        self.resource_cache = resource_cache
         self.init_view()
         
     def on_preset_close(self):
+        pass
+    
+    def on_preset_selected(self, preset_id):
         pass
     
     def init_view(self):
@@ -419,7 +434,8 @@ class PresetBrowserView(BoxLayout):
         self.ids.preset_grid.add_widget(preset_view)
 
     def preset_selected(self, instance, preset_id):
-        print(str(preset_id))
+        self.dispatch('on_preset_selected', preset_id)
+        self.dispatch('on_preset_close')
         
     def on_close(self, *args):
         self.dispatch('on_preset_close')

@@ -12,7 +12,7 @@ class ResourceCache(object):
     READ_RETRIES = 3
     RETRY_DELAY = 1.0
 
-    def __init__(self, user_dir, resource_url, resource_name, default_resource_dir, **kwargs):
+    def __init__(self, settings, resource_url, resource_name, default_resource_dir, **kwargs):
         self.resources = {}
         self.resource_image_paths = {}
         
@@ -20,7 +20,7 @@ class ResourceCache(object):
         self._default_resource_dir = default_resource_dir
         self.on_progress = lambda self, value: value
         self._resource_user_dir = '.'
-        self.set_resource_user_dir(os.path.join(user_dir, resource_name))
+        self.set_resource_user_dir(os.path.join(settings.get_default_data_dir(), resource_name))
         self._update_lock = Lock()
         self._check_load_defaults()
         self._load_resources()    
