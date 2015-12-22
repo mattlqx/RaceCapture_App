@@ -118,7 +118,7 @@ class CANChannelConfigView(BoxLayout):
         
         self.ids.can_bus_channel.setValueMap({0: '1', 1: '2'}, 0)
         
-        self.ids.endian.setValueMap({0: 'Big (MSB)', 1: 'Small (LSB)'}, 0)
+        self.ids.endian.setValueMap({0: 'Big (MSB)', 1: 'Little (LSB)'}, 0)
         
         self.ids.filters.setValueMap(self.can_filters.filters, self.can_filters.default_value)
         
