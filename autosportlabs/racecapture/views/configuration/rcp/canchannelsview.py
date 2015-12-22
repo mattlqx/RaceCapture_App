@@ -12,7 +12,7 @@ from iconbutton import IconButton
 from settingsview import SettingsSwitch
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
 from autosportlabs.racecapture.config.rcpconfig import *
-from autosportlabs.racecapture.views.util.alertview import confirmPopup
+from autosportlabs.racecapture.views.util.alertview import confirmPopup, choicePopup
 from autosportlabs.racecapture.resourcecache.resourcemanager import ResourceCache
 from fieldlabel import FieldLabel
 from utils import *
@@ -281,11 +281,10 @@ class CANChannelsView(BaseConfigView):
         self.can_filters = CANFilters(self._base_dir)
         self._resource_cache = None
 
-    @property
-    def resource_cache(self):
+    def get_resource_cache(self):
         if self._resource_cache is None:
             self._resource_cache = CANPresetResourceCache(self.settings, self._base_dir)
-            return self._resource_cache
+        return self._resource_cache
         
     def on_modified(self, *args):
         if self.can_channels_cfg:
@@ -315,31 +314,40 @@ class CANChannelsView(BaseConfigView):
                 
         self.ids.add_can_channel.disabled = add_disabled
         
-    def add_can_channel(self, index, can_channel_cfg, max_sample_rate):
+    def reload_can_channel_grid(self, can_channels_cfg, max_sample_rate):
+        self.can_grid.clear_widgets()
+        for i in range(len(can_channels_cfg.channels)):
+            can_channel_cfg = can_channels_cfg.channels[i]
+            self.append_can_channel(i, can_channel_cfg, max_sample_rate)
+        self.update_view_enabled()
+
+    def append_can_channel(self, index, can_channel_cfg, max_sample_rate):
         channel_view = CANChannelView(index, can_channel_cfg, max_sample_rate, self.channels)
         channel_view.bind(on_delete_channel=self.on_delete_channel)
         channel_view.bind(on_customize_channel=self.on_customize_channel)
         channel_view.bind(on_modified=self.on_modified)
         self.can_grid.add_widget(channel_view)
-
-    def reload_can_channel_grid(self, can_channels_cfg, max_sample_rate):
-        self.can_grid.clear_widgets()
-        for i in range(len(can_channels_cfg.channels)):
-            can_channel_cfg = can_channels_cfg.channels[i]
-            self.add_can_channel(i, can_channel_cfg, max_sample_rate)
-        self.update_view_enabled()
         
     def on_add_can_channel(self):
         if (self.can_channels_cfg):
             can_channel = CANChannel()
             can_channel.sampleRate = self.DEFAULT_CAN_SAMPLE_RATE
-            self.can_channels_cfg.channels.append(can_channel)
-            new_channel_index = len(self.can_channels_cfg.channels) - 1
-            self.add_can_channel(new_channel_index, can_channel, self.max_sample_rate)
+            new_channel_index = self.add_can_channel(can_channel)
             self._customize_channel(new_channel_index)
-            self.update_view_enabled()
-            self.dispatch('on_modified')
 
+    def add_can_channel(self, can_channel):
+        self.can_channels_cfg.channels.append(can_channel)
+        new_channel_index = len(self.can_channels_cfg.channels) - 1
+        self.append_can_channel(new_channel_index, can_channel, self.max_sample_rate)
+        self.update_view_enabled()
+        self.dispatch('on_modified')
+        return new_channel_index
+            
+    def _delete_all_channels(self):
+        del self.can_channels_cfg.channels[:]
+        self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
+        self.dispatch('on_modified')
+        
     def _delete_can_channel(self, channel_index ):
         del self.can_channels_cfg.channels[channel_index]
         self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
@@ -376,14 +384,33 @@ class CANChannelsView(BaseConfigView):
     def on_customize_channel(self, instance, channel_index):
         self._customize_channel(channel_index)
 
-    def on_preset_selected(self, instance, value):
-        print('preset selected ' + str(value))
+    def on_preset_selected(self, instance, preset_id):
+        popup = None 
+        def _on_answer(instance, answer):
+            if answer == True:
+                self._delete_all_channels()
+            self._import_preset(preset_id)
+            popup.dismiss()
+            
+        if len(self.can_channels_cfg.channels) > 0:
+            popup = choicePopup('Confirm', 'Overwrite or append existing channels?', 'Overwrite', 'Append', _on_answer)
+        else:
+            self._import_preset(preset_id)
+    
+    def _import_preset(self, preset_id):
+        resource_cache = self.get_resource_cache()
+        preset = resource_cache.resources.get(preset_id)
+        if preset:
+            for channel_json in preset['channels']:
+                new_channel = CANChannel()
+                new_channel.fromJson(channel_json)
+                self.add_can_channel(new_channel)
         
     def load_preset_view(self):
-        content = PresetBrowserView(self.resource_cache)
+        content = PresetBrowserView(self.get_resource_cache())
         content.bind(on_preset_selected=self.on_preset_selected)
         content.bind(on_preset_close=lambda *args:popup.dismiss())
-        popup = Popup(title='Select CAN Channel Presets', content=content, size_hint=(0.5, 0.75))
+        popup = Popup(title='Import a preset configuration', content=content, size_hint=(0.5, 0.75))
         popup.bind(on_dismiss=self.popup_dismissed)
         popup.open()
 
