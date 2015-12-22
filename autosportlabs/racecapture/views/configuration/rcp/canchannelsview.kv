@@ -320,7 +320,7 @@
                 icon_size: self.height * 0.7
                 title_font_size: self.height * 0.5
                 icon: u'\uf046'
-                on_press: root.load_preset()
+                on_press: root.select_preset()
     
 <PresetBrowserView>:
     orientation: 'vertical'
@@ -345,7 +345,7 @@
             cols: 1
     IconButton:
         size_hint_y: 0.15
-        text: "\357\200\214"
+        text: u'\uf00d'
         on_press: root.on_close()
 
 

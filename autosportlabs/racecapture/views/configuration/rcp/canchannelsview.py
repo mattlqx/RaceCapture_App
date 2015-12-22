@@ -40,11 +40,12 @@ class LargeFloatValueField(FloatValueField):
 
 class CANChannelConfigView(BoxLayout):
     
-    def __init__(self, can_channel_cfg, channels, max_sample_rate, can_filters, **kwargs):
+    def __init__(self, index, can_channel_cfg, channels, max_sample_rate, can_filters, **kwargs):
         super(CANChannelConfigView, self).__init__(**kwargs)
         self._loaded = False
         self.register_event_type('on_editor_close')
-        self.register_event_type('on_channel_modified')
+        self.register_event_type('on_editor_commit')
+        self.channel_index = index
         self.can_channel_cfg = can_channel_cfg
         self.channels = channels
         self.max_sample_rate = max_sample_rate
@@ -55,72 +56,61 @@ class CANChannelConfigView(BoxLayout):
     def on_editor_close(self, *args):
         pass
 
-    def on_channel_modified(self, *args):
+    def on_editor_commit(self, *args):
         pass
-    
-    def on_close(self):
+        
+    def on_cancel(self):
         self.dispatch('on_editor_close')        
     
+    def on_commit(self):
+        self.dispatch('on_editor_commit', self.channel_index, self.can_channel_cfg)
+        self.dispatch('on_editor_close')
+        
     def on_bit_mode(self, instance, value):
         if self._loaded:
             self.can_channel_cfg.bit_mode = self.ids.bitmode.active
             self.update_mapping_spinners()
-            self.dispatch('on_channel_modified')
     
-    def on_channel(self, *args):
-        if self._loaded:        
-            self.dispatch('on_channel_modified')
-
     def on_sample_rate(self, instance, value):
         if self._loaded:        
             self.can_channel_cfg.sampleRate = instance.getValueFromKey(value)
-            self.dispatch('on_channel_modified')
         
     def on_can_bus_channel(self, instance, value):
         if self._loaded:
             self.can_channel_cfg.can_channel = instance.getValueFromKey(value)
-            self.dispatch('on_channel_modified')
         
     def on_can_id(self, instance, value):
         if self._loaded:
             self.can_channel_cfg.can_id = int(value)
-            self.dispatch('on_channel_modified')
         
     def on_bit_offset(self, instance, value):
         if self._loaded:        
             self.can_channel_cfg.bit_offset = instance.getValueFromKey(value)
-            self.dispatch('on_channel_modified')
 
     def on_bit_length(self, instance, value):
         if self._loaded:
             self.can_channel_cfg.bit_length = instance.getValueFromKey(value)
-            self.dispatch('on_channel_modified')
         
     def on_endian(self, instance, value):
         if self._loaded:
             self.can_channel_cfg.endian = instance.getValueFromKey(value)
-            self.dispatch('on_channel_modified')
         
     def on_multiplier(self, instance, value):
         if self._loaded:
             self.can_channel_cfg.multiplier = float(value)
-            self.dispatch('on_channel_modified')
         
     def on_adder(self, instance, value):
         if self._loaded:
             self.can_channel_cfg.adder = float(value)
-            self.dispatch('on_channel_modified')
         
     def on_filter(self, instance, value):
         if self._loaded:
             self.can_channel_cfg.conversion_filter_id = instance.getValueFromKey(value)
-            self.dispatch('on_channel_modified')
         
     def init_view(self):
         channel_editor = self.ids.chan_id
         channel_editor.on_channels_updated(self.channels)
         channel_editor.setValue(self.can_channel_cfg)
-        channel_editor.bind(on_channel = self.on_channel)
         
         sample_rate_spinner = self.ids.sr
         sample_rate_spinner.set_max_rate(self.max_sample_rate)
@@ -352,7 +342,12 @@ class CANChannelsView(BaseConfigView):
             popup.dismiss()
         popup = confirmPopup('Confirm', 'Delete CAN Channel?', _on_answer)
         
-    def on_edited(self, *args):
+    def _replace_config(self, to_cfg, from_cfg):
+        to_cfg.__dict__.update(from_cfg.__dict__)
+        
+    def on_edited(self, instance, index, can_channel_cfg):
+        self._replace_config(self.can_channels_cfg.channels[index], can_channel_cfg)
+        self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
         self.dispatch('on_modified')
 
     def popup_dismissed(self, *args):
@@ -360,9 +355,8 @@ class CANChannelsView(BaseConfigView):
     
     def _customize_channel(self, channel_index):
         working_channel_cfg = copy(self.can_channels_cfg.channels[channel_index])
-        content = CANChannelConfigView(working_channel_cfg, self.channels, self.max_sample_rate, self.can_filters)
-        content.bind(on_channel_edited=self.on_edited)
-        content.bind(on_channel_modified=self.on_edited)
+        content = CANChannelConfigView(channel_index, working_channel_cfg, self.channels, self.max_sample_rate, self.can_filters)
+        content.bind(on_editor_commit=self.on_edited)
         content.bind(on_editor_close=lambda *args:popup.dismiss())
         popup = Popup(title="Customize CAN Channel", content=content, size_hint=(0.75, 0.75))
         popup.bind(on_dismiss=self.popup_dismissed)
@@ -377,6 +371,7 @@ class CANChannelsView(BaseConfigView):
     def load_preset_view(self):
         content = PresetBrowserView(self._base_dir)
         content.bind(on_preset_selected=self.on_preset_selected)
+        content.bind(on_preset_close=lambda *args:popup.dismiss())
         popup = Popup(title='Select CAN Channel Presets', content=content, size_hint=(0.5, 0.75))
         popup.bind(on_dismiss=self.popup_dismissed)
         popup.open()
@@ -384,22 +379,30 @@ class CANChannelsView(BaseConfigView):
 class PresetItemView(BoxLayout):
     def __init__(self, preset_id, name, notes, image_path, **kwargs):
         super(PresetItemView, self).__init__(**kwargs)
-        self.preset_id = id
+        self.preset_id = preset_id
         self.ids.title.text = name
         self.ids.notes.text = notes
         self.ids.image.source = image_path
+        self.register_event_type('on_preset_selected')
         
-    def load_preset(self):
-        print('load preset')
+    def select_preset(self):
+        self.dispatch('on_preset_selected', self.preset_id)
 
+    def on_preset_selected(self, preset_id):
+        pass
+    
 class PresetBrowserView(BoxLayout):
     presets = None
         
     def __init__(self, base_dir, **kwargs):
         super(PresetBrowserView, self).__init__(**kwargs)
         self._base_dir = base_dir
+        self.register_event_type('on_preset_close')
         self.init_view()
         
+    def on_preset_close(self):
+        pass
+    
     def init_view(self):
         self.load_presets()
         self.refresh_view()
@@ -410,17 +413,16 @@ class PresetBrowserView(BoxLayout):
             notes = v.get('notes', '')
             self.add_preset(k, name, notes)
     
-    def select_preset(self, *args):
-        print('select preset')
         
     def add_preset(self, preset_id, name, notes):
-        image_path = 'resource/can_presets/{}.jpg'.format(preset_id)
-        #image_path = os.path.join(self._base_dir, 'resource', 'can_presets', '{}.jpg'.format(preset_id))
-        print(image_path)
+        image_path = os.path.join(self._base_dir, 'resource', 'can_presets', '{}.jpg'.format(preset_id))
         preset_view = PresetItemView(preset_id, name, notes, image_path)
-        preset_view.bind(on_select=self.select_preset)
+        preset_view.bind(on_preset_selected = self.preset_selected)
         self.ids.preset_grid.add_widget(preset_view)
-            
+
+    def preset_selected(self, instance, preset_id):
+        print(str(preset_id))
+
     def load_presets(self):
         if self.presets is not None:
             return
@@ -432,4 +434,4 @@ class PresetBrowserView(BoxLayout):
             raise Exception('Error loading CAN filters: ' + str(detail))
         
     def on_close(self, *args):
-        pass
+        self.dispatch('on_preset_close')
