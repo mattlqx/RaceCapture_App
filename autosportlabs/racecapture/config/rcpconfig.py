@@ -781,8 +781,8 @@ class CANChannel(BaseChannel):
         self.can_id = 0
         self.bit_offset = 0
         self.bit_length = 0
-        self.multiplier = 0
-        self.adder = 0
+        self.multiplier = 1.0
+        self.adder = 0.0
         self.endian = 0
         self.conversion_filter_id = 0
 
