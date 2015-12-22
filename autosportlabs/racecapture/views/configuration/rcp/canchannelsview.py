@@ -333,7 +333,9 @@ class CANChannelsView(BaseConfigView):
             can_channel = CANChannel()
             can_channel.sampleRate = self.DEFAULT_CAN_SAMPLE_RATE
             self.can_channels_cfg.channels.append(can_channel)
-            self.add_can_channel(len(self.can_channels_cfg.channels) - 1, can_channel, self.max_sample_rate)
+            new_channel_index = len(self.can_channels_cfg.channels) - 1
+            self.add_can_channel(new_channel_index, can_channel, self.max_sample_rate)
+            self._customize_channel(new_channel_index)
             self.update_view_enabled()
             self.dispatch('on_modified')
 
@@ -355,8 +357,8 @@ class CANChannelsView(BaseConfigView):
 
     def popup_dismissed(self, *args):
         self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
-        
-    def on_customize_channel(self, instance, channel_index):
+    
+    def _customize_channel(self, channel_index):
         content = CANChannelConfigView(self.can_channels_cfg.channels[channel_index], self.channels, self.max_sample_rate, self.can_filters)
         content.bind(on_channel_edited=self.on_edited)
         content.bind(on_channel_modified=self.on_edited)
@@ -364,6 +366,9 @@ class CANChannelsView(BaseConfigView):
         popup = Popup(title="Customize CAN Channel", content=content, size_hint=(0.75, 0.75))
         popup.bind(on_dismiss=self.popup_dismissed)
         popup.open()
+        
+    def on_customize_channel(self, instance, channel_index):
+        self._customize_channel(channel_index)
 
     def on_preset_selected(self):
         print('preset selected')
