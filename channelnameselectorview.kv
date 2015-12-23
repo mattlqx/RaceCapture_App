@@ -4,12 +4,13 @@
 <ChannelNameSelectorView>:
     BoxLayout:
         orientation: 'horizontal'
+        spacing: sp(5)
         FieldLabel:
-            size_hint_x: 0.45
+            size_hint_x: 0.4
             text: 'Channel'
             halign: 'right'
         ChannelNameSpinner:
-            size_hint_x: 0.4
+            size_hint_x: 0.45
             id: channel_name
             on_text: root.on_channel_selected(*args)
         BoxLayout:
