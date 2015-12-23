@@ -3,10 +3,9 @@
 
 <ChannelNameSelectorView>:
     BoxLayout:
-        spacing: dp(5)
         orientation: 'horizontal'
         FieldLabel:
-            size_hint_x: 0.5
+            size_hint_x: 0.45
             text: 'Channel'
             halign: 'right'
         ChannelNameSpinner:
@@ -14,8 +13,8 @@
             id: channel_name
             on_text: root.on_channel_selected(*args)
         BoxLayout:
-            size_hint_x: 0.1
-            padding: (dp(2), dp(2))
+            size_hint_x: 0.15
+#            padding: (dp(2), dp(2))
             IconButton:
                 color: ColorScheme.get_accent()        
                 text: u'\uf013'
