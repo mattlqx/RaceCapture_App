@@ -1,6 +1,7 @@
 import kivy
 kivy.require('1.9.0')
 import os
+from kivy.metrics import sp
 from kivy.app import Builder
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.switch import Switch
@@ -382,7 +383,7 @@ class CANChannelsView(BaseConfigView):
         content = CANChannelConfigView(channel_index, working_channel_cfg, self.channels, self.max_sample_rate, self.can_filters)
         content.bind(on_editor_commit=self.on_edited)
         content.bind(on_editor_close=lambda *args:popup.dismiss())
-        popup = Popup(title="Customize CAN Channel", content=content, size_hint=(0.75, 0.7))
+        popup = Popup(title="Customize CAN Channel", content=content, size_hint=(spct(0.75), spct(0.7)))
         popup.bind(on_dismiss=self.popup_dismissed)
         popup.open()
         
