@@ -225,7 +225,7 @@
             size_hint_y: 0.6
     		id: can_channels_enable
     		label_text: 'CAN channels'
-    		help_text: 'Enable CAN mappings'
+    		help_text: 'Enable CAN data mappings'
     	BoxLayout:
             orientation: 'horizontal'
             size_hint_y: 0.4        
@@ -288,6 +288,11 @@
         	            size_hint_y: None
         	            height: max(self.minimum_height, scroller.height)
         	            cols: 1
+                FieldLabel:
+                    halign: 'center'
+                    id: list_msg
+                    text: ''
+        	            
             AnchorLayout:
                 anchor_y: 'bottom'
                 IconButton:

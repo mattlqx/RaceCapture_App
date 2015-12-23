@@ -319,10 +319,12 @@ class CANChannelsView(BaseConfigView):
         
     def reload_can_channel_grid(self, can_channels_cfg, max_sample_rate):
         self.can_grid.clear_widgets()
-        for i in range(len(can_channels_cfg.channels)):
+        channel_count = len(can_channels_cfg.channels)
+        for i in range(channel_count):
             can_channel_cfg = can_channels_cfg.channels[i]
             self.append_can_channel(i, can_channel_cfg, max_sample_rate)
         self.update_view_enabled()
+        self.ids.list_msg.text = 'No Channels defined. Press (+) to map a CAN channel' if channel_count == 0 else ''
 
     def append_can_channel(self, index, can_channel_cfg, max_sample_rate):
         channel_view = CANChannelView(index, can_channel_cfg, max_sample_rate, self.channels)
