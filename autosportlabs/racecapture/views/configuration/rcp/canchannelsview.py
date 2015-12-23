@@ -249,7 +249,7 @@ class CANChannelView(BoxLayout):
         self.ids.can_offset_len.text = u'{} ( {} )'.format(self.can_channel_cfg.bit_offset, self.can_channel_cfg.bit_length)
         sign = '-' if self.can_channel_cfg.adder < 0 else '+'
         self.ids.can_formula.text = u'\u00D7 {} {} {}'.format(self.can_channel_cfg.multiplier, sign, abs(self.can_channel_cfg.adder))
-        self.ids.can_offset_len.text = u'{} -> {}'.format(self.can_channel_cfg.bit_offset, self.can_channel_cfg.bit_length)
+        self.ids.can_offset_len.text = u'{}({})'.format(self.can_channel_cfg.bit_offset, self.can_channel_cfg.bit_length)
         sign = '-' if self.can_channel_cfg.adder < 0 else '+'
         self.ids.can_formula.text = u'\u00D7 {} {} {}'.format(self.can_channel_cfg.multiplier, sign, abs(self.can_channel_cfg.adder))
         

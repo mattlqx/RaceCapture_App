@@ -9,13 +9,13 @@
     option_cls: 'LargeSpinnerOption'
 
 <LargeFloatValueField>:
-    font_size: self.height * 0.5
+    font_size: self.height * 0.6
 
 <LargeIntegerValueField>:
-    font_size: self.height * 0.5
+    font_size: self.height * 0.6
     
 <LargeFieldLabel>:
-    font_size: self.height * 0.5
+    font_size: self.height * 0.8
     
 <SectionBoxLayout>:
     canvas.before:
@@ -76,13 +76,13 @@
                 spacing: sp(5)
                 BoxLayout:
                     size_hint_x: 0.3
+                    padding: (0, sp(10))
                     orientation: 'horizontal'
                     FieldLabel:
                         halign: 'right'
                         text: 'CAN ID'
                         size_hint_x: 0.1
                     LargeIntegerValueField:
-                        font_size: self.height * 0.5
                         id: can_id
                         size_hint_x: 0.2            
                         on_text: root.on_can_id(*args)
@@ -143,6 +143,7 @@
                     size_hint_x: 0.3
                     halign: 'right'
                 SectionBoxLayout:
+                    padding: (0, sp(10))
                     orientation: 'horizontal'
                     size_hint_x: 0.7
                     LargeFieldLabel:
@@ -156,10 +157,10 @@
                     LargeFieldLabel:
                         text: ' ) + '
                         halign: 'center'
-                        size_hint_x: 0.1
+                        size_hint_x: 0.15
                     LargeFloatValueField:
                         id: adder
-                        size_hint_x: 0.3
+                        size_hint_x: 0.25
                         on_text: root.on_adder(*args)
                 
             BoxLayout:
@@ -256,7 +257,7 @@
                 text: 'ID'
                 size_hint_x: 0.17
             FieldLabel:
-                text: 'Offset ( Length )'
+                text: 'Offset(Length)'
                 size_hint_x: 0.2
             FieldLabel:
                 text: 'Formula'
