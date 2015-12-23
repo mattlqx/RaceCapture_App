@@ -36,6 +36,9 @@ class LargeIntegerValueField(IntegerValueField):
 class LargeFloatValueField(FloatValueField):
     pass
 
+class SectionBoxLayout(BoxLayout):
+    pass
+
 class CANChannelConfigView(BoxLayout):
     
     def __init__(self, index, can_channel_cfg, channels, max_sample_rate, can_filters, **kwargs):
@@ -377,7 +380,7 @@ class CANChannelsView(BaseConfigView):
         content = CANChannelConfigView(channel_index, working_channel_cfg, self.channels, self.max_sample_rate, self.can_filters)
         content.bind(on_editor_commit=self.on_edited)
         content.bind(on_editor_close=lambda *args:popup.dismiss())
-        popup = Popup(title="Customize CAN Channel", content=content, size_hint=(0.75, 0.75))
+        popup = Popup(title="Customize CAN Channel", content=content, size_hint=(0.75, 0.7))
         popup.bind(on_dismiss=self.popup_dismissed)
         popup.open()
         

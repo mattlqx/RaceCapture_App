@@ -17,10 +17,19 @@
 <LargeFieldLabel>:
     font_size: self.height * 0.5
     
+<SectionBoxLayout>:
+    canvas.before:
+        Color:
+            rgba: 0.1, 0.1, 0.1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size             
+    padding: (sp(5), sp(5))                    
+
 <CANChannelConfigView>:
+    spacing: sp(10)
     BoxLayout:
         orientation: 'vertical'
-        spacing: sp(10)        
         BoxLayout:
             size_hint_y: 0.9
             spacing: sp(10)
@@ -28,86 +37,103 @@
             
             BoxLayout:
                 orientation: 'horizontal'
-                spacing: sp(5)
-                ChannelNameSelectorView:
-                    id: chan_id
-                    size_hint_x: 0.35
-                FieldLabel:
-                    size_hint_x: 0.2
-                    text: 'Sample Rate'
-                    halign: 'right'
-                SampleRateSpinner:
-                    id: sr
-                    size_hint_x: 0.15
-                    on_text: root.on_sample_rate(*args)
-                    
-                FieldLabel:
-                    size_hint_x: 0.2
-                    text: 'CAN Bus'
-                    halign: 'right'
-                LargeMappedSpinner:
-                    size_hint_x: 0.1
-                    id: can_bus_channel
-                    on_text: root.on_can_bus_channel(*args)
-                    
-                    
+                BoxLayout:
+                    padding: (sp(5), sp(5))
+                    size_hint_x: 0.3
+                    orientation: 'horizontal'
+                    ChannelNameSelectorView:
+                        id: chan_id
+                        size_hint_x: 0.35
+                BoxLayout:
+                    spacing: sp(3)
+                    size_hint_x: 0.7
+                    orientation: 'horizontal'
+                    SectionBoxLayout:
+                        size_hint_x: 0.6
+                        FieldLabel:
+                            size_hint_x: 0.2
+                            text: 'Sample Rate'
+                            halign: 'right'
+                        SampleRateSpinner:
+                            id: sr
+                            size_hint_x: 0.15
+                            on_text: root.on_sample_rate(*args)
+                    SectionBoxLayout:
+                        size_hint_x: 0.4
+                        FieldLabel:
+                            size_hint_x: 0.2
+                            text: 'CAN Bus'
+                            halign: 'right'
+                        LargeMappedSpinner:
+                            size_hint_x: 0.1
+                            id: can_bus_channel
+                            on_text: root.on_can_bus_channel(*args)
     
-            HSeparator:
-                text: 'Raw Mapping'
-            
+            HLineSeparator:
+                        
             BoxLayout:
                 orientation: 'horizontal'
                 spacing: sp(5)
-                FieldLabel:
-                    halign: 'right'
-                    text: 'CAN ID'
-                    size_hint_x: 0.1
-                LargeIntegerValueField:
-                    font_size: self.height * 0.5
-                    id: can_id
-                    size_hint_x: 0.2            
-                    on_text: root.on_can_id(*args)
-                FieldLabel:
-                    halign: 'right'
-                    text: 'Offset'
-                    size_hint_x: 0.1
-                LargeMappedSpinner:
-                    id: offset
-                    size_hint_x: 0.1
-                    on_text: root.on_bit_offset(*args)
-                FieldLabel:
-                    halign: 'right'
-                    text: 'Length'
-                    size_hint_x: 0.1
-                LargeMappedSpinner:
-                    id: length
-                    size_hint_x: 0.1
-                    on_text: root.on_bit_length(*args)                    
                 BoxLayout:
-                    orientation: 'vertical'
                     size_hint_x: 0.3
-                    spacing: sp(5)
-                    BoxLayout:
-                        spacing: sp(5)
-                        orientation: 'horizontal'
+                    orientation: 'horizontal'
+                    FieldLabel:
+                        halign: 'right'
+                        text: 'CAN ID'
+                        size_hint_x: 0.1
+                    LargeIntegerValueField:
+                        font_size: self.height * 0.5
+                        id: can_id
+                        size_hint_x: 0.2            
+                        on_text: root.on_can_id(*args)
+                BoxLayout:
+                    size_hint_x: 0.7
+                    orientation: 'horizontal'
+                    spacing: sp(3)
+                    SectionBoxLayout:
+                        size_hint_x: 0.6
                         FieldLabel:
-                            text: 'Bit Mode'
                             halign: 'right'
-                        CheckBox:
-                            id: bitmode
-                            on_active: root.on_bit_mode(*args)
-                    BoxLayout:
-                        spacing: sp(5)
-                        orientation: 'horizontal'
+                            text: 'Offset'
+                            size_hint_x: 0.1
+                        LargeMappedSpinner:
+                            id: offset
+                            size_hint_x: 0.1
+                            on_text: root.on_bit_offset(*args)
                         FieldLabel:
-                            text: 'Endian'
                             halign: 'right'
-                        MappedSpinner:
-                            id: endian
-                            on_text: root.on_endian(*args)
-                    
-            HSeparator:
-                text: 'Formula'
+                            text: 'Length'
+                            size_hint_x: 0.1
+                        LargeMappedSpinner:
+                            id: length
+                            size_hint_x: 0.1
+                            on_text: root.on_bit_length(*args)
+                    SectionBoxLayout:
+                        size_hint_x: 0.4                    
+                        BoxLayout:
+                            orientation: 'vertical'
+                            size_hint_x: 0.3
+                            spacing: sp(5)
+                            BoxLayout:
+                                spacing: sp(5)
+                                orientation: 'horizontal'
+                                FieldLabel:
+                                    text: 'Bit Mode'
+                                    halign: 'right'
+                                CheckBox:
+                                    id: bitmode
+                                    on_active: root.on_bit_mode(*args)
+                            BoxLayout:
+                                spacing: sp(5)
+                                orientation: 'horizontal'
+                                FieldLabel:
+                                    text: 'Endian'
+                                    halign: 'right'
+                                MappedSpinner:
+                                    id: endian
+                                    on_text: root.on_endian(*args)
+
+            HLineSeparator
                     
             BoxLayout:
                 orientation: 'horizontal'
@@ -116,22 +142,25 @@
                     text: 'Formula'
                     size_hint_x: 0.3
                     halign: 'right'
-                LargeFieldLabel:
-                    size_hint_x: 0.2
-                    halign: 'right'
-                    text: u'(Raw \u00D7 '
-                LargeFloatValueField:
-                    id: multiplier
-                    size_hint_x: 0.2
-                    on_text: root.on_multiplier(*args)
-                LargeFieldLabel:
-                    text: ' ) + '
-                    halign: 'center'
-                    size_hint_x: 0.1
-                LargeFloatValueField:
-                    id: adder
-                    size_hint_x: 0.2
-                    on_text: root.on_adder(*args)
+                SectionBoxLayout:
+                    orientation: 'horizontal'
+                    size_hint_x: 0.7
+                    LargeFieldLabel:
+                        size_hint_x: 0.3
+                        halign: 'right'
+                        text: u'(Raw \u00D7 '
+                    LargeFloatValueField:
+                        id: multiplier
+                        size_hint_x: 0.3
+                        on_text: root.on_multiplier(*args)
+                    LargeFieldLabel:
+                        text: ' ) + '
+                        halign: 'center'
+                        size_hint_x: 0.1
+                    LargeFloatValueField:
+                        id: adder
+                        size_hint_x: 0.3
+                        on_text: root.on_adder(*args)
                 
             BoxLayout:
                 orientation: 'horizontal'
