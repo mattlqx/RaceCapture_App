@@ -43,6 +43,18 @@ class ColorScheme(object):
         return get_color_from_hex("202020")
     
     @staticmethod
+    def get_medium_background():
+        return get_color_from_hex("505050")
+
+    @staticmethod
+    def get_dark_background_translucent():
+        return [0.1, 0.1, 0.1, 0.5]
+     
+    @staticmethod
+    def get_widget_translucent_background():
+        return [0.05, 0.05, 0.05, 0.8]
+     
+    @staticmethod
     def get_background():
         return get_color_from_hex("000000")
 

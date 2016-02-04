@@ -3,6 +3,7 @@ kivy.require('1.9.0')
 
 from kivy.properties import ObjectProperty
 from kivy import platform
+from kivy.clock import Clock
 from settingsview import SettingsMappedSpinner, SettingsSwitch
 from mappedspinner import MappedSpinner
 from kivy.uix.boxlayout import BoxLayout
@@ -10,6 +11,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 from kivy.app import Builder
 from kivy import platform
+from kivy.logger import Logger
 from autosportlabs.racecapture.views.util.alertview import confirmPopup, okPopup
 from utils import *
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
@@ -45,19 +47,8 @@ class FirmwareUpdateView(BaseConfigView):
                       content=Label(text='Coming soon!'),
                       size_hint=(None, None), size=(400, 400))
         popup.open()
-
-    def prompt_manual_restart(self):
-        popup = None
-        def _on_ok(*args):
-            popup.dismiss()
-            self._restart_json_serial()
-        popup = okPopup('Operation Complete',
-                        '1. Unplug RaceCapture from USB\n2. Wait 3 seconds\n3. Re-connect USB',
-                        _on_ok)
         
-    def prompt_manual_bootloader_mode(self, instance):
-        self._popup.dismiss()
-        self._teardown_json_serial()
+    def _prompt_manual_bootloader_mode(self, instance):
         popup = None
         def _on_answer(inst, answer):
             popup.dismiss()
@@ -76,24 +67,32 @@ class FirmwareUpdateView(BaseConfigView):
     def get_firmware_file_path(self):
         return self._settings.userPrefs.get_pref('preferences', 'firmware_dir')
         
-    def select_file(self):
-        if platform == 'win':
-            ok_cb = self.prompt_manual_bootloader_mode
-        else:
-            ok_cb = self._start_update_fw
+    def _select_file(self):
+        def _on_answer(instance):
+            popup.dismiss()
+            if platform == 'win':
+                self._prompt_manual_bootloader_mode(instance)
+            else:
+                self._start_update_fw(instance)
+
+        def dismiss_popup(self, *args):
+            popup.dismiss()
+
         user_path= self.get_firmware_file_path()
-        print("the user path " + str(user_path))
-        content = LoadDialog(ok=ok_cb, 
-                             cancel=self.dismiss_popup,
+        content = LoadDialog(ok=_on_answer, 
+                             cancel=dismiss_popup,
                              filters=['*' + '.ihex'],
                              user_path=user_path)
-        self._popup = Popup(title="Load file", content=content, size_hint=(0.9, 0.9))
-        self._popup.open()
+        popup = Popup(title="Load file", content=content, size_hint=(0.9, 0.9))
+        popup.open()
 
     def _update_progress_gauge(self, percent):
-        self.ids.fw_progress.value = int(percent)
+        def update_progress(pct):
+            self.ids.fw_progress.value = int(pct)
+        Clock.schedule_once(lambda dt: update_progress(percent))
 
     def _teardown_json_serial(self):
+        Logger.info('FirmwareUpdateView: Disabling RaceCapture Communcications')
         # It's ok if this fails, in the event of no device being present,
         # we just need to disable the com port
         self.rc_api.disable_autorecover()
@@ -108,6 +107,7 @@ class FirmwareUpdateView(BaseConfigView):
         sleep(5)
 
     def _restart_json_serial(self):
+        Logger.info('FirmwareUpdateView: Re-enabling RaceCapture Communications')
         self.rc_api.enable_autorecover()
         self.rc_api.run_auto_detect()
 
@@ -118,22 +118,15 @@ class FirmwareUpdateView(BaseConfigView):
             if filename:
                 #Even though we stopped the RX thread, this is OK
                 #since it doesn't return a value
-                try:
-                    self.ids.fw_progress.title="Processing"
-                    self._teardown_json_serial()
-                except:
-                    import sys, traceback
-                    print "Exception in user code:"
-                    print '-'*60
-                    traceback.print_exc(file=sys.stdout)
-                    print '-'*60
-                    pass
+                self.ids.fw_progress.title="Processing"
+
+                self._teardown_json_serial()
 
                 self.ids.fw_progress.title="Progress"
 
                 #Get our firmware updater class and register the
                 #callback that will update the progress gauge
-                fu = fw_update.FwUpdater()
+                fu = fw_update.FwUpdater(logger=Logger)
                 fu.register_progress_callback(self._update_progress_gauge)
 
                 retries = 5
@@ -154,9 +147,6 @@ class FirmwareUpdateView(BaseConfigView):
                 fu.update_firmware(filename, port)
                 self.ids.fw_progress.title = "Restarting"
 
-                #Windows workaround
-                if platform == 'win':
-                    self.prompt_manual_restart()
                 #Sleep for a few seconds since we need to let USB re-enumerate
                 sleep(3)
             else:
@@ -164,21 +154,25 @@ class FirmwareUpdateView(BaseConfigView):
         except Exception as detail:
             alertPopup('Error Loading', 'Failed to Load Firmware:\n\n' + str(detail))
 
-        if not platform == 'win':
-            self._restart_json_serial()
+        self._restart_json_serial()
         self.ids.fw_progress.value = ''
         self.ids.fw_progress.title = ""
 
-
+    def update_pre_check(self):
+        
+        popup = None
+        def _on_answer(inst, answer):
+            popup.dismiss()
+            if answer == True:
+                self._select_file()
+        popup = confirmPopup('Ready to update firmware',
+                             'Please ensure your configuration is saved before continuing\n',
+                             _on_answer)
 
     def _start_update_fw(self, instance):
-        self._popup.dismiss()
         self.set_firmware_file_path(instance.path)
-        print('path: ' + str(self.get_firmware_file_path()))        
         #The comma is necessary since we need to pass in a sequence of args
         t = Thread(target=self._update_thread, args=(instance,))
         t.daemon = True
         t.start()
 
-    def dismiss_popup(self, *args):
-        self._popup.dismiss()

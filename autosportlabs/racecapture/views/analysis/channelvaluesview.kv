@@ -1,0 +1,55 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+#have received a copy of the GNU General Public License along with
+#this code. If not, see <http://www.gnu.org/licenses/>.
+<ChannelValueView>:
+    canvas.before:
+        Color:
+            rgba: 0.05, 0.05, 0.05, 0.5
+        Rectangle:
+            pos: self.pos
+            size: self.size            
+
+    orientation: 'horizontal'
+    FieldLabel:
+        size_hint_x: 0.3
+        id: session
+    FieldLabel:
+        size_hint_x: 0.1
+        id: lap
+    FieldLabel:
+        size_hint_x: 0.3
+        id: channel
+    BarGraphGauge:
+        size_hint_x: 0.3
+        id: value
+
+<ChannelValuesView>:
+    options_enabled: False
+    BoxLayout:
+        ScrollView:
+            id: scroller
+            do_scroll_x:False
+            do_scroll_y:True
+            GridLayout:
+                id: channel_values
+                row_default_height: root.height * 0.12
+                row_force_default: True
+                size_hint_y: None
+                height: max(self.minimum_height, scroller.height)
+                cols: 1
