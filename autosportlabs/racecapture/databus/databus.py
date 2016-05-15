@@ -7,6 +7,7 @@ from autosportlabs.racecapture.data.sampledata import Sample, SampleMetaExceptio
 from autosportlabs.racecapture.databus.filter.bestlapfilter import BestLapFilter
 from autosportlabs.racecapture.databus.filter.laptimedeltafilter import LaptimeDeltaFilter
 from autosportlabs.util.threadutil import safe_thread_exit, ThreadSafeDict
+from utils import is_mobile_platform
 
 DEFAULT_DATABUS_UPDATE_INTERVAL = 0.02  # 50Hz UI update rate
 
@@ -55,7 +56,8 @@ class DataBus(object):
         self._polling = False
 
     def _update_datafilter_meta(self, datafilter):
-        metas = datafilter.get_channel_meta()
+        channel_metas = self.channel_metas
+        metas = datafilter.get_channel_meta(channel_metas)
         with self.channel_metas as cm:
             for channel, meta in metas.iteritems():
                 cm[channel] = meta
@@ -138,6 +140,30 @@ class DataBus(object):
         except:
             pass
 
+    def remove_sample_listener(self, listener):
+        '''
+        Remove the specified sample listener
+        :param listener
+        :type object / callback function
+        '''
+        Logger.info('DataBus: remove sample listener {}'.format(listener))
+        try:
+            self.sample_listeners.remove(listener)
+        except Exception as e:
+            Logger.error('Could not remove sample listener {}: {}'.format(listener, e))
+        
+    def remove_meta_listener(self, listener):
+        '''
+        Remove the specified meta listener
+        :param listener
+        :type object / callback function
+        '''
+        Logger.info('DataBus: remove meta listener {}'.format(listener))
+        try:
+            self.meta_listeners.remove(listener)
+        except Exception as e:
+            Logger.error('Could not remove meta listener {}: {}'.format(listener, e))
+        
     def add_sample_listener(self, callback):
         self.sample_listeners.append(callback)
 
@@ -176,26 +202,30 @@ class DataBusPump(object):
     def __init__(self, **kwargs):
         super(DataBusPump, self).__init__(**kwargs)
 
-    def start(self, data_bus, rc_api):
-        if self._sample_thread == None:
-            self._rc_api = rc_api
-            self._data_bus = data_bus
+    def start(self, data_bus, rc_api, streaming_supported):
+        if self._running.is_set():
+            # since we're already running, simply
+            # request updated metadata
+            self.meta_is_stale()
+            return
+                    
+        self._rc_api = rc_api
+        self._data_bus = data_bus
+        rc_api.addListener('s', self.on_sample)
+        rc_api.addListener('meta', self.on_meta)
+        self._running.set()
 
-            rc_api.addListener('s', self.on_sample)
-            rc_api.addListener('meta', self.on_meta)
-
-            self._running.set()
+        # Only BT supports auto-streaming data, the rest we have to poll
+        if not streaming_supported:
             t = Thread(target=self.sample_worker)
             t.start()
             self._sample_thread = t
-        else:
-            # we're already running, refresh channel meta data
-            self.meta_is_stale()
 
     def stop(self):
         self._running.clear()
         try:
-            self._sample_thread.join()
+            if self._sample_thread is not None:
+                self._sample_thread.join()
         except Exception as e:
             Logger.warning('DataBusPump: Failed to join sample_worker: {}'.format(e))
 
@@ -238,29 +268,14 @@ class DataBusPump(object):
 
     def sample_worker(self):
         rc_api = self._rc_api
-        sample_event = self._sample_event
-
         Logger.info('DataBusPump: sample_worker starting')
-
-        sample_event.clear()
-        if sample_event.wait(SAMPLE_POLL_TEST_TIMEOUT) == True:
-            Logger.info('DataBusPump: Async sampling detected')
-        else:
-            Logger.info('DataBusPump: Synchronous sampling mode enabled')
-            while self._running.is_set():
-                try:
-                    # the timeout here is designed to be longer than the streaming rate of
-                    # RaceCapture. If we don't get an asynchronous sample, then we will timeout
-                    # and request a sample anyway.
-                    rc_api.sample()
-                    sample_event.wait(SAMPLE_POLL_EVENT_TIMEOUT)
-                    sample_event.clear()
-                    sleep(SAMPLE_POLL_INTERVAL_TIMEOUT)
-                except Exception as e:
-                    sleep(SAMPLE_POLL_EXCEPTION_RECOVERY)
-                    Logger.error('DataBusPump: Exception in sample_worker: ' + str(e))
-                finally:
-                    sample_event.clear()
+        while self._running.is_set():
+            try:
+                rc_api.sample()
+                sleep(SAMPLE_POLL_INTERVAL_TIMEOUT)
+            except Exception as e:
+                Logger.error('DataBusPump: Exception in sample_worker: ' + str(e))
+                sleep(SAMPLE_POLL_EXCEPTION_RECOVERY)
 
         Logger.info('DataBusPump: sample_worker exiting')
         safe_thread_exit()

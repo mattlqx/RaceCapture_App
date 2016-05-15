@@ -30,6 +30,7 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.properties import ObjectProperty
 from collections import OrderedDict
+from  kivy.metrics import MetricsBase
 import bisect
 
 Builder.load_file('autosportlabs/racecapture/views/analysis/linechart.kv')
@@ -68,7 +69,9 @@ class LineChart(ChannelAnalysisWidget):
         self.register_event_type('on_marker')
         Window.bind(mouse_pos=self.on_mouse_pos)
         Window.bind(on_motion=self.on_motion)
-        
+
+        self.metrics_base = MetricsBase()
+
         self.got_mouse = False
         self._touches = []
         self._initial_touch_distance = 0
@@ -162,7 +165,6 @@ class LineChart(ChannelAnalysisWidget):
         
     def on_touch_move(self, touch):
         x, y = touch.x, touch.y
-        
         if self.collide_point(x, y):
             touches = len(self._touches)
             if touches == 1:
@@ -205,7 +207,7 @@ class LineChart(ChannelAnalysisWidget):
         if not self.collide_point(pos[0], pos[1]):
             return False
         
-        self.dispatch_marker(pos[0], pos[1])
+        self.dispatch_marker(pos[0] * self.metrics_base.density, pos[1] * self.metrics_base.density)
 
     def remove_channel(self, channel, source_ref):
         remove = []
@@ -216,7 +218,30 @@ class LineChart(ChannelAnalysisWidget):
         for channel_plot in remove:
             self.ids.chart.remove_plot(channel_plot.plot)
             del(self._channel_plots[str(channel_plot)])
-    
+
+        self._update_max_distance()
+
+    def _update_max_distance(self):
+        '''
+        Reset max distances for the currently selected plots
+        '''
+        max_distance = 0
+        for plot in self._channel_plots.itervalues():
+            #Find the largest distance for all of the active plots
+            distance_index = plot.distance_index
+            last = next(reversed(distance_index))
+            distance = last
+            if distance and distance > max_distance:
+                max_distance = distance
+
+        #update chart zoom range
+        self.current_offset = 0
+        self.current_distance = max_distance
+        self.max_distance = max_distance
+
+        self.ids.chart.xmin = self.current_offset
+        self.ids.chart.xmax = self.current_distance
+
     def _add_channels_results(self, channels, query_data):
         try:
             distance_data_values = query_data['Distance']
@@ -235,14 +260,11 @@ class LineChart(ChannelAnalysisWidget):
                 chart.add_plot(plot)
                 points = []
                 distance_index = OrderedDict()
-                max_distance = chart.xmax
                 sample_index = 0
                 distance_data = distance_data_values.values
                 channel_data = channel_data_values.values
                 for sample in channel_data:
                     distance = distance_data[sample_index]
-                    if distance > max_distance:
-                        max_distance = distance 
                     points.append((distance, sample))
                     distance_index[distance] = sample_index
                     sample_index += 1
@@ -251,12 +273,11 @@ class LineChart(ChannelAnalysisWidget):
                 channel_plot.samples = sample_index
                 plot.ymin = channel_data_values.min
                 plot.ymax = channel_data_values.max
-                chart.xmin = 0
-                chart.xmax = max_distance
                 plot.points = points
                 self._channel_plots[str(channel_plot)] = channel_plot
-                self.max_distance = max_distance
-                self.current_distance = max_distance
+
+                #sync max chart distances
+                self._update_max_distance()
         finally:
             ProgressSpinner.decrement_refcount()
 

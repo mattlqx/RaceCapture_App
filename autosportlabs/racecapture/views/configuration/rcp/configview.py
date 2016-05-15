@@ -2,7 +2,7 @@ import os
 import traceback
 import kivy
 from time import sleep
-kivy.require('1.9.0')
+kivy.require('1.9.1')
 from kivy.uix.boxlayout import BoxLayout
 from kivy.app import Builder
 from utils import *
@@ -15,7 +15,7 @@ from kivy.uix.screenmanager import Screen
 from kivy.clock import Clock
 from kivy import platform
 from kivy.logger import Logger
-from kivy.uix.scrollview import ScrollView
+from autosportlabs.widgets.scrollcontainer import ScrollContainer
 FIRMWARE_UPDATABLE =  not (platform == 'android' or platform == 'ios')
 
 from autosportlabs.racecapture.views.configuration.rcp.analogchannelsview import *
@@ -83,9 +83,6 @@ class ConfigView(Screen):
         self.register_event_type('on_config_modified')
         self.register_event_type('on_read_config')
         self.register_event_type('on_write_config')
-        self.register_event_type('on_run_script')
-        self.register_event_type('on_poll_logfile')
-        self.register_event_type('on_set_logfile_level')
         
     def on_config_written(self, *args):
         self.writeStale = False
@@ -176,10 +173,7 @@ class ConfigView(Screen):
             return tree.add_node(label, n)
 
         def create_scripting_view():
-            script_view = LuaScriptingView()
-            script_view.bind(on_run_script=self.runScript)
-            script_view.bind(on_poll_logfile=self.pollLogfile)
-            script_view.bind(on_set_logfile_level=self.setLogFileLevel)
+            script_view = LuaScriptingView(rc_api=self.rc_api)
             self.script_view = script_view
             return script_view            
             
@@ -227,30 +221,7 @@ class ConfigView(Screen):
     
     def on_write_config(self, instance, *args):
         pass
-    
-    def on_run_script(self):
-        pass
         
-    def on_logfile(self, logfileJson):
-        if self.script_view:
-            logfileText = logfileJson.get('logfile').replace('\r','').replace('\0','')
-            self.script_view.dispatch('on_logfile', logfileText)
-        
-    def runScript(self, instance):
-        self.dispatch('on_run_script')
-
-    def on_poll_logfile(self):
-        pass
-
-    def on_set_logfile_level(self, level):
-        pass
-    
-    def setLogFileLevel(self, instance, level):
-        self.dispatch('on_set_logfile_level', level)
-        
-    def pollLogfile(self, instance):
-        self.dispatch('on_poll_logfile')
-    
     def readConfig(self):
         if self.writeStale == True:
             popup = None 
