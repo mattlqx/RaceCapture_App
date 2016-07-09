@@ -13,6 +13,7 @@ if __name__ == '__main__':
     import kivy
     import os
     import traceback
+    from threading import Thread
     from kivy.properties import AliasProperty
     from functools import partial
     from kivy.clock import Clock
@@ -48,6 +49,7 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.settings.prefs import Range
     from autosportlabs.telemetry.telemetryconnection import TelemetryManager
     from autosportlabs.help.helpmanager import HelpInfo
+    from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
     from toolbarview import ToolbarView
     if not is_mobile_platform():
         kivy.config.Config.set ('input', 'mouse', 'mouse,multitouch_on_demand')
@@ -136,6 +138,7 @@ class RaceCaptureApp(App):
         self.settings = SystemSettings(self.user_data_dir, base_dir=self.base_dir)
         self._databus = DataBusFactory().create_standard_databus(self.settings.systemChannels)
         self.settings.runtimeChannels.data_bus = self._databus
+        self._datastore = CachingAnalysisDatastore()
 
         # RaceCapture communications API
         self._rc_api = RcpApi(on_disconnect=self._on_rcp_disconnect, settings=self.settings)
@@ -187,6 +190,21 @@ class RaceCaptureApp(App):
 
     def init_data(self):
         self.trackManager.init(None, self.loadCurrentTracksSuccess, self.loadCurrentTracksError)
+        self._init_datastore()
+
+    def _init_datastore(self):
+        def _init_datastore(dstore_path):
+            if os.path.isfile(dstore_path):
+                self._datastore.open_db(dstore_path)
+            else:
+                Logger.info('Main: creating datastore...')
+                self._datastore.new(dstore_path)
+
+        dstore_path = self.settings.userPrefs.datastore_location
+        Logger.info("Main: Datastore Path:" + str(dstore_path))
+        t = Thread(target=_init_datastore, args=(dstore_path,))
+        t.daemon = True
+        t.start()
 
     def _serial_warning(self):
         alertPopup('Warning', 'Command failed. Ensure you have selected a correct serial port')
@@ -301,7 +319,7 @@ class RaceCaptureApp(App):
         return dash_view
 
     def build_analysis_view(self):
-        analysis_view = AnalysisView(name='analysis', data_bus=self._databus, settings=self.settings, track_manager=self.trackManager)
+        analysis_view = AnalysisView(self._datastore, name='analysis', data_bus=self._databus, settings=self.settings, track_manager=self.trackManager)
         self.tracks_listeners.append(analysis_view)
         return analysis_view
 

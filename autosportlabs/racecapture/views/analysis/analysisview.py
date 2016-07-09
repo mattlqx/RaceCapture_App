@@ -61,10 +61,10 @@ class AnalysisView(Screen):
     _color_sequence = ColorSequence()
     sessions = ObjectProperty(None)
 
-    def __init__(self, **kwargs):
+    def __init__(self, datastore, **kwargs):
         Builder.load_file(ANALYSIS_VIEW_KV)
         super(AnalysisView, self).__init__(**kwargs)
-        self._datastore = CachingAnalysisDatastore()
+        self._datastore = datastore
         self.register_event_type('on_tracks_updated')
         self._databus = kwargs.get('dataBus')
         self._settings = kwargs.get('settings')
@@ -144,7 +144,6 @@ class AnalysisView(Screen):
             sessions_view = self.ids.sessions_view
             sessions_view.deselect_other_laps(session)
 
-
     def open_datastore(self):
         pass
 
@@ -187,23 +186,7 @@ class AnalysisView(Screen):
         popup.open()
         self._popup = popup
 
-    def init_datastore(self):
-        def _init_datastore(dstore_path):
-            if os.path.isfile(dstore_path):
-                self._datastore.open_db(dstore_path)
-            else:
-                Logger.info('AnalysisView: creating datastore...')
-                self._datastore.new(dstore_path)
-            self.ids.sessions_view.datastore = self._datastore
-
-        dstore_path = self._settings.userPrefs.datastore_location
-        Logger.info("AnalysisView: Datastore Path:" + str(dstore_path))
-        t = Thread(target=_init_datastore, args=(dstore_path,))
-        t.daemon = True
-        t.start()
-
     def init_view(self):
-        self.init_datastore()
         mainchart = self.ids.mainchart
         mainchart.settings = self._settings
         mainchart.datastore = self._datastore
@@ -212,6 +195,7 @@ class AnalysisView(Screen):
         channelvalues.settings = self._settings
         self.ids.analysismap.track_manager = self._track_manager
         self.ids.analysismap.datastore = self._datastore
+        self.ids.sessions_view.datastore = self._datastore
         Clock.schedule_once(lambda dt: HelpInfo.help_popup('beta_analysis_welcome', self, arrow_pos='right_mid'), 0.5)
 
     def popup_dismissed(self, *args):
