@@ -46,6 +46,7 @@ from autosportlabs.racecapture.views.util.alertview import alertPopup
 from autosportlabs.uix.color.colorsequence import ColorSequence
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.help.helpmanager import HelpInfo
+from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
 import traceback
 
 ANALYSIS_VIEW_KV = 'autosportlabs/racecapture/views/analysis/analysisview.kv'
@@ -61,10 +62,10 @@ class AnalysisView(Screen):
     _color_sequence = ColorSequence()
     sessions = ObjectProperty(None)
 
-    def __init__(self, datastore, **kwargs):
+    def __init__(self, **kwargs):
         Builder.load_file(ANALYSIS_VIEW_KV)
         super(AnalysisView, self).__init__(**kwargs)
-        self._datastore = datastore
+        self._datastore = CachingAnalysisDatastore()
         self.register_event_type('on_tracks_updated')
         self._databus = kwargs.get('dataBus')
         self._settings = kwargs.get('settings')
@@ -197,6 +198,20 @@ class AnalysisView(Screen):
         self.ids.analysismap.datastore = self._datastore
         self.ids.sessions_view.datastore = self._datastore
         Clock.schedule_once(lambda dt: HelpInfo.help_popup('beta_analysis_welcome', self, arrow_pos='right_mid'), 0.5)
+        self._init_datastore()
+
+    def _init_datastore(self):
+        def _init_datastore(dstore_path):
+            if os.path.isfile(dstore_path):
+                self._datastore.open_db(dstore_path)
+            else:
+                Logger.info('AnalysisView: creating datastore...')
+                self._datastore.new(dstore_path)
+
+        dstore_path = self.settings.userPrefs.datastore_location
+        t = Thread(target=_init_datastore, args=(dstore_path,))
+        t.daemon = True
+        t.start()
 
     def popup_dismissed(self, *args):
         if self.stream_connecting:

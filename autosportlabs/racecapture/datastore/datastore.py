@@ -150,7 +150,7 @@ class Session(object):
         self.name = name
         self.notes = notes
         self.date = date
-        
+
 class Lap(object):
     def __init__(self, lap, session_id, lap_time):
         self.lap = lap
@@ -261,14 +261,16 @@ class DataStore(object):
     # Channels to index on, WARNING: only [A-z] channel names with no spaces will work currently
     EXTRA_INDEX_CHANNELS = ["CurrentLap"]    
     val_filters = ['lt', 'gt', 'eq', 'lt_eq', 'gt_eq']
-    def __init__(self):
+    def __init__(self, databus=None):
         self._channels = []
         self._isopen = False
         self.datalog_channels = {}
         self.datalogchanneltypes = {}
         self._new_db = False
         self._ending_datalog_id  = 0
-        
+
+        self._databus = databus
+
 
     def close(self):
         self._conn.close()
@@ -651,7 +653,7 @@ class DataStore(object):
         self._conn.execute("""DELETE FROM session where id=?""",(session_id,))
         self._conn.commit()
         
-    def _create_session(self, name, notes=''):
+    def create_session(self, name, notes=''):
         """
         Creates a new session entry in the sessions table and returns it's ID
         """
@@ -833,7 +835,7 @@ class DataStore(object):
         headers = self._parse_datalog_headers(header)
 
         #Create an event to be tagged to these records
-        session_id = self._create_session(name, notes)
+        session_id = self.create_session(name, notes)
         self._handle_data(dl, headers, session_id, warnings, progress_cb)
         
         #update the channel metadata, including re-setting min/max values

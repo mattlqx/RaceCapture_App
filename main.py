@@ -14,6 +14,7 @@ if __name__ == '__main__':
     import os
     import traceback
     from threading import Thread
+    from pymitter import EventEmitter
     from kivy.properties import AliasProperty
     from functools import partial
     from kivy.clock import Clock
@@ -49,7 +50,8 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.settings.prefs import Range
     from autosportlabs.telemetry.telemetryconnection import TelemetryManager
     from autosportlabs.help.helpmanager import HelpInfo
-    from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
+    from autosportlabs.racecapture.datastore import DataStore
+    from autosportlabs.racecapture.data.sessionrecorder import SessionRecorder
     from toolbarview import ToolbarView
     if not is_mobile_platform():
         kivy.config.Config.set ('input', 'mouse', 'mouse,multitouch_on_demand')
@@ -135,10 +137,13 @@ class RaceCaptureApp(App):
         else:
             self.base_dir = os.path.dirname(os.path.abspath(__file__))
 
+        self.eventbus = EventEmitter()
+
         self.settings = SystemSettings(self.user_data_dir, base_dir=self.base_dir)
         self._databus = DataBusFactory().create_standard_databus(self.settings.systemChannels)
         self.settings.runtimeChannels.data_bus = self._databus
-        self._datastore = CachingAnalysisDatastore()
+        self._datastore = DataStore(databus=self._databus)
+        self._session_recorder = SessionRecorder(self._datastore, self._databus, self.eventbus)
 
         # RaceCapture communications API
         self._rc_api = RcpApi(on_disconnect=self._on_rcp_disconnect, settings=self.settings)
@@ -289,6 +294,7 @@ class RaceCaptureApp(App):
             self.screenMgr.add_widget(view)
             self.mainViews[view_name] = view
         self.screenMgr.current = view_name
+        self.eventbus.emit("view_change", view_name)
 
     def switchMainView(self, view_name):
             self.mainNav.anim_to_state('closed')
