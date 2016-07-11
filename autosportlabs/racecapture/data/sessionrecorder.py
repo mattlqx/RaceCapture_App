@@ -31,7 +31,7 @@ class SessionRecorder(object):
     # Main app views that the SessionRecorder should start recording when displayed
     RECORDING_VIEWS = ['dash']
 
-    def __init__(self, datastore, databus, rcpapi, track_manager=None):
+    def __init__(self, datastore, databus, rcpapi, track_manager=None, current_view=None):
         """
         Initializer.
         :param datastore: Datastore for saving data
@@ -48,15 +48,19 @@ class SessionRecorder(object):
         self._track_manager = track_manager
         self._meta = None
         self._rc_connected = False
+        self._current_view = current_view
 
         self._rcapi.add_connect_listener(self._on_rc_connected)
         self._rcapi.add_disconnect_listener(self._on_rc_disconnected)
         self._databus.addMetaListener(self._on_meta)
+        self._databus.addSampleListener(self._on_sample)
 
         metas = self._databus.getMeta()
 
         if metas:
             self._on_meta(metas)
+
+        self._check_should_record()
 
     def start(self, session_name=None):
         """
@@ -67,14 +71,9 @@ class SessionRecorder(object):
         """
         Logger.info("SessionRecorder: starting new session")
 
-        # Are all our prerequisites ready?
-        if self.ready():
-            session_id = self._datastore.create_session(self._create_session_name())
-            self._current_session = self._datastore.get_session_by_id(session_id)
-            self.recording = True
-        else:
-            # TODO: Should throw some error here
-            Logger.error("SessionRecorder: Could not start logging session")
+        session_id = self._datastore.create_session(self._create_session_name())
+        self._current_session = self._datastore.get_session_by_id(session_id)
+        self.recording = True
 
     def stop(self):
         """
@@ -85,15 +84,17 @@ class SessionRecorder(object):
         self.recording = False
         self._current_session = None
 
-    def ready(self):
-        """
-        Determines if we are ready to start a session, we need:
-        1) RCP connected
-        2) Channel list
-        3) ?
-        :return:
-        """
-        return self._rc_connected and self._channels
+    @property
+    def _should_record(self):
+        return self._current_view in SessionRecorder.RECORDING_VIEWS and\
+            self._rc_connected and\
+            self._channels
+
+    def _check_should_record(self):
+        if self._should_record and not self.recording:
+            self.start()
+        elif not self._should_record and self.recording:
+            self.stop()
 
     def _create_session_name(self):
         """
@@ -113,10 +114,11 @@ class SessionRecorder(object):
         :param view_name:
         :return:
         """
-        if self.recording and view_name not in SessionRecorder.RECORDING_VIEWS:
-            self.stop()
-        elif not self.recording and view_name in SessionRecorder.RECORDING_VIEWS:
-            self.start()
+        self._current_view = view_name
+        self._check_should_record()
+
+    def _save_sample(self, sample):
+        pass
 
     def _on_meta(self, metas):
         """
@@ -124,7 +126,17 @@ class SessionRecorder(object):
         :param metas:
         :return:
         """
-        self._metas = metas
+        self._channels = metas
+        self._check_should_record()
+
+    def _on_sample(self, sample):
+        """
+        Sample listener for data from RC. Saves data to Datastore if a session is being recorded
+        :param sample:
+        :return:
+        """
+        if self.recording:
+            self._save_sample(sample)
 
     def _on_rc_connected(self):
         """
@@ -132,6 +144,7 @@ class SessionRecorder(object):
         :return:
         """
         self._rc_connected = True
+        self._check_should_record()
 
     def _on_rc_disconnected(self):
         """
