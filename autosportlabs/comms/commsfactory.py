@@ -10,6 +10,8 @@ def comms_factory(device, conn_type):
             return android_comm(device)
         if conn_type == 'wifi':
             return socket_comm(device)
+        if conn_type == 'serial':
+            return serial_comm(device)
     else:
         if platform == 'android':
             return android_comm(device)
