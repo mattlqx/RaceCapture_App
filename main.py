@@ -14,7 +14,6 @@ if __name__ == '__main__':
     import os
     import traceback
     from threading import Thread
-    from pymitter import EventEmitter
     from kivy.properties import AliasProperty
     from functools import partial
     from kivy.clock import Clock
@@ -137,16 +136,17 @@ class RaceCaptureApp(App):
         else:
             self.base_dir = os.path.dirname(os.path.abspath(__file__))
 
-        self.eventbus = EventEmitter()
-
         self.settings = SystemSettings(self.user_data_dir, base_dir=self.base_dir)
-        self._databus = DataBusFactory().create_standard_databus(self.settings.systemChannels)
-        self.settings.runtimeChannels.data_bus = self._databus
-        self._datastore = DataStore(databus=self._databus)
-        self._session_recorder = SessionRecorder(self._datastore, self._databus, self.eventbus)
+        self.trackManager = TrackManager(user_dir=self.settings.get_default_data_dir(), base_dir=self.base_dir)
 
         # RaceCapture communications API
         self._rc_api = RcpApi(on_disconnect=self._on_rcp_disconnect, settings=self.settings)
+
+        self._databus = DataBusFactory().create_standard_databus(self.settings.systemChannels)
+        self.settings.runtimeChannels.data_bus = self._databus
+        self._datastore = DataStore(databus=self._databus)
+        self._session_recorder = SessionRecorder(self._datastore, self._databus, self._rc_api, self.trackManager)
+
 
         HelpInfo.settings = self.settings
 
@@ -159,7 +159,6 @@ class RaceCaptureApp(App):
         self.register_event_type('on_tracks_updated')
         self.processArgs()
         self.settings.appConfig.setUserDir(self.user_data_dir)
-        self.trackManager = TrackManager(user_dir=self.settings.get_default_data_dir(), base_dir=self.base_dir)
         self.setup_telemetry()
 
     def on_pause(self):
@@ -294,7 +293,8 @@ class RaceCaptureApp(App):
             self.screenMgr.add_widget(view)
             self.mainViews[view_name] = view
         self.screenMgr.current = view_name
-        self.eventbus.emit("view_change", view_name)
+        self._session_recorder.on_view_change(view_name)
+        self._session_recorder.on_view_change(view_name)
 
     def switchMainView(self, view_name):
             self.mainNav.anim_to_state('closed')
