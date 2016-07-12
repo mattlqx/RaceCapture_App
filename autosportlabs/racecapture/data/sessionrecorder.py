@@ -36,7 +36,7 @@ class SessionRecorder(object):
         Initializer.
         :param datastore: Datastore for saving data
         :param databus: Databus for listening for data
-        :param
+        :param rcpapi: RcpApi object for listening for connect/disconnect events
         :return:
         """
         self._datastore = datastore
@@ -86,9 +86,16 @@ class SessionRecorder(object):
 
     @property
     def _should_record(self):
-        return self._current_view in SessionRecorder.RECORDING_VIEWS and\
-            self._rc_connected and\
-            self._channels
+        if self._current_view not in SessionRecorder.RECORDING_VIEWS:
+            return False
+
+        if not self._rc_connected:
+            return False
+
+        if not self._channels:
+            return False
+
+        return True
 
     def _check_should_record(self):
         if self._should_record and not self.recording:
