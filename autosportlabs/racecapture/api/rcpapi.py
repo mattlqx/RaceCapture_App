@@ -225,15 +225,9 @@ class RcpApi:
                 Logger.debug("RCPAPI: Port not open...")
                 msg = ''
                 sleep(1.0)
-<<<<<<< HEAD
-            except Exception:
-                Logger.warn('RCPAPI: Message rx worker exception: {} | {}'.format(msg, str(Exception)))
-                Logger.info(traceback.format_exc())
-=======
             except Exception as e:
                 Logger.warn('RCPAPI: Message rx worker exception: {} | {}'.format(repr(msg), str(e)))
                 Logger.debug(traceback.format_exc())
->>>>>>> r/1.6.1
                 msg = ''
                 error_count += 1
                 if error_count > 5 and not self._auto_detect_event.is_set():
