@@ -48,10 +48,19 @@ class AddStreamView(BoxLayout):
 
         session_import_view = self.ids.session_import_screen
         session_import_view.datastore = datastore
+        session_import_view.bind(on_add=self.add_session)
 
         self.register_event_type('on_connect_stream_start')
         self.register_event_type('on_connect_stream_complete')
-        
+        self.register_event_type('on_add_session')
+
+    def add_session(self, instance, session):
+        Logger.info("AddStreamView: on_add_session: {}".format(session))
+        self.dispatch('on_add_session', session)
+
+    def on_add_session(self, *args):
+        pass
+
     def on_connect_stream_start(self, *args):
         pass
         
@@ -120,6 +129,7 @@ class SessionImportView(BaseStreamConnectView):
 
     def __init__(self, **kwargs):
         super(SessionImportView, self).__init__(**kwargs)
+        self.register_event_type('on_add')
 
     def on_enter(self, *args):
         # Find sessions, append to session list
@@ -130,6 +140,7 @@ class SessionImportView(BaseStreamConnectView):
             session_view.ids.name.text = session.name
             session_view.ids.date.text = datetime.fromtimestamp(session.date).strftime("%x %X")
             session_view.bind(on_delete=self.delete_session)
+            session_view.bind(on_add=self.add_session)
 
             self.ids.session_list.add_widget(session_view)
 
@@ -140,6 +151,12 @@ class SessionImportView(BaseStreamConnectView):
         self.datastore.delete_session(list_item.session.session_id)
         self.ids.session_list.remove_widget(list_item)
 
+    def add_session(self, list_item):
+        self.dispatch('on_add', list_item.session)
+
+    def on_add(self, *args):
+        Logger.info("SessionImportView: on_add: {}".format(args))
+
 
 class SessionListItem(BoxLayout):
 
@@ -147,6 +164,7 @@ class SessionListItem(BoxLayout):
         super(SessionListItem, self).__init__(**kwargs)
         self.session = session
         self.register_event_type('on_delete')
+        self.register_event_type('on_add')
 
     def delete_session(self, *args):
         popup = None
@@ -157,10 +175,17 @@ class SessionListItem(BoxLayout):
             popup.dismiss()
 
         popup = confirmPopup("Delete", "Are you sure you sure you want to delete session '{}'?".format(self.session.name),
-                     confirm_delete)
+                             confirm_delete)
+
+    def add_session(self, *args):
+        self.dispatch('on_add')
 
     def on_delete(self, *args):
         pass
+
+    def on_add(self, *args):
+        pass
+
 
 class LogImportWidget(BoxLayout):
     datastore = ObjectProperty(None)

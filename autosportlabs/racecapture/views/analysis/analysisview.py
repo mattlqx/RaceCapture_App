@@ -36,7 +36,7 @@ from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysi
 from autosportlabs.racecapture.views.analysis.analysismap import AnalysisMap
 from autosportlabs.racecapture.views.analysis.channelvaluesview import ChannelValuesView
 from autosportlabs.racecapture.views.analysis.addstreamview import AddStreamView
-from autosportlabs.racecapture.views.analysis.sessionbrowser import SessionBrowser
+from autosportlabs.racecapture.views.analysis.sessionlistview import SessionListView
 from autosportlabs.racecapture.views.analysis.flyinpanel import FlyinPanel
 from autosportlabs.racecapture.views.analysis.markerevent import MarkerEvent, SourceRef
 from autosportlabs.racecapture.views.analysis.linechart import LineChart
@@ -184,11 +184,16 @@ class AnalysisView(Screen):
         content = AddStreamView(settings=self._settings, datastore=self._datastore)
         content.bind(on_connect_stream_start=self.on_stream_connecting)
         content.bind(on_connect_stream_complete=self.on_stream_connected)
+        content.bind(on_add_session=self.on_add_session)
 
         popup = Popup(title="Add Session", content=content, size_hint=(0.7, 0.7))
         popup.bind(on_dismiss=self.popup_dismissed)
         popup.open()
         self._popup = popup
+
+    def on_add_session(self, instance, session):
+        Logger.info("AnalysisView: on_add_session: {}".format(session))
+        self.ids.sessions_view.append_session(session)
 
     def init_view(self):
         self._init_datastore()
