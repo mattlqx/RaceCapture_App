@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from threading import Thread
 import kivy
 kivy.require('1.9.1')
@@ -9,17 +10,19 @@ from kivy.properties import ObjectProperty
 from kivy.uix.popup import Popup
 from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.stacklayout import StackLayout
 from kivy.uix.listview import ListView, ListItemButton
 from kivy.uix.screenmanager import Screen
 from utils import kvFind
 from kivy.adapters.listadapter import ListAdapter
 from autosportlabs.uix.button.featurebutton import FeatureButton
 from autosportlabs.uix.textwidget import FieldInput
-from autosportlabs.racecapture.views.util.alertview import alertPopup
+from autosportlabs.racecapture.views.util.alertview import alertPopup, confirmPopup
 from autosportlabs.racecapture.views.file.loaddialogview import LoadDialog
 from autosportlabs.racecapture.views.file.savedialogview import SaveDialog
 from iconbutton import IconButton
 from fieldlabel import FieldLabel
+from iconbutton import LabelIconButton
 
 Builder.load_file('autosportlabs/racecapture/views/analysis/addstreamview.kv')
 
@@ -42,7 +45,10 @@ class AddStreamView(BoxLayout):
         file_connect_view.datastore = datastore
         file_connect_view.bind(on_connect_stream_complete=self.connect_stream_complete)
         file_connect_view.bind(on_connect_stream_start=self.connect_stream_start)
-        
+
+        session_import_view = self.ids.session_import_screen
+        session_import_view.datastore = datastore
+
         self.register_event_type('on_connect_stream_start')
         self.register_event_type('on_connect_stream_complete')
         
@@ -108,6 +114,53 @@ class FileConnectView(BaseStreamConnectView):
         
     def import_complete(self, instance, session_id):
         self.dispatch('on_connect_stream_complete', session_id)
+
+
+class SessionImportView(BaseStreamConnectView):
+
+    def __init__(self, **kwargs):
+        super(SessionImportView, self).__init__(**kwargs)
+
+    def on_enter(self, *args):
+        # Find sessions, append to session list
+        sessions = self.datastore.get_sessions()
+
+        for session in sessions:
+            session_view = SessionListItem(session)
+            session_view.ids.name.text = session.name
+            session_view.ids.date.text = datetime.fromtimestamp(session.date).strftime("%x %X")
+            session_view.bind(on_delete=self.delete_session)
+
+            self.ids.session_list.add_widget(session_view)
+
+    def on_scroll(self, *args):
+        pass
+
+    def delete_session(self, list_item):
+        self.datastore.delete_session(list_item.session.session_id)
+        self.ids.session_list.remove_widget(list_item)
+
+
+class SessionListItem(BoxLayout):
+
+    def __init__(self, session, **kwargs):
+        super(SessionListItem, self).__init__(**kwargs)
+        self.session = session
+        self.register_event_type('on_delete')
+
+    def delete_session(self, *args):
+        popup = None
+
+        def confirm_delete(instance, delete):
+            if delete:
+                self.dispatch('on_delete')
+            popup.dismiss()
+
+        popup = confirmPopup("Delete", "Are you sure you sure you want to delete session '{}'?".format(self.session.name),
+                     confirm_delete)
+
+    def on_delete(self, *args):
+        pass
 
 class LogImportWidget(BoxLayout):
     datastore = ObjectProperty(None)

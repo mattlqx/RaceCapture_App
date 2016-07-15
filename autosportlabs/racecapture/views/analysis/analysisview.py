@@ -48,6 +48,8 @@ from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.help.helpmanager import HelpInfo
 from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
 import traceback
+from kivy.core.window import Window
+from kivy.modules import inspector
 
 ANALYSIS_VIEW_KV = 'autosportlabs/racecapture/views/analysis/analysisview.kv'
 
@@ -77,6 +79,7 @@ class AnalysisView(Screen):
         Window.bind(mouse_pos=self.on_mouse_pos)
         Window.bind(on_motion=self.on_motion)
         self.init_view()
+        inspector.create_inspector(Window, self.ids.sessions_view)
 
     def on_motion(self, instance, event, motion_event):
         flyin = self.ids.laps_flyin
@@ -182,12 +185,13 @@ class AnalysisView(Screen):
         content.bind(on_connect_stream_start=self.on_stream_connecting)
         content.bind(on_connect_stream_complete=self.on_stream_connected)
 
-        popup = Popup(title="Add Telemetry Stream", content=content, size_hint=(0.7, 0.7))
+        popup = Popup(title="Add Session", content=content, size_hint=(0.7, 0.7))
         popup.bind(on_dismiss=self.popup_dismissed)
         popup.open()
         self._popup = popup
 
     def init_view(self):
+        self._init_datastore()
         mainchart = self.ids.mainchart
         mainchart.settings = self._settings
         mainchart.datastore = self._datastore
@@ -198,20 +202,14 @@ class AnalysisView(Screen):
         self.ids.analysismap.datastore = self._datastore
         self.ids.sessions_view.datastore = self._datastore
         Clock.schedule_once(lambda dt: HelpInfo.help_popup('beta_analysis_welcome', self, arrow_pos='right_mid'), 0.5)
-        self._init_datastore()
 
     def _init_datastore(self):
-        def _init_datastore(dstore_path):
-            if os.path.isfile(dstore_path):
-                self._datastore.open_db(dstore_path)
-            else:
-                Logger.info('AnalysisView: creating datastore...')
-                self._datastore.new(dstore_path)
-
-        dstore_path = self.settings.userPrefs.datastore_location
-        t = Thread(target=_init_datastore, args=(dstore_path,))
-        t.daemon = True
-        t.start()
+        dstore_path = self._settings.userPrefs.datastore_location
+        if os.path.isfile(dstore_path):
+            self._datastore.open_db(dstore_path)
+        else:
+            Logger.info('AnalysisView: creating datastore...')
+            self._datastore.new(dstore_path)
 
     def popup_dismissed(self, *args):
         if self.stream_connecting:
