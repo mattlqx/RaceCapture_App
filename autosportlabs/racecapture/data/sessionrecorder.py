@@ -127,6 +127,13 @@ class SessionRecorder(object):
     def _save_sample(self, sample):
         # Merging previous sample with new data to desparsify the data
         self._sample_data.update(sample)
+
+        # Ugly hack for now due to a bug in our filters, remove any channels that aren't in channel_meta from
+        # the samples
+        for channel_name, meta in self._sample_data.iteritems():
+            if channel_name not in self._channels:
+                self._sample_data.pop(channel_name)
+
         self._datastore.insert_sample(self._sample_data, self._current_session_id)
 
     def _on_meta(self, metas):

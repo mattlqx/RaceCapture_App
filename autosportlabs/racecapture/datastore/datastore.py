@@ -481,7 +481,8 @@ class DataStore(object):
 
             #Put together an insert statement containing the column names
             base_sql = "INSERT INTO datapoint ({}) VALUES({});".format(','.join(['sample_id'] + [_scrub_sql_value(x) for x in names]),
-                                                                       ','.join(['?'] * (len(values) + 1)))
+                                                                       ','.join(['?'] * (len(values))))
+
             cursor.execute(base_sql, values)
             self._conn.commit()
         except: #rollback under any exception, then re-raise exception
