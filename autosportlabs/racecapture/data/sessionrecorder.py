@@ -54,6 +54,7 @@ class SessionRecorder(object):
         self._rcapi.add_disconnect_listener(self._on_rc_disconnected)
         self._databus.addMetaListener(self._on_meta)
         self._databus.addSampleListener(self._on_sample)
+        self._sample_data = {}
 
         metas = self._databus.getMeta()
 
@@ -71,9 +72,8 @@ class SessionRecorder(object):
         """
         Logger.info("SessionRecorder: starting new session")
 
-        session_id = self._datastore.create_session(self._create_session_name())
-        self._current_session = self._datastore.get_session_by_id(session_id)
         self.recording = True
+        self._current_session = self._datastore.init_session(self._create_session_name(), self._channels)
 
     def stop(self):
         """

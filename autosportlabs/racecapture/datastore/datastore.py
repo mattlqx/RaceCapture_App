@@ -652,7 +652,22 @@ class DataStore(object):
         self._conn.execute("""DELETE FROM sample WHERE session_id=?""",(session_id,))
         self._conn.execute("""DELETE FROM session where id=?""",(session_id,))
         self._conn.commit()
-        
+
+    def init_session(self, name, channel_metas=None, notes=''):
+        session = self.create_session(name, notes)
+        Logger.info("Datastore: init_session. channels: {}".format(channel_metas))
+
+        if channel_metas:
+            new_channels = []
+            for name, meta in channel_metas.iteritems():
+                channel = DatalogChannel(name, meta.units, meta.min, meta.max, meta.sampleRate, 0)
+                if channel.name not in [x.name for x in self._channels]:
+                    new_channels.append(channel)
+                    self._channels.append(channel)
+            self._extend_datalog_channels(new_channels)
+
+        return session
+
     def create_session(self, name, notes=''):
         """
         Creates a new session entry in the sessions table and returns it's ID
@@ -668,7 +683,6 @@ class DataStore(object):
 
         Logger.info('DataStore: Created session with ID: {}'.format(session_id))
         return session_id
-
 
     #class member variable to track ending datalog id when importing
     def _handle_data(self, data_file, headers, session_id, warnings=None, progress_cb=None):
