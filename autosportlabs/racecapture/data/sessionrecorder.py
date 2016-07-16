@@ -44,7 +44,7 @@ class SessionRecorder(object):
         self._rcapi = rcpapi
         self._channels = None
         self.recording = False
-        self._current_session = None
+        self._current_session_id = None
         self._track_manager = track_manager
         self._meta = None
         self._rc_connected = False
@@ -73,7 +73,7 @@ class SessionRecorder(object):
         Logger.info("SessionRecorder: starting new session")
 
         self.recording = True
-        self._current_session = self._datastore.init_session(self._create_session_name(), self._channels)
+        self._current_session_id = self._datastore.init_session(self._create_session_name(), self._channels)
 
     def stop(self):
         """
@@ -82,7 +82,7 @@ class SessionRecorder(object):
         """
         Logger.info("SessionRecorder: stopping session")
         self.recording = False
-        self._current_session = None
+        self._current_session_id = None
 
     @property
     def _should_record(self):
@@ -125,7 +125,9 @@ class SessionRecorder(object):
         self._check_should_record()
 
     def _save_sample(self, sample):
-        pass
+        # Merging previous sample with new data to desparsify the data
+        self._sample_data.update(sample)
+        self._datastore.insert_sample(self._sample_data, self._current_session_id)
 
     def _on_meta(self, metas):
         """

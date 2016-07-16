@@ -464,6 +464,31 @@ class DataStore(object):
             self._conn.rollback()
             raise
 
+    def insert_sample(self, sample, session_id):
+        cursor = self._conn.cursor()
+        try:
+            #First, insert into the datalog table to give us a reference
+            #point for the datapoint insertions
+            cursor.execute("""INSERT INTO sample (session_id) VALUES (?)""", [session_id])
+            sample_id = cursor.lastrowid
+
+            values = [sample_id]
+            names = []
+
+            for channel_name, value in sample.iteritems():
+                values.append(value)
+                names.append(channel_name)
+
+            #Put together an insert statement containing the column names
+            base_sql = "INSERT INTO datapoint ({}) VALUES({});".format(','.join(['sample_id'] + [_scrub_sql_value(x) for x in names]),
+                                                                       ','.join(['?'] * (len(values) + 1)))
+            cursor.execute(base_sql, values)
+            self._conn.commit()
+        except: #rollback under any exception, then re-raise exception
+            self._conn.rollback()
+            raise
+
+
     def _extrap_datapoints(self, datapoints):
         """
         Takes a list of datapoints, and returns a new list of extrapolated datapoints
