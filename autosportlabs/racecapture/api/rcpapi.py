@@ -127,7 +127,7 @@ class RcpApi:
         self._msg_rx_thread = t
 
     def _shutdown_workers(self):
-        Logger.info('RCPAPI: Stopping msg rx worker')
+        Logger.debug('RCPAPI: Stopping msg rx worker')
         self._running.clear()
         # this allows the auto detect worker to fall through if needed
         self._auto_detect_event.set()
@@ -153,7 +153,7 @@ class RcpApi:
         self.shutdown_comms()
 
     def shutdown_comms(self):
-        Logger.info('RCPAPI: shutting down comms')
+        Logger.debug('RCPAPI: shutting down comms')
         try:
             self.comms.close()
             self.comms.device = None
@@ -771,7 +771,7 @@ class RcpApi:
                                 break  # we found something!
                         else:
                             try:
-                                Logger.info('RCPAPI: Giving up on ' + str(device))
+                                Logger.debug('RCPAPI: Giving up on ' + str(device))
                                 comms.close()
                             finally:
                                 pass
@@ -785,7 +785,7 @@ class RcpApi:
                             pass
 
                 if version_result.version_json != None:
-                    Logger.info("RCPAPI: Found device version " + str(testVer) + " on port: " + str(comms.device))
+                    Logger.debug("RCPAPI: Found device version " + str(testVer) + " on port: " + str(comms.device))
                     self.detect_win(testVer)
                     self._auto_detect_event.clear()
                     self._settings.userPrefs.set_pref('preferences', 'last_known_device', comms.device)
@@ -805,5 +805,4 @@ class RcpApi:
                 comms.device = None
                 sleep(AUTODETECT_COOLOFF_TIME)
 
-        Logger.info('RCPAPI: auto_detect_worker exiting')
-        safe_thread_exit()
+        Logger.debug('RCPAPI: auto_detect_worker exiting')
