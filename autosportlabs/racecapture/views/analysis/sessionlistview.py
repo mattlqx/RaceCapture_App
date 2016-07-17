@@ -17,10 +17,10 @@
 # See the GNU General Public License for more details. You should
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
-import pdb
 
 import kivy
 kivy.require('1.9.1')
+import json
 from kivy.app import Builder
 from kivy.properties import ListProperty
 from kivy.uix.label import Label
@@ -42,7 +42,6 @@ from autosportlabs.racecapture.views.analysis.sessioneditorview import SessionEd
 from autosportlabs.racecapture.views.util.alertview import confirmPopup, alertPopup, editor_popup
 from autosportlabs.racecapture.views.util.viewutils import format_laptime
 from fieldlabel import FieldLabel
-import traceback
 
 Builder.load_file('autosportlabs/racecapture/views/analysis/sessionlistview.kv')
 
@@ -143,8 +142,36 @@ class SessionListView(AnchorLayout):
         sv.add_widget(accordion)
         self._accordion = accordion
         self.add_widget(sv)
-        self.sessions = None
+        self.sessions = []
         self.datastore = None
+        self.settings = None
+        self._save_timeout = None
+
+    def init_view(self):
+        if self.settings and self.datastore:
+            selection_settings_json = self.settings.userPrefs.get_pref('analysis_preferences', 'selected_sessions_laps',
+                                                                       {"sessions": {}})
+            selection_settings = json.loads(selection_settings_json)
+
+            for session_id_str, session_info in selection_settings["sessions"].iteritems():
+                session = self.datastore.get_session_by_id(int(session_id_str))
+                self.append_session(session)
+        else:
+            Logger.error("SessionListView: init_view failed, missing settings or datastore object")
+
+    def _save_settings(self):
+        selection_settings = {"sessions": {}}
+
+        for session in self.sessions:
+            selection_settings["sessions"][str(session.session_id)] = {"selected_laps": []}
+
+        for key, source_ref in self.selected_laps.iteritems():
+            selection_settings["sessions"][str(source_ref.session)]["selected_laps"].append(source_ref.lap)
+
+        selection_json = json.dumps(selection_settings)
+
+        self.settings.userPrefs.set_pref('analysis_preferences', 'selected_sessions_laps', selection_json)
+        Logger.info("SessionListView: saved selection: {}".format(selection_json))
 
     @property
     def selected_count(self):
@@ -161,6 +188,7 @@ class SessionListView(AnchorLayout):
             self._accordion.height = accordion_height
 
     def append_session(self, session):
+        self.sessions.append(session)
         item = SessionAccordionItem(title=session.name)
         session_view = Session(session, item)
 
@@ -180,6 +208,8 @@ class SessionListView(AnchorLayout):
         else:
             for lap in laps:
                 self.append_lap(session_view, lap.lap, lap.lap_time)
+
+        self._save_event()
 
         return session_view
 
@@ -202,6 +232,9 @@ class SessionListView(AnchorLayout):
         popup = editor_popup('Edit Session', session_editor, _on_answer)
 
     def remove_session(self, instance, accordion):
+        Logger.info("SessionListView: remove_session: {}".format(instance))
+        self.sessions.remove(instance.session)
+        self._save_event()
         self.deselect_laps(instance.get_all_laps())
         self._accordion.remove_widget(accordion)
 
@@ -216,6 +249,12 @@ class SessionListView(AnchorLayout):
     def on_lap_selection(self, *args):
         pass
 
+    def _save_event(self):
+        if self._save_timeout:
+            self._save_timeout.cancel()
+
+        self._save_timeout = Clock.schedule_once(lambda dt: self._save_settings(), 1)
+
     def lap_selection(self, instance):
         source_ref = SourceRef(instance.lap, instance.session)
         source_key = str(source_ref)
@@ -225,6 +264,7 @@ class SessionListView(AnchorLayout):
         else:
             self.selected_laps.pop(source_key, None)
         Clock.schedule_once(lambda dt: self._notify_lap_selected(source_ref, selected))
+        self._save_event()
 
     def _notify_lap_selected(self, source_ref, selected):
         '''

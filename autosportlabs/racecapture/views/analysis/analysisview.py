@@ -157,7 +157,8 @@ class AnalysisView(Screen):
     def on_stream_connected(self, instance, new_session_id):
         self.stream_connecting = False
         self._dismiss_popup()
-        self.ids.sessions_view.refresh_session_list()
+        session = self._datastore.get_session_by_id(new_session_id)
+        self.ids.sessions_view.append_session(session)
         self.check_load_suggested_lap(new_session_id)
 
     # The following selects a best lap if there are no other laps currently selected
@@ -206,6 +207,8 @@ class AnalysisView(Screen):
         self.ids.analysismap.track_manager = self._track_manager
         self.ids.analysismap.datastore = self._datastore
         self.ids.sessions_view.datastore = self._datastore
+        self.ids.sessions_view.settings = self._settings
+        self.ids.sessions_view.init_view()
         Clock.schedule_once(lambda dt: HelpInfo.help_popup('beta_analysis_welcome', self, arrow_pos='right_mid'), 0.5)
 
     def _init_datastore(self):
