@@ -8,6 +8,7 @@ from kivy.logger import Logger
 from kivy.clock import Clock
 from kivy.properties import ObjectProperty
 from kivy.uix.popup import Popup
+from kivy.uix.label import Label
 from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.stacklayout import StackLayout
@@ -51,11 +52,13 @@ class AddStreamView(BoxLayout):
         session_import_view.datastore = datastore
         session_import_view.bind(on_add=self.add_session)
         session_import_view.bind(on_delete=self.delete_session)
+        session_import_view.bind(on_close=self.close)
 
         self.register_event_type('on_connect_stream_start')
         self.register_event_type('on_connect_stream_complete')
         self.register_event_type('on_add_session')
         self.register_event_type('on_delete_session')
+        self.register_event_type('on_close')
 
     def add_session(self, instance, session):
         self.dispatch('on_add_session', session)
@@ -83,6 +86,12 @@ class AddStreamView(BoxLayout):
         
     def connect_stream_complete(self, instance, session_id):
         self.dispatch('on_connect_stream_complete', session_id)
+
+    def close(self, *args):
+        self.dispatch('on_close')
+
+    def on_close(self, *args):
+        pass
         
 class AddStreamSelectView(Screen):    
     def __init__(self, **kwargs):
@@ -139,10 +148,14 @@ class SessionImportView(BaseStreamConnectView):
         super(SessionImportView, self).__init__(**kwargs)
         self.register_event_type('on_add')
         self.register_event_type('on_delete')
+        self.register_event_type('on_close')
 
     def on_enter(self, *args):
         # Find sessions, append to session list
         sessions = self.datastore.get_sessions()
+
+        if len(sessions) == 0:
+            self.ids.session_list.add_widget(Label(text="No saved sessions"))
 
         for session in sessions:
             session_view = SessionListItem(session)
@@ -166,10 +179,16 @@ class SessionImportView(BaseStreamConnectView):
         self.dispatch('on_add', list_item.session)
         toast("Session loaded")
 
+    def close(self, *args):
+        self.dispatch('on_close')
+
     def on_add(self, *args):
         Logger.debug("SessionImportView: on_add: {}".format(args))
 
     def on_delete(self, *args):
+        pass
+
+    def on_close(self, *args):
         pass
 
 
