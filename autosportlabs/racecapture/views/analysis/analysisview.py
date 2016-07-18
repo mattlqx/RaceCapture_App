@@ -185,7 +185,7 @@ class AnalysisView(Screen):
         content.bind(on_delete_session=self.on_delete_session)
         content.bind(on_close=self.close_popup)
 
-        popup = Popup(title="Add Session", content=content, size_hint=(0.7, 0.7))
+        popup = Popup(title="Add Session", content=content, size_hint=(0.8, 0.7))
         popup.bind(on_dismiss=self.popup_dismissed)
         popup.open()
         self._popup = popup
