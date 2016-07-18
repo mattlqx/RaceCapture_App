@@ -23,6 +23,7 @@ from autosportlabs.racecapture.views.file.savedialogview import SaveDialog
 from iconbutton import IconButton
 from fieldlabel import FieldLabel
 from iconbutton import LabelIconButton
+from autosportlabs.uix.toast.kivytoast import toast
 
 Builder.load_file('autosportlabs/racecapture/views/analysis/addstreamview.kv')
 
@@ -55,7 +56,6 @@ class AddStreamView(BoxLayout):
         self.register_event_type('on_add_session')
 
     def add_session(self, instance, session):
-        Logger.info("AddStreamView: on_add_session: {}".format(session))
         self.dispatch('on_add_session', session)
 
     def on_add_session(self, *args):
@@ -150,9 +150,11 @@ class SessionImportView(BaseStreamConnectView):
     def delete_session(self, list_item):
         self.datastore.delete_session(list_item.session.session_id)
         self.ids.session_list.remove_widget(list_item)
+        toast("Session deleted")
 
     def add_session(self, list_item):
         self.dispatch('on_add', list_item.session)
+        toast("Session loaded")
 
     def on_add(self, *args):
         Logger.info("SessionImportView: on_add: {}".format(args))
