@@ -18,7 +18,6 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 import os.path
-from threading import Thread
 import kivy
 kivy.require('1.9.1')
 from kivy.logger import Logger
@@ -47,9 +46,7 @@ from autosportlabs.uix.color.colorsequence import ColorSequence
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.help.helpmanager import HelpInfo
 from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
-import traceback
 from kivy.core.window import Window
-from kivy.modules import inspector
 
 ANALYSIS_VIEW_KV = 'autosportlabs/racecapture/views/analysis/analysisview.kv'
 
@@ -79,7 +76,6 @@ class AnalysisView(Screen):
         Window.bind(mouse_pos=self.on_mouse_pos)
         Window.bind(on_motion=self.on_motion)
         self.init_view()
-        inspector.create_inspector(Window, self.ids.sessions_view)
 
     def on_motion(self, instance, event, motion_event):
         flyin = self.ids.laps_flyin
