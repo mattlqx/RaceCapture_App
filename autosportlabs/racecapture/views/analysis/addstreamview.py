@@ -50,13 +50,21 @@ class AddStreamView(BoxLayout):
         session_import_view = self.ids.session_import_screen
         session_import_view.datastore = datastore
         session_import_view.bind(on_add=self.add_session)
+        session_import_view.bind(on_delete=self.delete_session)
 
         self.register_event_type('on_connect_stream_start')
         self.register_event_type('on_connect_stream_complete')
         self.register_event_type('on_add_session')
+        self.register_event_type('on_delete_session')
 
     def add_session(self, instance, session):
         self.dispatch('on_add_session', session)
+
+    def delete_session(self, instance, session):
+        self.dispatch('on_delete_session', session)
+
+    def on_delete_session(self, *args):
+        pass
 
     def on_add_session(self, *args):
         pass
@@ -130,6 +138,7 @@ class SessionImportView(BaseStreamConnectView):
     def __init__(self, **kwargs):
         super(SessionImportView, self).__init__(**kwargs)
         self.register_event_type('on_add')
+        self.register_event_type('on_delete')
 
     def on_enter(self, *args):
         # Find sessions, append to session list
@@ -150,6 +159,7 @@ class SessionImportView(BaseStreamConnectView):
     def delete_session(self, list_item):
         self.datastore.delete_session(list_item.session.session_id)
         self.ids.session_list.remove_widget(list_item)
+        self.dispatch('on_delete', list_item.session)
         toast("Session deleted")
 
     def add_session(self, list_item):
@@ -157,7 +167,10 @@ class SessionImportView(BaseStreamConnectView):
         toast("Session loaded")
 
     def on_add(self, *args):
-        Logger.info("SessionImportView: on_add: {}".format(args))
+        Logger.debug("SessionImportView: on_add: {}".format(args))
+
+    def on_delete(self, *args):
+        pass
 
 
 class SessionListItem(BoxLayout):

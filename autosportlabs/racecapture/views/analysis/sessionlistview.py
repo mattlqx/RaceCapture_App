@@ -146,17 +146,30 @@ class SessionListView(AnchorLayout):
         self.datastore = None
         self.settings = None
         self._save_timeout = None
+        self._session_accordion_items = []
 
     def init_view(self):
         if self.settings and self.datastore:
             selection_settings_json = self.settings.userPrefs.get_pref('analysis_preferences', 'selected_sessions_laps',
                                                                        {"sessions": {}})
             selection_settings = json.loads(selection_settings_json)
+            delete_sessions = []
 
             # Load sessions first, then select the session
             for session_id_str, session_info in selection_settings["sessions"].iteritems():
                 session = self.datastore.get_session_by_id(int(session_id_str))
-                self.append_session(session)
+                if session:
+                    self.append_session(session)
+                else:
+                    # If the session doesn't exist anymore, remove it from settings
+                    delete_sessions.append(session_id_str)
+
+            if len(delete_sessions) > 0:
+                for session_id in delete_sessions:
+                    selection_settings["sessions"].pop(session_id)
+
+                # Resave loaded sessions and laps
+                self._save_event()
 
             for session_id_str, session_info in selection_settings["sessions"].iteritems():
                 session_id = int(session_id_str)
@@ -207,6 +220,7 @@ class SessionListView(AnchorLayout):
 
         session_view.bind(on_remove_session=self.remove_session)
         session_view.bind(on_edit_session=self.edit_session)
+        self._session_accordion_items.append(item)
         item.add_widget(session_view)
 
         self._accordion.add_widget(item)
@@ -222,6 +236,17 @@ class SessionListView(AnchorLayout):
         self._save_event()
 
         return session_view
+
+    def session_deleted(self, session):
+        """
+        Handles when a session is deleted outside the scope of this view
+        :param session: Session db object
+        """
+        for session_accordion in self._session_accordion_items:
+            if session_accordion.session_widget.session.session_id == session.session_id:
+                self.remove_session(session_accordion.session_widget, session_accordion)
+                self._session_accordion_items.remove(session_accordion)
+                break
 
     def edit_session(self, instance, session_id):
         def _on_answer(instance, answer):
@@ -242,7 +267,6 @@ class SessionListView(AnchorLayout):
         popup = editor_popup('Edit Session', session_editor, _on_answer)
 
     def remove_session(self, instance, accordion):
-        Logger.info("SessionListView: remove_session: {}".format(instance))
         self.sessions.remove(instance.session)
         self._save_event()
         self.deselect_laps(instance.get_all_laps())

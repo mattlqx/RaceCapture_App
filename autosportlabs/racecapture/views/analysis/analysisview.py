@@ -182,6 +182,7 @@ class AnalysisView(Screen):
         content.bind(on_connect_stream_start=self.on_stream_connecting)
         content.bind(on_connect_stream_complete=self.on_stream_connected)
         content.bind(on_add_session=self.on_add_session)
+        content.bind(on_delete_session=self.on_delete_session)
 
         popup = Popup(title="Add Session", content=content, size_hint=(0.7, 0.7))
         popup.bind(on_dismiss=self.popup_dismissed)
@@ -191,6 +192,9 @@ class AnalysisView(Screen):
     def on_add_session(self, instance, session):
         Logger.info("AnalysisView: on_add_session: {}".format(session))
         self.ids.sessions_view.append_session(session)
+
+    def on_delete_session(self, instance, session):
+        self.ids.sessions_view.session_deleted(session)
 
     def init_view(self):
         self._init_datastore()
