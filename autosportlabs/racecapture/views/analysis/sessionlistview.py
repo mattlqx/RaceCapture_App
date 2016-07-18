@@ -169,7 +169,7 @@ class SessionListView(AnchorLayout):
                     selection_settings["sessions"].pop(session_id)
 
                 # Resave loaded sessions and laps
-                self._save_event()
+                self._save()
 
             for session_id_str, session_info in selection_settings["sessions"].iteritems():
                 session_id = int(session_id_str)
@@ -233,7 +233,7 @@ class SessionListView(AnchorLayout):
             for lap in laps:
                 self.append_lap(session_view, lap.lap, lap.lap_time)
 
-        self._save_event()
+        self._save()
 
         return session_view
 
@@ -268,7 +268,7 @@ class SessionListView(AnchorLayout):
 
     def remove_session(self, instance, accordion):
         self.sessions.remove(instance.session)
-        self._save_event()
+        self._save()
         self.deselect_laps(instance.get_all_laps())
         self._accordion.remove_widget(accordion)
 
@@ -283,7 +283,7 @@ class SessionListView(AnchorLayout):
     def on_lap_selection(self, *args):
         pass
 
-    def _save_event(self):
+    def _save(self):
         if self._save_timeout:
             self._save_timeout.cancel()
 
@@ -298,7 +298,7 @@ class SessionListView(AnchorLayout):
         else:
             self.selected_laps.pop(source_key, None)
         Clock.schedule_once(lambda dt: self._notify_lap_selected(source_ref, selected))
-        self._save_event()
+        self._save()
 
     def _notify_lap_selected(self, source_ref, selected):
         '''
@@ -328,7 +328,7 @@ class SessionListView(AnchorLayout):
             else:
                 self.selected_laps.pop(source_key, None)
 
-            self._save_event()
+            self._save()
 
     def deselect_other_laps(self, session):
         '''
@@ -341,7 +341,7 @@ class SessionListView(AnchorLayout):
             if instance.session != session:
                 source_refs.append(SourceRef(instance.lap, instance.session))
         self.deselect_laps(source_refs)
-        self._save_event()
+        self._save()
 
     def deselect_laps(self, source_refs):
         '''
