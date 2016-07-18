@@ -153,9 +153,19 @@ class SessionListView(AnchorLayout):
                                                                        {"sessions": {}})
             selection_settings = json.loads(selection_settings_json)
 
+            # Load sessions first, then select the session
             for session_id_str, session_info in selection_settings["sessions"].iteritems():
                 session = self.datastore.get_session_by_id(int(session_id_str))
                 self.append_session(session)
+
+            for session_id_str, session_info in selection_settings["sessions"].iteritems():
+                session_id = int(session_id_str)
+
+                laps = session_info["selected_laps"]
+
+                for lap in laps:
+                    self.select_lap(session_id, lap, True)
+
         else:
             Logger.error("SessionListView: init_view failed, missing settings or datastore object")
 
@@ -282,11 +292,19 @@ class SessionListView(AnchorLayout):
 
     def select_lap(self, session_id, lap_id, selected):
         source_ref = SourceRef(lap_id, session_id)
+        source_key = str(source_ref)
         lap_instance = self.current_laps.get(str(source_ref))
         if lap_instance:
             lap_instance.state = 'down' if selected else 'normal'
             self._notify_lap_selected(source_ref, True)
 
+            # Save our state
+            if selected:
+                self.selected_laps[source_key] = source_ref
+            else:
+                self.selected_laps.pop(source_key, None)
+
+            self._save_event()
 
     def deselect_other_laps(self, session):
         '''
@@ -299,6 +317,7 @@ class SessionListView(AnchorLayout):
             if instance.session != session:
                 source_refs.append(SourceRef(instance.lap, instance.session))
         self.deselect_laps(source_refs)
+        self._save_event()
 
     def deselect_laps(self, source_refs):
         '''
