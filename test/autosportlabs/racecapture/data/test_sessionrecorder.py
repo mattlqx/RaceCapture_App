@@ -37,6 +37,7 @@ class TestSessionRecorder(unittest.TestCase):
         self.mock_databus.addMetaListener = Mock()
         self.mock_databus.addSampleListener = Mock()
         self.mock_datastore.create_session = Mock(return_value=1)
+        self.mock_datastore.init_session = Mock(return_value=1)
 
     def test_starts(self):
 
@@ -70,7 +71,7 @@ class TestSessionRecorder(unittest.TestCase):
         connect_listener = self.mock_rcp_api.add_connect_listener.call_args[0][0]
         connect_listener()
 
-        self.assertEqual(len(self.mock_datastore.create_session.mock_calls), 1, "Creates a new session")
+        self.assertEqual(len(self.mock_datastore.init_session.mock_calls), 1, "Creates a new session")
 
     def test_stops_on_view_change(self):
         self.mock_databus.getMeta = Mock(return_value={"foo": "bar"})
