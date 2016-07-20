@@ -218,33 +218,35 @@ class DataBusPump(object):
 
         # Only BT supports auto-streaming data, the rest we have to stream or poll
         if not streaming_supported:
-            # First need to figure out if the connected RC supports the streaming api
-            Logger.info("DataBusPump: Auto-streaming not supported, checking if new streaming api is supported")
+            self._start_sample_streaming()
 
-            def handle_capabilities(capabilities_dict):
-                Logger.info("DataBus: capabilities: {}".format(capabilities_dict))
-                self.rc_capabilities = Capabilities()
-                self.rc_capabilities.from_json_dict(capabilities_dict['capabilities'])
+    def _start_sample_streaming(self):
+        # First need to figure out if the connected RC supports the streaming api
+        Logger.debug("DataBusPump: Checking if new streaming api is supported")
 
-                if self.rc_capabilities.has_streaming:
-                    # Send streaming command
-                    Logger.info("DataBusPump: connected device supports streaming")
-                    rc_api.start_telemetry(50)
-                else:
-                    Logger.info("DataBusPump: connected device does not support streaming api, starting polling")
-                    t = Thread(target=self.sample_worker)
-                    t.start()
-                    self._sample_thread = t
+        def handle_capabilities(capabilities_dict):
+            self.rc_capabilities = Capabilities()
+            self.rc_capabilities.from_json_dict(capabilities_dict['capabilities'])
 
-            def handle_capabilities_fail():
-                Logger.error("DataBusPump: Failed to get capabilities, can't determine if device supports streaming API")
+            if self.rc_capabilities.has_streaming:
+                # Send streaming command
+                Logger.debug("DataBusPump: connected device supports streaming")
+                self._rc_api.start_telemetry(50)
+            else:
+                Logger.debug("DataBusPump: connected device does not support streaming api, starting polling")
+                t = Thread(target=self.sample_worker)
+                t.start()
+                self._sample_thread = t
 
-            rc_api.get_capabilities(handle_capabilities, handle_capabilities_fail)
+        def handle_capabilities_fail():
+            Logger.error("DataBusPump: Failed to get capabilities, can't determine if device supports streaming API")
+
+        self._rc_api.get_capabilities(handle_capabilities, handle_capabilities_fail)
 
     def stop(self):
         self._running.clear()
 
-        if self.rc_capabilities.has_streaming:
+        if self.rc_capabilities and self.rc_capabilities.has_streaming:
             self._rc_api.stop_telemetry()
             return
 
