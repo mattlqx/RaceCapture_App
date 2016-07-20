@@ -1115,7 +1115,6 @@ class LinksCapabilities(object):
         }
 
 
-
 class Capabilities(object):
 
     MIN_BT_CONFIG_VERSION = "2.9.0"
@@ -1126,6 +1125,7 @@ class Capabilities(object):
         self.storage = StorageCapabilities()
         self.links = LinksCapabilities()
         self.bluetooth_config = True
+        self.flags = []
 
     @property
     def has_analog(self):
@@ -1164,6 +1164,10 @@ class Capabilities(object):
     def has_bluetooth(self):
         return self.links.bluetooth
 
+    @property
+    def has_streaming(self):
+        return 'telemstream' in self.flags
+
     def from_json_dict(self, json_dict, version_config=None):
         if json_dict:
             channels = json_dict.get('channels')
@@ -1184,6 +1188,10 @@ class Capabilities(object):
                 self.links.from_json_dict(links)
             else:
                 self.links.from_json_dict({'bluetooth': True, 'cellular': True})
+
+            flags = json_dict.get('flags')
+            if flags:
+                self.flags = flags
 
         # For select features/capabilities we need to check RCP version because
         # the capability wasn't added to the API. Not ideal, but let's at least

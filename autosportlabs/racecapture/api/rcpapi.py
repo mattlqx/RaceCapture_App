@@ -376,7 +376,6 @@ class RcpApi:
     def getRcpCfg(self, cfg, winCallback, failCallback):
 
         def query_available_configs(capabilities_dict):
-            Logger.info("RCPAPI: got capabilities: {}".format(capabilities_dict))
 
             capabilities_dict = capabilities_dict.get('capabilities')
 
@@ -417,6 +416,10 @@ class RcpApi:
 
         # First we need to get capabilities, then figure out what to query
         self.executeSingle(RcpCmd('capabilities', self.getCapabilities), query_available_configs, failCallback)
+
+    def get_capabilities(self, success_cb, fail_cb):
+        # Capabilities object also needs version info
+        self.executeSingle(RcpCmd('capabilities', self.getCapabilities), success_cb, fail_cb)
 
     def writeRcpCfg(self, cfg, winCallback=None, failCallback=None):
         cmdSequence = []
@@ -570,6 +573,12 @@ class RcpApi:
 
     def set_wifi_config(self, wifi_config):
         self.sendSet('setWifiCfg', wifi_config)
+
+    def start_telemetry(self, rate):
+        self.sendSet('setTelemetryStart', {'rate': rate})
+
+    def stop_telemetry(self):
+        self.sendSet('setTelemetryStop', None)
 
     def getScript(self):
         self.sendGet('getScriptCfg', None)
