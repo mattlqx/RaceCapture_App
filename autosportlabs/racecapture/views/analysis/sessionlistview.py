@@ -150,10 +150,11 @@ class SessionListView(AnchorLayout):
 
     def init_view(self):
         if self.settings and self.datastore:
-            selection_settings_json = self.settings.userPrefs.get_pref('analysis_preferences', 'selected_sessions_laps',
-                                                                       {"sessions": {}})
+            selection_settings_json = self.settings.userPrefs.get_pref('analysis_preferences', 'selected_sessions_laps')
             selection_settings = json.loads(selection_settings_json)
             delete_sessions = []
+
+            print selection_settings
 
             # Load sessions first, then select the session
             for session_id_str, session_info in selection_settings["sessions"].iteritems():
