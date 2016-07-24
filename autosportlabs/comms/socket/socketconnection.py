@@ -44,7 +44,7 @@ class SocketConnection(object):
         sock.settimeout(SCAN_TIMEOUT)
 
         # Bind the socket to the port
-        server_address = ('0.0.0.0', PORT)
+        server_address = ('', PORT)
         sock.bind(server_address)
 
         try:
@@ -128,6 +128,6 @@ class SocketConnection(object):
 
     def flushInput(self):
         pass
-    
+
     def flushOutput(self):
         pass
