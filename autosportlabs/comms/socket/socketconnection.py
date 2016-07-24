@@ -96,8 +96,6 @@ class SocketConnection(object):
         :type keep_reading: threading.Event
         :return: String or None
         """
-        Logger.info("SocketConnection: reading...")
-
         while keep_reading.is_set():
             try:
                 data = self.socket.recv(4096)
