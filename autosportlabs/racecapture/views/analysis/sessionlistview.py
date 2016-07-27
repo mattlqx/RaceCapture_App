@@ -180,6 +180,7 @@ class SessionListView(AnchorLayout):
 
         else:
             Logger.error("SessionListView: init_view failed, missing settings or datastore object")
+            raise Exception("SessionListView: init_view failed, missing settings or datastore object")
 
     def _save_settings(self):
         selection_settings = {"sessions": {}}
