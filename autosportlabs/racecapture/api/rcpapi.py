@@ -170,13 +170,13 @@ class RcpApi:
                 if msg:
                     # clean incoming string, and drop illegal characters
                     msg = unicode(msg, errors='ignore')
+                    msgJson = json.loads(msg, strict=False)
 
-                    if 's' in msg:
+                    if 's' in msgJson:
                         Logger.trace('RCPAPI: Rx: ' + str(msg))
                     else:
                         Logger.debug('RCPAPI: Rx: ' + str(msg))
 
-                    msgJson = json.loads(msg, strict=False)
                     Clock.schedule_once(lambda dt: self.on_rx(True))
                     error_count = 0
                     for messageName in msgJson.keys():
