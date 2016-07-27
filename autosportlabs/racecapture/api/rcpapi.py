@@ -618,6 +618,9 @@ class RcpApi:
         else:
             getLogfileCmd()
 
+    def get_capabilities(self, success_cb=None, fail_cb=None):
+        self.executeSingle(RcpCmd('capabilities', self.getCapabilities), success_cb, fail_cb)
+
     def sendFlashConfig(self):
         self.sendCommand({'flashCfg': None})
 

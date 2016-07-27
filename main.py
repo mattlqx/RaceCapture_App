@@ -48,6 +48,7 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.settings.systemsettings import SystemSettings
     from autosportlabs.racecapture.settings.prefs import Range
     from autosportlabs.racecapture.config.rcpconfig import Track
+    from autosportlabs.racecapture.config.rcpconfig import Capabilities
     from autosportlabs.telemetry.telemetryconnection import TelemetryManager
     from autosportlabs.help.helpmanager import HelpInfo
     from toolbarview import ToolbarView
@@ -229,8 +230,6 @@ class RaceCaptureApp(App):
             Clock.schedule_once(lambda dt, inner_listener=listener: inner_listener.dispatch('on_config_updated', self.rc_config))
         self.rc_config.stale = False
 
-        if not self._track_auto_set_run:
-            self._set_track()
 
     def on_read_config_error(self, detail):
         alertPopup('Error Reading', 'Could not read configuration:\n\n' + str(detail))
@@ -302,7 +301,7 @@ class RaceCaptureApp(App):
         return status_view
 
     def build_dash_view(self):
-        dash_view = DashboardView(self.trackManager, self._rc_api, self._status_pump, name='dash', dataBus=self._databus, settings=self.settings)
+        dash_view = DashboardView(self.trackManager, self._rc_api, self.rc_config, name='dash', dataBus=self._databus, settings=self.settings)
         self.tracks_listeners.append(dash_view)
         return dash_view
 
@@ -421,6 +420,9 @@ class RaceCaptureApp(App):
             else:
                 self.showActivity('Connected')
 
+            if not self._track_auto_set_run:
+                self._set_track()
+
         else:
             alertPopup('Incompatible Firmware', 'Detected {} v{}\n\nPlease upgrade firmware to {} or higher'.format(
                                version.friendlyName,
@@ -516,29 +518,45 @@ class RaceCaptureApp(App):
         self.init_rc_comms()
 
     def _set_track(self):
-        # For devices that have no device storage, attempt to set a track
-        if self.rc_config.capabilities.storage.tracks <= 1:
-            last_track_timestamp = self.settings.userPrefs.get_last_selected_track_timestamp()
+        if self._rc_api:
 
-            now = int(time.time())
-            one_day = 60*60*24
+            def capabilities_fail():
+                Logger.error("Main: _set_track(), could not get capabilities to determine if device has a tracks db")
 
-            Logger.info("Main: last_track_timestamp: {}, now: {}, one_day: {}".format(last_track_timestamp, now, one_day))
+            def capabilities_success(capabilities_dict):
+                Logger.debug("Main: _set_track(), got capabilities")
+                capabilities = Capabilities()
+                capabilities.from_json_dict(capabilities_dict['capabilities'])
 
-            if last_track_timestamp != 0 and (now - last_track_timestamp) <= one_day:
-                # Set the track!
-                last_track_id = self.settings.userPrefs.get_last_selected_track_id()
-                if last_track_id != 0:
-                    Logger.info("Main: setting active track: {}".format(last_track_id))
-                    track = self.trackManager.get_track_by_id(last_track_id)
-                    track_config = Track.fromTrackMap(track)
+                # For devices that have no device storage, attempt to set a track
+                Logger.debug("Main: _set_track, tracks: {}".format(capabilities.storage.tracks))
+                if capabilities.storage.tracks <= 1:
+                    last_track_timestamp = int(self.settings.userPrefs.get_last_selected_track_timestamp())
 
-                    if track_config:
-                        self._rc_api.set_active_track(track_config)
-                    else:
-                        Logger.error("Main: Could not find track id: {} in track db".format(last_track_id))
+                    now = int(time.time())
+                    one_day = 60*60*24
 
-        self._track_auto_set_run = True
+                    Logger.debug("Main: last_track_timestamp: {}, now: {}, one_day: {}".format(last_track_timestamp,
+                                                                                               now, one_day))
+                    if last_track_timestamp != 0 and (now - last_track_timestamp) <= one_day:
+                        # Set the track!
+                        last_track_id = self.settings.userPrefs.get_last_selected_track_id()
+                        Logger.info("Main: last active track: {}".format(last_track_id))
+                        if last_track_id != 0:
+                            track = self.trackManager.get_track_by_id(last_track_id)
+                            track_config = Track.fromTrackMap(track)
+
+                            if track_config:
+                                Logger.info("Main: setting active track: {}".format(last_track_id))
+                                self._rc_api.set_active_track(track_config)
+                                self.settings.userPrefs.set_last_selected_track(last_track_id, now)
+                            else:
+                                Logger.error("Main: Could not find track id: {} in track db".format(last_track_id))
+
+                self._track_auto_set_run = True
+
+            Logger.debug("Main: _set_track(), querying for capabilities")
+            self._rc_api.get_capabilities(capabilities_success, capabilities_fail)
 
 if __name__ == '__main__':
 

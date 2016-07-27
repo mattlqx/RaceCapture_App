@@ -1,5 +1,6 @@
 import os
 import kivy
+import time
 kivy.require('1.9.1')
 from kivy.uix.carousel import Carousel
 from kivy.uix.settings import SettingsWithNoMenu
@@ -83,7 +84,7 @@ class DashboardView(Screen):
     _POPUP_DISMISS_TIMEOUT_LONG = 60.0
     Builder.load_string(DASHBOARD_VIEW_KV)
 
-    def __init__(self, track_manager, rc_api, status_pump, **kwargs):
+    def __init__(self, track_manager, rc_api, rc_config, **kwargs):
         self._initialized = False
         self._view_builders = OrderedDict()
         super(DashboardView, self).__init__(**kwargs)
@@ -92,17 +93,11 @@ class DashboardView(Screen):
         self._settings = kwargs.get('settings')
         self._track_manager = track_manager
         self._rc_api = rc_api
-        self._status_pump = status_pump
-        self._rc_status = None
+        self._rc_config = rc_config
         self._alert_widgets = {}
         self._dismiss_popup_trigger = Clock.create_trigger(self._dismiss_popup, DashboardView._POPUP_DISMISS_TIMEOUT_LONG)
         self._popup = None
         self._race_setup_view = None
-
-        status_pump.add_listener(self.on_status_updated)
-
-    def on_status_updated(self, status):
-        self._rc_status = status['status']
 
     def on_tracks_updated(self, trackmanager):
         pass
@@ -166,15 +161,11 @@ class DashboardView(Screen):
         self._notify_preference_listeners()
         self._show_last_view()
 
-        if self._should_show_race_setup():
-            self._show_race_setup()
+        self._race_setup()
 
         self._initialized = True
 
-    def _should_show_race_setup(self):
-        return True
-
-    def _show_race_setup(self):
+    def _race_setup(self):
         content = RaceSetupView(track_manager=self._track_manager)
         self._race_setup_view = content
         self._popup = editor_popup("Select your track", content, self._on_race_setup_close)
@@ -185,6 +176,9 @@ class DashboardView(Screen):
             Logger.info("DashboardView: setting track: {}".format(track))
             track_config = Track.fromTrackMap(track)
             self._rc_api.set_active_track(track_config)
+
+            now = int(time.time())
+            self._settings.userPrefs.set_last_selected_track(track.track_id, now)
 
         self._popup.dismiss()
 

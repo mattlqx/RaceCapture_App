@@ -137,10 +137,14 @@ class UserPrefs(EventDispatcher):
         return self._prefs_dict["gauge_settings"].get(gauge_id, False)
 
     def get_last_selected_track_id(self):
-        return self.get_pref_int('track_detection', 'last_selected_track_id')
+        return self.get_pref('track_detection', 'last_selected_track_id')
 
     def get_last_selected_track_timestamp(self):
         return self.get_pref_int('track_detection', 'last_selected_track_timestamp')
+
+    def set_last_selected_track(self, track_id, timestamp):
+        self.set_pref('track_detection', 'last_selected_track_id', track_id)
+        self.set_pref('track_detection', 'last_selected_track_timestamp', timestamp)
 
     @property
     def datastore_location(self):
