@@ -178,6 +178,9 @@ class UserPrefs(EventDispatcher):
         self.config.setdefault('dashboard_preferences', 'pitstoptimer_alert_speed', 25)
         self.config.setdefault('dashboard_preferences', 'pitstoptimer_exit_speed', 55)
 
+        self.config.adddefaultsection('analysis_preferences')
+        self.config.setdefault('analysis_preferences', 'selected_sessions_laps', '{"sessions":{}}')
+
     def load(self):
         Logger.info('UserPrefs: Data Dir is: {}'.format(self.data_dir))
         self.config = ConfigParser()

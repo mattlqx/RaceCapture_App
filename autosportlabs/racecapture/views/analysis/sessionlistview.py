@@ -20,6 +20,7 @@
 
 import kivy
 kivy.require('1.9.1')
+import json
 from kivy.app import Builder
 from kivy.properties import ListProperty
 from kivy.uix.label import Label
@@ -41,9 +42,8 @@ from autosportlabs.racecapture.views.analysis.sessioneditorview import SessionEd
 from autosportlabs.racecapture.views.util.alertview import confirmPopup, alertPopup, editor_popup
 from autosportlabs.racecapture.views.util.viewutils import format_laptime
 from fieldlabel import FieldLabel
-import traceback
 
-Builder.load_file('autosportlabs/racecapture/views/analysis/sessionbrowser.kv')
+Builder.load_file('autosportlabs/racecapture/views/analysis/sessionlistview.kv')
 
 class NoSessionsAlert(FieldLabel):
     pass
@@ -66,13 +66,13 @@ class LapItemButton(ToggleButton):
 
 class Session(BoxLayout):
     data_items = ListProperty()
-    def __init__(self, session_id, name, notes, **kwargs):
+
+    def __init__(self, session, accordion, **kwargs):
         super(Session, self).__init__(**kwargs)
-        self.session_id = session_id
-        self.name = name
-        self.notes = notes
-        self.register_event_type('on_delete_session')
+        self.session = session
+        self.register_event_type('on_remove_session')
         self.register_event_type('on_edit_session')
+        self.accordion = accordion
 
     @property
     def item_count(self):
@@ -101,22 +101,17 @@ class Session(BoxLayout):
     def append_label(self, message):
         self.ids.lap_list.add_widget(FieldLabel(text=message, halign='center'))
 
-    def on_delete_session(self, value):
+    def on_remove_session(self, value):
         pass
 
     def on_edit_session(self, value):
         pass
 
     def edit_session(self):
-        self.dispatch('on_edit_session', self.session_id)
+        self.dispatch('on_edit_session', self.session.session_id)
 
-    def prompt_delete_session(self):
-        def _on_answer(instance, answer):
-            if answer:
-                self.dispatch('on_delete_session', self.session_id)
-            popup.dismiss()
-
-        popup = confirmPopup('Confirm', 'Delete Session {}?'.format(self.name), _on_answer)
+    def remove_session(self):
+        self.dispatch('on_remove_session', self.accordion)
 
 
 class SessionAccordionItem(AccordionItem):
@@ -132,13 +127,13 @@ class SessionAccordionItem(AccordionItem):
         super(SessionAccordionItem, self).on_collapse(instance, value)
         self.dispatch('on_collapsed', value)
 
-class SessionBrowser(AnchorLayout):
+
+class SessionListView(AnchorLayout):
     ITEM_HEIGHT = sp(40)
     SESSION_TITLE_HEIGHT = sp(45)
-    datastore = ObjectProperty(None)
 
     def __init__(self, **kwargs):
-        super(SessionBrowser, self).__init__(**kwargs)
+        super(SessionListView, self).__init__(**kwargs)
         self.register_event_type('on_lap_selection')
         accordion = Accordion(orientation='vertical', size_hint=(1.0, None))
         sv = ScrollContainer(size_hint=(1.0, 1.0), do_scroll_x=False)
@@ -147,34 +142,63 @@ class SessionBrowser(AnchorLayout):
         sv.add_widget(accordion)
         self._accordion = accordion
         self.add_widget(sv)
+        self.sessions = []
+        self.datastore = None
+        self.settings = None
+        self._save_timeout = None
+        self._session_accordion_items = []
 
-    def on_datastore(self, instance, value):
-        Clock.schedule_once(lambda dt: self.refresh_session_list())
+    def init_view(self):
+        if self.settings and self.datastore:
+            selection_settings_json = self.settings.userPrefs.get_pref('analysis_preferences', 'selected_sessions_laps')
+            selection_settings = json.loads(selection_settings_json)
+            delete_sessions = []
+
+            # Load sessions first, then select the session
+            for session_id_str, session_info in selection_settings["sessions"].iteritems():
+                session = self.datastore.get_session_by_id(int(session_id_str))
+                if session:
+                    self.append_session(session)
+                else:
+                    # If the session doesn't exist anymore, remove it from settings
+                    delete_sessions.append(session_id_str)
+
+            if len(delete_sessions) > 0:
+                for session_id in delete_sessions:
+                    selection_settings["sessions"].pop(session_id)
+
+                # Resave loaded sessions and laps
+                self._save()
+
+            for session_id_str, session_info in selection_settings["sessions"].iteritems():
+                session_id = int(session_id_str)
+
+                laps = session_info["selected_laps"]
+
+                for lap in laps:
+                    self.select_lap(session_id, lap, True)
+
+        else:
+            Logger.error("SessionListView: init_view failed, missing settings or datastore object")
+            raise Exception("SessionListView: init_view failed, missing settings or datastore object")
+
+    def _save_settings(self):
+        selection_settings = {"sessions": {}}
+
+        for session in self.sessions:
+            selection_settings["sessions"][str(session.session_id)] = {"selected_laps": []}
+
+        for key, source_ref in self.selected_laps.iteritems():
+            selection_settings["sessions"][str(source_ref.session)]["selected_laps"].append(source_ref.lap)
+
+        selection_json = json.dumps(selection_settings)
+
+        self.settings.userPrefs.set_pref('analysis_preferences', 'selected_sessions_laps', selection_json)
+        Logger.info("SessionListView: saved selection: {}".format(selection_json))
 
     @property
     def selected_count(self):
         return len(self.selected_laps.values())
-    
-    def refresh_session_list(self):
-        try:
-            self.clear_sessions()
-            sessions = self.datastore.get_sessions()
-            f = Filter().gt('CurrentLap', 0)
-            session = None
-            for session in sessions:
-                session = self.append_session(session_id=session.session_id, name=session.name, notes=session.notes)
-                laps = self.datastore.get_laps(session.session_id)
-                if len(laps) == 0:
-                    session.append_label('No Laps')
-                else:
-                    for lap in laps:
-                        self.append_lap(session, lap.lap, lap.lap_time)
-
-            self.sessions = sessions
-            self.ids.session_alert.text = '' if session else 'No Sessions'
-
-        except Exception as e:
-            Logger.error('AnalysisView: unable to fetch laps: {}\n\{}'.format(e, traceback.format_exc()))
 
     def on_session_collapsed(self, instance, value):
         if value == False:
@@ -186,16 +210,43 @@ class SessionBrowser(AnchorLayout):
             accordion_height = session_items_height + session_titles_height
             self._accordion.height = accordion_height
 
-    def append_session(self, session_id, name, notes):
-        session = Session(session_id=session_id, name=name, notes=notes)
-        item = SessionAccordionItem(title=name)
-        item.session_widget = session
+    def append_session(self, session):
+        self.sessions.append(session)
+        item = SessionAccordionItem(title=session.name)
+        session_view = Session(session, item)
+
+        item.session_widget = session_view
         item.bind(on_collapsed=self.on_session_collapsed)
-        session.bind(on_delete_session=self.delete_session)
-        session.bind(on_edit_session=self.edit_session)
-        item.add_widget(session)
+
+        session_view.bind(on_remove_session=self.remove_session)
+        session_view.bind(on_edit_session=self.edit_session)
+        self._session_accordion_items.append(item)
+        item.add_widget(session_view)
+
         self._accordion.add_widget(item)
-        return session
+
+        laps = self.datastore.get_laps(session.session_id)
+
+        if len(laps) == 0:
+            session_view.append_label('No Laps')
+        else:
+            for lap in laps:
+                self.append_lap(session_view, lap.lap, lap.lap_time)
+
+        self._save()
+
+        return session_view
+
+    def session_deleted(self, session):
+        """
+        Handles when a session is deleted outside the scope of this view
+        :param session: Session db object
+        """
+        for session_accordion in self._session_accordion_items:
+            if session_accordion.session_widget.session.session_id == session.session_id:
+                self.remove_session(session_accordion.session_widget, session_accordion)
+                self._session_accordion_items.remove(session_accordion)
+                break
 
     def edit_session(self, instance, session_id):
         def _on_answer(instance, answer):
@@ -207,7 +258,6 @@ class SessionBrowser(AnchorLayout):
                 session.name = session_editor.session_name
                 session.notes = session_editor.session_notes
                 self.datastore.update_session(session)
-                self.refresh_session_list()
             popup.dismiss()
 
         session = self.datastore.get_session_by_id(session_id, self.sessions)
@@ -216,19 +266,15 @@ class SessionBrowser(AnchorLayout):
         session_editor.session_notes = session.notes
         popup = editor_popup('Edit Session', session_editor, _on_answer)
 
-    def delete_session(self, instance, id):
+    def remove_session(self, instance, accordion):
+        self.sessions.remove(instance.session)
+        self._save()
         self.deselect_laps(instance.get_all_laps())
-        try:
-            self.datastore.delete_session(id)
-            Logger.info('SessionBrowser: Session {} deleted'.format(id))
-            self.refresh_session_list()
-        except DatastoreException as e:
-            alertPopup('Error', 'There was an error deleting the session:\n{}'.format(e))
-            Logger.error('SessionBrowser: Error deleting session: {}\n\{}'.format(e, traceback.format_exc()))
+        self._accordion.remove_widget(accordion)
 
-    def append_lap(self, session, lap, laptime):
-        lapitem = session.append_lap(session.session_id, lap, laptime)
-        source_key = str(SourceRef(lap, session.session_id))
+    def append_lap(self, session_view, lap, laptime):
+        lapitem = session_view.append_lap(session_view.session.session_id, lap, laptime)
+        source_key = str(SourceRef(lap, session_view.session.session_id))
         if self.selected_laps.get(source_key):
             lapitem.state = 'down'
         lapitem.bind(on_press=self.lap_selection)
@@ -236,6 +282,12 @@ class SessionBrowser(AnchorLayout):
 
     def on_lap_selection(self, *args):
         pass
+
+    def _save(self):
+        if self._save_timeout:
+            self._save_timeout.cancel()
+
+        self._save_timeout = Clock.schedule_once(lambda dt: self._save_settings(), 1)
 
     def lap_selection(self, instance):
         source_ref = SourceRef(instance.lap, instance.session)
@@ -246,6 +298,7 @@ class SessionBrowser(AnchorLayout):
         else:
             self.selected_laps.pop(source_key, None)
         Clock.schedule_once(lambda dt: self._notify_lap_selected(source_ref, selected))
+        self._save()
 
     def _notify_lap_selected(self, source_ref, selected):
         '''
@@ -263,11 +316,19 @@ class SessionBrowser(AnchorLayout):
 
     def select_lap(self, session_id, lap_id, selected):
         source_ref = SourceRef(lap_id, session_id)
+        source_key = str(source_ref)
         lap_instance = self.current_laps.get(str(source_ref))
         if lap_instance:
             lap_instance.state = 'down' if selected else 'normal'
             self._notify_lap_selected(source_ref, True)
 
+            # Save our state
+            if selected:
+                self.selected_laps[source_key] = source_ref
+            else:
+                self.selected_laps.pop(source_key, None)
+
+            self._save()
 
     def deselect_other_laps(self, session):
         '''
@@ -280,6 +341,7 @@ class SessionBrowser(AnchorLayout):
             if instance.session != session:
                 source_refs.append(SourceRef(instance.lap, instance.session))
         self.deselect_laps(source_refs)
+        self._save()
 
     def deselect_laps(self, source_refs):
         '''
