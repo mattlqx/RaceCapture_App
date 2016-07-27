@@ -13,6 +13,7 @@ if __name__ == '__main__':
     import kivy
     import os
     import traceback
+    import time
     from kivy.properties import AliasProperty
     from functools import partial
     from kivy.clock import Clock
@@ -46,6 +47,7 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.menu.homepageview import HomePageView
     from autosportlabs.racecapture.settings.systemsettings import SystemSettings
     from autosportlabs.racecapture.settings.prefs import Range
+    from autosportlabs.racecapture.config.rcpconfig import Track
     from autosportlabs.telemetry.telemetryconnection import TelemetryManager
     from autosportlabs.help.helpmanager import HelpInfo
     from toolbarview import ToolbarView
@@ -153,6 +155,7 @@ class RaceCaptureApp(App):
         self.settings.appConfig.setUserDir(self.user_data_dir)
         self.trackManager = TrackManager(user_dir=self.settings.get_default_data_dir(), base_dir=self.base_dir)
         self.setup_telemetry()
+        self._track_auto_set_run = False
 
     def on_pause(self):
         return True
@@ -226,6 +229,9 @@ class RaceCaptureApp(App):
             Clock.schedule_once(lambda dt, inner_listener=listener: inner_listener.dispatch('on_config_updated', self.rc_config))
         self.rc_config.stale = False
 
+        if not self._track_auto_set_run:
+            self._set_track()
+
     def on_read_config_error(self, detail):
         alertPopup('Error Reading', 'Could not read configuration:\n\n' + str(detail))
         Logger.error("Main: {}".format(str(detail)))
@@ -296,7 +302,7 @@ class RaceCaptureApp(App):
         return status_view
 
     def build_dash_view(self):
-        dash_view = DashboardView(name='dash', dataBus=self._databus, settings=self.settings)
+        dash_view = DashboardView(self.trackManager, self._rc_api, self._status_pump, name='dash', dataBus=self._databus, settings=self.settings)
         self.tracks_listeners.append(dash_view)
         return dash_view
 
@@ -414,6 +420,7 @@ class RaceCaptureApp(App):
                 Clock.schedule_once(lambda dt: self.on_read_config(self))
             else:
                 self.showActivity('Connected')
+
         else:
             alertPopup('Incompatible Firmware', 'Detected {} v{}\n\nPlease upgrade firmware to {} or higher'.format(
                                version.friendlyName,
@@ -436,6 +443,8 @@ class RaceCaptureApp(App):
     def _on_rcp_disconnect(self):
         if self._telemetry_connection.data_connected:
             self._telemetry_connection.data_connected = False
+
+        self._track_auto_set_run = False
 
     def open_settings(self, *largs):
         self.switchMainView('preferences')
@@ -506,6 +515,30 @@ class RaceCaptureApp(App):
         self._rc_api.shutdown_api()
         self.init_rc_comms()
 
+    def _set_track(self):
+        # For devices that have no device storage, attempt to set a track
+        if self.rc_config.capabilities.storage.tracks <= 1:
+            last_track_timestamp = self.settings.userPrefs.get_last_selected_track_timestamp()
+
+            now = int(time.time())
+            one_day = 60*60*24
+
+            Logger.info("Main: last_track_timestamp: {}, now: {}, one_day: {}".format(last_track_timestamp, now, one_day))
+
+            if last_track_timestamp != 0 and (now - last_track_timestamp) <= one_day:
+                # Set the track!
+                last_track_id = self.settings.userPrefs.get_last_selected_track_id()
+                if last_track_id != 0:
+                    Logger.info("Main: setting active track: {}".format(last_track_id))
+                    track = self.trackManager.get_track_by_id(last_track_id)
+                    track_config = Track.fromTrackMap(track)
+
+                    if track_config:
+                        self._rc_api.set_active_track(track_config)
+                    else:
+                        Logger.error("Main: Could not find track id: {} in track db".format(last_track_id))
+
+        self._track_auto_set_run = True
 
 if __name__ == '__main__':
 

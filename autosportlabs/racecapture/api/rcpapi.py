@@ -668,6 +668,11 @@ class RcpApi:
         Logger.debug("RCPAPI: sending meta")
         self.sendCommand({'getMeta':None})
 
+    def set_active_track(self, track):
+        Logger.debug("RCPAPI: setting active track: {}".format(track))
+        track_json = track.toJson()
+        self.sendCommand({'setActiveTrack': {'track': track_json}})
+
     def sample(self, include_meta=False):
         if include_meta:
             self.sendCommand({'s':{'meta':1}})
@@ -769,7 +774,7 @@ class RcpApi:
                     if self.detect_fail_callback: self.detect_fail_callback()
             except Exception as e:
                 Logger.error('RCPAPI: Error running auto detect: ' + str(e))
-                Logger.debug(traceback.format_exc())
+                Logger.error(traceback.format_exc())
             finally:
                 Logger.debug("RCPAPI: auto detect finished. port=" + str(comms.device))
                 self._auto_detect_busy.clear()

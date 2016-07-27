@@ -136,6 +136,12 @@ class UserPrefs(EventDispatcher):
         '''
         return self._prefs_dict["gauge_settings"].get(gauge_id, False)
 
+    def get_last_selected_track_id(self):
+        return self.get_pref_int('track_detection', 'last_selected_track_id')
+
+    def get_last_selected_track_timestamp(self):
+        return self.get_pref_int('track_detection', 'last_selected_track_timestamp')
+
     @property
     def datastore_location(self):
         return os.path.join(self.data_dir, 'datastore.sq3')
@@ -177,6 +183,11 @@ class UserPrefs(EventDispatcher):
         self.config.setdefault('dashboard_preferences', 'pitstoptimer_trigger_speed', 5)
         self.config.setdefault('dashboard_preferences', 'pitstoptimer_alert_speed', 25)
         self.config.setdefault('dashboard_preferences', 'pitstoptimer_exit_speed', 55)
+
+        # Track detection pref
+        self.config.adddefaultsection('track_detection')
+        self.config.setdefault('track_detection', 'last_selected_track_id', 0)
+        self.config.setdefault('track_detection', 'last_selected_track_timestamp', 0)
 
     def load(self):
         Logger.info('UserPrefs: Data Dir is: {}'.format(self.data_dir))
