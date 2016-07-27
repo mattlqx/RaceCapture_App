@@ -34,12 +34,12 @@
         IconButton: #Delete button
             text: u'\uf00d'
             color: ColorScheme.get_primary()
-            on_press: root.prompt_delete_session()
+            on_press: root.remove_session()
     BoxLayout:
         orientation: 'vertical'
         id: lap_list
 
-<SessionBrowser>:
+<SessionListView>:
     FieldLabel:
         id: session_alert
         halign: 'center'

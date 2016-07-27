@@ -69,14 +69,33 @@ class RcpApi:
 
     COMMAND_SEQUENCE_TIMEOUT = 1.0
 
-    def __init__(self, settings, on_disconnect, **kwargs):
+    def __init__(self, settings, on_disconnect=None, on_connect=None, **kwargs):
         self.comms = kwargs.get('comms', self.comms)
         self._running = Event()
         self._running.clear()
         self._enable_autodetect = Event()
         self._enable_autodetect.set()
         self._settings = settings
-        self._disconnect_callback = on_disconnect
+        self._disconnect_listeners = []
+        self._connect_listeners = []
+
+        if on_disconnect:
+            self.add_disconnect_listener(on_disconnect)
+
+        if on_connect:
+            self.add_connect_listener(on_connect)
+
+    def add_disconnect_listener(self, func):
+        self._disconnect_listeners.append(func)
+
+    def remove_disconnect_listener(self, func):
+        self._disconnect_listeners.remove(func)
+
+    def add_connect_listener(self, func):
+        self._connect_listeners.append(func)
+
+    def remove_connect_listener(self, func):
+        self._connect_listeners.remove(func)
 
     def enable_autorecover(self):
         Logger.debug("RCPAPI: Enabling auto recover")
@@ -87,12 +106,19 @@ class RcpApi:
         self._enable_autodetect.clear()
 
     def recover_connection(self):
-        if self._disconnect_callback:
-            self._disconnect_callback()
+        self._notify_disconnect_listeners()
 
         if self._enable_autodetect.is_set():
             Logger.debug("RCPAPI: attempting to recover connection")
             self.run_auto_detect()
+
+    def _notify_disconnect_listeners(self):
+        for listener in self._disconnect_listeners:
+            listener()
+
+    def _notify_connect_listeners(self):
+        for listener in self._connect_listeners:
+            listener()
 
     def _start_message_rx_worker(self):
         self._running.set()
@@ -132,13 +158,14 @@ class RcpApi:
             self.comms.close()
             self.comms.device = None
         except Exception:
-            Logger.warn('RCPAPI: Message rx worker exception: {} | {}'.format(msg, str(Exception)))
-            Logger.debug(traceback.format_exc())
+            Logger.warn('RCPAPI: Shutdown rx worker exception: {} | {}'.format(msg, str(Exception)))
+            Logger.info(traceback.format_exc())
 
     def detect_win(self, version_info):
         self.level_2_retries = DEFAULT_LEVEL2_RETRIES
         self.msg_rx_timeout = DEFAULT_MSG_RX_TIMEOUT
         if self.detect_win_callback: self.detect_win_callback(version_info)
+        self._notify_connect_listeners()
 
     def run_auto_detect(self):
         self.level_2_retries = AUTODETECT_LEVEL2_RETRIES

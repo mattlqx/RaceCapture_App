@@ -6,6 +6,7 @@ __all__ = 'comms_factory'
 def comms_factory(device, conn_type):
     # Connection type can be overridden by user or for testing purposes
     if conn_type is not None:
+        conn_type = conn_type.lower()
         if conn_type == 'bluetooth':
             return android_comm(device)
         if conn_type == 'wifi':

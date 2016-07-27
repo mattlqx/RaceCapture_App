@@ -18,7 +18,6 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 import os.path
-from threading import Thread
 import kivy
 kivy.require('1.9.1')
 from kivy.logger import Logger
@@ -36,7 +35,7 @@ from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysi
 from autosportlabs.racecapture.views.analysis.analysismap import AnalysisMap
 from autosportlabs.racecapture.views.analysis.channelvaluesview import ChannelValuesView
 from autosportlabs.racecapture.views.analysis.addstreamview import AddStreamView
-from autosportlabs.racecapture.views.analysis.sessionbrowser import SessionBrowser
+from autosportlabs.racecapture.views.analysis.sessionlistview import SessionListView
 from autosportlabs.racecapture.views.analysis.flyinpanel import FlyinPanel
 from autosportlabs.racecapture.views.analysis.markerevent import MarkerEvent, SourceRef
 from autosportlabs.racecapture.views.analysis.linechart import LineChart
@@ -46,7 +45,8 @@ from autosportlabs.racecapture.views.util.alertview import alertPopup
 from autosportlabs.uix.color.colorsequence import ColorSequence
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.help.helpmanager import HelpInfo
-import traceback
+from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
+from kivy.core.window import Window
 
 ANALYSIS_VIEW_KV = 'autosportlabs/racecapture/views/analysis/analysisview.kv'
 
@@ -144,7 +144,6 @@ class AnalysisView(Screen):
             sessions_view = self.ids.sessions_view
             sessions_view.deselect_other_laps(session)
 
-
     def open_datastore(self):
         pass
 
@@ -154,7 +153,8 @@ class AnalysisView(Screen):
     def on_stream_connected(self, instance, new_session_id):
         self.stream_connecting = False
         self._dismiss_popup()
-        self.ids.sessions_view.refresh_session_list()
+        session = self._datastore.get_session_by_id(new_session_id)
+        self.ids.sessions_view.append_session(session)
         self.check_load_suggested_lap(new_session_id)
 
     # The following selects a best lap if there are no other laps currently selected
@@ -181,29 +181,28 @@ class AnalysisView(Screen):
         content = AddStreamView(settings=self._settings, datastore=self._datastore)
         content.bind(on_connect_stream_start=self.on_stream_connecting)
         content.bind(on_connect_stream_complete=self.on_stream_connected)
+        content.bind(on_add_session=self.on_add_session)
+        content.bind(on_delete_session=self.on_delete_session)
+        content.bind(on_close=self.close_popup)
 
-        popup = Popup(title="Add Telemetry Stream", content=content, size_hint=(0.7, 0.7))
+        popup = Popup(title="Add Session", content=content, size_hint=(0.8, 0.7))
         popup.bind(on_dismiss=self.popup_dismissed)
         popup.open()
         self._popup = popup
 
-    def init_datastore(self):
-        def _init_datastore(dstore_path):
-            if os.path.isfile(dstore_path):
-                self._datastore.open_db(dstore_path)
-            else:
-                Logger.info('AnalysisView: creating datastore...')
-                self._datastore.new(dstore_path)
-            self.ids.sessions_view.datastore = self._datastore
+    def close_popup(self, *args):
+        self._popup.dismiss()
 
-        dstore_path = self._settings.userPrefs.datastore_location
-        Logger.info("AnalysisView: Datastore Path:" + str(dstore_path))
-        t = Thread(target=_init_datastore, args=(dstore_path,))
-        t.daemon = True
-        t.start()
+    def on_add_session(self, instance, session):
+        Logger.info("AnalysisView: on_add_session: {}".format(session))
+        self.check_load_suggested_lap(session.session_id)
+        self.ids.sessions_view.append_session(session)
+
+    def on_delete_session(self, instance, session):
+        self.ids.sessions_view.session_deleted(session)
 
     def init_view(self):
-        self.init_datastore()
+        self._init_datastore()
         mainchart = self.ids.mainchart
         mainchart.settings = self._settings
         mainchart.datastore = self._datastore
@@ -212,7 +211,18 @@ class AnalysisView(Screen):
         channelvalues.settings = self._settings
         self.ids.analysismap.track_manager = self._track_manager
         self.ids.analysismap.datastore = self._datastore
+        self.ids.sessions_view.datastore = self._datastore
+        self.ids.sessions_view.settings = self._settings
+        self.ids.sessions_view.init_view()
         Clock.schedule_once(lambda dt: HelpInfo.help_popup('beta_analysis_welcome', self, arrow_pos='right_mid'), 0.5)
+
+    def _init_datastore(self):
+        dstore_path = self._settings.userPrefs.datastore_location
+        if os.path.isfile(dstore_path):
+            self._datastore.open_db(dstore_path)
+        else:
+            Logger.info('AnalysisView: creating datastore...')
+            self._datastore.new(dstore_path)
 
     def popup_dismissed(self, *args):
         if self.stream_connecting:
