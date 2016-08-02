@@ -601,10 +601,10 @@ class RcpApi:
         self.sendSet('setWifiCfg', wifi_config)
 
     def start_telemetry(self, rate):
-        self.sendSet('setTelemetryStart', {'rate': rate})
+        self.sendSet('setTelemetry', {'rate': rate})
 
     def stop_telemetry(self):
-        self.sendSet('setTelemetryStop', None)
+        self.sendSet('setTelemetry', {'rate': 0})
 
     def getScript(self):
         self.sendGet('getScriptCfg', None)
