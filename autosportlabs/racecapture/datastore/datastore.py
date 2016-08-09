@@ -150,7 +150,7 @@ class Session(object):
         self.name = name
         self.notes = notes
         self.date = date
-        
+
 class Lap(object):
     def __init__(self, lap, session_id, lap_time):
         self.lap = lap
@@ -261,14 +261,16 @@ class DataStore(object):
     # Channels to index on, WARNING: only [A-z] channel names with no spaces will work currently
     EXTRA_INDEX_CHANNELS = ["CurrentLap"]    
     val_filters = ['lt', 'gt', 'eq', 'lt_eq', 'gt_eq']
-    def __init__(self):
+    def __init__(self, databus=None):
         self._channels = []
         self._isopen = False
         self.datalog_channels = {}
         self.datalogchanneltypes = {}
         self._new_db = False
         self._ending_datalog_id  = 0
-        
+
+        self._databus = databus
+
 
     def close(self):
         self._conn.close()
@@ -462,6 +464,32 @@ class DataStore(object):
             self._conn.rollback()
             raise
 
+    def insert_sample(self, sample, session_id):
+        cursor = self._conn.cursor()
+        try:
+            #First, insert into the datalog table to give us a reference
+            #point for the datapoint insertions
+            cursor.execute("""INSERT INTO sample (session_id) VALUES (?)""", [session_id])
+            sample_id = cursor.lastrowid
+
+            values = [sample_id]
+            names = []
+
+            for channel_name, value in sample.iteritems():
+                values.append(value)
+                names.append(channel_name)
+
+            #Put together an insert statement containing the column names
+            base_sql = "INSERT INTO datapoint ({}) VALUES({});".format(','.join(['sample_id'] + [_scrub_sql_value(x) for x in names]),
+                                                                       ','.join(['?'] * (len(values))))
+
+            cursor.execute(base_sql, values)
+            self._conn.commit()
+        except: #rollback under any exception, then re-raise exception
+            self._conn.rollback()
+            raise
+
+
     def _extrap_datapoints(self, datapoints):
         """
         Takes a list of datapoints, and returns a new list of extrapolated datapoints
@@ -650,8 +678,23 @@ class DataStore(object):
         self._conn.execute("""DELETE FROM sample WHERE session_id=?""",(session_id,))
         self._conn.execute("""DELETE FROM session where id=?""",(session_id,))
         self._conn.commit()
-        
-    def _create_session(self, name, notes=''):
+
+    def init_session(self, name, channel_metas=None, notes=''):
+        session = self.create_session(name, notes)
+        Logger.info("Datastore: init_session. channels: {}".format(channel_metas))
+
+        if channel_metas:
+            new_channels = []
+            for name, meta in channel_metas.iteritems():
+                channel = DatalogChannel(name, meta.units, meta.min, meta.max, meta.sampleRate, 0)
+                if channel.name not in [x.name for x in self._channels]:
+                    new_channels.append(channel)
+                    self._channels.append(channel)
+            self._extend_datalog_channels(new_channels)
+
+        return session
+
+    def create_session(self, name, notes=''):
         """
         Creates a new session entry in the sessions table and returns it's ID
         """
@@ -666,7 +709,6 @@ class DataStore(object):
 
         Logger.info('DataStore: Created session with ID: {}'.format(session_id))
         return session_id
-
 
     #class member variable to track ending datalog id when importing
     def _handle_data(self, data_file, headers, session_id, warnings=None, progress_cb=None):
@@ -833,7 +875,7 @@ class DataStore(object):
         headers = self._parse_datalog_headers(header)
 
         #Create an event to be tagged to these records
-        session_id = self._create_session(name, notes)
+        session_id = self.create_session(name, notes)
         self._handle_data(dl, headers, session_id, warnings, progress_cb)
         
         #update the channel metadata, including re-setting min/max values

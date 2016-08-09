@@ -14,6 +14,7 @@ if __name__ == '__main__':
     import os
     import traceback
     import time
+    from threading import Thread
     from kivy.properties import AliasProperty
     from functools import partial
     from kivy.clock import Clock
@@ -51,6 +52,8 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.config.rcpconfig import Capabilities
     from autosportlabs.telemetry.telemetryconnection import TelemetryManager
     from autosportlabs.help.helpmanager import HelpInfo
+    from autosportlabs.racecapture.datastore import DataStore
+    from autosportlabs.racecapture.data.sessionrecorder import SessionRecorder
     from toolbarview import ToolbarView
     if not is_mobile_platform():
         kivy.config.Config.set ('input', 'mouse', 'mouse,multitouch_on_demand')
@@ -137,11 +140,16 @@ class RaceCaptureApp(App):
             self.base_dir = os.path.dirname(os.path.abspath(__file__))
 
         self.settings = SystemSettings(self.user_data_dir, base_dir=self.base_dir)
-        self._databus = DataBusFactory().create_standard_databus(self.settings.systemChannels)
-        self.settings.runtimeChannels.data_bus = self._databus
+        self.trackManager = TrackManager(user_dir=self.settings.get_default_data_dir(), base_dir=self.base_dir)
 
         # RaceCapture communications API
         self._rc_api = RcpApi(on_disconnect=self._on_rcp_disconnect, settings=self.settings)
+
+        self._databus = DataBusFactory().create_standard_databus(self.settings.systemChannels)
+        self.settings.runtimeChannels.data_bus = self._databus
+        self._datastore = DataStore(databus=self._databus)
+        self._session_recorder = SessionRecorder(self._datastore, self._databus, self._rc_api, self.trackManager)
+
 
         HelpInfo.settings = self.settings
 
@@ -154,7 +162,6 @@ class RaceCaptureApp(App):
         self.register_event_type('on_tracks_updated')
         self.processArgs()
         self.settings.appConfig.setUserDir(self.user_data_dir)
-        self.trackManager = TrackManager(user_dir=self.settings.get_default_data_dir(), base_dir=self.base_dir)
         self.setup_telemetry()
         self._track_auto_set_run = False
 
@@ -191,6 +198,21 @@ class RaceCaptureApp(App):
 
     def init_data(self):
         self.trackManager.init(None, self.loadCurrentTracksSuccess, self.loadCurrentTracksError)
+        self._init_datastore()
+
+    def _init_datastore(self):
+        def _init_datastore(dstore_path):
+            if os.path.isfile(dstore_path):
+                self._datastore.open_db(dstore_path)
+            else:
+                Logger.info('Main: creating datastore...')
+                self._datastore.new(dstore_path)
+
+        dstore_path = self.settings.userPrefs.datastore_location
+        Logger.info("Main: Datastore Path:" + str(dstore_path))
+        t = Thread(target=_init_datastore, args=(dstore_path,))
+        t.daemon = True
+        t.start()
 
     def _serial_warning(self):
         alertPopup('Warning', 'Command failed. Ensure you have selected a correct serial port')
@@ -276,6 +298,7 @@ class RaceCaptureApp(App):
             self.screenMgr.add_widget(view)
             self.mainViews[view_name] = view
         self.screenMgr.current = view_name
+        self._session_recorder.on_view_change(view_name)
 
     def switchMainView(self, view_name):
             self.mainNav.anim_to_state('closed')

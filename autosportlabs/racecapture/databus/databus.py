@@ -7,6 +7,7 @@ from autosportlabs.racecapture.data.sampledata import Sample, SampleMetaExceptio
 from autosportlabs.racecapture.databus.filter.bestlapfilter import BestLapFilter
 from autosportlabs.racecapture.databus.filter.laptimedeltafilter import LaptimeDeltaFilter
 from autosportlabs.util.threadutil import safe_thread_exit
+from autosportlabs.racecapture.config.rcpconfig import Capabilities
 from utils import is_mobile_platform
 
 DEFAULT_DATABUS_UPDATE_INTERVAL = 0.02  # 50Hz UI update rate
@@ -194,15 +195,22 @@ class DataBusPump(object):
     _data_bus = None
     sample = Sample()
     _sample_event = Event()
-    _running = Event()
+    _poll = Event()
     _sample_thread = None
     _meta_is_stale_counter = 0
 
     def __init__(self, **kwargs):
         super(DataBusPump, self).__init__(**kwargs)
+        self.rc_capabilities = None
+        self._should_run = False
+        self._running = False
+        self._streaming_supported = False
 
     def start(self, data_bus, rc_api, streaming_supported):
-        if self._running.is_set():
+        self._should_run = True
+        self._streaming_supported = streaming_supported
+
+        if self._poll.is_set():
             # since we're already running, simply
             # request updated metadata
             self.meta_is_stale()
@@ -212,21 +220,78 @@ class DataBusPump(object):
         self._data_bus = data_bus
         rc_api.addListener('s', self.on_sample)
         rc_api.addListener('meta', self.on_meta)
-        self._running.set()
+        rc_api.add_connect_listener(self.on_connect)
+        rc_api.add_disconnect_listener(self.on_disconnect)
 
-        # Only BT supports auto-streaming data, the rest we have to poll
-        if not streaming_supported:
-            t = Thread(target=self.sample_worker)
-            t.start()
-            self._sample_thread = t
+        self._start()
+
+    def _start(self):
+        self._poll.set()
+
+        # Only BT supports auto-streaming data, the rest we have to stream or poll
+        if not self._streaming_supported:
+            self._start_sample_streaming()
+
+    def on_connect(self):
+        if self._should_run:
+            self._start()
+
+    def on_disconnect(self):
+        self._stop(True)
+
+    def _start_sample_streaming(self):
+        # First need to figure out if the connected RC supports the streaming api
+        Logger.debug("DataBusPump: Checking if new streaming api is supported")
+
+        def handle_capabilities(capabilities_dict):
+            self.rc_capabilities = Capabilities()
+            self.rc_capabilities.from_json_dict(capabilities_dict['capabilities'])
+
+            if self.rc_capabilities.has_streaming:
+                # Send streaming command
+                Logger.debug("DataBusPump: connected device supports streaming")
+                stream_hz = int(1/SAMPLE_POLL_INTERVAL_TIMEOUT)
+                self._rc_api.start_telemetry(stream_hz)
+            else:
+                Logger.debug("DataBusPump: connected device does not support streaming api, starting polling")
+                self._start_polling()
+
+        def handle_capabilities_fail():
+            Logger.error("DataBusPump: Failed to get capabilities, can't determine if device supports streaming API")
+            self._start_polling()
+            self._poll = True
+
+            raise Exception("DataBusPump: Failed to get capabilities for streaming API support")
+
+        self._rc_api.get_capabilities(handle_capabilities, handle_capabilities_fail)
+
+    def _start_polling(self):
+        t = Thread(target=self.sample_worker)
+        t.start()
+        self._sample_thread = t
 
     def stop(self):
-        self._running.clear()
-        try:
-            if self._sample_thread is not None:
+        """ Public method to stop databuspump
+        """
+        self._should_run = False
+        self._stop()
+
+    def _stop(self, disconnected=False):
+        """
+        Private method to stop databuspump, leaves self._should_run alone so if we're stopping because
+        of a disconnect, we will start up again on reconnect
+        """
+        self._poll.clear()
+
+        if self.rc_capabilities and self.rc_capabilities.has_streaming and not disconnected:
+            self._rc_api.stop_telemetry()
+            return
+
+        if self._sample_thread is not None:
+            try:
                 self._sample_thread.join()
-        except Exception as e:
-            Logger.warning('DataBusPump: Failed to join sample_worker: {}'.format(e))
+            except Exception as e:
+                Logger.warning('DataBusPump: Failed to join sample_worker: {}'.format(e))
 
     def on_meta(self, meta_json):
         metas = self.sample.metas
@@ -256,7 +321,7 @@ class DataBusPump(object):
                 self._meta_is_stale_counter -= 1
 
     def stopDataPump(self):
-        self._running.clear()
+        self._poll.clear()
         self._sample_thread.join()
 
     def meta_is_stale(self):
@@ -268,7 +333,7 @@ class DataBusPump(object):
     def sample_worker(self):
         rc_api = self._rc_api
         Logger.info('DataBusPump: sample_worker starting')
-        while self._running.is_set():
+        while self._poll.is_set():
             try:
                 rc_api.sample()
                 sleep(SAMPLE_POLL_INTERVAL_TIMEOUT)

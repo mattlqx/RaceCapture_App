@@ -193,6 +193,9 @@ class UserPrefs(EventDispatcher):
         self.config.setdefault('track_detection', 'last_selected_track_id', 0)
         self.config.setdefault('track_detection', 'last_selected_track_timestamp', 0)
 
+        self.config.adddefaultsection('analysis_preferences')
+        self.config.setdefault('analysis_preferences', 'selected_sessions_laps', '{"sessions":{}}')
+
     def load(self):
         Logger.info('UserPrefs: Data Dir is: {}'.format(self.data_dir))
         self.config = ConfigParser()

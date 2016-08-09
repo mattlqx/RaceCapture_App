@@ -69,14 +69,33 @@ class RcpApi:
 
     COMMAND_SEQUENCE_TIMEOUT = 1.0
 
-    def __init__(self, settings, on_disconnect, **kwargs):
+    def __init__(self, settings, on_disconnect=None, on_connect=None, **kwargs):
         self.comms = kwargs.get('comms', self.comms)
         self._running = Event()
         self._running.clear()
         self._enable_autodetect = Event()
         self._enable_autodetect.set()
         self._settings = settings
-        self._disconnect_callback = on_disconnect
+        self._disconnect_listeners = []
+        self._connect_listeners = []
+
+        if on_disconnect:
+            self.add_disconnect_listener(on_disconnect)
+
+        if on_connect:
+            self.add_connect_listener(on_connect)
+
+    def add_disconnect_listener(self, func):
+        self._disconnect_listeners.append(func)
+
+    def remove_disconnect_listener(self, func):
+        self._disconnect_listeners.remove(func)
+
+    def add_connect_listener(self, func):
+        self._connect_listeners.append(func)
+
+    def remove_connect_listener(self, func):
+        self._connect_listeners.remove(func)
 
     def enable_autorecover(self):
         Logger.debug("RCPAPI: Enabling auto recover")
@@ -87,12 +106,19 @@ class RcpApi:
         self._enable_autodetect.clear()
 
     def recover_connection(self):
-        if self._disconnect_callback:
-            self._disconnect_callback()
+        self._notify_disconnect_listeners()
 
         if self._enable_autodetect.is_set():
             Logger.debug("RCPAPI: attempting to recover connection")
             self.run_auto_detect()
+
+    def _notify_disconnect_listeners(self):
+        for listener in self._disconnect_listeners:
+            listener()
+
+    def _notify_connect_listeners(self):
+        for listener in self._connect_listeners:
+            listener()
 
     def _start_message_rx_worker(self):
         self._running.set()
@@ -132,13 +158,14 @@ class RcpApi:
             self.comms.close()
             self.comms.device = None
         except Exception:
-            Logger.warn('RCPAPI: Message rx worker exception: {} | {}'.format(msg, str(Exception)))
-            Logger.debug(traceback.format_exc())
+            Logger.warn('RCPAPI: Shutdown rx worker exception: {} | {}'.format(msg, str(Exception)))
+            Logger.info(traceback.format_exc())
 
     def detect_win(self, version_info):
         self.level_2_retries = DEFAULT_LEVEL2_RETRIES
         self.msg_rx_timeout = DEFAULT_MSG_RX_TIMEOUT
         if self.detect_win_callback: self.detect_win_callback(version_info)
+        self._notify_connect_listeners()
 
     def run_auto_detect(self):
         self.level_2_retries = AUTODETECT_LEVEL2_RETRIES
@@ -176,7 +203,6 @@ class RcpApi:
                         Logger.trace('RCPAPI: Rx: ' + str(msg))
                     else:
                         Logger.debug('RCPAPI: Rx: ' + str(msg))
-
                     Clock.schedule_once(lambda dt: self.on_rx(True))
                     error_count = 0
                     for messageName in msgJson.keys():
@@ -376,7 +402,6 @@ class RcpApi:
     def getRcpCfg(self, cfg, winCallback, failCallback):
 
         def query_available_configs(capabilities_dict):
-            Logger.info("RCPAPI: got capabilities: {}".format(capabilities_dict))
 
             capabilities_dict = capabilities_dict.get('capabilities')
 
@@ -417,6 +442,10 @@ class RcpApi:
 
         # First we need to get capabilities, then figure out what to query
         self.executeSingle(RcpCmd('capabilities', self.getCapabilities), query_available_configs, failCallback)
+
+    def get_capabilities(self, success_cb, fail_cb):
+        # Capabilities object also needs version info
+        self.executeSingle(RcpCmd('capabilities', self.getCapabilities), success_cb, fail_cb)
 
     def writeRcpCfg(self, cfg, winCallback=None, failCallback=None):
         cmdSequence = []
@@ -570,6 +599,12 @@ class RcpApi:
 
     def set_wifi_config(self, wifi_config):
         self.sendSet('setWifiCfg', wifi_config)
+
+    def start_telemetry(self, rate):
+        self.sendSet('setTelemetry', {'rate': rate})
+
+    def stop_telemetry(self):
+        self.sendSet('setTelemetry', {'rate': 0})
 
     def getScript(self):
         self.sendGet('getScriptCfg', None)
