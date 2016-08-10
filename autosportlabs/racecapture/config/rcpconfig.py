@@ -1099,20 +1099,11 @@ class LinksCapabilities(object):
         self.wifi = True
         self.usb = True
 
-    def from_json_dict(self, json_dict):
-        Logger.info("LinksCapabilities: {}".format(json_dict))
-        self.bluetooth = json_dict.get('bluetooth', False)
-        self.cellular = json_dict.get('cellular', False)
-        self.wifi = json_dict.get('wifi', False)
-        self.usb = json_dict.get('usb', False)
-
-    def to_json_dict(self):
-        return {
-            "bluetooth": self.bluetooth,
-            "cellular": self.cellular,
-            "wifi": self.wifi,
-            "usb": self.usb
-        }
+    def from_flags(self, flags):
+        self.bluetooth = 'bluetooth' in flags
+        self.cellular = 'cellular' in flags
+        self.usb = 'usb' in flags
+        self.wifi = 'wifi' in flags
 
 
 class Capabilities(object):
@@ -1170,6 +1161,10 @@ class Capabilities(object):
 
     def from_json_dict(self, json_dict, version_config=None):
         if json_dict:
+            Logger.debug("RCPConfig: Capabilities: {}".format(json_dict))
+
+            self.flags = json_dict.get('flags', False)
+
             channels = json_dict.get('channels')
             if channels:
                 self.channels.from_json_dict(channels)
@@ -1182,16 +1177,7 @@ class Capabilities(object):
             if storage:
                 self.storage.from_json_dict(storage)
 
-            # If there is no links object, this is old firmware, which only supports BT & Cell
-            links = json_dict.get('links')
-            if links:
-                self.links.from_json_dict(links)
-            else:
-                self.links.from_json_dict({'bluetooth': True, 'cellular': True})
-
-            flags = json_dict.get('flags')
-            if flags:
-                self.flags = flags
+            self.links.from_flags(self.flags)
 
         # For select features/capabilities we need to check RCP version because
         # the capability wasn't added to the API. Not ideal, but let's at least
