@@ -170,7 +170,11 @@ class ConfigView(Screen):
 
         runtime_channels = self._settings.runtimeChannels
 
-        defaultNode = attach_node('Race Tracks', None, lambda: TrackConfigView(databus=self._databus))
+        if self.rc_config.capabilities.storage.tracks <= 1:
+            default_node = attach_node('Race Tracks', None, lambda: TempTrackConfigView(databus=self._databus))
+        else:
+            default_node = attach_node('Race Tracks', None, lambda: TrackConfigView(databus=self._databus))
+
         attach_node('GPS', None, lambda: GPSChannelsView())
         attach_node('Race Timing', None, lambda: LapStatsView())
 
@@ -200,7 +204,7 @@ class ConfigView(Screen):
         if FIRMWARE_UPDATABLE:
             attach_node('Firmware', None, lambda: FirmwareUpdateView(rc_api=self.rc_api, settings=self._settings))
 
-        self.ids.menu.select_node(defaultNode)
+        self.ids.menu.select_node(default_node)
 
         self.update_runtime_channels(runtime_channels)
         self.update_tracks()

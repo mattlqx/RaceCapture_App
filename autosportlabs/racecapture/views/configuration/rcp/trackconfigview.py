@@ -25,6 +25,20 @@ from autosportlabs.widgets.scrollcontainer import ScrollContainer
 
 TRACK_CONFIG_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/trackconfigview.kv'
 
+TEMP_TRACK_CONFIG_VIEW = """
+<TempTrackConfigView>:
+    StackLayout:
+        size_hint: [1, None]
+        spacing: [0, dp(20)]
+        padding: dp(20)
+        GridLayout:
+            cols: 1
+            SettingsView:
+                id: current_track
+                label_text: 'Current Track'
+
+"""
+
 GPS_STATUS_POLL_INTERVAL = 1.0
 GPS_NOT_LOCKED_COLOR = [0.7, 0.7, 0.0, 1.0]
 GPS_LOCKED_COLOR = [0.0, 1.0, 0.0, 1.0]
@@ -438,5 +452,18 @@ class TrackConfigView(BaseConfigView):
             self.trackCfg.autoDetect = value
             self.trackCfg.stale = True
             self.dispatch('on_modified')
-            
-            
+
+
+class TempTrackConfigView(BaseConfigView):
+
+    Builder.load_string(TEMP_TRACK_CONFIG_VIEW)
+
+    def __init__(self, **kwargs):
+        super(TempTrackConfigView, self).__init__(**kwargs)
+        self._databus = kwargs.get('databus')
+        self.register_event_type('on_config_updated')
+        self.ids.current_track.setControl(SettingsButton(text='Set Track'))
+
+    def on_config_updated(self, rcpCfg):
+        pass
+

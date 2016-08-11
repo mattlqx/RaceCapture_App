@@ -12,6 +12,8 @@ from kivy.uix.modalview import ModalView
 from kivy.uix.screenmanager import Screen
 from utils import kvFindClass
 from kivy.uix.anchorlayout import AnchorLayout
+from kivy.uix.stacklayout import StackLayout
+from kivy.uix.button import Button
 from autosportlabs.racecapture.views.dashboard.widgets.digitalgauge import DigitalGauge
 from autosportlabs.racecapture.views.dashboard.widgets.stopwatch import PitstopTimerView
 from autosportlabs.racecapture.settings.systemsettings import SettingsListener
@@ -74,6 +76,18 @@ DASHBOARD_VIEW_KV = """
                 color: [1.0, 1.0, 1.0, 0.2]
                 on_press: root.on_preferences()
 """
+
+TRACK_SELECT_BUTTON_VIEW = """
+<TrackSelectButton>
+    size_hint: [1,1]
+    Button:
+        text: 'Change track'
+        on_press: root.select_track()
+"""
+
+
+class TrackSelectButton(StackLayout):
+    pass
 
 
 class DashboardView(Screen):
