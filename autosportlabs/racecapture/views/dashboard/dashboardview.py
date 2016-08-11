@@ -170,7 +170,7 @@ class DashboardView(Screen):
         self._initialized = True
 
     def _on_rc_connect(self, *args):
-        self._race_setup()
+        Clock.schedule_once(lambda dt: self._race_setup())
 
     def _race_setup(self):
         Logger.info("DashboardView: _race_setup start")
