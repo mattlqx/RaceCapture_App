@@ -189,32 +189,48 @@ class DashboardView(Screen):
                     # For devices that have no device storage, attempt to set a track
                     Logger.info("DashboardView: _race_setup, tracks: {}".format(capabilities.storage.tracks))
                     if capabilities.storage.tracks <= 1:
-                        last_track_timestamp = int(self._settings.userPrefs.get_last_selected_track_timestamp())
 
-                        now = int(time.time())
-                        one_day = 60*60*24
+                        # Now figure out if the device already has a track set, if not, set one. Enough callbacks yet?!
 
-                        Logger.info("DashboardView: last_track_timestamp: {}, now: {}, one_day: {}".format(
-                            last_track_timestamp, now, one_day))
-                        if last_track_timestamp != 0 and (now - last_track_timestamp) <= one_day:
-                            # Set the track!
-                            last_track_id = self._settings.userPrefs.get_last_selected_track_id()
-                            Logger.info("DashboardView: last active track: {}".format(last_track_id))
-                            if last_track_id != 0:
-                                track = self._track_manager.get_track_by_id(last_track_id)
-                                self._selected_track = track
+                        def status_fail():
+                            Logger.error("DashboardView: _race_setup(), could not get status to determine if device "
+                                         "has a track set/detected")
 
-                                if track:
-                                    Logger.info("DashboardView: setting active track: {}".format(last_track_id))
-                                    self._rc_api.set_active_track(Track.fromTrackMap(track))
+                        def status_success(status):
+                            Logger.info("DashboardView: _race_setup(), got status: {}".format(status))
+                            status = status['status']
+                            if status['track']['status'] != 1 and status['track']['trackId'] == 0:
+                                Logger.info("DashboardView: no track set and no track db, setting track if available")
+                                # No track detected, set one
+                                last_track_timestamp = int(self._settings.userPrefs.get_last_selected_track_timestamp())
+
+                                now = int(time.time())
+                                one_day = 60*60*24
+
+                                Logger.info("DashboardView: last_track_timestamp: {}, now: {}, one_day: {}".format(
+                                    last_track_timestamp, now, one_day))
+
+                                if last_track_timestamp != 0 and (now - last_track_timestamp) <= one_day:
+                                    # Set the track!
+                                    last_track_id = self._settings.userPrefs.get_last_selected_track_id()
+                                    Logger.info("DashboardView: last active track: {}".format(last_track_id))
+                                    if last_track_id != 0:
+                                        track = self._track_manager.get_track_by_id(last_track_id)
+                                        self._selected_track = track
+
+                                        if track:
+                                            Logger.info("DashboardView: setting active track: {}".format(last_track_id))
+                                            self._set_rc_track(track)
+                                        else:
+                                            Logger.error("DashboardView: Could not find track id: {} in track db"
+                                                         .format(last_track_id))
                                 else:
-                                    Logger.error("DashboardView: Could not find track id: {} in track db"
-                                                 .format(last_track_id))
-                        else:
-                            # Prompt for track!
-                            # Scheduling once because this callback is not in the UI thread and if we update the UI
-                            # now we'll crash >:\
-                            Clock.schedule_once(lambda dt: self._load_race_setup_view())
+                                    # Prompt for track!
+                                    # Scheduling once because this callback is not in the UI thread and if we update
+                                    # the UI now we'll crash >:\
+                                    Clock.schedule_once(lambda dt: self._load_race_setup_view())
+
+                        self._rc_api.get_status(status_success, status_fail)
 
                 Logger.info("DashboardView: _set_track(), querying for capabilities")
                 self._rc_api.get_capabilities(capabilities_success, capabilities_fail)

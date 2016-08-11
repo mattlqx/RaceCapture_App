@@ -617,8 +617,12 @@ class RcpApi:
     def setScriptPage(self, scriptPage, page, mode):
         self.sendCommand({'setScriptCfg': {'data':scriptPage, 'page':page, 'mode':mode}})
 
-    def get_status(self):
-        self.sendGet('getStatus', None)
+    def get_status(self, success_cb=None, fail_cb=None):
+        if success_cb is not None:
+            Logger.info("RCPAPI: getting status with CB")
+            self.executeSingle(RcpCmd('status', self.getStatus), success_cb, fail_cb)
+        else:
+            self.sendGet('getStatus', None)
 
     def sequenceWriteScript(self, scriptCfg, cmdSequence):
         page = 0
@@ -694,6 +698,9 @@ class RcpApi:
 
     def getCapabilities(self):
         self.sendGet('getCapabilities')
+
+    def getStatus(self):
+        self.sendGet('getStatus')
 
     def sendCalibrateImu(self):
         self.sendCommand({"calImu":1})
