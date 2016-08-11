@@ -19,6 +19,7 @@ from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
 from autosportlabs.racecapture.views.configuration.rcp.racesetupview import RaceSetupView
 from autosportlabs.racecapture.views.util.alertview import editor_popup
 from autosportlabs.racecapture.config.rcpconfig import Track
+from autosportlabs.racecapture.config.rcpconfig import Capabilities
 
 # Dashboard screens
 from autosportlabs.racecapture.views.dashboard.gaugeview import GaugeView
@@ -98,6 +99,7 @@ class DashboardView(Screen):
         self._dismiss_popup_trigger = Clock.create_trigger(self._dismiss_popup, DashboardView._POPUP_DISMISS_TIMEOUT_LONG)
         self._popup = None
         self._race_setup_view = None
+        self._selected_track = None
 
     def on_tracks_updated(self, trackmanager):
         pass
@@ -161,26 +163,85 @@ class DashboardView(Screen):
         self._notify_preference_listeners()
         self._show_last_view()
 
-        self._race_setup()
+        if self._rc_api.connected:
+            self._race_setup()
 
+        #self._rc_api.add_connect_listener(self._on_rc_connect)
         self._initialized = True
 
+    def _on_rc_connect(self, *args):
+        pass
+
     def _race_setup(self):
+        Logger.info("DashboardView: _race_setup start")
+        if self._rc_api.connected:
+            if not self._selected_track:
+
+                def capabilities_fail():
+                    Logger.error("DashboardView: _race_setup(), could not get capabilities to determine if device has "
+                                 "a tracks db")
+
+                def capabilities_success(capabilities_dict):
+                    Logger.info("DashboardView: _race_setup(), got capabilities")
+                    capabilities = Capabilities()
+                    capabilities.from_json_dict(capabilities_dict['capabilities'])
+
+                    # For devices that have no device storage, attempt to set a track
+                    Logger.info("DashboardView: _race_setup, tracks: {}".format(capabilities.storage.tracks))
+                    if capabilities.storage.tracks <= 1:
+                        last_track_timestamp = int(self._settings.userPrefs.get_last_selected_track_timestamp())
+
+                        now = int(time.time())
+                        one_day = 60*60*24
+
+                        Logger.info("DashboardView: last_track_timestamp: {}, now: {}, one_day: {}".format(
+                            last_track_timestamp, now, one_day))
+                        if last_track_timestamp != 0 and (now - last_track_timestamp) <= one_day:
+                            # Set the track!
+                            last_track_id = self._settings.userPrefs.get_last_selected_track_id()
+                            Logger.info("DashboardView: last active track: {}".format(last_track_id))
+                            if last_track_id != 0:
+                                track = self._track_manager.get_track_by_id(last_track_id)
+                                self._selected_track = track
+
+                                if track:
+                                    Logger.info("DashboardView: setting active track: {}".format(last_track_id))
+                                    self._rc_api.set_active_track(Track.fromTrackMap(track))
+                                else:
+                                    Logger.error("DashboardView: Could not find track id: {} in track db"
+                                                 .format(last_track_id))
+                        else:
+                            # Prompt for track!
+                            # Scheduling once because this callback is not in the UI thread and if we update the UI
+                            # now we'll crash >:\
+                            Clock.schedule_once(lambda dt: self._load_race_setup_view())
+
+                Logger.info("DashboardView: _set_track(), querying for capabilities")
+                self._rc_api.get_capabilities(capabilities_success, capabilities_fail)
+            else:
+                self._set_rc_track(self._selected_track)
+
+    def _load_race_setup_view(self):
+        Logger.info("DashboardView: loading race setup view")
         content = RaceSetupView(track_manager=self._track_manager)
         self._race_setup_view = content
         self._popup = editor_popup("Select your track", content, self._on_race_setup_close)
+        self._popup.open()
 
     def _on_race_setup_close(self, instance, answer):
         if answer:
-            track = self._race_setup_view.selected_track
-            Logger.info("DashboardView: setting track: {}".format(track))
-            track_config = Track.fromTrackMap(track)
-            self._rc_api.set_active_track(track_config)
-
-            now = int(time.time())
-            self._settings.userPrefs.set_last_selected_track(track.track_id, now)
+            self._selected_track = self._race_setup_view.selected_track
+            Logger.info("DashboardView: setting track: {}".format(self._selected_track))
+            self._set_rc_track(self._selected_track)
 
         self._popup.dismiss()
+
+    def _set_rc_track(self, track):
+        track_config = Track.fromTrackMap(track)
+        self._rc_api.set_active_track(track_config)
+
+        now = int(time.time())
+        self._settings.userPrefs.set_last_selected_track(track.track_id, now)
 
     def on_enter(self):
         Window.bind(mouse_pos=self.on_mouse_pos)

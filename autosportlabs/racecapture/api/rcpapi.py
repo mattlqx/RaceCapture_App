@@ -78,6 +78,7 @@ class RcpApi:
         self._settings = settings
         self._disconnect_listeners = []
         self._connect_listeners = []
+        self.connected = False
 
         if on_disconnect:
             self.add_disconnect_listener(on_disconnect)
@@ -166,6 +167,7 @@ class RcpApi:
         self.msg_rx_timeout = DEFAULT_MSG_RX_TIMEOUT
         if self.detect_win_callback: self.detect_win_callback(version_info)
         self._notify_connect_listeners()
+        self.connected = True
 
     def run_auto_detect(self):
         self.level_2_retries = AUTODETECT_LEVEL2_RETRIES
@@ -232,6 +234,7 @@ class RcpApi:
                 if error_count > 5 and not self._auto_detect_event.is_set():
                     Logger.warn("RCPAPI: Too many Rx exceptions; re-opening connection")
                     self.recover_connection()
+                    self.connected = False
                     sleep(5)
                 else:
                     sleep(0.25)
@@ -343,10 +346,12 @@ class RcpApi:
 
                 except CommsErrorException:
                     self.recover_connection()
+                    self.connected = False
                 except Exception as detail:
                     Logger.error('RCPAPI: Command sequence exception: ' + str(detail))
                     Logger.error(traceback.format_exc())
                     failCallback(detail)
+                    self.connected = False
                     self.recover_connection()
 
                 Logger.debug('RCPAPI: Execute Sequence complete')
@@ -652,9 +657,6 @@ class RcpApi:
             self.executeSingle(RcpCmd('logfile', getLogfileCmd), winCallback, failCallback)
         else:
             getLogfileCmd()
-
-    def get_capabilities(self, success_cb=None, fail_cb=None):
-        self.executeSingle(RcpCmd('capabilities', self.getCapabilities), success_cb, fail_cb)
 
     def sendFlashConfig(self):
         self.sendCommand({'flashCfg': None})
