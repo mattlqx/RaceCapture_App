@@ -166,11 +166,11 @@ class DashboardView(Screen):
         if self._rc_api.connected:
             self._race_setup()
 
-        #self._rc_api.add_connect_listener(self._on_rc_connect)
+        self._rc_api.add_connect_listener(self._on_rc_connect)
         self._initialized = True
 
     def _on_rc_connect(self, *args):
-        pass
+        self._race_setup()
 
     def _race_setup(self):
         Logger.info("DashboardView: _race_setup start")

@@ -166,8 +166,8 @@ class RcpApi:
         self.level_2_retries = DEFAULT_LEVEL2_RETRIES
         self.msg_rx_timeout = DEFAULT_MSG_RX_TIMEOUT
         if self.detect_win_callback: self.detect_win_callback(version_info)
-        self._notify_connect_listeners()
         self.connected = True
+        self._notify_connect_listeners()
 
     def run_auto_detect(self):
         self.level_2_retries = AUTODETECT_LEVEL2_RETRIES
