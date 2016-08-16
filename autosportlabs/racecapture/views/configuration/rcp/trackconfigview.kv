@@ -160,7 +160,7 @@
     	    	rcid: 'addtrack'
 	        
 
-	
+
 <ManualTrackConfigScreen>:
 	BoxLayout:
 		orientation: 'vertical'
@@ -172,14 +172,14 @@
 		BoxLayout:
 			orientation: 'vertical'
 			size_hint_y: 0.6
-		    	
+
 			SectorPointView:
 				id: start_line
 				size_hint_y: 0.15
 			SectorPointView:
 				id: finish_line
 				size_hint_y: 0.15
-		    	
+
 		    ScrollContainer:
                 id: scroller
 		    	size_hint_y: 0.6
@@ -195,6 +195,5 @@
                     row_default_height: root.height * 0.12
                     row_force_default: True
                     size_hint_y: None
-                    height: max(self.minimum_height, scroller.height)                                      
+                    height: max(self.minimum_height, scroller.height)
                     cols: 1
-				

@@ -71,6 +71,7 @@ class ConfigView(Screen):
         self.rc_api = kwargs.get('rc_api', None)
         self._settings = kwargs.get('settings')
         self.base_dir = kwargs.get('base_dir')
+        self._status_pump = kwargs.get('status_pump')
 
         self.register_event_type('on_config_updated')
         self.register_event_type('on_channels_updated')
@@ -171,7 +172,10 @@ class ConfigView(Screen):
         runtime_channels = self._settings.runtimeChannels
 
         if self.rc_config.capabilities.storage.tracks <= 1:
-            default_node = attach_node('Race Tracks', None, lambda: TempTrackConfigView(databus=self._databus))
+            default_node = attach_node('Race Tracks', None, lambda: TempTrackConfigView(self.rc_api, self._databus,
+                                                                                        self._settings,
+                                                                                        self.track_manager,
+                                                                                        self._status_pump))
         else:
             default_node = attach_node('Race Tracks', None, lambda: TrackConfigView(databus=self._databus))
 

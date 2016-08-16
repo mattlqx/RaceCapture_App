@@ -1,4 +1,5 @@
 import kivy
+import time
 kivy.require('1.9.1')
 
 from kivy.properties import ObjectProperty
@@ -9,6 +10,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.logger import Logger
 from kivy.uix.popup import Popup
+from kivy.uix.button import Button
 from kivy.clock import Clock
 from kivy.app import Builder
 from helplabel import HelpLabel
@@ -18,24 +20,43 @@ from utils import *
 from valuefield import FloatValueField
 from autosportlabs.racecapture.views.util.alertview import alertPopup
 from autosportlabs.racecapture.views.tracks.tracksview import TrackInfoView, TracksView
+from autosportlabs.racecapture.views.configuration.rcp.trackselectview import TrackSelectView
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.uix.toast.kivytoast import toast
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
+from autosportlabs.racecapture.views.util.alertview import editor_popup
 
 TRACK_CONFIG_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/trackconfigview.kv'
 
 TEMP_TRACK_CONFIG_VIEW = """
 <TempTrackConfigView>:
-    StackLayout:
-        size_hint: [1, None]
+    GridLayout:
         spacing: [0, dp(20)]
         padding: dp(20)
+        id: content
+        cols: 1
         GridLayout:
+            size_hint_y: 0.4
             cols: 1
             SettingsView:
                 id: current_track
-                label_text: 'Current Track'
+                label_text: 'Current Track: Unknown'
+            SettingsView:
+                id: custom_start_finish
+                label_text: 'Custom start/finish'
+        GridLayout:
+            id: custom
+            canvas.before:
+                Color:
+                    rgba: 0.1, 0.1, 0.1, 1.0
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            row_default_height: root.height * 0.12
+            row_force_default: True
+            size_hint_y: 1
+            cols: 1
 
 """
 
@@ -142,7 +163,8 @@ class GeoPointEditor(BoxLayout):
             lon = float(lat_lon[1])
             self.ids.lat.text = str(lat)
             self.ids.lon.text = str(lon)
-        except Exception:
+        except ValueError as e:
+            Logger.error("GeoPointEditor: error handling paste: {}".format(e))
             toast('Required format is: Latitude, Longitude\nin NN.NNNNN decimal format', True)
 
     def update_gps_status(self, dt,  *args):
@@ -170,7 +192,8 @@ class GeoPointEditor(BoxLayout):
             point.latitude = float(self.ids.lat.text)
             point.longitude = float(self.ids.lon.text)
             self.dispatch('on_point_edited', self.point)
-        except Exception:
+        except ValueError as e:
+            Logger.error("GeoPointEditor: error closing: {}".format(e))
             toast('NN.NNNNN decimal latitude/longitude format required', True)
         self.dispatch('on_close')
 
@@ -458,12 +481,101 @@ class TempTrackConfigView(BaseConfigView):
 
     Builder.load_string(TEMP_TRACK_CONFIG_VIEW)
 
-    def __init__(self, **kwargs):
+    def __init__(self, rc_api, databus, settings, track_manager, status_pump, **kwargs):
         super(TempTrackConfigView, self).__init__(**kwargs)
-        self._databus = kwargs.get('databus')
+
+        self._databus = databus
+        self._rc_api = rc_api
+        self._settings = settings
+        self._track_manager = track_manager
+        self._status_pump = status_pump
+
         self.register_event_type('on_config_updated')
-        self.ids.current_track.setControl(SettingsButton(text='Set Track'))
+
+        button = Button(text='Set Track')
+        button.bind(on_press=self.on_set_track_press)
+        self.ids.current_track.setControl(button)
+
+        self.ids.custom_start_finish.bind(on_setting=self.on_custom_start_finish)
+        self.ids.custom_start_finish.setControl(SettingsSwitch())
+
+        self._track_select_view = None
+        self._popup = None
+        self._manual_track_config_view = None
+
+        self._status_pump.add_listener(self.on_status)
+
+        start_line = SectorPointView(databus=self._databus)
+        start_line.set_point(GeoPoint())
+        start_line.setTitle("Start/Finish")
+        start_line.bind(on_config_changed=self._on_custom_change)
+        self.ids.custom.add_widget(start_line)
+
+        self._start_line = start_line
+
+    def on_status(self, status):
+        # Update track name in current track item
+        status = status['status']['track']
+        track_name = ''
+
+        # Track id 0 is a user-defined track, status 1 means track detected
+        if status['status'] == 1:
+            track_name = 'User defined'
+        else:
+            if status['trackId'] != 0:
+                track = self._track_manager.find_track_by_short_id(status['trackId'])
+
+                if track is None:
+                    track_name = 'Track not found'
+                else:
+                    track_name = track.name
+                    configuration_name = track.configuration
+                    if configuration_name and len(configuration_name):
+                        track_name += ' (' + configuration_name + ')'
+            else:
+                # We could have a manually set start/finish, check
+                if status['status'] == 3:
+                    # Manually set
+                    track_name = 'User defined'
+                else:
+                    track_name = 'Unknown'
+
+        self.ids.current_track.label_text = 'Current track: ' + track_name
+
+    def on_set_track_press(self, instance):
+        content = TrackSelectView(self._track_manager)
+        self._track_select_view = content
+        self._popup = editor_popup("Select your track", content, self._on_track_select_close)
+        self._popup.open()
+
+    def _on_track_select_close(self, instance, answer):
+        if answer:
+            selected_track = self._track_select_view.selected_track
+            track_config = Track.fromTrackMap(selected_track)
+            Logger.info("TempTrackConfigView: setting track: {}".format(selected_track))
+            self._set_rc_track(track_config)
+
+        self._popup.dismiss()
+
+    def _set_rc_track(self, track):
+        Logger.info("TempTrackConfigView: setting track: {}".format(track))
+        self._rc_api.set_active_track(track)
+
+        now = int(time.time())
+        self._settings.userPrefs.set_last_selected_track(track.trackId, now)
+
+    def on_custom_start_finish(self, instance, value):
+        # Show or hide custom start/finish points
+        pass
+
+    def _on_custom_change(self, *args):
+        Logger.info("TempTrackConfig: on_custom_modified: {}".format(args))
+        # Get point, use it to set custom start/finish
+        track = Track()
+        track.trackId = 0
+        track.startLine = self._start_line.point
+
+        self._set_rc_track(track)
 
     def on_config_updated(self, rcpCfg):
         pass
-

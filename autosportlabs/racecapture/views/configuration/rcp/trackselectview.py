@@ -27,20 +27,20 @@ from kivy.logger import Logger
 from kivy.properties import ObjectProperty
 from autosportlabs.racecapture.views.tracks.tracksview import TracksBrowser
 
-RACE_SETUP_VIEW = """
-<RaceSetupView>:
+TRACK_SELECT_VIEW = """
+<TrackSelectView>:
     TracksBrowser:
         id: track_browser
 """
 
 
-class RaceSetupView(StackLayout):
+class TrackSelectView(StackLayout):
 
-    Builder.load_string(RACE_SETUP_VIEW)
+    Builder.load_string(TRACK_SELECT_VIEW)
 
     def __init__(self, track_manager, **kwargs):
         Logger.info("RaceSetupView: __init__")
-        super(RaceSetupView, self).__init__(**kwargs)
+        super(TrackSelectView, self).__init__(**kwargs)
         self._track_manager = track_manager
         self.selected_track = None
 

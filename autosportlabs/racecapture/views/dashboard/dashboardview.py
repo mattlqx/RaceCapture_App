@@ -18,7 +18,7 @@ from autosportlabs.racecapture.views.dashboard.widgets.digitalgauge import Digit
 from autosportlabs.racecapture.views.dashboard.widgets.stopwatch import PitstopTimerView
 from autosportlabs.racecapture.settings.systemsettings import SettingsListener
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
-from autosportlabs.racecapture.views.configuration.rcp.racesetupview import RaceSetupView
+from autosportlabs.racecapture.views.configuration.rcp.trackselectview import TrackSelectView
 from autosportlabs.racecapture.views.util.alertview import editor_popup
 from autosportlabs.racecapture.config.rcpconfig import Track
 from autosportlabs.racecapture.config.rcpconfig import Capabilities
@@ -252,8 +252,8 @@ class DashboardView(Screen):
                 self._set_rc_track(self._selected_track)
 
     def _load_race_setup_view(self):
-        Logger.info("DashboardView: loading race setup view")
-        content = RaceSetupView(track_manager=self._track_manager)
+        Logger.info("DashboardView: loading track select view")
+        content = TrackSelectView(self._track_manager)
         self._race_setup_view = content
         self._popup = editor_popup("Select your track", content, self._on_race_setup_close)
         self._popup.open()

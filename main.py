@@ -310,7 +310,8 @@ class RaceCaptureApp(App):
                                 databus=self._databus,
                                 settings=self.settings,
                                 base_dir=self.base_dir,
-                                track_manager=self.trackManager)
+                                track_manager=self.trackManager,
+                                 status_pump=self._status_pump)
         config_view.bind(on_read_config=self.on_read_config)
         config_view.bind(on_write_config=self.on_write_config)
         self.config_listeners.append(config_view)
