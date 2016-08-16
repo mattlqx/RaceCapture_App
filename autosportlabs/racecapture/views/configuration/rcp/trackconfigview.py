@@ -542,7 +542,7 @@ class TempTrackConfigView(BaseConfigView):
         if status['trackId'] != 0:
             # Not using user defined track
             self.ids.custom_start_finish.setValue(False)
-        elif (status['status'] == 1 or status['status'] == 3) and not status['valid']:
+        elif (status['status'] == 1 or status['status'] == 3) and status['valid']:
             self.ids.custom_start_finish.setValue(True)
 
     def on_set_track_press(self, instance):
