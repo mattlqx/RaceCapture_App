@@ -516,13 +516,14 @@ class TempTrackConfigView(BaseConfigView):
     def on_status(self, status):
         # Update track name in current track item
         status = status['status']['track']
-        track_name = ''
 
         # Track id 0 is a user-defined track, status 1 means track detected
-        if status['status'] == 1:
+        if status['status'] == 1 or (status['status'] == 3 and status['trackId'] == 0):
             track_name = 'User defined'
         else:
-            if status['trackId'] != 0:
+            if status['trackId'] == -1:
+                track_name = 'Unknown'
+            elif status['trackId'] != 0:
                 track = self._track_manager.find_track_by_short_id(status['trackId'])
 
                 if track is None:
@@ -533,14 +534,16 @@ class TempTrackConfigView(BaseConfigView):
                     if configuration_name and len(configuration_name):
                         track_name += ' (' + configuration_name + ')'
             else:
-                # We could have a manually set start/finish, check
-                if status['status'] == 3:
-                    # Manually set
-                    track_name = 'User defined'
-                else:
-                    track_name = 'Unknown'
+                track_name = 'Unknown'
 
         self.ids.current_track.label_text = 'Current track: ' + track_name
+
+        # Update toggle
+        if status['trackId'] != 0:
+            # Not using user defined track
+            self.ids.custom_start_finish.setValue(False)
+        elif (status['status'] == 1 or status['status'] == 3) and not status['valid']:
+            self.ids.custom_start_finish.setValue(True)
 
     def on_set_track_press(self, instance):
         content = TrackSelectView(self._track_manager)
@@ -566,7 +569,19 @@ class TempTrackConfigView(BaseConfigView):
 
     def on_custom_start_finish(self, instance, value):
         # Show or hide custom start/finish points
-        pass
+        if value:
+            track = Track()
+            track.trackId = 0
+            track.startLine = self._start_line.point
+
+            self._set_rc_track(track)
+        else:
+            # Somehow revert...
+            track = Track()
+            track.trackId = -1
+            track.startLine = GeoPoint()
+
+            self._set_rc_track(track)
 
     def _on_custom_change(self, *args):
         Logger.info("TempTrackConfig: on_custom_modified: {}".format(args))
