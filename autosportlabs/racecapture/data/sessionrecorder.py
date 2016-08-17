@@ -125,9 +125,12 @@ class SessionRecorder(object):
         self._check_should_record()
 
     def _save_sample(self, sample):
+        if not self._current_session_id:
+            Logger.warn("SessionRecorder: Cannot save sample: session_id is None")
+            return
+
         # Merging previous sample with new data to desparsify the data
         self._sample_data.update(sample)
-
         self._datastore.insert_sample(self._sample_data, self._current_session_id)
 
     def _on_meta(self, metas):
