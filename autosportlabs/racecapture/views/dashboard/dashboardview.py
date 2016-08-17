@@ -21,6 +21,7 @@ from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
 from autosportlabs.racecapture.views.configuration.rcp.trackselectview import TrackSelectView
 from autosportlabs.racecapture.views.util.alertview import editor_popup
 from autosportlabs.racecapture.config.rcpconfig import Track
+from autosportlabs.racecapture.config.rcpconfig import TrackConfig
 from autosportlabs.racecapture.config.rcpconfig import Capabilities
 
 # Dashboard screens
@@ -114,6 +115,7 @@ class DashboardView(Screen):
         self._popup = None
         self._race_setup_view = None
         self._selected_track = None
+        self._track_config = None
 
     def on_tracks_updated(self, trackmanager):
         pass
@@ -202,18 +204,31 @@ class DashboardView(Screen):
 
                     # For devices that have no device storage, attempt to set a track
                     Logger.info("DashboardView: _race_setup, tracks: {}".format(capabilities.storage.tracks))
-                    if capabilities.storage.tracks <= 1:
+                    if capabilities.storage.tracks == 0:
 
                         # Now figure out if the device already has a track set, if not, set one. Enough callbacks yet?!
 
-                        def status_fail():
-                            Logger.error("DashboardView: _race_setup(), could not get status to determine if device "
-                                         "has a track set/detected")
+                        def track_fail():
+                            Logger.error("DashboardView: _race_setup(), could not get track config")
 
-                        def status_success(status):
-                            Logger.info("DashboardView: _race_setup(), got status: {}".format(status))
-                            status = status['status']
-                            if status['track']['status'] != 1 and status['track']['trackId'] == 0:
+                        def track_success(track_config):
+                            # {"trackCfg":{"rad":0.0001,"autoDetect":1,"track":
+                            # {"id":0,"type":0,"sf":[0.0,0.0],"sec":[[0.0,0.0],
+                            # [0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],
+                            # [0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],
+                            # [0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],
+                            # [0.0,0.0],[0.0,0.0],[0.0,0.0]]}}}
+                            self._track_config = TrackConfig()
+
+                            self._track_config.fromJson(track_config['trackCfg'])
+                            Logger.info("DashboardView: _race_setup(), got track config: {}".format(self._track_config))
+
+                            # Only clear way to know if the track in the track config is a real track or not is by
+                            # checking start/finish point. If both are 0, not a track. Can't use track id because a
+                            # track id of 0 can be a user defined track
+                            if self._track_config.track.startLine.latitude == 0 and \
+                               self._track_config.track.startLine.longitude == 0:
+                                # No track set
                                 Logger.info("DashboardView: no track set and no track db, setting track if available")
                                 # No track detected, set one
                                 last_track_timestamp = int(self._settings.userPrefs.get_last_selected_track_timestamp())
@@ -234,7 +249,7 @@ class DashboardView(Screen):
 
                                         if track:
                                             Logger.info("DashboardView: setting active track: {}".format(last_track_id))
-                                            self._set_rc_track(track)
+                                            self._set_rc_track(track, self._track_config)
                                         else:
                                             Logger.error("DashboardView: Could not find track id: {} in track db"
                                                          .format(last_track_id))
@@ -244,7 +259,7 @@ class DashboardView(Screen):
                                     # the UI now we'll crash >:\
                                     Clock.schedule_once(lambda dt: self._load_race_setup_view())
 
-                        self._rc_api.get_status(status_success, status_fail)
+                        self._rc_api.getTrackCfg(track_success, track_fail)
 
                 Logger.info("DashboardView: _set_track(), querying for capabilities")
                 self._rc_api.get_capabilities(capabilities_success, capabilities_fail)
@@ -262,13 +277,18 @@ class DashboardView(Screen):
         if answer:
             self._selected_track = self._race_setup_view.selected_track
             Logger.info("DashboardView: setting track: {}".format(self._selected_track))
-            self._set_rc_track(self._selected_track)
+            self._set_rc_track(self._selected_track, self._track_config)
 
         self._popup.dismiss()
 
-    def _set_rc_track(self, track):
-        track_config = Track.fromTrackMap(track)
-        self._rc_api.set_active_track(track_config)
+    def _set_rc_track(self, track, track_config):
+        Logger.info("DashboardView: setting track: {}".format(track))
+        new_track = Track.fromTrackMap(track)
+        new_track.trackId = 0
+        track_config.track = new_track
+        track_config.autoDetect = False
+        self._rc_api.setTrackCfg(track_config.toJson())
+        self._rc_api.sendFlashConfig()
 
         now = int(time.time())
         self._settings.userPrefs.set_last_selected_track(track.track_id, now)

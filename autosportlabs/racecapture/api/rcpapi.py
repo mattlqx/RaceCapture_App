@@ -379,7 +379,9 @@ class RcpApi:
             else:
                 Logger.debug('RCPAPI: Tx: ' + cmdStr)
             comms.write_message(cmdStr)
-        except Exception:
+        except Exception as e:
+            Logger.error('RCPAPI: sendCommand exception ' + str(e))
+            Logger.error(traceback.format_exc())
             self.recover_connection()
         finally:
             self.sendCommandLock.release()
@@ -575,8 +577,11 @@ class RcpApi:
     def setPwmCfg(self, pwmCfg, channelId):
         self.sendSet('setPwmCfg', pwmCfg, channelId)
 
-    def getTrackCfg(self):
-        self.sendGet('getTrackCfg', None)
+    def getTrackCfg(self, success_cb=None, fail_cb=None):
+        if success_cb is None:
+            self.sendGet('getTrackCfg', None)
+        else:
+            self.executeSingle(RcpCmd('trackCfg', self.getTrackCfg), success_cb, fail_cb)
 
     def setTrackCfg(self, trackCfg):
         self.sendSet('setTrackCfg', trackCfg)

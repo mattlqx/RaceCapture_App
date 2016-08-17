@@ -41,7 +41,7 @@ TEMP_TRACK_CONFIG_VIEW = """
             cols: 1
             SettingsView:
                 id: current_track
-                label_text: 'Current Track: Unknown'
+                label_text: 'Track: Unknown'
             SettingsView:
                 id: custom_start_finish
                 label_text: 'Custom start/finish'
@@ -489,6 +489,7 @@ class TempTrackConfigView(BaseConfigView):
         self._settings = settings
         self._track_manager = track_manager
         self._status_pump = status_pump
+        self._track_config = None
 
         self.register_event_type('on_config_updated')
 
@@ -503,8 +504,6 @@ class TempTrackConfigView(BaseConfigView):
         self._popup = None
         self._manual_track_config_view = None
 
-        self._status_pump.add_listener(self.on_status)
-
         start_line = SectorPointView(databus=self._databus)
         start_line.set_point(GeoPoint())
         start_line.setTitle("Start/Finish")
@@ -512,38 +511,6 @@ class TempTrackConfigView(BaseConfigView):
         self.ids.custom.add_widget(start_line)
 
         self._start_line = start_line
-
-    def on_status(self, status):
-        # Update track name in current track item
-        status = status['status']['track']
-
-        # Track id 0 is a user-defined track, status 1 means track detected
-        if status['status'] == 1 or (status['status'] == 3 and status['trackId'] == 0):
-            track_name = 'User defined'
-        else:
-            if status['trackId'] == -1:
-                track_name = 'Unknown'
-            elif status['trackId'] != 0:
-                track = self._track_manager.find_track_by_short_id(status['trackId'])
-
-                if track is None:
-                    track_name = 'Track not found'
-                else:
-                    track_name = track.name
-                    configuration_name = track.configuration
-                    if configuration_name and len(configuration_name):
-                        track_name += ' (' + configuration_name + ')'
-            else:
-                track_name = 'Unknown'
-
-        self.ids.current_track.label_text = 'Current track: ' + track_name
-
-        # Update toggle
-        if status['trackId'] != 0:
-            # Not using user defined track
-            self.ids.custom_start_finish.setValue(False)
-        elif (status['status'] == 1 or status['status'] == 3) and status['valid']:
-            self.ids.custom_start_finish.setValue(True)
 
     def on_set_track_press(self, instance):
         content = TrackSelectView(self._track_manager)
@@ -553,19 +520,21 @@ class TempTrackConfigView(BaseConfigView):
 
     def _on_track_select_close(self, instance, answer):
         if answer:
-            selected_track = self._track_select_view.selected_track
-            track_config = Track.fromTrackMap(selected_track)
-            Logger.info("TempTrackConfigView: setting track: {}".format(selected_track))
-            self._set_rc_track(track_config)
+            if self._track_config:
+                selected_track = self._track_select_view.selected_track
+                Logger.info("TempTrackConfigView: setting track: {}".format(selected_track))
+                track_config = Track.fromTrackMap(selected_track)
+                self._track_config.track = track_config
+                self._track_config.stale = True
+                self.dispatch('on_modified')
 
+                track_name = selected_track.name
+                configuration_name = selected_track.configuration
+                if configuration_name and len(configuration_name):
+                    track_name += ' (' + configuration_name + ')'
+
+                self.ids.current_track.label_text = 'Track: ' + track_name
         self._popup.dismiss()
-
-    def _set_rc_track(self, track):
-        Logger.info("TempTrackConfigView: setting track: {}".format(track))
-        self._rc_api.set_active_track(track)
-
-        now = int(time.time())
-        self._settings.userPrefs.set_last_selected_track(track.trackId, now)
 
     def on_custom_start_finish(self, instance, value):
         # Show or hide custom start/finish points
@@ -574,23 +543,49 @@ class TempTrackConfigView(BaseConfigView):
             track.trackId = 0
             track.startLine = self._start_line.point
 
-            self._set_rc_track(track)
+            self._track_config.track = track
+            self._track_config.stale = True
+            self.dispatch('on_modified')
+
+            self.ids.current_track.label_text = 'Track: User defined'
         else:
-            # Somehow revert...
+            # Somehow revert?
             track = Track()
             track.trackId = -1
             track.startLine = GeoPoint()
-
-            self._set_rc_track(track)
+            self._track_config.track = track
+            self._track_config.stale = True
+            self.dispatch('on_modified')
+            self.ids.current_track.label_text = 'Track: Unknown'
 
     def _on_custom_change(self, *args):
         Logger.info("TempTrackConfig: on_custom_modified: {}".format(args))
-        # Get point, use it to set custom start/finish
-        track = Track()
-        track.trackId = 0
-        track.startLine = self._start_line.point
 
-        self._set_rc_track(track)
+        if self._track_config:
+            # Get point, use it to set custom start/finish
+            track = Track()
+            track.trackId = 0
+            track.startLine = self._start_line.point
 
-    def on_config_updated(self, rcpCfg):
-        pass
+            self._track_config.track = track
+            self._track_config.stale = True
+            self.dispatch('on_modified')
+
+    def on_config_updated(self, rcp_config):
+        self._track_config = rcp_config.trackConfig
+
+        if rcp_config.trackConfig.track.trackId > 0:
+            track = self._track_manager.find_track_by_short_id(rcp_config.trackConfig.track.trackId)
+
+            if track is None:
+                track_name = 'Track not found'
+            else:
+                track_name = track.name
+                configuration_name = track.configuration
+                if configuration_name and len(configuration_name):
+                    track_name += ' (' + configuration_name + ')'
+
+            self.ids.current_track.label_text = 'Track: ' + track_name
+        elif rcp_config.trackConfig.track.trackId == 0:
+            self.ids.custom_start_finish.setValue(True)
+            self._start_line.set_point(rcp_config.trackConfig.track.startLine)
