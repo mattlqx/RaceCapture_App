@@ -813,4 +813,6 @@ class RcpApi:
                 comms.device = None
                 sleep(AUTODETECT_COOLOFF_TIME)
 
+        safe_thread_exit()
         Logger.debug('RCPAPI: auto_detect_worker exiting')
+

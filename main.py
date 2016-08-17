@@ -521,7 +521,7 @@ class RaceCaptureApp(App):
         if token == ('preferences', 'conn_type'):
             # User changed their RC connection type
             Logger.info("Racecaptureapp: RC connection type changed to {}, restarting comms".format(value))
-            Clock.schedule_once(lambda dt: self._restart_comms(), 0.1)
+            Clock.schedule_once(lambda dt: self._restart_comms(), 0.5)
 
     def _restart_comms(self):
         self._data_bus_pump.stop()
