@@ -174,10 +174,10 @@ class ToolbarView(BoxLayout):
             detection_status = track_status['status']
             if detection_status == 0:
                 track_status_msg = 'Searching for Track'
-            elif detection_status == 1 or (detection_status == 3 and track_status['trackId'] == 0):
+            elif detection_status == 1:
                 track_status_msg = 'User defined Track'
             else:
-                if track_status['trackId'] != 0 and detection_status == 3:
+                if track_status['trackId'] != 0:
                     track = self.track_manager.find_track_by_short_id(track_status['trackId'])
                     if track is None:
                         track_status_msg = '(Unknown Track)'
