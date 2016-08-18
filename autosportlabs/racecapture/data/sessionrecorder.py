@@ -21,9 +21,10 @@
 from datetime import datetime
 from autosportlabs.racecapture.datastore import Session
 from kivy.logger import Logger
+from kivy.event import EventDispatcher
 
 
-class SessionRecorder(object):
+class SessionRecorder(EventDispatcher) :
     """
     Handles starting/stopping session recording and other related tasks
     """
@@ -63,6 +64,11 @@ class SessionRecorder(object):
 
         self._check_should_record()
 
+        self.register_event_type('on_recording')
+
+    def on_recording(self, recording):
+        pass
+
     def start(self, session_name=None):
         """
         Starts recording a new session.
@@ -74,6 +80,7 @@ class SessionRecorder(object):
 
         self.recording = True
         self._current_session_id = self._datastore.init_session(self._create_session_name(), self._channels)
+        self.dispatch('on_recording', True)
 
     def stop(self):
         """
@@ -83,6 +90,7 @@ class SessionRecorder(object):
         Logger.info("SessionRecorder: stopping session")
         self.recording = False
         self._current_session_id = None
+        self.dispatch('on_recording', False)
 
     @property
     def _should_record(self):
