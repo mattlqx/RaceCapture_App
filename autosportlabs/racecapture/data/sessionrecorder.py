@@ -78,9 +78,9 @@ class SessionRecorder(EventDispatcher) :
         """
         Logger.info("SessionRecorder: starting new session")
 
-        self.recording = True
         self._current_session_id = self._datastore.init_session(self._create_session_name(), self._channels)
         self.dispatch('on_recording', True)
+        self.recording = True
 
     def stop(self):
         """
@@ -133,9 +133,11 @@ class SessionRecorder(EventDispatcher) :
         self._check_should_record()
 
     def _save_sample(self, sample):
+        if not self.recording:
+            return
+
         # Merging previous sample with new data to desparsify the data
         self._sample_data.update(sample)
-
         self._datastore.insert_sample(self._sample_data, self._current_session_id)
 
     def _on_meta(self, metas):
