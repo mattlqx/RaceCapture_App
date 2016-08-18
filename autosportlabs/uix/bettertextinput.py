@@ -12,12 +12,11 @@ class BetterTextInput(ValueField):
 
     def __init__(self, max_chars=200000, regex=None, **kwargs):
         super(BetterTextInput, self).__init__(**kwargs)
-        self.font_size = self.height * 0.20
         self.max_chars = max_chars
         self.regex = regex
 
     def insert_text(self, substring, from_undo=False):
-        if not from_undo and (len(self.text)+len(substring) > self.max_chars):
+        if not from_undo and (len(self.text) + len(substring) > self.max_chars):
             return
 
         if self.regex:
