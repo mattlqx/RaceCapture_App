@@ -5,6 +5,7 @@ from time import sleep
 from jnius import autoclass
 import jnius
 from kivy.logger import Logger
+from autosportlabs.util.threadutil import safe_thread_exit
 
 BTConn = autoclass('com.autosportlabs.racecapture.BluetoothConnection')
 

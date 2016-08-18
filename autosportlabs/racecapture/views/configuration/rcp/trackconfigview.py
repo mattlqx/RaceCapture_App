@@ -124,6 +124,7 @@ class SectorPointView(BoxLayout):
         self.ids.lon.text = str(self.point.longitude)
         
     def set_point(self, point):
+        Logger.info("SectorPointView: set_point: {}".format(point))
         self.point = point
         self._refresh_point_view()
             
@@ -503,6 +504,7 @@ class TempTrackConfigView(BaseConfigView):
         self._track_select_view = None
         self._popup = None
         self._manual_track_config_view = None
+        self._old_track_id = None
 
         start_line = SectorPointView(databus=self._databus)
         start_line.set_point(GeoPoint())
@@ -539,6 +541,10 @@ class TempTrackConfigView(BaseConfigView):
     def on_custom_start_finish(self, instance, value):
         # Show or hide custom start/finish points
         if value:
+            if self._track_config:
+                if self._track_config.track.trackId > 0:
+                    self._old_track_id = self._track_config.track.trackId
+
             track = Track()
             track.trackId = 0
             track.startLine = self._start_line.point
@@ -547,16 +553,32 @@ class TempTrackConfigView(BaseConfigView):
             self._track_config.stale = True
             self.dispatch('on_modified')
 
-            self.ids.current_track.label_text = 'Track: User defined'
+            self.ids.current_track.control.disabled = True
+            self.ids.current_track.label_text = 'Track: Custom'
         else:
-            # Somehow revert?
+            # Revert
+            if self._old_track_id:
+                track = self._track_manager.find_track_by_short_id(self._old_track_id)
+
+                if track is None:
+                    track_name = 'Track not found'
+                else:
+                    track_name = track.name
+                    configuration_name = track.configuration
+                    if configuration_name and len(configuration_name):
+                        track_name += ' (' + configuration_name + ')'
+
+                self.ids.current_track.label_text = 'Track: ' + track_name
+            else:
+                self.ids.current_track.label_text = 'Track: Unknown'
+
             track = Track()
             track.trackId = -1
             track.startLine = GeoPoint()
             self._track_config.track = track
             self._track_config.stale = True
             self.dispatch('on_modified')
-            self.ids.current_track.label_text = 'Track: Unknown'
+            self.ids.current_track.control.disabled = False
 
     def _on_custom_change(self, *args):
         Logger.info("TempTrackConfig: on_custom_modified: {}".format(args))
@@ -587,5 +609,6 @@ class TempTrackConfigView(BaseConfigView):
 
             self.ids.current_track.label_text = 'Track: ' + track_name
         elif rcp_config.trackConfig.track.trackId == 0:
-            self.ids.custom_start_finish.setValue(True)
+            Logger.info("TempTrackConfig: custom start/finish: {}".format(rcp_config.trackConfig.track.startLine.toJson()))
             self._start_line.set_point(rcp_config.trackConfig.track.startLine)
+            self.ids.custom_start_finish.setValue(True)
