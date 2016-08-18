@@ -189,7 +189,6 @@ class DashboardView(Screen):
         Clock.schedule_once(lambda dt: self._race_setup())
 
     def _race_setup(self):
-        Logger.info("DashboardView: _race_setup start")
         if self._rc_api.connected:
             if not self._selected_track:
 
@@ -198,12 +197,10 @@ class DashboardView(Screen):
                                  "a tracks db")
 
                 def capabilities_success(capabilities_dict):
-                    Logger.info("DashboardView: _race_setup(), got capabilities")
                     capabilities = Capabilities()
                     capabilities.from_json_dict(capabilities_dict['capabilities'])
 
                     # For devices that have no device storage, attempt to set a track
-                    Logger.info("DashboardView: _race_setup, tracks: {}".format(capabilities.storage.tracks))
                     if capabilities.storage.tracks == 0:
 
                         # Now figure out if the device already has a track set, if not, set one. Enough callbacks yet?!
@@ -221,7 +218,7 @@ class DashboardView(Screen):
                             self._track_config = TrackConfig()
 
                             self._track_config.fromJson(track_config['trackCfg'])
-                            Logger.info("DashboardView: _race_setup(), got track config: {}".format(self._track_config))
+                            Logger.debug("DashboardView: _race_setup(), got track config: {}".format(self._track_config))
 
                             # Only clear way to know if the track in the track config is a real track or not is by
                             # checking start/finish point. If both are 0, not a track. Can't use track id because a
@@ -229,26 +226,26 @@ class DashboardView(Screen):
                             if self._track_config.track.startLine.latitude == 0 and \
                                self._track_config.track.startLine.longitude == 0:
                                 # No track set
-                                Logger.info("DashboardView: no track set and no track db, setting track if available")
+                                Logger.debug("DashboardView: no track set and no track db, setting track if available")
                                 # No track detected, set one
                                 last_track_timestamp = int(self._settings.userPrefs.get_last_selected_track_timestamp())
 
                                 now = int(time.time())
                                 one_day = 60*60*24
 
-                                Logger.info("DashboardView: last_track_timestamp: {}, now: {}, one_day: {}".format(
+                                Logger.debug("DashboardView: last_track_timestamp: {}, now: {}, one_day: {}".format(
                                     last_track_timestamp, now, one_day))
 
                                 if last_track_timestamp != 0 and (now - last_track_timestamp) <= one_day:
                                     # Set the track!
                                     last_track_id = self._settings.userPrefs.get_last_selected_track_id()
-                                    Logger.info("DashboardView: last active track: {}".format(last_track_id))
+                                    Logger.debug("DashboardView: last active track: {}".format(last_track_id))
                                     if last_track_id != 0:
                                         track = self._track_manager.get_track_by_id(last_track_id)
                                         self._selected_track = track
 
                                         if track:
-                                            Logger.info("DashboardView: setting active track: {}".format(last_track_id))
+                                            Logger.debug("DashboardView: setting active track: {}".format(last_track_id))
                                             self._set_rc_track(track, self._track_config)
                                         else:
                                             Logger.error("DashboardView: Could not find track id: {} in track db"
@@ -261,13 +258,11 @@ class DashboardView(Screen):
 
                         self._rc_api.getTrackCfg(track_success, track_fail)
 
-                Logger.info("DashboardView: _set_track(), querying for capabilities")
                 self._rc_api.get_capabilities(capabilities_success, capabilities_fail)
             else:
                 self._set_rc_track(self._selected_track)
 
     def _load_race_setup_view(self):
-        Logger.info("DashboardView: loading track select view")
         content = TrackSelectView(self._track_manager)
         self._race_setup_view = content
         self._popup = editor_popup("Select your track", content, self._on_race_setup_close)
@@ -276,15 +271,14 @@ class DashboardView(Screen):
     def _on_race_setup_close(self, instance, answer):
         if answer:
             self._selected_track = self._race_setup_view.selected_track
-            Logger.info("DashboardView: setting track: {}".format(self._selected_track))
+            Logger.debug("DashboardView: setting track: {}".format(self._selected_track))
             self._set_rc_track(self._selected_track, self._track_config)
 
         self._popup.dismiss()
 
     def _set_rc_track(self, track, track_config):
-        Logger.info("DashboardView: setting track: {}".format(track))
         new_track = Track.fromTrackMap(track)
-        new_track.trackId = 0
+        new_track.trackId = track.short_id
         track_config.track = new_track
         track_config.autoDetect = False
         self._rc_api.setTrackCfg(track_config.toJson())

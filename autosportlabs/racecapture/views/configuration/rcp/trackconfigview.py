@@ -572,9 +572,10 @@ class TempTrackConfigView(BaseConfigView):
             else:
                 self.ids.current_track.label_text = 'Track: Unknown'
 
-            track = Track()
-            track.trackId = -1
-            track.startLine = GeoPoint()
+                track = Track()
+                track.trackId = -1
+                track.startLine = GeoPoint()
+
             self._track_config.track = track
             self._track_config.stale = True
             self.dispatch('on_modified')
