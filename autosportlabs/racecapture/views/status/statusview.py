@@ -258,9 +258,10 @@ class StatusView(Screen):
         self._add_item('Access Point', 'Enabled' if ap_enabled else 'Disabled')
         client_enabled = status['client']['active']
         client_connected = status['client']['connected']
-        self._add_item('Client', '{} {}'.format('Enabled' if client_enabled else 'Disabled',
-                                                '' if not client_enabled else '({})'.format(
-                                                'Connected' if client_connected else 'Disconnected')))
+        connected_msg = '' if not client_enabled else '({})'.format(
+                                                'Connected' if client_connected else 'Disconnected')
+        client_status_msg = '{} {}'.format('Enabled' if client_enabled else 'Disabled', connected_msg)
+        self._add_item('Client', client_status_msg)
 
     def render_imu(self):
         status = self.status['imu']
