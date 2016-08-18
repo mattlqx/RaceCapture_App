@@ -30,7 +30,7 @@ from autosportlabs.racecapture.views.util.alertview import editor_popup
 TRACK_CONFIG_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/trackconfigview.kv'
 
 SIMPLE_TRACK_CONFIG_VIEW = """
-<TempTrackConfigView>:
+<SimpleTrackConfigView>:
     GridLayout:
         spacing: [0, dp(20)]
         padding: dp(20)
