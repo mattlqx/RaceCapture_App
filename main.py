@@ -532,7 +532,7 @@ class RaceCaptureApp(App):
         self.init_rc_comms()
 
     def _on_session_recording(self, instance, is_recording):
-        toast('Analysis session started' if is_recording else 'Analysis session stopped', length_long=True)
+        toast('Session started' if is_recording else 'Session stopped', length_long=True)
 
 if __name__ == '__main__':
 
