@@ -556,13 +556,14 @@ class SimpleTrackConfigView(BaseConfigView):
         else:
             # Revert
             if self._old_track_id:
-                track = self._track_manager.find_track_by_short_id(self._old_track_id)
+                track_map = self._track_manager.find_track_by_short_id(self._old_track_id)
+                track = Track.fromTrackMap(track_map)
 
-                if track is None:
+                if track_map is None:
                     track_name = 'Track not found'
                 else:
-                    track_name = track.name
-                    configuration_name = track.configuration
+                    track_name = track_map.name
+                    configuration_name = track_map.configuration
                     if configuration_name and len(configuration_name):
                         track_name += ' (' + configuration_name + ')'
 
@@ -595,7 +596,8 @@ class SimpleTrackConfigView(BaseConfigView):
     def on_config_updated(self, rcp_config):
         self._track_config = rcp_config.trackConfig
 
-        if rcp_config.trackConfig.track.trackId > 0:
+        if rcp_config.trackConfig.track.trackId > 0 or (rcp_config.trackConfig.track.startLine.latitude == 0 and
+                                                        rcp_config.trackConfig.track.startLine.latitude == 0):
             track = self._track_manager.find_track_by_short_id(rcp_config.trackConfig.track.trackId)
 
             if track is None:
