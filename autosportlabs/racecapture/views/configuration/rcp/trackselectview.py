@@ -39,14 +39,12 @@ class TrackSelectView(StackLayout):
     Builder.load_string(TRACK_SELECT_VIEW)
 
     def __init__(self, track_manager, **kwargs):
-        Logger.info("RaceSetupView: __init__")
         super(TrackSelectView, self).__init__(**kwargs)
         self._track_manager = track_manager
         self.selected_track = None
 
         self.ids.track_browser.multi_select = False
         self.ids.track_browser.set_trackmanager(self._track_manager)
-        Logger.info("RaceSetupView: __init__ done")
         self.ids.track_browser.init_view()
         self.ids.track_browser.bind(on_track_selected=self.on_track_selected)
 

@@ -624,7 +624,6 @@ class RcpApi:
 
     def get_status(self, success_cb=None, fail_cb=None):
         if success_cb is not None:
-            Logger.info("RCPAPI: getting status with CB")
             self.executeSingle(RcpCmd('status', self.getStatus), success_cb, fail_cb)
         else:
             self.sendGet('getStatus', None)

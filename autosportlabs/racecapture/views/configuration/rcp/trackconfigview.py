@@ -29,7 +29,7 @@ from autosportlabs.racecapture.views.util.alertview import editor_popup
 
 TRACK_CONFIG_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/trackconfigview.kv'
 
-TEMP_TRACK_CONFIG_VIEW = """
+SIMPLE_TRACK_CONFIG_VIEW = """
 <TempTrackConfigView>:
     GridLayout:
         spacing: [0, dp(20)]
@@ -124,7 +124,6 @@ class SectorPointView(BoxLayout):
         self.ids.lon.text = str(self.point.longitude)
         
     def set_point(self, point):
-        Logger.info("SectorPointView: set_point: {}".format(point))
         self.point = point
         self._refresh_point_view()
             
@@ -478,18 +477,17 @@ class TrackConfigView(BaseConfigView):
             self.dispatch('on_modified')
 
 
-class TempTrackConfigView(BaseConfigView):
+class SimpleTrackConfigView(BaseConfigView):
 
-    Builder.load_string(TEMP_TRACK_CONFIG_VIEW)
+    Builder.load_string(SIMPLE_TRACK_CONFIG_VIEW)
 
-    def __init__(self, rc_api, databus, settings, track_manager, status_pump, **kwargs):
-        super(TempTrackConfigView, self).__init__(**kwargs)
+    def __init__(self, rc_api, databus, settings, track_manager, **kwargs):
+        super(SimpleTrackConfigView, self).__init__(**kwargs)
 
         self._databus = databus
         self._rc_api = rc_api
         self._settings = settings
         self._track_manager = track_manager
-        self._status_pump = status_pump
         self._track_config = None
 
         self.register_event_type('on_config_updated')

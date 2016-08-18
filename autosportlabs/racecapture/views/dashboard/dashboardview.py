@@ -78,18 +78,6 @@ DASHBOARD_VIEW_KV = """
                 on_press: root.on_preferences()
 """
 
-TRACK_SELECT_BUTTON_VIEW = """
-<TrackSelectButton>
-    size_hint: [1,1]
-    Button:
-        text: 'Change track'
-        on_press: root.select_track()
-"""
-
-
-class TrackSelectButton(StackLayout):
-    pass
-
 
 class DashboardView(Screen):
     """
@@ -189,6 +177,12 @@ class DashboardView(Screen):
         Clock.schedule_once(lambda dt: self._race_setup())
 
     def _race_setup(self):
+
+        """
+        Beginnings of a 'race setup' screen that checks everything is working and set correctly. Currently
+        just checks that a track map is detected/set.
+        :return:
+        """
         if self._rc_api.connected:
             if not self._selected_track:
 
@@ -209,12 +203,6 @@ class DashboardView(Screen):
                             Logger.error("DashboardView: _race_setup(), could not get track config")
 
                         def track_success(track_config):
-                            # {"trackCfg":{"rad":0.0001,"autoDetect":1,"track":
-                            # {"id":0,"type":0,"sf":[0.0,0.0],"sec":[[0.0,0.0],
-                            # [0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],
-                            # [0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],
-                            # [0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],[0.0,0.0],
-                            # [0.0,0.0],[0.0,0.0],[0.0,0.0]]}}}
                             self._track_config = TrackConfig()
 
                             self._track_config.fromJson(track_config['trackCfg'])

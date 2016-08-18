@@ -465,7 +465,6 @@ class RaceCaptureApp(App):
         if self._telemetry_connection.data_connected:
             self._telemetry_connection.data_connected = False
 
-        self._track_auto_set_run = False
 
     def open_settings(self, *largs):
         self.switchMainView('preferences')
