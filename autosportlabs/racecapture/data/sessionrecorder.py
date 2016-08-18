@@ -72,8 +72,8 @@ class SessionRecorder(object):
         """
         Logger.info("SessionRecorder: starting new session")
 
-        self.recording = True
         self._current_session_id = self._datastore.init_session(self._create_session_name(), self._channels)
+        self.recording = True
 
     def stop(self):
         """
@@ -125,8 +125,7 @@ class SessionRecorder(object):
         self._check_should_record()
 
     def _save_sample(self, sample):
-        if not self._current_session_id:
-            Logger.warn("SessionRecorder: Cannot save sample: session_id is None")
+        if not self.recording:
             return
 
         # Merging previous sample with new data to desparsify the data
