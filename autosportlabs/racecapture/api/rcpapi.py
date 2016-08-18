@@ -792,7 +792,7 @@ class RcpApi:
                         comms.device = device
                         comms.open()
                         self.sendGetVersion()
-                        version_result_event.wait(1)
+                        version_result_event.wait(2)
                         version_result_event.clear()
                         if version_result.version_json != None:
                             testVer.fromJson(version_result.version_json.get('ver', None))
@@ -834,4 +834,6 @@ class RcpApi:
                 comms.device = None
                 sleep(AUTODETECT_COOLOFF_TIME)
 
+        safe_thread_exit()
         Logger.debug('RCPAPI: auto_detect_worker exiting')
+
