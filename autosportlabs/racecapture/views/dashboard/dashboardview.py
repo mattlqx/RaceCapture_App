@@ -211,34 +211,8 @@ class DashboardView(Screen):
                             # Only clear way to know if the track in the track config is a real track or not is by
                             # checking start/finish point. If both are 0, not a track. Can't use track id because a
                             # track id of 0 can be a user defined track
-                            if self._track_config.track.startLine.latitude == 0 and \
-                               self._track_config.track.startLine.longitude == 0:
-                                # No track set
-                                Logger.debug("DashboardView: no track set and no track db, setting track if available")
-                                # No track detected, set one
-                                last_track_timestamp = int(self._settings.userPrefs.get_last_selected_track_timestamp())
-
-                                now = int(time.time())
-                                one_day = 60*60*24
-
-                                Logger.debug("DashboardView: last_track_timestamp: {}, now: {}, one_day: {}".format(
-                                    last_track_timestamp, now, one_day))
-
-                                if last_track_timestamp != 0 and (now - last_track_timestamp) <= one_day:
-                                    # Set the track!
-                                    last_track_id = self._settings.userPrefs.get_last_selected_track_id()
-                                    Logger.debug("DashboardView: last active track: {}".format(last_track_id))
-                                    if last_track_id != 0:
-                                        track = self._track_manager.get_track_by_id(last_track_id)
-                                        self._selected_track = track
-
-                                        if track:
-                                            Logger.debug("DashboardView: setting active track: {}".format(last_track_id))
-                                            self._set_rc_track(track, self._track_config)
-                                        else:
-                                            Logger.error("DashboardView: Could not find track id: {} in track db"
-                                                         .format(last_track_id))
-                                else:
+                            if self._track_config.track.startLine.latitude != 0 and \
+                               self._track_config.track.startLine.longitude != 0:
                                     # Prompt for track!
                                     # Scheduling once because this callback is not in the UI thread and if we update
                                     # the UI now we'll crash >:\
@@ -246,7 +220,7 @@ class DashboardView(Screen):
 
                         self._rc_api.getTrackCfg(track_success, track_fail)
 
-                self._rc_api.get_capabilities(capabilities_success, capabilities_fail)
+                Clock.schedule_once(lambda dt: self._rc_api.get_capabilities(capabilities_success, capabilities_fail))
             else:
                 self._set_rc_track(self._selected_track)
 
