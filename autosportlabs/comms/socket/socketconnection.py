@@ -23,7 +23,7 @@ import socket
 import json
 
 PORT = 7223
-READ_TIMEOUT = 2
+READ_TIMEOUT = 1
 SCAN_TIMEOUT = 3
 
 class InvalidAddressException(Exception):
