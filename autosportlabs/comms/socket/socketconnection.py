@@ -23,8 +23,13 @@ import socket
 import json
 
 PORT = 7223
-READ_TIMEOUT = 1
+READ_TIMEOUT = 2
 SCAN_TIMEOUT = 3
+
+class InvalidAddressException(Exception):
+
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
 
 
 class SocketConnection(object):
@@ -74,6 +79,13 @@ class SocketConnection(object):
         :param address: IP address to connect to
         :return: None
         """
+        # Check if we've been given a valid IP
+
+        try:
+            socket.inet_aton(address)
+        except socket.error:
+            raise InvalidAddressException("{} is not a valid IP address".format(address))
+
         # Connect to ip address here
         rc_address = (address, 7223)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

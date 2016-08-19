@@ -34,7 +34,7 @@ class SocketComm(object):
     Responsible for communicating with a socket connection to a RC device
      Starts up threads for reading/writing data and pushes/reads data to queues
     """
-    CONNECT_TIMEOUT = 1.0
+    CONNECT_TIMEOUT = 2.0
     DEFAULT_TIMEOUT = 1.0
     QUEUE_FULL_TIMEOUT = 1.0
     TX_QUEUE_SIZE = 5
