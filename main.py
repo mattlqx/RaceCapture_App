@@ -54,6 +54,7 @@ if __name__ == '__main__':
     from autosportlabs.help.helpmanager import HelpInfo
     from autosportlabs.racecapture.datastore import DataStore
     from autosportlabs.racecapture.data.sessionrecorder import SessionRecorder
+    from autosportlabs.uix.toast.kivytoast import toast
     from toolbarview import ToolbarView
     if not is_mobile_platform():
         kivy.config.Config.set ('input', 'mouse', 'mouse,multitouch_on_demand')
@@ -149,6 +150,7 @@ class RaceCaptureApp(App):
         self.settings.runtimeChannels.data_bus = self._databus
         self._datastore = DataStore(databus=self._databus)
         self._session_recorder = SessionRecorder(self._datastore, self._databus, self._rc_api, self.trackManager)
+        self._session_recorder.bind(on_recording=self._on_session_recording)
 
 
         HelpInfo.settings = self.settings
@@ -534,6 +536,9 @@ class RaceCaptureApp(App):
         self._status_pump.stop()
         self._rc_api.shutdown_api()
         self.init_rc_comms()
+
+    def _on_session_recording(self, instance, is_recording):
+        toast('Session recording started' if is_recording else 'Session recording stopped', length_long=True)
 
 if __name__ == '__main__':
 
