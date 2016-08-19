@@ -1,5 +1,6 @@
 import os
 import kivy
+import time
 kivy.require('1.9.1')
 from kivy.uix.carousel import Carousel
 from kivy.uix.settings import SettingsWithNoMenu
@@ -11,10 +12,17 @@ from kivy.uix.modalview import ModalView
 from kivy.uix.screenmanager import Screen
 from utils import kvFindClass
 from kivy.uix.anchorlayout import AnchorLayout
+from kivy.uix.stacklayout import StackLayout
+from kivy.uix.button import Button
 from autosportlabs.racecapture.views.dashboard.widgets.digitalgauge import DigitalGauge
 from autosportlabs.racecapture.views.dashboard.widgets.stopwatch import PitstopTimerView
 from autosportlabs.racecapture.settings.systemsettings import SettingsListener
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
+from autosportlabs.racecapture.views.configuration.rcp.trackselectview import TrackSelectView
+from autosportlabs.racecapture.views.util.alertview import editor_popup
+from autosportlabs.racecapture.config.rcpconfig import Track
+from autosportlabs.racecapture.config.rcpconfig import TrackConfig
+from autosportlabs.racecapture.config.rcpconfig import Capabilities
 
 # Dashboard screens
 from autosportlabs.racecapture.views.dashboard.gaugeview import GaugeView
@@ -80,16 +88,22 @@ class DashboardView(Screen):
     _POPUP_DISMISS_TIMEOUT_LONG = 60.0
     Builder.load_string(DASHBOARD_VIEW_KV)
 
-    def __init__(self, **kwargs):
+    def __init__(self, track_manager, rc_api, rc_config, **kwargs):
         self._initialized = False
         self._view_builders = OrderedDict()
         super(DashboardView, self).__init__(**kwargs)
         self.register_event_type('on_tracks_updated')
         self._databus = kwargs.get('dataBus')
         self._settings = kwargs.get('settings')
+        self._track_manager = track_manager
+        self._rc_api = rc_api
+        self._rc_config = rc_config
         self._alert_widgets = {}
         self._dismiss_popup_trigger = Clock.create_trigger(self._dismiss_popup, DashboardView._POPUP_DISMISS_TIMEOUT_LONG)
         self._popup = None
+        self._race_setup_view = None
+        self._selected_track = None
+        self._track_config = None
 
     def on_tracks_updated(self, trackmanager):
         pass
@@ -152,7 +166,88 @@ class DashboardView(Screen):
 
         self._notify_preference_listeners()
         self._show_last_view()
+
+        if self._rc_api.connected:
+            self._race_setup()
+
+        self._rc_api.add_connect_listener(self._on_rc_connect)
         self._initialized = True
+
+    def _on_rc_connect(self, *args):
+        Clock.schedule_once(lambda dt: self._race_setup())
+
+    def _race_setup(self):
+
+        """
+        Beginnings of a 'race setup' screen that checks everything is working and set correctly. Currently
+        just checks that a track map is detected/set.
+        :return:
+        """
+        if self._rc_api.connected:
+            if not self._selected_track:
+
+                def capabilities_fail():
+                    Logger.error("DashboardView: _race_setup(), could not get capabilities to determine if device has "
+                                 "a tracks db")
+
+                def capabilities_success(capabilities_dict):
+                    capabilities = Capabilities()
+                    capabilities.from_json_dict(capabilities_dict['capabilities'])
+
+                    # For devices that have no device storage, attempt to set a track
+                    if capabilities.storage.tracks == 0:
+
+                        # Now figure out if the device already has a track set, if not, set one. Enough callbacks yet?!
+
+                        def track_fail():
+                            Logger.error("DashboardView: _race_setup(), could not get track config")
+
+                        def track_success(track_config):
+                            self._track_config = TrackConfig()
+
+                            self._track_config.fromJson(track_config['trackCfg'])
+                            Logger.debug("DashboardView: _race_setup(), got track config: {}".format(self._track_config))
+
+                            # Only clear way to know if the track in the track config is a real track or not is by
+                            # checking start/finish point. If both are 0, not a track. Can't use track id because a
+                            # track id of 0 can be a user defined track
+                            if self._track_config.track.startLine.latitude != 0 and \
+                               self._track_config.track.startLine.longitude != 0:
+                                    # Prompt for track!
+                                    # Scheduling once because this callback is not in the UI thread and if we update
+                                    # the UI now we'll crash >:\
+                                    Clock.schedule_once(lambda dt: self._load_race_setup_view())
+
+                        self._rc_api.getTrackCfg(track_success, track_fail)
+
+                Clock.schedule_once(lambda dt: self._rc_api.get_capabilities(capabilities_success, capabilities_fail))
+            else:
+                self._set_rc_track(self._selected_track)
+
+    def _load_race_setup_view(self):
+        content = TrackSelectView(self._track_manager)
+        self._race_setup_view = content
+        self._popup = editor_popup("Select your track", content, self._on_race_setup_close)
+        self._popup.open()
+
+    def _on_race_setup_close(self, instance, answer):
+        if answer:
+            self._selected_track = self._race_setup_view.selected_track
+            Logger.debug("DashboardView: setting track: {}".format(self._selected_track))
+            self._set_rc_track(self._selected_track, self._track_config)
+
+        self._popup.dismiss()
+
+    def _set_rc_track(self, track, track_config):
+        new_track = Track.fromTrackMap(track)
+        new_track.trackId = track.short_id
+        track_config.track = new_track
+        track_config.autoDetect = False
+        self._rc_api.setTrackCfg(track_config.toJson())
+        self._rc_api.sendFlashConfig()
+
+        now = int(time.time())
+        self._settings.userPrefs.set_last_selected_track(track.track_id, now)
 
     def on_enter(self):
         Window.bind(mouse_pos=self.on_mouse_pos)

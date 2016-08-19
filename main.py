@@ -13,6 +13,7 @@ if __name__ == '__main__':
     import kivy
     import os
     import traceback
+    import time
     from threading import Thread
     from kivy.properties import AliasProperty
     from functools import partial
@@ -47,6 +48,8 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.menu.homepageview import HomePageView
     from autosportlabs.racecapture.settings.systemsettings import SystemSettings
     from autosportlabs.racecapture.settings.prefs import Range
+    from autosportlabs.racecapture.config.rcpconfig import Track
+    from autosportlabs.racecapture.config.rcpconfig import Capabilities
     from autosportlabs.telemetry.telemetryconnection import TelemetryManager
     from autosportlabs.help.helpmanager import HelpInfo
     from autosportlabs.racecapture.datastore import DataStore
@@ -250,6 +253,7 @@ class RaceCaptureApp(App):
             Clock.schedule_once(lambda dt, inner_listener=listener: inner_listener.dispatch('on_config_updated', self.rc_config))
         self.rc_config.stale = False
 
+
     def on_read_config_error(self, detail):
         alertPopup('Error Reading', 'Could not read configuration:\n\n' + str(detail))
         Logger.error("Main: {}".format(str(detail)))
@@ -308,7 +312,8 @@ class RaceCaptureApp(App):
                                 databus=self._databus,
                                 settings=self.settings,
                                 base_dir=self.base_dir,
-                                track_manager=self.trackManager)
+                                track_manager=self.trackManager,
+                                 status_pump=self._status_pump)
         config_view.bind(on_read_config=self.on_read_config)
         config_view.bind(on_write_config=self.on_write_config)
         self.config_listeners.append(config_view)
@@ -321,7 +326,7 @@ class RaceCaptureApp(App):
         return status_view
 
     def build_dash_view(self):
-        dash_view = DashboardView(name='dash', dataBus=self._databus, settings=self.settings)
+        dash_view = DashboardView(self.trackManager, self._rc_api, self.rc_config, name='dash', dataBus=self._databus, settings=self.settings)
         self.tracks_listeners.append(dash_view)
         return dash_view
 
@@ -461,6 +466,7 @@ class RaceCaptureApp(App):
     def _on_rcp_disconnect(self):
         if self._telemetry_connection.data_connected:
             self._telemetry_connection.data_connected = False
+
 
     def open_settings(self, *largs):
         self.switchMainView('preferences')

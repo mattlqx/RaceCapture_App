@@ -78,6 +78,7 @@ class RcpApi:
         self._settings = settings
         self._disconnect_listeners = []
         self._connect_listeners = []
+        self.connected = False
 
         if on_disconnect:
             self.add_disconnect_listener(on_disconnect)
@@ -165,6 +166,7 @@ class RcpApi:
         self.level_2_retries = DEFAULT_LEVEL2_RETRIES
         self.msg_rx_timeout = DEFAULT_MSG_RX_TIMEOUT
         if self.detect_win_callback: self.detect_win_callback(version_info)
+        self.connected = True
         self._notify_connect_listeners()
 
     def run_auto_detect(self):
@@ -232,6 +234,7 @@ class RcpApi:
                 if error_count > 5 and not self._auto_detect_event.is_set():
                     Logger.warn("RCPAPI: Too many Rx exceptions; re-opening connection")
                     self.recover_connection()
+                    self.connected = False
                     sleep(5)
                 else:
                     sleep(0.25)
@@ -343,10 +346,12 @@ class RcpApi:
 
                 except CommsErrorException:
                     self.recover_connection()
+                    self.connected = False
                 except Exception as detail:
                     Logger.error('RCPAPI: Command sequence exception: ' + str(detail))
                     Logger.error(traceback.format_exc())
                     failCallback(detail)
+                    self.connected = False
                     self.recover_connection()
 
                 Logger.debug('RCPAPI: Execute Sequence complete')
@@ -374,7 +379,9 @@ class RcpApi:
             else:
                 Logger.debug('RCPAPI: Tx: ' + cmdStr)
             comms.write_message(cmdStr)
-        except Exception:
+        except Exception as e:
+            Logger.error('RCPAPI: sendCommand exception ' + str(e))
+            Logger.error(traceback.format_exc())
             self.recover_connection()
         finally:
             self.sendCommandLock.release()
@@ -570,8 +577,11 @@ class RcpApi:
     def setPwmCfg(self, pwmCfg, channelId):
         self.sendSet('setPwmCfg', pwmCfg, channelId)
 
-    def getTrackCfg(self):
-        self.sendGet('getTrackCfg', None)
+    def getTrackCfg(self, success_cb=None, fail_cb=None):
+        if success_cb is None:
+            self.sendGet('getTrackCfg', None)
+        else:
+            self.executeSingle(RcpCmd('trackCfg', self.getTrackCfg), success_cb, fail_cb)
 
     def setTrackCfg(self, trackCfg):
         self.sendSet('setTrackCfg', trackCfg)
@@ -612,8 +622,11 @@ class RcpApi:
     def setScriptPage(self, scriptPage, page, mode):
         self.sendCommand({'setScriptCfg': {'data':scriptPage, 'page':page, 'mode':mode}})
 
-    def get_status(self):
-        self.sendGet('getStatus', None)
+    def get_status(self, success_cb=None, fail_cb=None):
+        if success_cb is not None:
+            self.executeSingle(RcpCmd('status', self.getStatus), success_cb, fail_cb)
+        else:
+            self.sendGet('getStatus', None)
 
     def sequenceWriteScript(self, scriptCfg, cmdSequence):
         page = 0
@@ -690,6 +703,9 @@ class RcpApi:
     def getCapabilities(self):
         self.sendGet('getCapabilities')
 
+    def getStatus(self):
+        self.sendGet('getStatus')
+
     def sendCalibrateImu(self):
         self.sendCommand({"calImu":1})
 
@@ -702,6 +718,11 @@ class RcpApi:
     def get_meta(self):
         Logger.debug("RCPAPI: sending meta")
         self.sendCommand({'getMeta':None})
+
+    def set_active_track(self, track):
+        Logger.debug("RCPAPI: setting active track: {}".format(track))
+        track_json = track.toJson()
+        self.sendCommand({'setActiveTrack': {'track': track_json}})
 
     def sample(self, include_meta=False):
         if include_meta:

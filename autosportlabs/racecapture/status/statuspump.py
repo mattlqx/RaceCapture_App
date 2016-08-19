@@ -12,7 +12,7 @@ from autosportlabs.util.threadutil import safe_thread_exit
 class StatusPump(object):
 
     # how often we query for status
-    STATUS_QUERY_INTERVAL = 2.0
+    STATUS_QUERY_INTERVAL = 1.0
 
     # Connection to the RC API
     _rc_api = None

@@ -110,7 +110,8 @@ class StatusView(Screen):
             'status': [
                 'Searching',
                 'Fixed start/finish',
-                'Detected'
+                'Detected',
+                'Manually Set'
             ]
         },
         'telemetry': {

@@ -174,7 +174,7 @@ class ToolbarView(BoxLayout):
             detection_status = track_status['status']
             if detection_status == 0:
                 track_status_msg = 'Searching for Track'
-            elif detection_status == 1:
+            elif detection_status == 1 and status_data['status']['track']['trackId'] == 0:
                 track_status_msg = 'User defined Track'
             else:
                 if track_status['trackId'] != 0:
