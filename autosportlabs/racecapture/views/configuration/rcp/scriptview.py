@@ -41,14 +41,22 @@ class LuaScriptingView(BaseConfigView):
     '''
     Builder.load_file(SCRIPT_VIEW_KV)
     
-    def __init__(self, **kwargs):
+    def __init__(self, capabilities, **kwargs):
         super(LuaScriptingView, self).__init__(**kwargs)
         self.script_cfg = None
         self.register_event_type('on_config_updated')
         self._logwindow_max_length = LOGWINDOW_MAX_LENGTH_MOBILE\
             if is_mobile_platform() else LOGWINDOW_MAX_LENGTH_DESKTOP
         self.rc_api.addListener('logfile', lambda value: Clock.schedule_once(lambda dt: self.on_logfile(value)))
-        
+
+        if not capabilities.has_script:
+            self._hide_lua()
+
+    def _hide_lua(self):
+        self.ids.buttons.remove_widget(self.ids.run_script)
+        self.ids.lua_log_wrapper.remove_widget(self.ids.lua_script_sv)
+        self.ids.splitter.strip_size = 0
+
     def on_config_updated(self, rcp_cfg):
         '''
         Callback when the configuration is updates
