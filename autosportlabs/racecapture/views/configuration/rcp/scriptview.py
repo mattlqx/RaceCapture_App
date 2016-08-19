@@ -48,6 +48,7 @@ class LuaScriptingView(BaseConfigView):
         self._logwindow_max_length = LOGWINDOW_MAX_LENGTH_MOBILE\
             if is_mobile_platform() else LOGWINDOW_MAX_LENGTH_DESKTOP
         self.rc_api.addListener('logfile', lambda value: Clock.schedule_once(lambda dt: self.on_logfile(value)))
+        self._capabilities = capabilities
 
         if not capabilities.has_script:
             self._hide_lua()
@@ -64,8 +65,10 @@ class LuaScriptingView(BaseConfigView):
         :type RcpConfig
         '''
         cfg = rcp_cfg.scriptConfig
-        self.ids.lua_script.text = cfg.script
-        self.script_cfg = cfg
+
+        if self._capabilities.has_script:
+            self.ids.lua_script.text = cfg.script
+            self.script_cfg = cfg
    
     def on_script_changed(self, instance, value):
         '''
