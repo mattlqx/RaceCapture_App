@@ -211,8 +211,8 @@ class DashboardView(Screen):
                             # Only clear way to know if the track in the track config is a real track or not is by
                             # checking start/finish point. If both are 0, not a track. Can't use track id because a
                             # track id of 0 can be a user defined track
-                            if self._track_config.track.startLine.latitude != 0 and \
-                               self._track_config.track.startLine.longitude != 0:
+                            if self._track_config.track.startLine.latitude == 0 and \
+                               self._track_config.track.startLine.longitude == 0:
                                     # Prompt for track!
                                     # Scheduling once because this callback is not in the UI thread and if we update
                                     # the UI now we'll crash >:\
