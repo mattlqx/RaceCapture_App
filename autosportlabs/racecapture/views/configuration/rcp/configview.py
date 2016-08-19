@@ -163,8 +163,8 @@ class ConfigView(Screen):
             label.color_selected = ColorScheme.get_dark_primary()
             return tree.add_node(label, n)
 
-        def create_scripting_view():
-            script_view = LuaScriptingView(rc_api=self.rc_api)
+        def create_scripting_view(capabilities):
+            script_view = LuaScriptingView(capabilities, rc_api=self.rc_api)
             self.script_view = script_view
             return script_view
 
@@ -201,7 +201,10 @@ class ConfigView(Screen):
         attach_node('Telemetry', None, lambda: TelemetryConfigView(self.rc_config.capabilities))
 
         if self.rc_config.capabilities.has_script:
-            attach_node('Scripting', None, lambda: create_scripting_view())
+            node_name = 'Scripting'
+        else:
+            node_name = 'Logs'
+        attach_node(node_name, None, lambda: create_scripting_view(self.rc_config.capabilities))
 
         if FIRMWARE_UPDATABLE:
             attach_node('Firmware', None, lambda: FirmwareUpdateView(rc_api=self.rc_api, settings=self._settings))
