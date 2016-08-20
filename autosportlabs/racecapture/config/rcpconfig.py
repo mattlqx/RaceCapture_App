@@ -1163,7 +1163,7 @@ class Capabilities(object):
         if json_dict:
             Logger.debug("RCPConfig: Capabilities: {}".format(json_dict))
 
-            self.flags = json_dict.get('flags', False)
+            self.flags = json_dict.get('flags', [])
 
             channels = json_dict.get('channels')
             if channels:
