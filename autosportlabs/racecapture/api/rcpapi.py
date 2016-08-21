@@ -12,7 +12,6 @@ from functools import partial
 from kivy.clock import Clock
 from kivy.logger import Logger
 from traceback import print_stack
-from twisted.internet.unix import ConnectedDatagramPort
 
 TRACK_ADD_MODE_IN_PROGRESS = 1
 TRACK_ADD_MODE_COMPLETE = 2
