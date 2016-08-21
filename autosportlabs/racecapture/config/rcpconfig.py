@@ -1101,10 +1101,10 @@ class StorageCapabilities(object):
 class LinksCapabilities(object):
 
     def __init__(self):
-        self.bluetooth = True
-        self.cellular = True
-        self.wifi = True
-        self.usb = True
+        self.bluetooth = False
+        self.cellular = False
+        self.wifi = False
+        self.usb = False
 
     def from_flags(self, flags):
         self.bluetooth = 'bt' in flags
@@ -1112,10 +1112,11 @@ class LinksCapabilities(object):
         self.usb = 'usb' in flags
         self.wifi = 'wifi' in flags
 
-
 class Capabilities(object):
 
     MIN_BT_CONFIG_VERSION = "2.9.0"
+    MIN_FLAGS_VERSION = "2.10.0"
+    LEGACY_FLAGS = ['bt', 'cell', 'usb']
 
     def __init__(self):
         self.channels = ChannelCapabilities()
@@ -1184,16 +1185,18 @@ class Capabilities(object):
             if storage:
                 self.storage.from_json_dict(storage)
 
-            self.links.from_flags(self.flags)
-
         # For select features/capabilities we need to check RCP version because
         # the capability wasn't added to the API. Not ideal, but let's at least
         # insulate other code from inspecting the version string
         if version_config:
-            min_bt_config_version = StrictVersion(self.MIN_BT_CONFIG_VERSION)
-
             rcp_version = StrictVersion(version_config.version_string())
 
+            # Handle flags. Encapsulate legacy firmware versions that don't support flags
+            min_flags_version = StrictVersion(Capabilities.MIN_FLAGS_VERSION)
+            self.links.from_flags(self.flags if rcp_version >= min_flags_version else Capabilities.LEGACY_FLAGS)
+
+            # Handle BT version
+            min_bt_config_version = StrictVersion(Capabilities.MIN_BT_CONFIG_VERSION)
             self.bluetooth_config = rcp_version >= min_bt_config_version
 
     def to_json_dict(self):

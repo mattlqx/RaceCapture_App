@@ -12,6 +12,7 @@ from functools import partial
 from kivy.clock import Clock
 from kivy.logger import Logger
 from traceback import print_stack
+from twisted.internet.unix import ConnectedDatagramPort
 
 TRACK_ADD_MODE_IN_PROGRESS = 1
 TRACK_ADD_MODE_COMPLETE = 2
@@ -78,13 +79,21 @@ class RcpApi:
         self._settings = settings
         self._disconnect_listeners = []
         self._connect_listeners = []
-        self.connected = False
+        self.connected_version = None
 
         if on_disconnect:
             self.add_disconnect_listener(on_disconnect)
 
         if on_connect:
             self.add_connect_listener(on_connect)
+
+    @property
+    def connected(self):
+        '''
+        Returns True if we are currently connected to a device
+        :returns True if connected
+        '''
+        return self.connected_version is not None
 
     def add_disconnect_listener(self, func):
         self._disconnect_listeners.append(func)
@@ -166,7 +175,7 @@ class RcpApi:
         self.level_2_retries = DEFAULT_LEVEL2_RETRIES
         self.msg_rx_timeout = DEFAULT_MSG_RX_TIMEOUT
         if self.detect_win_callback: self.detect_win_callback(version_info)
-        self.connected = True
+        self.connected_version = version_info
         self._notify_connect_listeners()
 
     def run_auto_detect(self):
@@ -234,7 +243,7 @@ class RcpApi:
                 if error_count > 5 and not self._auto_detect_event.is_set():
                     Logger.warn("RCPAPI: Too many Rx exceptions; re-opening connection")
                     self.recover_connection()
-                    self.connected = False
+                    self.connected_version = None
                     sleep(5)
                 else:
                     sleep(0.25)
@@ -346,12 +355,12 @@ class RcpApi:
 
                 except CommsErrorException:
                     self.recover_connection()
-                    self.connected = False
+                    self.connected_version = None
                 except Exception as detail:
                     Logger.error('RCPAPI: Command sequence exception: ' + str(detail))
                     Logger.error(traceback.format_exc())
                     failCallback(detail)
-                    self.connected = False
+                    self.connected_version = None
                     self.recover_connection()
 
                 Logger.debug('RCPAPI: Execute Sequence complete')
@@ -413,7 +422,7 @@ class RcpApi:
             capabilities_dict = capabilities_dict.get('capabilities')
 
             capabilities = Capabilities()
-            capabilities.from_json_dict(capabilities_dict)
+            capabilities.from_json_dict(capabilities_dict, self.connected_version)
 
             cmdSequence = [RcpCmd('ver', self.sendGetVersion),
                            RcpCmd('capabilities', self.getCapabilities),
