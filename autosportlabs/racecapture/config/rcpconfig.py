@@ -1100,8 +1100,8 @@ class LinksCapabilities(object):
         self.usb = True
 
     def from_flags(self, flags):
-        self.bluetooth = 'bluetooth' in flags
-        self.cellular = 'cellular' in flags
+        self.bluetooth = 'bt' in flags
+        self.cellular = 'cell' in flags
         self.usb = 'usb' in flags
         self.wifi = 'wifi' in flags
 
