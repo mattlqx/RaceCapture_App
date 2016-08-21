@@ -130,10 +130,10 @@ class BaseMultiChannelConfigView(BaseConfigView):
         super(BaseMultiChannelConfigView, self).on_modified(self, instance, channel_config)
 
     def setAccordionItemTitle(self, accordion, channel_configs, config):
-            i = channel_configs.index(config)
-            accordion_children = accordion.children
-            accordion_item = accordion_children[len(accordion_children) - i - 1]
-            accordion_item.title = self.createTitleForChannel(config)
+        i = channel_configs.index(config)
+        accordion_children = accordion.children
+        accordion_item = accordion_children[len(accordion_children) - i - 1]
+        accordion_item.title = self.createTitleForChannel(config)
         
     def createTitleForChannel(self, channel_config):
         try:

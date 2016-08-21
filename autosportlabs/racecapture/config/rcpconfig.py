@@ -176,9 +176,16 @@ class AnalogConfig(object):
         return {'analogCfg':analogCfgJson}
 
     def build_channels(self):
-        self.channels = []
-        for i in range (self.channelCount):
-            self.channels.append(AnalogChannel())
+        initialized_channel_count = len(self.channels)
+        required_channel_count = self.channelCount
+
+        if initialized_channel_count == required_channel_count:
+            return
+        else:
+            # Probably got a new capabilities, make a new channels array
+            self.channels = []
+            for i in range(required_channel_count):
+                self.channels.append(AnalogChannel())
 
     @property
     def stale(self):
