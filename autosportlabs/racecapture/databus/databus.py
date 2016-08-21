@@ -241,7 +241,7 @@ class DataBusPump(object):
 
     def _start_sample_streaming(self):
         # First need to figure out if the connected RC supports the streaming api
-        Logger.info("DataBusPump: Checking for streaming API support")
+        Logger.debug("DataBusPump: Checking for streaming API support")
 
         def handle_capabilities(capabilities_dict):
             self.rc_capabilities = Capabilities()
@@ -249,11 +249,11 @@ class DataBusPump(object):
 
             if self.rc_capabilities.has_streaming:
                 # Send streaming command
-                Logger.info("DataBusPump: device supports streaming")
+                Logger.debug("DataBusPump: device supports streaming")
                 stream_hz = int(1 / SAMPLE_POLL_INTERVAL_TIMEOUT)
                 self._rc_api.start_telemetry(stream_hz)
             else:
-                Logger.info("DataBusPump: connected device does not support streaming api")
+                Logger.debug("DataBusPump: connected device does not support streaming api")
                 self._start_polling()
 
         def handle_capabilities_fail():
