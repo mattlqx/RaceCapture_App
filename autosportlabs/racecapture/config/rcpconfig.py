@@ -905,7 +905,6 @@ class TelemetryConfig(object):
 
 class WifiConfig(object):
 
-
     def __init__(self):
         self.active = False
 
@@ -1354,6 +1353,7 @@ class RcpConfig(object):
                              'canCfg':self.canConfig.toJson().get('canCfg'),
                              'obd2Cfg':self.obd2Config.toJson().get('obd2Cfg'),
                              'connCfg':self.connectivityConfig.toJson().get('connCfg'),
+                             'wifiCfg': self.wifi_config.to_json(),
                              'trackCfg':self.trackConfig.toJson().get('trackCfg'),
                              'scriptCfg':self.scriptConfig.toJson().get('scriptCfg'),
                              'trackDb': self.trackDb.toJson().get('trackDb')
