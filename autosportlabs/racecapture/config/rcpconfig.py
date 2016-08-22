@@ -1204,7 +1204,7 @@ class Capabilities(object):
             "channels": self.channels.to_json_dict(),
             "db": self.storage.to_json_dict(),
             "sampleRates": self.sample_rates.to_json_dict(),
-            "links": self.links.to_json_dict()
+            "flags": self.flags
         }
 
 
