@@ -76,21 +76,24 @@ class SessionRecorder(EventDispatcher) :
         :type session_name: String
         :return: None
         """
-        Logger.info("SessionRecorder: starting new session")
 
-        self._current_session_id = self._datastore.init_session(self._create_session_name(), self._channels)
-        self.dispatch('on_recording', True)
-        self.recording = True
+        if not self.recording:
+            Logger.info("SessionRecorder: starting new session")
+
+            self._current_session_id = self._datastore.init_session(self._create_session_name(), self._channels)
+            self.dispatch('on_recording', True)
+            self.recording = True
 
     def stop(self):
         """
         Stops recording the current session, does any additional post-processing necessary
         :return: None
         """
-        Logger.info("SessionRecorder: stopping session")
-        self.recording = False
-        self._current_session_id = None
-        self.dispatch('on_recording', False)
+        if self.recording:
+            Logger.info("SessionRecorder: stopping session")
+            self.recording = False
+            self._current_session_id = None
+            self.dispatch('on_recording', False)
 
     @property
     def _should_record(self):
