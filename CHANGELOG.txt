@@ -1,3 +1,13 @@
+==1.7.0==
+* Support for new PnP RaceCapture from Kickstarter
+* Initial support for in-app track detection (user prompting)
+* Automatically record session in-app
+* Added WiFi support for RaceCapture / RaceCapture/Pro connectivity
+* Make default region all when searching for tracks
+* Improved dashboard loading performance
+* Enabled swipe to switch between dashboard screens
+
+
 ==1.6.1==
 * Improve performance of dashboard screen loading
 * Added swiping to screen
