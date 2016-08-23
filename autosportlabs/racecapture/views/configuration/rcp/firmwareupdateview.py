@@ -45,19 +45,6 @@ class FirmwareUpdateView(BaseConfigView):
                       size_hint=(None, None), size=(400, 400))
         popup.open()
 
-    def _prompt_manual_bootloader_mode(self, instance):
-        popup = None
-        def _on_answer(inst, answer):
-            popup.dismiss()
-            if answer == True:
-                self._start_update_fw(instance)
-            else:
-                self._restart_json_serial()
-        popup = confirmPopup('Enable Bootloader Mode',
-                             '1. Disconnect 12v power\n2. Unplug RaceCapture from USB\n' \
-                             '3. Wait 3 seconds\n4. While holding front panel button, re-connect USB',
-                             _on_answer)
-
     def set_firmware_file_path(self, path):
         self._settings.userPrefs.set_pref('preferences', 'firmware_dir', path)
 
