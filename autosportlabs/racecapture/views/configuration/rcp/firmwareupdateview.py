@@ -23,11 +23,8 @@ from threading import Thread
 
 FIRMWARE_UPDATE_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/firmwareupdateview.kv'
 
-if platform == 'win':
-    RESET_DELAY = 5000
-else:
-    RESET_DELAY = 1000
-#TODO: MK1 support
+RESET_DELAY = 1000
+# TODO: MK1 support
 class FirmwareUpdateView(BaseConfigView):
     progress_gauge = ObjectProperty(None)
     _settings = None
@@ -47,7 +44,7 @@ class FirmwareUpdateView(BaseConfigView):
                       content=Label(text='Coming soon!'),
                       size_hint=(None, None), size=(400, 400))
         popup.open()
-        
+
     def _prompt_manual_bootloader_mode(self, instance):
         popup = None
         def _on_answer(inst, answer):
@@ -55,31 +52,28 @@ class FirmwareUpdateView(BaseConfigView):
             if answer == True:
                 self._start_update_fw(instance)
             else:
-                self._restart_json_serial()                
+                self._restart_json_serial()
         popup = confirmPopup('Enable Bootloader Mode',
                              '1. Disconnect 12v power\n2. Unplug RaceCapture from USB\n' \
                              '3. Wait 3 seconds\n4. While holding front panel button, re-connect USB',
                              _on_answer)
-        
+
     def set_firmware_file_path(self, path):
         self._settings.userPrefs.set_pref('preferences', 'firmware_dir', path)
-        
+
     def get_firmware_file_path(self):
         return self._settings.userPrefs.get_pref('preferences', 'firmware_dir')
-        
+
     def _select_file(self):
         def _on_answer(instance):
             popup.dismiss()
-            if platform == 'win':
-                self._prompt_manual_bootloader_mode(instance)
-            else:
-                self._start_update_fw(instance)
+            self._start_update_fw(instance)
 
         def dismiss_popup(self, *args):
             popup.dismiss()
 
-        user_path= self.get_firmware_file_path()
-        content = LoadDialog(ok=_on_answer, 
+        user_path = self.get_firmware_file_path()
+        content = LoadDialog(ok=_on_answer,
                              cancel=dismiss_popup,
                              filters=['*' + '.ihex'],
                              user_path=user_path)
@@ -97,10 +91,9 @@ class FirmwareUpdateView(BaseConfigView):
         # we just need to disable the com port
         self.rc_api.disable_autorecover()
         try:
-            #Windows workaround (because windows sucks at enumerating
-            #USB in a timely fashion)
-            if not platform == 'win':
-                self.rc_api.resetDevice(True, RESET_DELAY)
+            # Windows workaround (because windows sucks at enumerating
+            # USB in a timely fashion)
+            self.rc_api.resetDevice(True, RESET_DELAY)
             self.rc_api.shutdown_comms()
         except:
             pass
@@ -116,23 +109,23 @@ class FirmwareUpdateView(BaseConfigView):
             selection = instance.selection
             filename = selection[0] if len(selection) else None
             if filename:
-                #Even though we stopped the RX thread, this is OK
-                #since it doesn't return a value
-                self.ids.fw_progress.title="Processing"
+                # Even though we stopped the RX thread, this is OK
+                # since it doesn't return a value
+                self.ids.fw_progress.title = "Processing"
 
                 self._teardown_json_serial()
 
-                self.ids.fw_progress.title="Progress"
+                self.ids.fw_progress.title = "Progress"
 
-                #Get our firmware updater class and register the
-                #callback that will update the progress gauge
+                # Get our firmware updater class and register the
+                # callback that will update the progress gauge
                 fu = fw_update.FwUpdater(logger=Logger)
                 fu.register_progress_callback(self._update_progress_gauge)
 
                 retries = 5
                 port = None
                 while retries > 0 and not port:
-                    #Find our bootloader
+                    # Find our bootloader
                     port = fu.scan_for_device()
 
                     if not port:
@@ -143,11 +136,11 @@ class FirmwareUpdateView(BaseConfigView):
                     self.ids.fw_progress.title = ""
                     raise Exception("Unable to locate bootloader")
 
-                #Go on our jolly way
+                # Go on our jolly way
                 fu.update_firmware(filename, port)
                 self.ids.fw_progress.title = "Restarting"
 
-                #Sleep for a few seconds since we need to let USB re-enumerate
+                # Sleep for a few seconds since we need to let USB re-enumerate
                 sleep(3)
             else:
                 alertPopup('Error Loading', 'No firmware file selected')
@@ -159,7 +152,7 @@ class FirmwareUpdateView(BaseConfigView):
         self.ids.fw_progress.title = ""
 
     def update_pre_check(self):
-        
+
         popup = None
         def _on_answer(inst, answer):
             popup.dismiss()
@@ -171,7 +164,7 @@ class FirmwareUpdateView(BaseConfigView):
 
     def _start_update_fw(self, instance):
         self.set_firmware_file_path(instance.path)
-        #The comma is necessary since we need to pass in a sequence of args
+        # The comma is necessary since we need to pass in a sequence of args
         t = Thread(target=self._update_thread, args=(instance,))
         t.daemon = True
         t.start()
