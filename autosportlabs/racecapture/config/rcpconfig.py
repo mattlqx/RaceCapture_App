@@ -996,6 +996,7 @@ class VersionConfig(object):
         self.major = kwargs.get('major', 0)
         self.minor = kwargs.get('minor', 0)
         self.bugfix = kwargs.get('bugfix', 0)
+        self.git_info = kwargs.get('git_info', '')
 
     def __str__(self):
         return '{} {}.{}.{} (s/n# {})'.format(self.name, self.major, self.minor, self.bugfix, self.serial)
@@ -1014,9 +1015,11 @@ class VersionConfig(object):
         self.minor = versionJson.get('minor', self.minor)
         self.bugfix = versionJson.get('bugfix', self.bugfix)
         self.serial = versionJson.get('serial', self.serial)
+        self.git_info = versionJson.get('git_info', self.git_info)
 
     def toJson(self):
-        versionJson = {'name': self.name, 'fname': self.friendlyName, 'major': self.major, 'minor': self.minor, 'bugfix': self.bugfix}
+        versionJson = {'name': self.name, 'fname': self.friendlyName, 'major': self.major, 'minor': self.minor,
+                       'bugfix': self.bugfix, 'git_info': self.git_info}
         return {'ver': versionJson}
 
     def is_compatible_version(self):
