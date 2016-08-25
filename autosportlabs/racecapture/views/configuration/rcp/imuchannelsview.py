@@ -37,10 +37,18 @@ class ImuChannel(BoxLayout):
         super(ImuChannel, self).__init__(**kwargs)
         self.imu_id = kwargs.get('imu_id', None)
         self.register_event_type('on_modified')
+        # State to track if we're in the process of updating the UI values and we should
+        # ignore modified events that are fired by them as we change their values.
+        self._updating = False
     
     def on_modified(self):
         pass
-    
+
+    def notify_modified(self):
+        if not self._updating:
+            self.channelConfig.stale = True
+            self.dispatch('on_modified')
+
     def enable_view(self, enabled):
         disabled = not enabled
         kvFind(self, 'rcid', 'orientation').disabled = disabled
@@ -50,23 +58,20 @@ class ImuChannel(BoxLayout):
     def on_zero_value(self, instance, value):
         if self.channelConfig:
             self.channelConfig.zeroValue = int(value)
-            self.channelConfig.stale = True
-            self.dispatch('on_modified')
-                
+            self.notify_modified()
+
     def on_orientation(self, instance, value):
         if self.channelConfig and value:
             mode = int(instance.getValueFromKey(value))
             if mode:
                 self.channelConfig.mode = mode
-                self.channelConfig.stale = True
-                self.dispatch('on_modified')
-                
+                self.notify_modified()
+
     def on_mapping(self, instance, value):
         if self.channelConfig:
             self.channelConfig.chan = int(instance.getValueFromKey(value))
-            self.channelConfig.stale = True
-            self.dispatch('on_modified')
-                            
+            self.notify_modified()
+
     def on_enabled(self, instance, value):
         self.enable_view(value)
         if self.channelConfig:
@@ -76,10 +81,10 @@ class ImuChannel(BoxLayout):
                 mode = IMU_MODE_DISABLED
             orientation.setFromValue(mode)
             self.channelConfig.mode = mode
-            self.channelConfig.stale = True
-            self.dispatch('on_modified')
-            
+            self.notify_modified()
+
     def on_config_updated(self, channelIndex, channelConfig, channelLabels):
+        self._updating = True
         label = kvFind(self, 'rcid', 'label')
         label.text = channelLabels[channelIndex]
 
@@ -104,7 +109,8 @@ class ImuChannel(BoxLayout):
         zeroValue.text = str(channelConfig.zeroValue)
         self.channelConfig = channelConfig
         self.channelLabels = channelLabels
-        
+        self._updating = False
+
 class ImuChannelsView(BaseConfigView):
     editors = []
     imu_cfg = None
@@ -121,7 +127,10 @@ class ImuChannelsView(BaseConfigView):
         self.ids.sr.bind(on_sample_rate = self.on_sample_rate)
 
         self.rc_config = None
-        
+        # State to track if we're in the process of updating the UI values and we should
+        # ignore modified events that are fired by them as we change their values.
+        self._updating = False
+
     def appendImuChannels(self, container, editors, ids):
         for i in ids:
             editor = ImuChannel(rcid='imu_chan_' + str(i))
@@ -162,10 +171,12 @@ class ImuChannelsView(BaseConfigView):
         if self.imu_cfg:
             for imuChannel in self.imu_cfg.channels:
                 imuChannel.sampleRate = value
-                imuChannel.stale = True
-                self.dispatch('on_modified')
+                if not self._updating:
+                    imuChannel.stale = True
+                    self.dispatch('on_modified')
 
     def _update_view(self, imu_cfg):
+        self._updating = True
         channelCount = imu_cfg.channelCount
 
         common_sample_rate = 0
@@ -177,6 +188,7 @@ class ImuChannelsView(BaseConfigView):
 
         self.ids.sr.setValue(common_sample_rate, self.rc_config.capabilities.sample_rates.sensor)
         self.imu_cfg = imu_cfg
+        self._updating = False
 
     def on_config_updated(self, rc_cfg):
         self.rc_config = rc_cfg
