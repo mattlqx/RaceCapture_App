@@ -119,6 +119,8 @@ class ImuChannelsView(BaseConfigView):
         self.appendImuChannels(imu_container, self.editors, IMU_ACCEL_CHANNEL_IDS)
         self.appendImuChannels(imu_container, self.editors, IMU_GYRO_CHANNEL_IDS)
         self.ids.sr.bind(on_sample_rate = self.on_sample_rate)
+
+        self.rc_config = None
         
     def appendImuChannels(self, container, editors, ids):
         for i in ids:
@@ -128,11 +130,31 @@ class ImuChannelsView(BaseConfigView):
             editors.append(editor)
     
     def on_calibrate(self):
-        self.rc_api.calibrate_imu(self.on_calibrate_win, self.on_calibrate_fail)
+        # First check if config was updated and prompt
+
+        stale = False
+        for editor in self.editors:
+            if editor.channelConfig.stale:
+                stale = True
+
+        if stale:
+            alertPopup("Warning", "Accel configuration has been modified, write config first, then calibrate.")
+        else:
+            self.rc_api.calibrate_imu(self.on_calibrate_win, self.on_calibrate_fail)
         
     def on_calibrate_win(self, result):
         alertPopup('Calibration', 'Calibration Complete')
-        
+        # Re-read just imu config
+
+        def read_success(imu_cfg):
+            self.imu_cfg.fromJson(imu_cfg['imuCfg'])
+            self._update_view(self.imu_cfg)
+
+        def read_fail():
+            Logger.error("ImuChannelsView: Failed to read imu cfg after calibration")
+
+        self.rc_api.getImuCfg(None, read_success, read_fail)
+
     def on_calibrate_fail(self, result):
         alertPopup('Calibration', 'Calibration Failed:\n\n' + str(result))
         
@@ -142,9 +164,8 @@ class ImuChannelsView(BaseConfigView):
                 imuChannel.sampleRate = value
                 imuChannel.stale = True
                 self.dispatch('on_modified')
-                
-    def on_config_updated(self, rc_cfg):
-        imu_cfg = rc_cfg.imuConfig
+
+    def _update_view(self, imu_cfg):
         channelCount = imu_cfg.channelCount
 
         common_sample_rate = 0
@@ -153,7 +174,12 @@ class ImuChannelsView(BaseConfigView):
             editor = self.editors[i]
             editor.on_config_updated(i, imuChannel, self.channelLabels)
             common_sample_rate = imuChannel.sampleRate if common_sample_rate < imuChannel.sampleRate else common_sample_rate
-        
-        self.ids.sr.setValue(common_sample_rate, rc_cfg.capabilities.sample_rates.sensor)
+
+        self.ids.sr.setValue(common_sample_rate, self.rc_config.capabilities.sample_rates.sensor)
         self.imu_cfg = imu_cfg
 
+    def on_config_updated(self, rc_cfg):
+        self.rc_config = rc_cfg
+        imu_cfg = rc_cfg.imuConfig
+
+        self._update_view(imu_cfg)
