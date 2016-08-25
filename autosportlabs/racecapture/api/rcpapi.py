@@ -348,9 +348,11 @@ class RcpApi:
                         self.notifyProgress(cmdCount, cmdLength)
 
                     if rootName:
-                        winCallback({rootName: responseResults})
+                        callback = self.callback_factory(winCallback, {rootName: responseResults})
                     else:
-                        winCallback(responseResults)
+                        callback = self.callback_factory(winCallback, responseResults)
+
+                    Clock.schedule_once(callback)
 
                 except CommsErrorException:
                     self.recover_connection()
@@ -358,7 +360,8 @@ class RcpApi:
                 except Exception as detail:
                     Logger.error('RCPAPI: Command sequence exception: ' + str(detail))
                     Logger.error(traceback.format_exc())
-                    failCallback(detail)
+                    callback = self.callback_factory(failCallback, detail)
+                    Clock.schedule_once(callback)
                     self.connected_version = None
                     self.recover_connection()
 
@@ -372,6 +375,21 @@ class RcpApi:
 
         Logger.info('RCPAPI: cmd_sequence_worker exiting')
         safe_thread_exit()
+
+    def callback_factory(self, callback, *args):
+        """
+        This function returns a function that when called, will call the argument callback with the remaining arguments
+        passed to this function. Weird, huh? We use it to handle the problem of lambda scoping in cmd_sequence_worker.
+        Basically, in cmd_sequence_worker we need to schedule the callbacks to happen in the UI thread, but
+        cmd_sequence_worker is running in a separate thread. So we use Clock.schedule_once to have it fire in the UI
+        thread. But if we're running a bunch of commands in a row, the variables that the callback function has scope to
+        will change out from underneath it. So we need to wrap our callback data in another function so we keep the
+        same scope .
+        :param callback:
+        :param args:
+        :return: Function
+        """
+        return lambda dt: callback(*args)
 
     def sendCommand(self, cmd):
         try:
