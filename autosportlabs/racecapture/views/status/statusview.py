@@ -204,13 +204,16 @@ class StatusView(Screen):
         self._add_item('Application Version', RaceCaptureApp.get_app_version())
 
     def render_system(self):
-        version = '.'.join(
-            [
-                str(self.status['system']['ver_major']),
-                str(self.status['system']['ver_minor']),
-                str(self.status['system']['ver_bugfix'])
-            ]
-        )
+        if 'git_info' in self.status['system']:
+            version = self.status['system']['git_info']
+        else:
+            version = '.'.join(
+                [
+                    str(self.status['system']['ver_major']),
+                    str(self.status['system']['ver_minor']),
+                    str(self.status['system']['ver_bugfix'])
+                ]
+            )
 
         self._add_item('Version', version)
         self._add_item('Serial Number', self.status['system']['serial'])

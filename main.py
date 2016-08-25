@@ -435,7 +435,8 @@ class RaceCaptureApp(App):
 
     def rc_detect_win(self, version):
         if version.is_compatible_version():
-            self.showStatus("{} v{}.{}.{}".format(version.friendlyName, version.major, version.minor, version.bugfix), False)
+            version_string = version.git_info if version.git_info is not '' else 'v' + version.version_string()
+            self.showStatus("{} {}".format(version.friendlyName, version_string), False)
             self._data_bus_pump.start(self._databus, self._rc_api, self._rc_api.comms.supports_streaming)
             self._status_pump.start(self._rc_api)
             self._telemetry_connection.data_connected = True
