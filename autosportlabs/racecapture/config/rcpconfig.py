@@ -795,7 +795,7 @@ class PidConfig(BaseChannel):
     def fromJson(self, json_dict):
         if json_dict:
             super(PidConfig, self).fromJson(json_dict)
-            self.pid = json_dict.get("pid", self.pidId)
+            self.pidId = json_dict.get("pid", self.pidId)
 
     def toJson(self):
         json_dict = {}

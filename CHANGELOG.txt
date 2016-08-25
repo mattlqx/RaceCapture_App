@@ -1,6 +1,7 @@
 ==1.7.1==
 * Show git_info instead of version number if available in status bar and status screen
 * Use threadsafe callback mechanism in rcp api code to prevent crashes
+* Correct lost PID ID when restoring an OBD-II config from file
 
 ==1.7.0==
 * Support for new PnP RaceCapture from Kickstarter
