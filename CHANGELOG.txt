@@ -1,3 +1,6 @@
+==1.7.1==
+* Show git_info instead of version number if available in status bar and status screen
+
 ==1.7.0==
 * Support for new PnP RaceCapture from Kickstarter
 * Initial support for in-app track detection (user prompting)
