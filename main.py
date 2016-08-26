@@ -1,5 +1,5 @@
 #!/usr/bin/python
-__version__ = "1.7.1"
+__version__ = "1.7.2"
 import sys
 import os
 
@@ -253,10 +253,9 @@ class RaceCaptureApp(App):
             Clock.schedule_once(lambda dt, inner_listener=listener: inner_listener.dispatch('on_config_updated', self.rc_config))
         self.rc_config.stale = False
 
-
     def on_read_config_error(self, detail):
-        alertPopup('Error Reading', 'Could not read configuration:\n\n' + str(detail))
-        Logger.error("Main: {}".format(str(detail)))
+        self.showActivity("Error reading configuration")
+        Logger.error("Main: Error reading configuration: {}".format(str(detail)))
 
     def on_tracks_updated(self, track_manager):
         for view in self.tracks_listeners:
