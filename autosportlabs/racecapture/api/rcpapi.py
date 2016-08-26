@@ -567,8 +567,11 @@ class RcpApi:
     def setAnalogCfg(self, analogCfg, channelId):
         self.sendSet('setAnalogCfg', analogCfg, channelId)
 
-    def getImuCfg(self, channelId=None):
-        self.sendGet('getImuCfg', channelId)
+    def getImuCfg(self, channelId=None, success_cb=None, fail_cb=None):
+        if success_cb:
+            self.executeSingle(RcpCmd('imuCfg', self.getImuCfg), success_cb, fail_cb)
+        else:
+            self.sendGet('getImuCfg', channelId)
 
     def setImuCfg(self, imuCfg, channelId):
         self.sendSet('setImuCfg', imuCfg, channelId)
