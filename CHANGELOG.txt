@@ -1,3 +1,6 @@
+==1.7.2==
+* Remove popups when a read error occurs with RaceCapture; put message in status bar instead
+
 ==1.7.1==
 * Show git_info instead of version number if available in status bar and status screen
 * Use threadsafe callback mechanism in rcp api code to prevent crashes
