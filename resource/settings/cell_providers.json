@@ -10,6 +10,11 @@
             "apn_user": "",
             "apn_pass": ""
         },
+        "Rogers (Canada)": {
+            "apn_host": "rogers-core-appl1.apn",
+            "apn_user": "",
+            "apn_pass": ""
+        },
         "AT&T (USA) Alt #1": {
             "apn_host": "wap.cingular",
             "apn_user": "wap@cingulargprs.com",
