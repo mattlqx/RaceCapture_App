@@ -24,11 +24,14 @@ class ImuMappingSpinner(MappedSpinner):
     def __init__(self, **kwargs):
         super(ImuMappingSpinner, self).__init__(**kwargs)
 
-    def setImuType(self, imuType):
+    def setImuType(self, imuType, value):
+
+        default = str(self.valueMappings.get(value, self.defaultValue))
+
         if imuType == 'accel':
-            self.setValueMap({0:'X', 1:'Y', 2:'Z'}, 'X')
+            self.setValueMap({0:'X', 1:'Y', 2:'Z'}, default)
         elif imuType == 'gyro':
-            self.setValueMap({3:'Yaw', 4:'Pitch', 5:'Roll'}, 'Yaw')
+            self.setValueMap({3:'Yaw', 4:'Pitch', 5:'Roll'}, default)
         
 class ImuChannel(BoxLayout):
     channelConfig = None
@@ -87,15 +90,15 @@ class ImuChannel(BoxLayout):
         active = not channelConfig.mode == IMU_MODE_DISABLED
         self.enable_view(active)
         enabled.active = active
-        
+
         orientation = kvFind(self, 'rcid', 'orientation')
         orientation.setFromValue(channelConfig.mode)
 
         mapping = kvFind(self, 'rcid', 'mapping')
         if channelIndex in(IMU_ACCEL_CHANNEL_IDS):
-            mapping.setImuType('accel')
+            mapping.setImuType('accel', channelConfig.chan)
         elif channelIndex in(IMU_GYRO_CHANNEL_IDS):
-            mapping.setImuType('gyro')
+            mapping.setImuType('gyro', channelConfig.chan)
 
         mapping.setFromValue(channelConfig.chan)
         
@@ -104,7 +107,7 @@ class ImuChannel(BoxLayout):
         zeroValue.text = str(channelConfig.zeroValue)
         self.channelConfig = channelConfig
         self.channelLabels = channelLabels
-        
+
 class ImuChannelsView(BaseConfigView):
     editors = []
     imu_cfg = None
