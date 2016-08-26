@@ -2,6 +2,9 @@
 * Show git_info instead of version number if available in status bar and status screen
 * Use threadsafe callback mechanism in rcp api code to prevent crashes
 * Correct lost PID ID when restoring an OBD-II config from file
+* Re-read accelerometer configuration after calibration
+* Ensure Podium telemetry re-connects after a wifi disconnect
+* Prevent incorrect acclerometer readings upon repetitive reads
 
 ==1.7.0==
 * Support for new PnP RaceCapture from Kickstarter
