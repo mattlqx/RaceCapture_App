@@ -204,9 +204,16 @@ class DataBusPump(object):
         self.rc_capabilities = None
         self._should_run = False
         self._running = False
+        self._starting = False
         self._streaming_supported = False
 
     def start(self, data_bus, rc_api, streaming_supported):
+        Logger.debug("DataBusPump: start()")
+
+        if self._running or self._starting:
+            Logger.debug("DataBusPump: start(), already running, aborting")
+            return
+
         self._should_run = True
         self._streaming_supported = streaming_supported
 
@@ -226,6 +233,10 @@ class DataBusPump(object):
         self._start()
 
     def _start(self):
+        if self._running or self._starting:
+            Logger.debug("DataBusPump: _start(), already running or starting, aborting")
+            return
+
         self._poll.set()
 
         # Only BT supports auto-streaming data, the rest we have to stream or poll
@@ -256,6 +267,8 @@ class DataBusPump(object):
                 Logger.debug("DataBusPump: connected device does not support streaming api")
                 self._start_polling()
 
+            self._running = True
+
         def handle_capabilities_fail():
             Logger.error("DataBusPump: Failed to get capabilities, can't determine if device supports streaming API")
             self._start_polling()
@@ -264,6 +277,7 @@ class DataBusPump(object):
             raise Exception("DataBusPump: Failed to get capabilities for streaming API support")
 
         self._rc_api.get_capabilities(handle_capabilities, handle_capabilities_fail)
+        self._starting = True
 
     def _start_polling(self):
         if self._sample_thread:
@@ -285,6 +299,8 @@ class DataBusPump(object):
         of a disconnect, we will start up again on reconnect
         """
         self._poll.clear()
+        self._running = False
+        self._starting = False
 
         if self.rc_capabilities and self.rc_capabilities.has_streaming and not disconnected:
             self._rc_api.stop_telemetry()
