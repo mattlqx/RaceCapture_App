@@ -1103,10 +1103,10 @@ class StorageCapabilities(object):
 class LinksCapabilities(object):
 
     def __init__(self):
-        self.bluetooth = False
-        self.cellular = False
-        self.wifi = False
-        self.usb = False
+        self.bluetooth = True
+        self.cellular = True
+        self.wifi = True
+        self.usb = True
 
     def from_flags(self, flags):
         self.bluetooth = 'bt' in flags
