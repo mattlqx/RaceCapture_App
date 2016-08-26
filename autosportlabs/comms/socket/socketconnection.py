@@ -21,6 +21,7 @@
 from kivy.logger import Logger
 import socket
 import json
+import errno
 
 PORT = 7223
 READ_TIMEOUT = 1
@@ -108,9 +109,14 @@ class SocketConnection(object):
         :type keep_reading: threading.Event
         :return: String or None
         """
+
+        timeout_count = 0
+        max_timeouts = 3
+
         while keep_reading.is_set():
             try:
                 data = self.socket.recv(4096)
+
                 if data == '':
                     return None
 
@@ -125,7 +131,21 @@ class SocketConnection(object):
                     return msg
 
             except socket.timeout:
-                pass
+                Logger.error("SocketConnection: timeout")
+                timeout_count += 1
+
+                if timeout_count > max_timeouts:
+                    Logger.error("SocketConnection: max timeouts when reading, closing")
+                    self.close()
+                    raise
+                else:
+                    pass
+            except socket.error, e:
+                if e.errno == errno.ECONNRESET:
+                    Logger.error("SocketConnection: connection reset: {}".format(e))
+                    self.close()
+                    raise
+                Logger.error("SocketConnection: error: {}".format(e))
 
     def write(self, data):
         """

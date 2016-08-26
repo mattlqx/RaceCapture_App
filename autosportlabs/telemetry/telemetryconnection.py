@@ -120,7 +120,6 @@ class TelemetryManager(EventDispatcher):
         if value:
             self.start()
         else:
-            self.channels = None
             self._user_stopped()
 
     # Event handler for when config is pulled from RCP
