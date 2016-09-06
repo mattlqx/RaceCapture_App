@@ -1,3 +1,6 @@
+==1.7.3==
+* Restore telemetry change back to 50Hz. 
+
 ==1.7.2==
 * Remove popups when a read error occurs with RaceCapture; put message in status bar instead
 * Show full Wireless config if no device is connected
