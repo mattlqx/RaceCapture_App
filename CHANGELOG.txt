@@ -1,5 +1,5 @@
 ==1.7.3==
-* Restore telemetry change back to 50Hz. 
+* Restore telemetry back to 50Hz (fix bad 1.7.2 google play release)
 
 ==1.7.2==
 * Remove popups when a read error occurs with RaceCapture; put message in status bar instead
