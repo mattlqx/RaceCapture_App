@@ -376,8 +376,7 @@ class RaceCaptureApp(App):
 
         rc_api = self._rc_api
         rc_api.on_progress = lambda value: status_bar.dispatch('on_progress', value)
-        rc_api.on_rx = lambda value: status_bar.dispatch('on_rc_rx', value)
-        rc_api.on_tx = lambda value: status_bar.dispatch('on_rc_tx', value)
+        rc_api.on_rx = lambda value: status_bar.dispatch('on_data_rx', value)
 
         screenMgr = root.ids.main
         # NoTransition
