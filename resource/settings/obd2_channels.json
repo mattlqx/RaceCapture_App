@@ -18,7 +18,7 @@
         "RPM": {
             "pid": 12
         },
-        "Speed": {
+        "WheelSpeed": {
             "pid": 13
         },
         "IgnTiming": {
