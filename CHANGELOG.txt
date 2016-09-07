@@ -1,3 +1,7 @@
+==1.7.4==
+* Ensure realtime values update in line chart, even if there is no location detected
+* Change OBDII Speed channel to WheelSpeed to prevent conflict with GPS speed channel
+
 ==1.7.3==
 * Restore telemetry back to 50Hz (fix bad 1.7.2 google play release)
 
