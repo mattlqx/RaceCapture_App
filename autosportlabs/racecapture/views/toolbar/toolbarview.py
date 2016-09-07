@@ -108,6 +108,9 @@ class ToolbarItem(BoxLayout):
     pass
 
 class ProgressFieldLabel(AnchorLayout):
+    """
+    A specialized field for showing progress information 
+    """
     minval = NumericProperty(0)
     maxval = NumericProperty(100)
     value = NumericProperty(0)
@@ -140,13 +143,11 @@ class ProgressFieldLabel(AnchorLayout):
         stencil.width = width
 
 class ToolbarView(BoxLayout):
+    """
+    The Toolbar view provides various status indicators for the running application. 
+    """
     status_pump = ObjectProperty(None)
     track_manager = ObjectProperty(None)
-
-    TOOLBAR_DATA_RX_DURATION = 0.1
-    PROGRESS_COMPLETE_LINGER_DURATION = 7.0
-    ACTIVITY_MESSAGE_LINGER_DURATION = 7.5
-    STATUS_LINGER_DURATION = 2.0
 
     TELEMETRY_IDLE = 0
     TELEMETRY_ACTIVE = 1
@@ -163,7 +164,7 @@ class ToolbarView(BoxLayout):
     DATA_RX = 1
     data_rx_color = {DATA_NO_RX:[0.0, 0.8, 1.0, 0.2],
                      DATA_RX:[0.0, 0.8, 1.0, 1.0]}
-
+    TOOLBAR_DATA_RX_DURATION = 0.1
 
     GPS_NO_DATA = 0
     GPS_NO_LOCK = 1
@@ -174,6 +175,9 @@ class ToolbarView(BoxLayout):
                  GPS_MARGINAL: [1.0, 1.0, 0.0, 1.0],
                  GPS_HIGH_QUALITY: [0.0, 1.0, 0.0, 1.0]}
 
+    STATUS_LINGER_DURATION = 2.0
+    ACTIVITY_MESSAGE_LINGER_DURATION = 7.5
+    PROGRESS_COMPLETE_LINGER_DURATION = 7.0
     normal_status_color = ColorScheme.get_light_primary_text()
     alert_status_color = ColorScheme.get_alert()
 
@@ -188,9 +192,9 @@ class ToolbarView(BoxLayout):
         self.register_event_type('on_tele_status')
         self.register_event_type('on_status')
         self.register_event_type('on_activity')
-        self._data_rx_decay = Clock.create_trigger(self.on_data_rx_decay, ToolbarView.TOOLBAR_DATA_RX_DURATION)
-        self._activity_decay = Clock.create_trigger(self.on_activity_decay, ToolbarView.ACTIVITY_MESSAGE_LINGER_DURATION)
-        self._progress_decay = Clock.create_trigger(self.on_progress_decay, ToolbarView.PROGRESS_COMPLETE_LINGER_DURATION)
+        self._data_rx_decay = Clock.create_trigger(self._on_data_rx_decay, ToolbarView.TOOLBAR_DATA_RX_DURATION)
+        self._activity_decay = Clock.create_trigger(self._on_activity_decay, ToolbarView.ACTIVITY_MESSAGE_LINGER_DURATION)
+        self._progress_decay = Clock.create_trigger(self._on_progress_decay, ToolbarView.PROGRESS_COMPLETE_LINGER_DURATION)
         self._gps_decay = Clock.create_trigger(self._on_gps_decay, ToolbarView.STATUS_LINGER_DURATION)
 
     def on_status_pump(self, instance, value):
@@ -204,7 +208,13 @@ class ToolbarView(BoxLayout):
         self._set_activity_message(msg)
         self._activity_decay()
 
-    def set_state_message(self, msg):
+    def on_main_menu(self, instance, *args):
+        pass
+
+    def mainMenu(self):
+        self.dispatch('on_main_menu', None)
+
+    def _set_state_message(self, msg):
         self.ids.state.text = msg
 
     def _set_activity_message(self, msg):
@@ -220,28 +230,22 @@ class ToolbarView(BoxLayout):
         else:
             status_label.text_color = self.normal_status_color
 
-    def update_progress(self, value):
+    def _update_progress(self, value):
         self.ids.prog_status.value = value
         if value == 100:
             self._progress_decay()
 
     def on_progress(self, value):
-        self.update_progress(value)
+        self._update_progress(value)
 
-    def on_main_menu(self, instance, *args):
-        pass
-
-    def mainMenu(self):
-        self.dispatch('on_main_menu', None)
-
-    def on_progress_decay(self, dt):
-        self.update_progress(0)
+    def _on_progress_decay(self, dt):
+        self._update_progress(0)
         self.ids.prog_status.text = self.current_status
 
-    def on_activity_decay(self, dt):
+    def _on_activity_decay(self, dt):
         self._set_activity_message(self.current_status)
 
-    def on_data_rx_decay(self, dt):
+    def _on_data_rx_decay(self, dt):
         self.ids.data_rx_status.color = ToolbarView.data_rx_color[int(False)]
 
     def on_data_rx(self, value):
@@ -294,7 +298,7 @@ class ToolbarView(BoxLayout):
                             track_status_msg += ' (' + configuration_name + ')'
                 else:
                     track_status_msg = 'No track detected'
-            self.set_state_message(track_status_msg)
+            self._set_state_message(track_status_msg)
         except Exception as e:
             Logger.warn("ToolbarView: Could not retrieve track detection status " + str(e))
 
