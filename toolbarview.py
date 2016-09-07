@@ -12,8 +12,102 @@ from iconbutton import IconButton
 from kivy.logger import Logger
 from fieldlabel import FieldLabel
 from autosportlabs.racecapture.theme.color import ColorScheme
-Builder.load_file('toolbarview.kv')
 
+TOOLBAR_VIEW_KV = '''
+<ProgressFieldLabel>:
+    RelativeLayout:
+        StencilView:
+            size_hint: (None, 1.0)
+            id: stencil
+            width: 0
+            canvas.after:
+                Color:
+                    rgba: root.color
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+    FieldLabel:
+        id: value
+        halign: 'center'
+        color: root.text_color
+        font_size: self.height * 0.6
+
+<ToolbarItem>:
+    canvas.before:
+        Color:
+            rgba: ColorScheme.get_dark_background()
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<ToolbarView>:
+    orientation: 'horizontal'
+    spacing: sp(2)
+    ToolbarItem:
+        padding: self.height * 0.5, 0
+        size_hint_x: 0.10
+        orientation: 'horizontal'
+        IconButton:
+            id: 'menu'
+            text: '\357\203\211'
+            on_release: root.mainMenu()
+            size_hint_x: None
+            width: self.height * 1
+            font_size: self.height
+        Button:
+            background_color: [0.0, 0.0, 0.0, 0.0]
+            background_down: ''
+            text: '    '
+            font_name: "resource/fonts/ASL_light.ttf"
+            size_hint_x: 0.0
+            width: self.height * 2.4
+            font_size: self.height * 0.7
+            on_release: root.mainMenu()
+            
+    ToolbarItem:
+        orientation: 'horizontal'
+        padding: self.height * 0.4, 0
+        size_hint_x: 0.50
+        FieldLabel:
+            halign: 'center'
+            text: ''
+            id: state
+            font_size: self.height * 0.7
+
+    ToolbarItem:
+        orientation: 'horizontal'
+        padding: self.height * 0.4, 0
+        size_hint_x: 0.3
+        ProgressFieldLabel:
+            text: ''
+                id: prog_status
+        
+    ToolbarItem:
+        orientation: 'horizontal'
+        size_hint_x: 0.1
+        IconButton:
+            id: gps_status
+            text: u'\uf041'
+            font_size: self.height * 0.8
+        IconButton:
+            id: teleStatus
+            text: '\357\203\256'
+            color: [0.3, 0.3, 0.3, 0.2]        
+            font_size: self.height * 0.8
+        IconButton:
+            id: rcTxStatus
+            text: '\357\200\231'
+            color: [0.0, 1.0, 0.0, 0.2]
+            font_size: self.height * 0.8
+        IconButton:
+            id: rcRxStatus
+            text: '\357\202\223'
+            color: [0.0, 0.8, 1.0, 0.2]
+            font_size: self.height * 0.8
+            
+            
+
+'''
 TOOLBAR_LED_DURATION = 2.0
 PROGRESS_COMPLETE_LINGER_DURATION = 7.0
 ACTIVITY_MESSAGE_LINGER_DURATION = 7.5
@@ -78,6 +172,8 @@ class ToolbarView(BoxLayout):
     teleStatus = None
     rcTxStatus = None
     rcRxStatus = None
+    
+    Builder.load_string(TOOLBAR_VIEW_KV)
 
     def __init__(self, **kwargs):
         super(ToolbarView, self).__init__(**kwargs)
