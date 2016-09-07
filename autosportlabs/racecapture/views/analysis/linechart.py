@@ -126,7 +126,7 @@ class LineChart(ChannelAnalysisWidget):
         '''
         self.chart_mode_toggle_button = IconButton(size_hint_x=0.15, on_press=self.on_toggle_chart_mode)
         self.append_option_button(self.chart_mode_toggle_button)
-        self.x_axis_value_label = LabelButton(size_hint_x=0.3, on_press=self.on_toggle_chart_mode)
+        self.x_axis_value_label = LabelButton(size_hint_x=0.5, on_press=self.on_toggle_chart_mode)
         self.append_option_button(self.x_axis_value_label)
         self._refresh_chart_mode_toggle()
 
