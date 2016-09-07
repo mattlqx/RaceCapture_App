@@ -42,6 +42,7 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.views.dashboard.dashboardview import DashboardView
     from autosportlabs.racecapture.views.analysis.analysisview import AnalysisView
     from autosportlabs.racecapture.views.preferences.preferences import PreferencesView
+    from autosportlabs.racecapture.views.toolbar.toolbarview import ToolbarView
     from autosportlabs.racecapture.menu.mainmenu import MainMenu
     from autosportlabs.comms.commsfactory import comms_factory
     from autosportlabs.racecapture.tracks.trackmanager import TrackManager
@@ -55,7 +56,6 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.datastore import DataStore
     from autosportlabs.racecapture.data.sessionrecorder import SessionRecorder
     from autosportlabs.uix.toast.kivytoast import toast
-    from toolbarview import ToolbarView
     if not is_mobile_platform():
         kivy.config.Config.set ('input', 'mouse', 'mouse,multitouch_on_demand')
 
