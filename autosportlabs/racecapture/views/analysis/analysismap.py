@@ -268,6 +268,8 @@ class AnalysisMap(AnalysisWidget):
         :returns the selected track
         :type Track 
         '''
+        if not latitude or not longitude:
+            return None
         point = GeoPoint.fromPoint(latitude, longitude)
         track = self.track_manager.find_nearby_track(point)
         if self.track != track:

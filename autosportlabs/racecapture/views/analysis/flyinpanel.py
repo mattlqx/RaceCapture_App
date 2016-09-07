@@ -28,8 +28,9 @@ from kivy.animation import Animation
 from kivy.properties import ObjectProperty
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.core.window import Window
+import datetime
 
-FLYIN_PANEL_LAYOUT='''
+FLYIN_PANEL_LAYOUT = '''
 <FlyinPanel>:
     size_hint: (1,1)
     BoxLayout:
@@ -64,20 +65,19 @@ class FlyinPanelException(Exception):
 
 class FlyinHandle(ButtonBehavior, AnchorLayout):
     pass
-    
+
 class FlyinPanel(FloatLayout):
-    
+
     content = ObjectProperty()
     handle = ObjectProperty()
-    
-    #how long we wait to auto-dismiss session list
-    #after a perioud of disuse
+
+    # how long we wait to auto-dismiss session list
+    # after a perioud of disuse
     SESSION_HIDE_DELAY = 1.0
+    MINIMUM_OPEN_TIME = datetime.timedelta(seconds=0.5)
     TRANSITION_STYLE = 'in_out_elastic'
     SHOW_POSITION = 0
-#    contents = ObjectProperty(None, allownone=True)
-#    handle = ObjectProperty(None, allownone=True)
-    
+
     def __init__(self, **kwargs):
         Builder.load_string(FLYIN_PANEL_LAYOUT)
         super(FlyinPanel, self).__init__(**kwargs)
@@ -85,20 +85,21 @@ class FlyinPanel(FloatLayout):
         Window.bind(mouse_pos=self.on_mouse_pos)
         Window.bind(on_motion=self.on_motion)
         Clock.schedule_once(lambda dt: self.show())
-    
+        self.shown_at = None
+
     def flyin_collide_point(self, x, y):
         return self.ids.flyin.collide_point(x, y)
-    
+
     def on_motion(self, instance, event, motion_event):
         if self.ids.flyin.collide_point(motion_event.x, motion_event.y):
             self.cancel_hide()
-        
+
     def on_mouse_pos(self, x, pos):
         if self.ids.flyin.collide_point(pos[0], pos[1]):
             self.cancel_hide()
             return True
         return False
-                
+
     def add_widget(self, widget):
         if len(self.children) == 0:
             super(FlyinPanel, self).add_widget(widget)
@@ -109,10 +110,13 @@ class FlyinPanel(FloatLayout):
                 self.ids.handle.add_widget(widget)
             else:
                 raise FlyinPanelException('Can only add one content widget and one handle widget to FlyinPanel')
-           
+
     def schedule_hide(self):
+        # do not dismiss before the minimum open time. prevents false triggers
+        if FlyinPanel.MINIMUM_OPEN_TIME + self.shown_at > datetime.datetime.now():
+            return
         self.hide_decay()
-    
+
     def cancel_hide(self):
         Clock.unschedule(self.hide_decay)
 
@@ -120,15 +124,15 @@ class FlyinPanel(FloatLayout):
         b_height = self.ids.handle.height
         anim = Animation(y=(self.height - b_height), t=self.TRANSITION_STYLE)
         anim.start(self.ids.flyin)
-        
+
     def show(self):
         anim = Animation(y=self.SHOW_POSITION, t=self.TRANSITION_STYLE)
         anim.start(self.ids.flyin)
-    
+        self.shown_at = datetime.datetime.now()
+
     @property
     def is_hidden(self):
         return self.ids.flyin.y != self.SHOW_POSITION
-    
+
     def toggle(self):
         self.show() if self.is_hidden else self.hide()
-    
