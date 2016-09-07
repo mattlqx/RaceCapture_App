@@ -129,7 +129,7 @@ class AnalysisView(Screen):
             except IndexError:
                 point = cache[len(cache) - 1]
             self.ids.analysismap.update_reference_mark(source, point)
-            self.ids.channelvalues.update_reference_mark(source, marker.data_index)
+        self.ids.channelvalues.update_reference_mark(source, marker.data_index)
 
     def _sync_analysis_map(self, session):
         analysis_map = self.ids.analysismap
