@@ -199,7 +199,7 @@ class DashboardView(Screen):
 
                         # Now figure out if the device already has a track set, if not, set one. Enough callbacks yet?!
 
-                        def track_fail():
+                        def track_fail(*args):
                             Logger.error("DashboardView: _race_setup(), could not get track config")
 
                         def track_success(track_config):
