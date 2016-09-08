@@ -48,7 +48,52 @@ from autosportlabs.help.helpmanager import HelpInfo
 from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
 from kivy.core.window import Window
 
-ANALYSIS_VIEW_KV = 'autosportlabs/racecapture/views/analysis/analysisview.kv'
+ANALYSIS_VIEW_KV = '''
+<AnalysisView>:
+    AnchorLayout:
+        BoxLayout:
+            orientation: 'vertical'
+            BoxLayout:
+                padding: (sp(10), sp(10), sp(10), sp(5))
+                spacing: sp(10)       
+                size_hint_y: 0.5
+                orientation: 'horizontal'
+                AnalysisMap:
+                    id: analysismap
+            AnchorLayout:
+                spacing: sp(10)       
+                padding: (sp(10), sp(5), sp(10), sp(10))
+                size_hint_y: 0.5            
+                AnchorLayout:
+                    LineChart:
+                        id: mainchart
+                        on_channel_selected: root.on_channel_selected(*args)
+                        on_marker: root.on_marker(*args)
+                AnchorLayout:
+                    anchor_x: 'right'
+                    anchor_y: 'top'
+                    ChannelValuesView:
+                        size_hint_x: None
+                        width: min(dp(320), 0.5 * root.width)
+                        id: channelvalues
+
+        FlyinPanel:
+            id: laps_flyin
+            BoxLayout:
+                orientation: 'vertical'
+                SessionListView:
+                    size_hint_y: 0.9
+                    id: sessions_view
+                IconButton:
+                    size_hint_y: 0.1
+                    font_size: root.height * 0.1
+                    text: u'\uf0fe'
+                    on_release: root.on_add_stream()
+
+            Label:
+                text: 'Sessions'
+                size_hint_y: 0.05
+'''
 
 
 class AnalysisView(Screen):
@@ -60,9 +105,9 @@ class AnalysisView(Screen):
     _popup = None
     _color_sequence = ColorSequence()
     sessions = ObjectProperty(None)
+    Builder.load_string(ANALYSIS_VIEW_KV)
 
     def __init__(self, **kwargs):
-        Builder.load_file(ANALYSIS_VIEW_KV)
         super(AnalysisView, self).__init__(**kwargs)
         self._datastore = CachingAnalysisDatastore()
         self.register_event_type('on_tracks_updated')
