@@ -85,7 +85,7 @@ class FlyinPanel(FloatLayout):
         Window.bind(mouse_pos=self.on_mouse_pos)
         Window.bind(on_motion=self.on_motion)
         Clock.schedule_once(lambda dt: self.show())
-        self.shown_at = None
+        self._shown_at = None
 
     def flyin_collide_point(self, x, y):
         return self.ids.flyin.collide_point(x, y)
@@ -113,7 +113,7 @@ class FlyinPanel(FloatLayout):
 
     def schedule_hide(self):
         # do not dismiss before the minimum open time. prevents false triggers
-        if FlyinPanel.MINIMUM_OPEN_TIME + self.shown_at > datetime.datetime.now():
+        if FlyinPanel.MINIMUM_OPEN_TIME + self._shown_at > datetime.datetime.now():
             return
         self.hide_decay()
 
@@ -128,7 +128,7 @@ class FlyinPanel(FloatLayout):
     def show(self):
         anim = Animation(y=self.SHOW_POSITION, t=self.TRANSITION_STYLE)
         anim.start(self.ids.flyin)
-        self.shown_at = datetime.datetime.now()
+        self._shown_at = datetime.datetime.now()
 
     @property
     def is_hidden(self):

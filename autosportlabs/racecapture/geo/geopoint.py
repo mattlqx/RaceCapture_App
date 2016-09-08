@@ -2,16 +2,16 @@ import math
 RADIUS_EARTH_KM = 6371;
 
 class GeoPoint:
-    '''
+    """
     Represents the concept of a Geographic point.
-    '''
+    """
     def __init__(self, **kwargs):
         self.latitude = 0
         self.longitude = 0
 
     @classmethod
     def fromPoint(cls, latitude, longitude):
-        '''
+        """
         Factory to create a GeoPoint from the specified point
         :param latitude
         :type  latitude float
@@ -19,7 +19,7 @@ class GeoPoint:
         :type longitude float
         :returns the new instance
         :type GeoPoint
-        '''
+        """
         if not latitude or not longitude:
             raise ValueError("Latitude and Longitude must be provided")
         g = GeoPoint()

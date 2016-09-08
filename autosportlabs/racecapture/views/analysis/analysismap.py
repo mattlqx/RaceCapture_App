@@ -38,9 +38,9 @@ from autosportlabs.uix.options.optionsview import OptionsView, BaseOptionsScreen
 # The scaling we use while we zoom
 ANALYSIS_MAP_ZOOM_SCALE = 1.1
 class AnalysisMap(AnalysisWidget):
-    '''
+    """
     Displays a track map with options
-    '''
+    """
     Builder.load_string('''
 <AnalysisMap>:
     options_enabled: True
@@ -146,15 +146,15 @@ class AnalysisMap(AnalysisWidget):
 
 
     def add_option_buttons(self):
-        '''
+        """
         Add additional buttons needed by this widget
-        '''
+        """
         self.append_option_button(IconButton(size_hint_x=0.15, text=u'\uf0b2', on_press=self.on_center_map))
 
     def on_center_map(self, *args):
-        '''
+        """
         Restore the track map to the default position/zoom/rotation
-        '''
+        """
         scatter = self.ids.scatter
         scatter.scale = 1
         scatter.rotation = 0
@@ -179,10 +179,10 @@ class AnalysisMap(AnalysisWidget):
         self._update_legend_box_layout()
 
     def _update_legend_box_layout(self):
-        '''
+        """
         This will set the size of the box that contains
         the lap legend widgets
-        '''
+        """
         if self.heatmap_channel:
             self.ids.top_bar.size_hint_x = 0.6
             self.ids.legend_box.size_hint_x = 0.4
@@ -211,9 +211,9 @@ class AnalysisMap(AnalysisWidget):
         self._set_heat_map(values.heatmap_channel)
 
     def show_customize_dialog(self):
-        '''
+        """
         Display the customization dialog for this widget
-        '''
+        """
 
         current_track_id = None if self.track == None else self.track.track_id
         params = CustomizeParams(settings=self.settings, datastore=self.datastore, track_manager=self.track_manager)
@@ -259,7 +259,7 @@ class AnalysisMap(AnalysisWidget):
                 pass  # no scrollwheel support
 
     def select_map(self, latitude, longitude):
-        '''
+        """
         Find and display a nearby track by latitude / longitude
         :param latitude
         :type  latitude float
@@ -267,7 +267,7 @@ class AnalysisMap(AnalysisWidget):
         :type longitude float
         :returns the selected track
         :type Track 
-        '''
+        """
         if not latitude or not longitude:
             return None
         point = GeoPoint.fromPoint(latitude, longitude)
@@ -281,20 +281,20 @@ class AnalysisMap(AnalysisWidget):
         self.ids.track.remove_marker(source)
 
     def add_reference_mark(self, source, color):
-        '''
+        """
         Add a reference mark for the specified source
         :param source the key representing the reference mark
         :type source string
         :param color the color of the reference mark
         :type color list
-        '''
+        """
         self.ids.track.add_marker(source, color)
 
     def update_reference_mark(self, source, point):
         self.ids.track.update_marker(str(source), point)
 
     def add_map_path(self, source_ref, path, color):
-        '''
+        """
         Add a map path for the specified session/lap source reference
         :param source_ref the lap/session reference
         :type source_ref SourceRef
@@ -302,7 +302,7 @@ class AnalysisMap(AnalysisWidget):
         :type path list
         :param color the path of the color
         :type color list
-        '''
+        """
         source_key = str(source_ref)
         self.sources[source_key] = source_ref
         self.ids.track.add_path(source_key, path, color)
@@ -312,11 +312,11 @@ class AnalysisMap(AnalysisWidget):
         self._refresh_lap_legends()
 
     def remove_map_path(self, source_ref):
-        '''
+        """
         Remove the map path for the specified session/lap source reference
         :param source_ref the source session/lap reference
         :type source_ref SourceRef
-        '''
+        """
         source_key = str(source_ref)
         self.ids.track.remove_path(source_key)
         self.sources.pop(source_key, None)
@@ -324,7 +324,7 @@ class AnalysisMap(AnalysisWidget):
         self._refresh_lap_legends()
 
     def _add_heat_value_results(self, channel, source_ref, query_data):
-        '''
+        """
         Callback for adding channel data from the heat values
         :param channel the channel fetched
         :type channel string
@@ -332,7 +332,7 @@ class AnalysisMap(AnalysisWidget):
         :type source_ref SourceRef
         :param query_data the data results
         :type query_data ChannelData
-        '''
+        """
         source_key = str(source_ref)
         values = query_data[channel].values
         channel_info = self.datastore.get_channel(channel)
@@ -340,30 +340,30 @@ class AnalysisMap(AnalysisWidget):
         self.ids.track.add_heat_values(source_key, values)
 
     def add_heat_values(self, channel, source_ref):
-        '''
+        """
         Add heat values to the track map
         :param channel the channel for the selected heat values
         :type channel string
         :param source_ref the source session/lap reference
         :type source_ref SourceRef
-        '''
+        """
         def get_results(results):
             Clock.schedule_once(lambda dt: self._add_heat_value_results(channel, source_ref, results))
         self.datastore.get_channel_data(source_ref, [channel], get_results)
 
     def remove_heat_values(self, source_ref):
-        '''
+        """
         Remove the heat values for the specified source reference
         :param source_ref the session/lap reference
         :type source_ref SourceRef
-        '''
+        """
         source_key = str(source_ref)
         self.ids.track.remove_heat_values(source_key)
 
     def _refresh_lap_legends(self):
-        '''
+        """
         Wholesale refresh the list of lap legends
-        '''
+        """
         self.ids.legend_list.clear_widgets()
 
         height_pct = 0.4
@@ -395,18 +395,18 @@ class AnalysisMap(AnalysisWidget):
 
 
 class CustomizeParams(object):
-    '''
+    """
     A container class for holding multiple parameter for customization dialog
-    '''
+    """
     def __init__(self, settings, datastore, track_manager, **kwargs):
         self.settings = settings
         self.datastore = datastore
         self.track_manager = track_manager
 
 class CustomizeValues(object):
-    '''
+    """
     A container class for holding customization values
-    '''
+    """
     def __init__(self, heatmap_channel, track_id, **kwargs):
         self.heatmap_channel = heatmap_channel
         self.track_id = track_id
@@ -430,9 +430,9 @@ class TrackmapButton(LabelIconButton):
     ''')
 
 class CustomizeHeatmapView(BaseOptionsScreen):
-    '''
+    """
     The customization view for customizing the heatmap options
-    '''
+    """
     Builder.load_string('''
 <CustomizeHeatmapView>:
     BoxLayout:
@@ -476,9 +476,9 @@ class CustomizeHeatmapView(BaseOptionsScreen):
             self.dispatch('on_screen_modified')
 
 class CustomizeTrackView(BaseOptionsScreen):
-    '''
+    """
     The customization view for selecting a track to display
-    '''
+    """
     Builder.load_string('''
 <CustomizeTrackView>:
     BoxLayout:
