@@ -80,6 +80,7 @@ def connection_message_process(connection, device, rx_queue, tx_queue, command_q
             Logger.debug(traceback.format_exc())
     except Exception as e:
         Logger.debug('Comms: Exception setting up connection process: ' + str(type(e)) + str(e))
+        Logger.trace(traceback.format_exc())
 
     Logger.debug('Comms: connection worker exited')
 
