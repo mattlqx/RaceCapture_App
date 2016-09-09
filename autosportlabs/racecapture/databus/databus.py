@@ -210,13 +210,22 @@ class DataBusPump(object):
         self._running = False
         self._starting = False
         self._auto_streaming_supported = False
-        self._telemetry_idle = True
+        self._telemetry_active = False
 
     @property
     def current_sample_rate(self):
-        return DataBusPump.TELEMETRY_RATE_IDLE_HZ if self._telemetry_idle else DataBusPump.TELEMETRY_RATE_ACTIVE_HZ
+        return DataBusPump.TELEMETRY_RATE_ACTIVE_HZ if self._telemetry_active else DataBusPump.TELEMETRY_RATE_IDLE_HZ
 
-    def start(self, data_bus, rc_api, streaming_supported):
+    def _on_session_recording(self, instance, is_recording):
+        self._telemetry_active = is_recording
+        self._start_telemetry()
+
+    def _start_telemetry(self):
+        capabilities = self.rc_capabilities
+        if capabilities is not None and capabilities.has_streaming:
+            self._rc_api.start_telemetry(self.current_sample_rate)
+
+    def start(self, data_bus, rc_api, session_recorder, auto_streaming_supported):
         Logger.debug("DataBusPump: start()")
 
         if self._running or self._starting:
@@ -224,7 +233,7 @@ class DataBusPump(object):
             return
 
         self._should_run = True
-        self._auto_streaming_supported = streaming_supported
+        self._auto_streaming_supported = auto_streaming_supported
 
         if self._poll.is_set():
             # since we're already running, simply
@@ -234,6 +243,8 @@ class DataBusPump(object):
 
         self._rc_api = rc_api
         self._data_bus = data_bus
+        self._session_recorder = session_recorder
+        session_recorder.bind(on_recording=self._on_session_recording)
         rc_api.addListener('s', self.on_sample)
         rc_api.addListener('meta', self.on_meta)
         rc_api.add_connect_listener(self.on_connect)
@@ -261,7 +272,7 @@ class DataBusPump(object):
 
     def _start_sample_streaming(self):
         # First need to figure out if the connected RC supports the streaming api
-        Logger.debug("DataBusPump: Checking for streaming API support")
+        Logger.info("DataBusPump: Checking for streaming API support")
 
         def handle_capabilities(capabilities_dict):
             self.rc_capabilities = Capabilities()
@@ -269,26 +280,25 @@ class DataBusPump(object):
 
             if self.rc_capabilities.has_streaming:
                 # Send streaming command
-                Logger.debug("DataBusPump: device supports streaming")
-                stream_hz = int(self.current_sample_rate)
-                self._rc_api.start_telemetry(stream_hz)
+                Logger.info("DataBusPump: device supports streaming")
+                self._start_telemetry()
             else:
-                Logger.debug("DataBusPump: connected device does not support streaming api")
-                self._start_polling()
+                Logger.info("DataBusPump: connected device does not support streaming api")
+                self._start_polling_telemetry()
 
             self._running = True
 
-        def handle_capabilities_fail():
-            Logger.error("DataBusPump: Failed to get capabilities, can't determine if device supports streaming API")
-            self._start_polling()
-            self._poll = True
+        def handle_capabilities_fail(*args):
+            Logger.error("DataBusPump: Failed to get capabilities, can't determine if device supports streaming API. Assuming polling")
+            self._start_polling_telemetry()
+            self._poll.set()
 
             raise Exception("DataBusPump: Failed to get capabilities for streaming API support")
 
         self._rc_api.get_capabilities(handle_capabilities, handle_capabilities_fail)
         self._starting = True
 
-    def _start_polling(self):
+    def _start_polling_telemetry(self):
         if self._sample_thread:
             return
 
@@ -364,7 +374,7 @@ class DataBusPump(object):
         while self._poll.is_set():
             try:
                 rc_api.sample()
-                sleep(1 / self.current_sample_rate)
+                sleep(1.0 / self.current_sample_rate)
             except Exception as e:
                 Logger.error('DataBusPump: Exception in sample_worker: ' + str(e))
                 sleep(DataBusPump.SAMPLE_POLL_EXCEPTION_RECOVERY)
