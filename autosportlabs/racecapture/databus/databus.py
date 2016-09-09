@@ -180,11 +180,6 @@ class DataBus(object):
     def getData(self, channel):
         return self.channel_data[channel]
 
-SAMPLE_POLL_TEST_TIMEOUT = 3.0
-SAMPLE_POLL_INTERVAL_TIMEOUT = 0.02  # 50Hz polling
-SAMPLE_POLL_EVENT_TIMEOUT = 1.0
-SAMPLE_POLL_EXCEPTION_RECOVERY = 10.0
-SAMPLES_TO_WAIT_FOR_META = 5.0
 
 class DataBusPump(object):
     """Responsible for dispatching raw JSON API messages into a format the DataBus can consume.
@@ -199,6 +194,14 @@ class DataBusPump(object):
     _sample_thread = None
     _meta_is_stale_counter = 0
 
+    # Telemetry rate when we're actively needing the stream (logging, dashboard, etc)
+    TELEMETRY_RATE_ACTIVE_HZ = 50
+    # Telemetry rate when we're idle
+    TELEMETRY_RATE_IDLE_HZ = 1
+
+    SAMPLE_POLL_EXCEPTION_RECOVERY = 10.0
+    SAMPLES_TO_WAIT_FOR_META = 5
+
     def __init__(self, **kwargs):
         super(DataBusPump, self).__init__(**kwargs)
         self.rc_capabilities = None
@@ -206,6 +209,11 @@ class DataBusPump(object):
         self._running = False
         self._starting = False
         self._streaming_supported = False
+        self._telemetry_active = True
+
+    @property
+    def current_sample_rate(self):
+        return DataBusPump.TELEMETRY_RATE_ACTIVE_HZ if self._telemetry_active else DataBusPump.TELEMETRY_RATE_IDLE_HZ
 
     def start(self, data_bus, rc_api, streaming_supported):
         Logger.debug("DataBusPump: start()")
@@ -261,7 +269,7 @@ class DataBusPump(object):
             if self.rc_capabilities.has_streaming:
                 # Send streaming command
                 Logger.debug("DataBusPump: device supports streaming")
-                stream_hz = int(1 / SAMPLE_POLL_INTERVAL_TIMEOUT)
+                stream_hz = int(self.current_sample_rate)
                 self._rc_api.start_telemetry(stream_hz)
             else:
                 Logger.debug("DataBusPump: connected device does not support streaming api")
@@ -334,7 +342,7 @@ class DataBusPump(object):
     def _request_meta_handler(self):
             if self._meta_is_stale_counter <= 0:
                 Logger.info('DataBusPump: Sample Meta is stale, requesting meta')
-                self._meta_is_stale_counter = SAMPLES_TO_WAIT_FOR_META
+                self._meta_is_stale_counter = DataBusPump.SAMPLES_TO_WAIT_FOR_META
                 self.request_meta()
             else:
                 self._meta_is_stale_counter -= 1
@@ -355,10 +363,10 @@ class DataBusPump(object):
         while self._poll.is_set():
             try:
                 rc_api.sample()
-                sleep(SAMPLE_POLL_INTERVAL_TIMEOUT)
+                sleep(1 / self.current_sample_rate)
             except Exception as e:
                 Logger.error('DataBusPump: Exception in sample_worker: ' + str(e))
-                sleep(SAMPLE_POLL_EXCEPTION_RECOVERY)
+                sleep(DataBusPump.SAMPLE_POLL_EXCEPTION_RECOVERY)
 
         Logger.info('DataBusPump: sample_worker exiting')
         safe_thread_exit()
