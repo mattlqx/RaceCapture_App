@@ -1,4 +1,25 @@
 #!/usr/bin/python
+
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 __version__ = "1.7.4"
 import sys
 import os
@@ -42,6 +63,7 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.views.dashboard.dashboardview import DashboardView
     from autosportlabs.racecapture.views.analysis.analysisview import AnalysisView
     from autosportlabs.racecapture.views.preferences.preferences import PreferencesView
+    from autosportlabs.racecapture.views.toolbar.toolbarview import ToolbarView
     from autosportlabs.racecapture.menu.mainmenu import MainMenu
     from autosportlabs.comms.commsfactory import comms_factory
     from autosportlabs.racecapture.tracks.trackmanager import TrackManager
@@ -55,7 +77,6 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.datastore import DataStore
     from autosportlabs.racecapture.data.sessionrecorder import SessionRecorder
     from autosportlabs.uix.toast.kivytoast import toast
-    from toolbarview import ToolbarView
     if not is_mobile_platform():
         kivy.config.Config.set ('input', 'mouse', 'mouse,multitouch_on_demand')
 
@@ -376,8 +397,7 @@ class RaceCaptureApp(App):
 
         rc_api = self._rc_api
         rc_api.on_progress = lambda value: status_bar.dispatch('on_progress', value)
-        rc_api.on_rx = lambda value: status_bar.dispatch('on_rc_rx', value)
-        rc_api.on_tx = lambda value: status_bar.dispatch('on_rc_tx', value)
+        rc_api.on_rx = lambda value: status_bar.dispatch('on_data_rx', value)
 
         screenMgr = root.ids.main
         # NoTransition
