@@ -542,14 +542,20 @@ class RaceCaptureApp(App):
             if value == "1":  # Boolean settings values are 1/0, not True/False
                 if self.rc_config.connectivityConfig.cellConfig.cellEnabled:
                     alertPopup('Telemetry error', "Turn off RaceCapture's telemetry module for app to stream telemetry.")
-                self._telemetry_connection.telemetry_enabled = True
+                Clock.schedule_once(lambda dt: self._enable_telemetry())
             else:
-                self._telemetry_connection.telemetry_enabled = False
+                Clock.schedule_once(lambda dt: self._disable_telemetry())
 
         if token == ('preferences', 'conn_type'):
             # User changed their RC connection type
             Logger.info("Racecaptureapp: RC connection type changed to {}, restarting comms".format(value))
             Clock.schedule_once(lambda dt: self._restart_comms(), 0.5)
+
+    def _enable_telemetry(self):
+        self._telemetry_connection.telemetry_enabled = True
+
+    def _disable_telemetry(self):
+        self._telemetry_connection.telemetry_enabled = False
 
     def _restart_comms(self):
         self._data_bus_pump.stop()
