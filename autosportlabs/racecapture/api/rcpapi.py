@@ -210,9 +210,9 @@ class RcpApi:
                     msgJson = json.loads(msg, strict=False)
 
                     if 's' in msgJson:
-                        Logger.trace('RCPAPI: Rx: ' + str(msg))
+                         Logger.trace('RCPAPI: Rx: ' + str(msg))
                     else:
-                        Logger.debug('RCPAPI: Rx: ' + str(msg))
+                         Logger.debug('RCPAPI: Rx: ' + str(msg))
                     Clock.schedule_once(lambda dt: self.on_rx(True))
                     error_count = 0
                     for messageName in msgJson.keys():
@@ -400,10 +400,7 @@ class RcpApi:
 
             cmdStr = json.dumps(cmd, separators=(',', ':')) + '\r'
 
-            if "s" in cmd:
-                Logger.trace('RCPAPI: Tx: ' + cmdStr)
-            else:
-                Logger.debug('RCPAPI: Tx: ' + cmdStr)
+            Logger.debug('RCPAPI: Tx: ' + cmdStr)
             comms.write_message(cmdStr)
         except Exception as e:
             Logger.error('RCPAPI: sendCommand exception ' + str(e))
