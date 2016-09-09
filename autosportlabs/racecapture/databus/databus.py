@@ -186,14 +186,6 @@ class DataBusPump(object):
     Attempts to detect asynchronous messaging mode, where messages are streamed to the DataBusPump.
     If Async mode not detected, a polling thread is created to simulate this.
     """
-    _rc_api = None
-    _data_bus = None
-    sample = Sample()
-    _sample_event = Event()
-    _poll = Event()
-    _sample_thread = None
-    _meta_is_stale_counter = 0
-
     # Telemetry rate when we're actively needing the stream (logging, dashboard, etc)
     TELEMETRY_RATE_ACTIVE_HZ = 50
     # Telemetry rate when we're idle
@@ -204,6 +196,15 @@ class DataBusPump(object):
 
     def __init__(self, **kwargs):
         super(DataBusPump, self).__init__(**kwargs)
+
+        self._rc_api = None
+        self._data_bus = None
+        self.sample = Sample()
+        self._sample_event = Event()
+        self._poll = Event()
+        self._sample_thread = None
+        self._meta_is_stale_counter = 0
+
         self.rc_capabilities = None
         self._should_run = False
         self._running = False
