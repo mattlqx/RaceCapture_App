@@ -15,6 +15,21 @@
             "apn_user": "",
             "apn_pass": ""
         },
+        "Three Network (UK)": {
+            "apn_host": "three.co.uk",
+            "apn_user": "",
+            "apn_pass": ""
+        },
+        "Vodafone (Spain)": {
+            "apn_host": "ac.vodafone.es",
+            "apn_user": "vodafone",
+            "apn_pass": "vodafone"
+        },
+        "Lycamobile (Spain)": {
+            "apn_host": "data.lycamobile.es",
+            "apn_user": "lmes",
+            "apn_pass": "plus"
+        },
         "AT&T (USA) Alt #1": {
             "apn_host": "wap.cingular",
             "apn_user": "wap@cingulargprs.com",
