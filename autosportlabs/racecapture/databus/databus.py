@@ -209,12 +209,12 @@ class DataBusPump(object):
         self._should_run = False
         self._running = False
         self._starting = False
-        self._streaming_supported = False
-        self._telemetry_active = True
+        self._auto_streaming_supported = False
+        self._telemetry_idle = True
 
     @property
     def current_sample_rate(self):
-        return DataBusPump.TELEMETRY_RATE_ACTIVE_HZ if self._telemetry_active else DataBusPump.TELEMETRY_RATE_IDLE_HZ
+        return DataBusPump.TELEMETRY_RATE_IDLE_HZ if self._telemetry_idle else DataBusPump.TELEMETRY_RATE_ACTIVE_HZ
 
     def start(self, data_bus, rc_api, streaming_supported):
         Logger.debug("DataBusPump: start()")
@@ -224,7 +224,7 @@ class DataBusPump(object):
             return
 
         self._should_run = True
-        self._streaming_supported = streaming_supported
+        self._auto_streaming_supported = streaming_supported
 
         if self._poll.is_set():
             # since we're already running, simply
@@ -249,7 +249,7 @@ class DataBusPump(object):
         self._poll.set()
 
         # Only BT supports auto-streaming data, the rest we have to stream or poll
-        if not self._streaming_supported:
+        if not self._auto_streaming_supported:
             self._start_sample_streaming()
 
     def on_connect(self):
