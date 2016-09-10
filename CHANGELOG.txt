@@ -1,7 +1,16 @@
 ==1.7.4==
 * Ensure realtime values update in line chart, even if there is no location detected
+* Order saved sessions by most recent first
 * Change OBDII Speed channel to WheelSpeed to prevent conflict with GPS speed channel
 * Expand available space in realtime chart values for small formfactor devices (phones)
+* Improve UI response when enabling telemetry
+* Add Spain and UK APNs
+* Improvements to re-connection logic 
+* Adjust telemetry based on app mode - reduce telemetry rate when not logging to improve app responsiveness
+* Ensure analysis view loads correctly under all conditions
+* Improve behavior on session list dropdown, prevent pre-mature dismissing
+* Add GPS status indicator in toolbar
+* Make RX/TX indicator a single RX indicator with improved responsiveness
 
 ==1.7.3==
 * Restore telemetry back to 50Hz (fix bad 1.7.2 google play release)
