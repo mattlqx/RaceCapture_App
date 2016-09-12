@@ -154,11 +154,13 @@ class SessionListView(AnchorLayout):
             selection_settings = json.loads(selection_settings_json)
             delete_sessions = []
 
+            session_selections = []
+
             # Load sessions first, then select the session
             for session_id_str, session_info in selection_settings["sessions"].iteritems():
                 session = self.datastore.get_session_by_id(int(session_id_str))
                 if session:
-                    self.append_session(session)
+                    session_selections.append(session)
                 else:
                     # If the session doesn't exist anymore, remove it from settings
                     delete_sessions.append(session_id_str)
@@ -170,17 +172,28 @@ class SessionListView(AnchorLayout):
                 # Resave loaded sessions and laps
                 self._save()
 
+            lap_selections = []
             for session_id_str, session_info in selection_settings["sessions"].iteritems():
                 session_id = int(session_id_str)
-
                 laps = session_info["selected_laps"]
-
                 for lap in laps:
-                    self.select_lap(session_id, lap, True)
-
+                    lap_selections.append((session_id, lap))
+            Clock.schedule_once(lambda dt: self._load_next_selected_session(0, session_selections, lap_selections), 0.1)
         else:
             Logger.error("SessionListView: init_view failed, missing settings or datastore object")
             raise Exception("SessionListView: init_view failed, missing settings or datastore object")
+
+    def _load_next_selected_session(self, index, session_selections, lap_selections):
+        if index < len(session_selections):
+            self.append_session(session_selections[index])
+            Clock.schedule_once(lambda dt: self._load_next_selected_session(index + 1, session_selections, lap_selections), 0.1)
+        else:
+            Clock.schedule_once(lambda dt: self._load_next_selected_lap(0, lap_selections), 0.1)            
+            
+    def _load_next_selected_lap(self, index, lap_selections ):
+        if index < len(lap_selections):
+            self.select_lap(lap_selections[index][0], lap_selections[index][1], True)
+            Clock.schedule_once(lambda dt: self._load_next_selected_lap(index + 1, lap_selections), 0.1)                            
 
     def _save_settings(self):
         selection_settings = {"sessions": {}}
