@@ -182,3 +182,7 @@ class ChannelValuesView(ChannelAnalysisWidget):
         channels.pop(channel, None)
 
 
+    def on_touch_down(self, touch):
+        super(ChannelValuesView, self).on_touch_down(touch)
+        return False
+
