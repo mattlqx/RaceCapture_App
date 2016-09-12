@@ -155,7 +155,6 @@ class SessionListView(AnchorLayout):
             delete_sessions = []
 
             session_selections = []
-
             # Load sessions first, then select the session
             for session_id_str, session_info in selection_settings["sessions"].iteritems():
                 session = self.datastore.get_session_by_id(int(session_id_str))
