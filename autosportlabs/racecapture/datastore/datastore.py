@@ -1010,7 +1010,9 @@ class DataStore(object):
             for row in c.execute(extra_lap_query, [session_id, laps[-1].lap]):
                 laps.append(Lap(session_id=session_id, lap=(laps[-1].lap + 1), lap_time=None))
                 break
-
+        
+        #Filter so we only include valid laps
+        laps = [lap for lap in laps if lap.lap >= 0]
         return laps
 
     def update_session(self, session):
