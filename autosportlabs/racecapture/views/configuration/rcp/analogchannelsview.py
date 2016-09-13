@@ -16,7 +16,7 @@ from autosportlabs.racecapture.views.configuration.baseconfigview import BaseMul
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.racecapture.views.util.alertview import alertPopup
 from autosportlabs.racecapture.views.popup.centeredbubble import CenteredBubble, WarnLabel
-from kivy.metrics import dp
+from kivy.metrics import sp
 
 ANALOG_CHANNELS_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/analogchannelsview.kv'
 
@@ -27,8 +27,7 @@ class AnalogChannelsView(BaseMultiChannelConfigView):
     def __init__(self, **kwargs):
         super(AnalogChannelsView, self).__init__(**kwargs)
         self.channel_title = 'Analog '
-        self.accordion_item_height = dp(80)
-        self._min_height = 350
+        self.accordion_item_height = sp(300)
         
             
     def channel_builder(self, index, max_sample_rate):
@@ -208,7 +207,7 @@ class AnalogScalingMapEditor(BoxLayout):
             warn.add_widget(WarnLabel(text=str(e)))
             warn.auto_dismiss_timeout(WARN_DISMISS_TIMEOUT)
             warn.background_color = (1, 0, 0, 1.0)
-            warn.size = (dp(200), dp(50))
+            warn.size = (sp(200), sp(50))
             warn.size_hint = (None,None)
             self.get_root_window().add_widget(warn)
             warn.center_on(instance)
