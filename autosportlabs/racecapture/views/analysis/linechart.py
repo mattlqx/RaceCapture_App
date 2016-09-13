@@ -69,9 +69,9 @@ class LineChartMode(object):
     TIME = 1
     DISTANCE = 2
 
-    #conversion factor for milliseconds to minutes
+    # conversion factor for milliseconds to minutes
     MS_TO_MINUTES = 0.000016666
-    
+
     @staticmethod
     def format_value(mode, value):
         '''
@@ -133,8 +133,10 @@ class LineChart(ChannelAnalysisWidget):
     def _refresh_chart_mode_toggle(self):
         if self.line_chart_mode == LineChartMode.DISTANCE:
             self.chart_mode_toggle_button.text = u'\uf178'
+            toast('Distance')
         else:
             self.chart_mode_toggle_button.text = u'\uf017'
+            toast('Time')
 
     def on_toggle_chart_mode(self, *args):
         if self.line_chart_mode == LineChartMode.DISTANCE:
@@ -220,7 +222,7 @@ class LineChart(ChannelAnalysisWidget):
         '''
         marker_x = self._get_adjusted_offset()
         self.x_axis_value_label.text = LineChartMode.format_value(self.line_chart_mode, marker_x)
-    
+
     def _update_marker_pct(self, x, y):
         '''
         Synchronize the marker percent based on the x / y screen position
@@ -229,7 +231,7 @@ class LineChart(ChannelAnalysisWidget):
         width = self.size[0]
         pct = mouse_x / width
         self.marker_pct = pct
-        
+
     def _dispatch_marker(self, x, y):
         '''
         Update the marker and notify parent about marker selection
@@ -238,7 +240,7 @@ class LineChart(ChannelAnalysisWidget):
         self.ids.chart.marker_x = data_index
 
         self._update_x_marker_value()
-        
+
         for channel_plot in self._channel_plots.itervalues():
             try:
                 value_index = bisect.bisect_right(channel_plot.chart_x_index.keys(), data_index)
@@ -255,7 +257,7 @@ class LineChart(ChannelAnalysisWidget):
             touches = len(self._touches)
             if touches == 1:
                 # regular dragging / updating marker
-                self._update_marker_pct(x,y)            
+                self._update_marker_pct(x, y)
                 self._dispatch_marker(x, y)
             elif touches == 2:
                 zoom_scaling = self.max_x * self.TOUCH_ZOOM_SCALING
@@ -295,7 +297,7 @@ class LineChart(ChannelAnalysisWidget):
         if not self.collide_point(pos[0], pos[1]):
             return False
 
-        self._update_marker_pct(pos[0],pos[1])            
+        self._update_marker_pct(pos[0], pos[1])
         self._dispatch_marker(pos[0] * self.metrics_base.density, pos[1] * self.metrics_base.density)
 
     def remove_channel(self, channel, source_ref):
@@ -420,27 +422,25 @@ class LineChart(ChannelAnalysisWidget):
                 # sync max chart distances
                 self._update_max_chart_x()
                 self._update_x_marker_value()
-                
+
         finally:
             ProgressSpinner.decrement_refcount()
 
     def _results_has_distance(self, results):
         values = results['Distance'].values
         return len(values) > 0 and values[-1] > 0
-        
+
     def _add_unselected_channels(self, channels, source_ref):
         ProgressSpinner.increment_refcount()
         def get_results(results):
-            if not self._results_has_distance(results):
+            if self.line_chart_mode == LineChartMode.DISTANCE and not self._results_has_distance(results):
                 self.line_chart_mode = LineChartMode.TIME
                 self._refresh_chart_mode_toggle()
             # clone the incoming list of channels and pass it to the handler
-            if self.line_chart_mode == LineChartMode.TIME: 
+            if self.line_chart_mode == LineChartMode.TIME:
                 Clock.schedule_once(lambda dt: self._add_channels_results_time(channels[:], results))
-                toast('Time')
             elif self.line_chart_mode == LineChartMode.DISTANCE:
                 Clock.schedule_once(lambda dt: self._add_channels_results_distance(channels[:], results))
-                toast('Distance')
             else:
                 Logger.error('LineChart: Unknown line chart mode ' + str(self.line_chart_mode))
 
