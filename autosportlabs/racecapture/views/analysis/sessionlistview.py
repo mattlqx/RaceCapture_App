@@ -249,16 +249,21 @@ class SessionListView(AnchorLayout):
 
         return session_view
 
+    def _find_session_accordion_item(self, session):
+        for session_accordion in self._session_accordion_items:
+            if session_accordion.session_widget.session.session_id == session.session_id:
+                return session_accordion
+        return None
+
     def session_deleted(self, session):
         """
         Handles when a session is deleted outside the scope of this view
         :param session: Session db object
         """
-        for session_accordion in self._session_accordion_items:
-            if session_accordion.session_widget.session.session_id == session.session_id:
-                self.remove_session(session_accordion.session_widget, session_accordion)
-                self._session_accordion_items.remove(session_accordion)
-                break
+        session_accordion = self._find_session_accordion_item(session)
+        if session_accordion is not None:
+            self.remove_session(session_accordion.session_widget, session_accordion)
+            self._session_accordion_items.remove(session_accordion)
 
     def edit_session(self, instance, session_id):
         def _on_answer(instance, answer):
@@ -267,7 +272,13 @@ class SessionListView(AnchorLayout):
                 if not session_name or len(session_name) == 0:
                     alertPopup('Error', 'A session name must be specified')
                     return
-                session.name = session_editor.session_name
+                # did the session name change? if so, refresh the view.
+                new_name = session_editor.session_name
+                if new_name != session.name:
+                    session.name = new_name
+                    session_accordion = self._find_session_accordion_item(session)
+                    session_accordion.title = new_name
+
                 session.notes = session_editor.session_notes
                 self.datastore.update_session(session)
             popup.dismiss()
