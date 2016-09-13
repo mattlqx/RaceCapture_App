@@ -139,10 +139,8 @@ class LineChart(ChannelAnalysisWidget):
     def on_toggle_chart_mode(self, *args):
         if self.line_chart_mode == LineChartMode.DISTANCE:
             self.line_chart_mode = LineChartMode.TIME
-            toast('Time')
         else:
             self.line_chart_mode = LineChartMode.DISTANCE
-            toast('Distance')
 
         self._redraw_plots()
         self._refresh_chart_mode_toggle()
@@ -426,14 +424,23 @@ class LineChart(ChannelAnalysisWidget):
         finally:
             ProgressSpinner.decrement_refcount()
 
+    def _results_has_distance(self, results):
+        values = results['Distance'].values
+        return len(values) > 0 and values[-1] > 0
+        
     def _add_unselected_channels(self, channels, source_ref):
         ProgressSpinner.increment_refcount()
         def get_results(results):
+            if not self._results_has_distance(results):
+                self.line_chart_mode = LineChartMode.TIME
+                self._refresh_chart_mode_toggle()
             # clone the incoming list of channels and pass it to the handler
-            if self.line_chart_mode == LineChartMode.DISTANCE:
-                Clock.schedule_once(lambda dt: self._add_channels_results_distance(channels[:], results))
-            elif self.line_chart_mode == LineChartMode.TIME:
+            if self.line_chart_mode == LineChartMode.TIME: 
                 Clock.schedule_once(lambda dt: self._add_channels_results_time(channels[:], results))
+                toast('Time')
+            elif self.line_chart_mode == LineChartMode.DISTANCE:
+                Clock.schedule_once(lambda dt: self._add_channels_results_distance(channels[:], results))
+                toast('Distance')
             else:
                 Logger.error('LineChart: Unknown line chart mode ' + str(self.line_chart_mode))
 
