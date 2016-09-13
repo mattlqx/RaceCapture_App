@@ -120,8 +120,8 @@ class AnalysisView(Screen):
         self.stream_connecting = False
         Window.bind(mouse_pos=self.on_mouse_pos)
         Window.bind(on_motion=self.on_motion)
-        self.init_view()
-
+        self._layout_complete = False
+        
     def on_motion(self, instance, event, motion_event):
         flyin = self.ids.laps_flyin
         if self.collide_point(motion_event.x, motion_event.y):
@@ -261,6 +261,12 @@ class AnalysisView(Screen):
         self.ids.sessions_view.init_view()
         Clock.schedule_once(lambda dt: HelpInfo.help_popup('beta_analysis_welcome', self, arrow_pos='right_mid'), 0.5)
 
+    def do_layout(self, *largs):
+        super(AnalysisView, self).do_layout(largs)
+        if not self._layout_complete:
+            Clock.schedule_once(lambda dt: self.init_view(), 0.5)
+        self._layout_complete = True
+        
     def _init_datastore(self):
         dstore_path = self._settings.userPrefs.datastore_location
         if os.path.isfile(dstore_path):
