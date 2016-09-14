@@ -173,11 +173,11 @@ class SessionImportView(BaseStreamConnectView):
         self.datastore.delete_session(list_item.session.session_id)
         self.ids.session_list.remove_widget(list_item)
         self.dispatch('on_delete', list_item.session)
-        toast("Session deleted")
+        toast("Session deleted", center_on=self)
 
     def add_session(self, list_item):
         self.dispatch('on_add', list_item.session)
-        toast("Session loaded")
+        toast("Session loaded", center_on=self)
 
     def close(self, *args):
         self.dispatch('on_close')

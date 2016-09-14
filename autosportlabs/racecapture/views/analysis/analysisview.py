@@ -221,7 +221,8 @@ class AnalysisView(Screen):
                 sessions_view.select_lap(new_session_id, best_lap_id, True)
                 HelpInfo.help_popup('suggested_lap', main_chart, arrow_pos='left_mid')
             else:
-                Logger.warn('AnalysisView: Could not determine best lap for session {}'.format(new_session_id))
+                Logger.info('AnalysisView: No best lap could be determined; selecting first lap by default for session {}'.format(new_session_id))
+                sessions_view.select_lap(new_session_id, 0, True)
 
     def on_stream_connecting(self, *args):
         self.stream_connecting = True
@@ -247,6 +248,7 @@ class AnalysisView(Screen):
         Logger.info("AnalysisView: on_add_session: {}".format(session))
         self.check_load_suggested_lap(session.session_id)
         self.ids.sessions_view.append_session(session)
+        self.check_load_suggested_lap(session.session_id)        
 
     def on_delete_session(self, instance, session):
         self.ids.sessions_view.session_deleted(session)
