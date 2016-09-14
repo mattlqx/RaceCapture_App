@@ -121,7 +121,7 @@ class SessionRecorder(EventDispatcher) :
         """
         date = datetime.now()
 
-        date_string = date.strftime("%x %X%p")
+        date_string = date.strftime("%x %X")
 
         return date_string
 
