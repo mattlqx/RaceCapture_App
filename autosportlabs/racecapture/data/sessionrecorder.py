@@ -22,7 +22,7 @@ from datetime import datetime
 from autosportlabs.racecapture.datastore import Session
 from kivy.logger import Logger
 from kivy.event import EventDispatcher
-
+from autosportlabs.util.timeutil import format_time
 
 class SessionRecorder(EventDispatcher) :
     """
@@ -119,10 +119,7 @@ class SessionRecorder(EventDispatcher) :
         Creates a session name
         :return: String name
         """
-        date = datetime.now()
-
-        date_string = date.strftime("%x %X")
-
+        date_string = format_time()
         return date_string
 
     def on_view_change(self, view_name):
