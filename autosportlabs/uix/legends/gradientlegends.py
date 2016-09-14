@@ -129,7 +129,7 @@ class GradientLapLegend(BoxLayout):
 
 class LapLegend(BoxLayout):
     '''
-    A compound widget that presents the the color legend with session/lap information
+    A compound widget that presents a colored legend with session/lap information
     '''
     Builder.load_string('''
 <LapLegend>:
@@ -137,20 +137,17 @@ class LapLegend(BoxLayout):
     spacing: sp(5)
     FieldLabel:
         id: lap
-        size_hint_x: 0.5
+        size_hint_x: 0.7
         halign: 'right'
         valign: 'middle'
-        text: '{} :: {}'.format(root.lap, root.session)
+        text: '{} :: {}'.format(root.session, root.lap)
+        color: root.color
     FieldLabel:
         id: laptime
-        size_hint_x: 0.4
+        size_hint_x: 0.3
         halign: 'right'
         valign: 'middle'
         text: '{}'.format(root.lap_time)
-    ColorLegend:
-        id: legend
-        size_hint_x: 0.1
-        bar_color: root.color    
     ''')
     color = ListProperty([1.0, 1.0, 1.0, 1.0])
     session = StringProperty('')
