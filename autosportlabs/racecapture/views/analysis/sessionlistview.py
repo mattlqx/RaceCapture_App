@@ -135,6 +135,7 @@ class SessionListView(AnchorLayout):
     def __init__(self, **kwargs):
         super(SessionListView, self).__init__(**kwargs)
         self.register_event_type('on_lap_selection')
+        self.register_event_type('on_session_updated')
         accordion = Accordion(orientation='vertical', size_hint=(1.0, None))
         sv = ScrollContainer(size_hint=(1.0, 1.0), do_scroll_x=False)
         self.selected_laps = {}
@@ -187,12 +188,12 @@ class SessionListView(AnchorLayout):
             self.append_session(session_selections[index])
             Clock.schedule_once(lambda dt: self._load_next_selected_session(index + 1, session_selections, lap_selections), 0.1)
         else:
-            Clock.schedule_once(lambda dt: self._load_next_selected_lap(0, lap_selections), 0.1)            
-            
-    def _load_next_selected_lap(self, index, lap_selections ):
+            Clock.schedule_once(lambda dt: self._load_next_selected_lap(0, lap_selections), 0.1)
+
+    def _load_next_selected_lap(self, index, lap_selections):
         if index < len(lap_selections):
             self.select_lap(lap_selections[index][0], lap_selections[index][1], True)
-            Clock.schedule_once(lambda dt: self._load_next_selected_lap(index + 1, lap_selections), 0.1)                            
+            Clock.schedule_once(lambda dt: self._load_next_selected_lap(index + 1, lap_selections), 0.1)
 
     def _save_settings(self):
         selection_settings = {"sessions": {}}
@@ -281,6 +282,7 @@ class SessionListView(AnchorLayout):
 
                 session.notes = session_editor.session_notes
                 self.datastore.update_session(session)
+                self.dispatch('on_session_updated', session)
             popup.dismiss()
 
         session = self.datastore.get_session_by_id(session_id, self.sessions)
@@ -304,6 +306,9 @@ class SessionListView(AnchorLayout):
         self.current_laps[source_key] = lapitem
 
     def on_lap_selection(self, *args):
+        pass
+
+    def on_session_updated(self, *args):
         pass
 
     def _save(self):
