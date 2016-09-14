@@ -174,6 +174,9 @@ class ChannelValuesView(ChannelAnalysisWidget):
         self.datastore.get_channel_data(source_ref, channels, get_results)
 
     def refresh_view(self):
+        """
+        Refresh the current view
+        """
         self._refresh_channels()
 
     def remove_channel(self, channel, source_ref):

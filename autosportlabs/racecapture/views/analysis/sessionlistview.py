@@ -135,6 +135,7 @@ class SessionListView(AnchorLayout):
     def __init__(self, **kwargs):
         super(SessionListView, self).__init__(**kwargs)
         self.register_event_type('on_lap_selection')
+        self.register_event_type('on_session_updated')
         accordion = Accordion(orientation='vertical', size_hint=(1.0, None))
         sv = ScrollContainer(size_hint=(1.0, 1.0), do_scroll_x=False)
         self.selected_laps = {}
@@ -187,12 +188,12 @@ class SessionListView(AnchorLayout):
             self.append_session(session_selections[index])
             Clock.schedule_once(lambda dt: self._load_next_selected_session(index + 1, session_selections, lap_selections), 0.1)
         else:
-            Clock.schedule_once(lambda dt: self._load_next_selected_lap(0, lap_selections), 0.1)            
-            
-    def _load_next_selected_lap(self, index, lap_selections ):
+            Clock.schedule_once(lambda dt: self._load_next_selected_lap(0, lap_selections), 0.1)
+
+    def _load_next_selected_lap(self, index, lap_selections):
         if index < len(lap_selections):
             self.select_lap(lap_selections[index][0], lap_selections[index][1], True)
-            Clock.schedule_once(lambda dt: self._load_next_selected_lap(index + 1, lap_selections), 0.1)                            
+            Clock.schedule_once(lambda dt: self._load_next_selected_lap(index + 1, lap_selections), 0.1)
 
     def _save_settings(self):
         selection_settings = {"sessions": {}}
@@ -249,16 +250,21 @@ class SessionListView(AnchorLayout):
 
         return session_view
 
+    def _find_session_accordion_item(self, session):
+        for session_accordion in self._session_accordion_items:
+            if session_accordion.session_widget.session.session_id == session.session_id:
+                return session_accordion
+        return None
+
     def session_deleted(self, session):
         """
         Handles when a session is deleted outside the scope of this view
         :param session: Session db object
         """
-        for session_accordion in self._session_accordion_items:
-            if session_accordion.session_widget.session.session_id == session.session_id:
-                self.remove_session(session_accordion.session_widget, session_accordion)
-                self._session_accordion_items.remove(session_accordion)
-                break
+        session_accordion = self._find_session_accordion_item(session)
+        if session_accordion is not None:
+            self.remove_session(session_accordion.session_widget, session_accordion)
+            self._session_accordion_items.remove(session_accordion)
 
     def edit_session(self, instance, session_id):
         def _on_answer(instance, answer):
@@ -267,9 +273,16 @@ class SessionListView(AnchorLayout):
                 if not session_name or len(session_name) == 0:
                     alertPopup('Error', 'A session name must be specified')
                     return
-                session.name = session_editor.session_name
+                # did the session name change? if so, refresh the view.
+                new_name = session_editor.session_name
+                if new_name != session.name:
+                    session.name = new_name
+                    session_accordion = self._find_session_accordion_item(session)
+                    session_accordion.title = new_name
+
                 session.notes = session_editor.session_notes
                 self.datastore.update_session(session)
+                self.dispatch('on_session_updated', session)
             popup.dismiss()
 
         session = self.datastore.get_session_by_id(session_id, self.sessions)
@@ -293,6 +306,9 @@ class SessionListView(AnchorLayout):
         self.current_laps[source_key] = lapitem
 
     def on_lap_selection(self, *args):
+        pass
+
+    def on_session_updated(self, *args):
         pass
 
     def _save(self):

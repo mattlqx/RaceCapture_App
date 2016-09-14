@@ -145,6 +145,12 @@ class AnalysisMap(AnalysisWidget):
         Window.bind(on_motion=self.on_motion)
 
 
+    def refresh_view(self):
+        """
+        Refresh the current view
+        """
+        self._refresh_lap_legends()
+
     def add_option_buttons(self):
         """
         Add additional buttons needed by this widget
