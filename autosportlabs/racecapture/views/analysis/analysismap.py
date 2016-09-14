@@ -33,7 +33,7 @@ from autosportlabs.racecapture.datastore import Filter
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.racecapture.views.util.viewutils import format_laptime
 from iconbutton import IconButton, LabelIconButton
-from autosportlabs.uix.legends.gradientlegends import GradientLapLegend, LapLegend
+from autosportlabs.uix.legends.laplegends import GradientLapLegend, LapLegend
 from autosportlabs.uix.options.optionsview import OptionsView, BaseOptionsScreen
 
 # The scaling we use while we zoom
@@ -87,7 +87,7 @@ class AnalysisMap(AnalysisWidget):
             BoxLayout:
                 id: legend_box
                 orientation: 'vertical'
-                size_hint_x: None
+                size_hint_x: 0.4
 
                 width: min(dp(300), 0.35 * root.width)
                 BoxLayout:
@@ -197,7 +197,7 @@ class AnalysisMap(AnalysisWidget):
             self.ids.heat_channel_name.text = '{} {}'.format(self.heatmap_channel, '' if len(units) == 0 else '({})'.format(units))
         else:
             self.ids.top_bar.size_hint_x = 0.75
-            self.ids.legend_box.size_hint_x = 0.25
+            self.ids.legend_box.size_hint_x = 0.4
             self.ids.heat_channel_name.text = ''
 
     def _update_trackmap(self, values):
