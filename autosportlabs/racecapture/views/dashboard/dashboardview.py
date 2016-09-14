@@ -186,7 +186,7 @@ class DashboardView(Screen):
         if self._rc_api.connected:
             if not self._selected_track:
 
-                def capabilities_fail():
+                def capabilities_fail(*args):
                     Logger.error("DashboardView: _race_setup(), could not get capabilities to determine if device has "
                                  "a tracks db")
 
