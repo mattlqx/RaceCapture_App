@@ -31,6 +31,7 @@ from kivy.logger import Logger
 import bisect
 import copy
 
+from autosportlabs.racecapture.views.util.alertview import alertPopup
 from autosportlabs.racecapture.views.analysis.analysiswidget import ChannelAnalysisWidget
 from autosportlabs.racecapture.views.analysis.markerevent import MarkerEvent
 from autosportlabs.uix.color.colorsequence import ColorSequence
@@ -119,6 +120,7 @@ class LineChart(ChannelAnalysisWidget):
         self.marker_pct = 0
         self.line_chart_mode = LineChartMode.DISTANCE
         self._channel_plots = {}
+        self.x_axis_value_label = None
 
     def add_option_buttons(self):
         '''
@@ -221,7 +223,9 @@ class LineChart(ChannelAnalysisWidget):
         Update the value of the marker distance / time widget based on the current marker percent
         '''
         marker_x = self._get_adjusted_offset()
-        self.x_axis_value_label.text = LineChartMode.format_value(self.line_chart_mode, marker_x)
+        label = self.x_axis_value_label
+        if label is not None:
+            self.x_axis_value_label.text = LineChartMode.format_value(self.line_chart_mode, marker_x)
 
     def _update_marker_pct(self, x, y):
         '''
@@ -443,8 +447,13 @@ class LineChart(ChannelAnalysisWidget):
                 Clock.schedule_once(lambda dt: self._add_channels_results_distance(channels[:], results))
             else:
                 Logger.error('LineChart: Unknown line chart mode ' + str(self.line_chart_mode))
-
-        self.datastore.get_channel_data(source_ref, ['Interval', 'Distance'] + channels, get_results)
+        try:
+            self.datastore.get_channel_data(source_ref, ['Interval', 'Distance'] + channels, get_results)
+        except Exception as e:
+            alertPopup('Could not load lap', "There was a problem loading the lap due to missing data:\r\n\r\n{}".format(e))
+            raise  # allow CrashHandler to record the issue
+        finally:
+            ProgressSpinner.decrement_refcount()
 
     def _redraw_plots(self):
         selected_channels = self.selected_channels
