@@ -31,6 +31,7 @@ from autosportlabs.uix.track.racetrackview import RaceTrackView
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.racecapture.datastore import Filter
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
+from autosportlabs.racecapture.views.util.viewutils import format_laptime
 from iconbutton import IconButton, LabelIconButton
 from autosportlabs.uix.legends.gradientlegends import GradientLapLegend, LapLegend
 from autosportlabs.uix.options.optionsview import OptionsView, BaseOptionsScreen
@@ -392,10 +393,12 @@ class AnalysisMap(AnalysisWidget):
                                                )
             else:
                 session_info = self.datastore.get_session_by_id(source_ref.session)
+                lap = self.datastore.get_cached_lap_info(source_ref)
                 path_color = self.ids.track.get_path(source_key).color
                 lap_legend = LapLegend(color=path_color,
                                        session=session_info.name,
-                                       lap=str(source_ref.lap))
+                                       lap=str(source_ref.lap),
+                                       lap_time=format_laptime(lap.lap_time))
             self.ids.legend_list.add_widget(lap_legend)
             height_pct *= 0.6
 

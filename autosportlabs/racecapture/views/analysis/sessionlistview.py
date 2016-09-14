@@ -238,7 +238,7 @@ class SessionListView(AnchorLayout):
 
         self._accordion.add_widget(item)
 
-        laps = self.datastore.get_laps(session.session_id)
+        laps = self.datastore.get_cached_session_laps(session.session_id)
 
         if len(laps) == 0:
             session_view.append_label('No Laps')
