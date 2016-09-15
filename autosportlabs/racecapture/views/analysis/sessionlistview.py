@@ -136,6 +136,7 @@ class SessionListView(AnchorLayout):
         super(SessionListView, self).__init__(**kwargs)
         self.register_event_type('on_lap_selection')
         self.register_event_type('on_session_updated')
+        self.register_event_type('on_sessions_loaded')
         accordion = Accordion(orientation='vertical', size_hint=(1.0, None))
         sv = ScrollContainer(size_hint=(1.0, 1.0), do_scroll_x=False)
         self.selected_laps = {}
@@ -182,7 +183,7 @@ class SessionListView(AnchorLayout):
         else:
             Logger.error("SessionListView: init_view failed, missing settings or datastore object")
             raise Exception("SessionListView: init_view failed, missing settings or datastore object")
-
+ 
     def _load_next_selected_session(self, index, session_selections, lap_selections):
         if index < len(session_selections):
             self.append_session(session_selections[index])
@@ -194,6 +195,11 @@ class SessionListView(AnchorLayout):
         if index < len(lap_selections):
             self.select_lap(lap_selections[index][0], lap_selections[index][1], True)
             Clock.schedule_once(lambda dt: self._load_next_selected_lap(index + 1, lap_selections), 0.1)
+        else:
+            self._session_load_complete()
+    
+    def _session_load_complete(self):
+        self.dispatch('on_sessions_loaded')
 
     def _save_settings(self):
         selection_settings = {"sessions": {}}
@@ -213,6 +219,10 @@ class SessionListView(AnchorLayout):
     def selected_count(self):
         return len(self.selected_laps.values())
 
+    @property
+    def session_count(self):
+        return len(self.sessions)
+    
     def on_session_collapsed(self, instance, value):
         if value == False:
             session_count = len(self._accordion.children)
@@ -314,6 +324,9 @@ class SessionListView(AnchorLayout):
     def on_session_updated(self, *args):
         pass
 
+    def on_sessions_loaded(self, *args):
+        pass
+    
     def _save(self):
         if self._save_timeout:
             self._save_timeout.cancel()
