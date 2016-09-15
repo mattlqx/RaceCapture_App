@@ -99,7 +99,7 @@ class SessionRecorder(EventDispatcher) :
     @property
     def _should_record(self):
 
-        if self._settings.userPrefs.get_pref('preferences', 'record_session') == "0":
+        if self._settings.userPrefs.get_pref('preferences', 'record_session') == '0':
             return False
 
         if self._current_view not in SessionRecorder.RECORDING_VIEWS:
