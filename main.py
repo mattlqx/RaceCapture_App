@@ -170,7 +170,7 @@ class RaceCaptureApp(App):
         self._databus = DataBusFactory().create_standard_databus(self.settings.systemChannels)
         self.settings.runtimeChannels.data_bus = self._databus
         self._datastore = DataStore(databus=self._databus)
-        self._session_recorder = SessionRecorder(self._datastore, self._databus, self._rc_api, self.trackManager)
+        self._session_recorder = SessionRecorder(self._datastore, self._databus, self._rc_api, self.settings, self.trackManager)
         self._session_recorder.bind(on_recording=self._on_session_recording)
 
 
