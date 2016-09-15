@@ -11,7 +11,7 @@
     {
         "type": "bool",
         "title": "Record Session",
-        "desc": "App will automatically record data while in Dashboard mode and will be available as a saved session for immediate analysis",
+        "desc": "Automatically record data in app while in Dashboard mode. Data will be available as a saved session in Analysis mode.",
         "section": "preferences",
         "key": "record_session",
         "true": "auto"
