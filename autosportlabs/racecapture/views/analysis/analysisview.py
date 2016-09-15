@@ -116,6 +116,7 @@ class AnalysisView(Screen):
         self._track_manager = kwargs.get('track_manager')
         self.ids.sessions_view.bind(on_lap_selection=self.lap_selection)
         self.ids.sessions_view.bind(on_session_updated=self.session_updated)
+        self.ids.sessions_view.bind(on_sessions_loaded=self.sessions_loaded)
         self.ids.channelvalues.color_sequence = self._color_sequence
         self.ids.mainchart.color_sequence = self._color_sequence
         self.stream_connecting = False
@@ -147,6 +148,10 @@ class AnalysisView(Screen):
     def session_updated(self, instance, session):
         self.ids.channelvalues.refresh_view()
         self.ids.analysismap.refresh_view()
+
+    def sessions_loaded(self, instance):
+        if self.ids.sessions_view.session_count == 0:
+            self.show_add_stream_dialog()
 
     def lap_selection(self, instance, source_ref, selected):
         source_key = str(source_ref)
