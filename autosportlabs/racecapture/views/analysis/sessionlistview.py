@@ -194,7 +194,7 @@ class SessionListView(AnchorLayout):
     def _load_next_selected_lap(self, index, lap_selections):
         if index < len(lap_selections):
             self.select_lap(lap_selections[index][0], lap_selections[index][1], True)
-            Clock.schedule_once(lambda dt: self._load_next_selected_lap(index + 1, lap_selections), 0.5)
+            Clock.schedule_once(lambda dt: self._load_next_selected_lap(index + 1, lap_selections), 0.1)
         else:
             self._session_load_complete()
 
