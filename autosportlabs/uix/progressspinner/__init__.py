@@ -263,26 +263,19 @@ class ProgressSpinner(ProgressSpinnerBase):
 	
 	@staticmethod
 	def increment_refcount():
-		ProgressSpinner.busy_refcount +=1
+		ProgressSpinner.busy_refcount += 1
 		if ProgressSpinner.instance is None:
 			ProgressSpinner.instance = ProgressSpinner(size_hint=(None, None), size=(100,100), center=Window.center)
 			Window.add_widget(ProgressSpinner.instance)
 	
 	@staticmethod
 	def decrement_refcount():
-		ProgressSpinner.busy_refcount -=1
+		ProgressSpinner.busy_refcount -= 1 if ProgressSpinner.busy_refcount > 0 else 0
+		print(str(ProgressSpinner.busy_refcount))
 		if ProgressSpinner.busy_refcount == 0 and ProgressSpinner.instance:
 			Window.remove_widget(ProgressSpinner.instance)
 			ProgressSpinner.instance = None
 			
-#		if value > 0:
-#			Window().
-#		else:
-#			self.instance.get_root_window().remove_widget(self.instance)
-			
-		
-
-
 class TextureProgressSpinnerBase(ProgressSpinnerBase):
 	texture = ObjectProperty()
 	'''Texture to render for the spinner.
