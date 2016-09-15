@@ -251,7 +251,6 @@ class AnalysisView(Screen):
 
     def on_add_session(self, instance, session):
         Logger.info("AnalysisView: on_add_session: {}".format(session))
-        self._datastore.refresh_session_data()
         self.check_load_suggested_lap(session.session_id)
         self.ids.sessions_view.append_session(session)
         self.check_load_suggested_lap(session.session_id)
