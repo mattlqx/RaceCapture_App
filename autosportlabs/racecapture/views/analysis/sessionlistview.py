@@ -183,7 +183,7 @@ class SessionListView(AnchorLayout):
         else:
             Logger.error("SessionListView: init_view failed, missing settings or datastore object")
             raise Exception("SessionListView: init_view failed, missing settings or datastore object")
- 
+
     def _load_next_selected_session(self, index, session_selections, lap_selections):
         if index < len(session_selections):
             self.append_session(session_selections[index])
@@ -197,7 +197,7 @@ class SessionListView(AnchorLayout):
             Clock.schedule_once(lambda dt: self._load_next_selected_lap(index + 1, lap_selections), 0.1)
         else:
             self._session_load_complete()
-    
+
     def _session_load_complete(self):
         self.dispatch('on_sessions_loaded')
 
@@ -222,7 +222,7 @@ class SessionListView(AnchorLayout):
     @property
     def session_count(self):
         return len(self.sessions)
-    
+
     def on_session_collapsed(self, instance, value):
         if value == False:
             session_count = len(self._accordion.children)
@@ -250,7 +250,7 @@ class SessionListView(AnchorLayout):
 
         laps = self.datastore.get_cached_session_laps(session.session_id)
 
-        if len(laps) == 0:
+        if laps is None or len(laps) == 0:
             session_view.append_label('No Laps')
         else:
             for lap in laps:
@@ -326,7 +326,7 @@ class SessionListView(AnchorLayout):
 
     def on_sessions_loaded(self, *args):
         pass
-    
+
     def _save(self):
         if self._save_timeout:
             self._save_timeout.cancel()

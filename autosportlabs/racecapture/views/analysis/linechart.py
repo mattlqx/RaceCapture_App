@@ -99,6 +99,14 @@ class LineChart(ChannelAnalysisWidget):
     TOUCH_ZOOM_SCALING = 0.000001
     MAX_SAMPLES_TO_DISPLAY = 1000
 
+    # The meaningful distance is an approximate distance / time threshold to consider
+    # a dataset to have meaningful distance data. The threshold is:
+    # 0.001 miles (or km, close enough) within 10 seconds.
+    #
+    # This is to provide a smart-ish way to auto-select time vs distance when a lap
+    # is loaded loaded.
+    MEANINGFUL_DISTANCE_RATIO_THRESHOLD = 0.0001
+
     def __init__(self, **kwargs):
         super(LineChart, self).__init__(**kwargs)
         self.register_event_type('on_marker')
@@ -121,6 +129,8 @@ class LineChart(ChannelAnalysisWidget):
         self.line_chart_mode = LineChartMode.DISTANCE
         self._channel_plots = {}
         self.x_axis_value_label = None
+
+        self._user_refresh_requested = False
 
     def add_option_buttons(self):
         '''
@@ -146,6 +156,7 @@ class LineChart(ChannelAnalysisWidget):
         else:
             self.line_chart_mode = LineChartMode.DISTANCE
 
+        self._user_refresh_requested = True
         self._redraw_plots()
         self._refresh_chart_mode_toggle()
 
@@ -431,15 +442,41 @@ class LineChart(ChannelAnalysisWidget):
             ProgressSpinner.decrement_refcount()
 
     def _results_has_distance(self, results):
-        values = results['Distance'].values
-        return len(values) > 0 and values[-1] > 0
+        distance_values = results.get('Distance')
+        interval_values = results.get('Interval')
+        # Some sanity checking
+        if not (distance_values and interval_values):
+            return False
+
+        distance_values = distance_values.values
+        interval_values = interval_values.values
+        if not (len(distance_values) > 0 and len(interval_values) > 0):
+            return False
+
+        # calculate the ratio of total distance / time
+        total_time_ms = interval_values[-1] - interval_values[0]
+        total_distance = distance_values[-1]
+        distance_ratio = total_distance / total_time_ms
+
+        print('{} {} {}'.format(total_time_ms, total_distance, distance_ratio))
+        return distance_ratio > LineChart.MEANINGFUL_DISTANCE_RATIO_THRESHOLD
 
     def _add_unselected_channels(self, channels, source_ref):
         ProgressSpinner.increment_refcount()
         def get_results(results):
-            if self.line_chart_mode == LineChartMode.DISTANCE and not self._results_has_distance(results):
-                self.line_chart_mode = LineChartMode.TIME
-                self._refresh_chart_mode_toggle()
+            # Auto-switch to time mode in charts only if the user
+            # did not request it.
+            if (
+                    self.line_chart_mode == LineChartMode.DISTANCE and
+                    not self._results_has_distance(results)
+                ):
+                    if self._user_refresh_requested == True:
+                        toast("Warning: one or more selected laps have missing distance data", length_long=True)
+                        self._user_refresh_requested = False
+                    else:
+                        self.line_chart_mode = LineChartMode.TIME
+                        self._refresh_chart_mode_toggle()
+
             # clone the incoming list of channels and pass it to the handler
             if self.line_chart_mode == LineChartMode.TIME:
                 Clock.schedule_once(lambda dt: self._add_channels_results_time(channels[:], results))
