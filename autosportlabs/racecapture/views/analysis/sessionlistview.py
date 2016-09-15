@@ -249,11 +249,10 @@ class SessionListView(AnchorLayout):
         self._accordion.add_widget(item)
 
         laps = self.datastore.get_cached_session_laps(session.session_id)
-
         if laps is None or len(laps) == 0:
             session_view.append_label('No Laps')
         else:
-            for lap in laps:
+            for lap in laps.values():
                 self.append_lap(session_view, lap.lap, lap.lap_time)
 
         self._save()

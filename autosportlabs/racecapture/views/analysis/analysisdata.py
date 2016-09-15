@@ -111,7 +111,8 @@ class CachingAnalysisDatastore(DataStore):
         sessions = self.get_sessions()
         for session in sessions:
             session_id = session.session_id
-            self._session_info_cache[session_id] = self.get_laps(session_id)
+            laps_dict = self.get_laps(session_id)
+            self._session_info_cache[session_id] = laps_dict
 
     def get_cached_lap_info(self, source_ref):
         """
@@ -123,15 +124,15 @@ class CachingAnalysisDatastore(DataStore):
         lap = None
         session = self.session_info_cache.get(source_ref.session)
         if session is not None:
-            lap = session[source_ref.lap]
+            lap = session.get(source_ref.lap)
         return lap
 
     def get_cached_session_laps(self, session_id):
         """
-        Returns a list of Lap objects for the specified session
+        Returns an ordered Dictionary of Lap objects for the specified session
         :param session_id the session to get
         :type session_id int
-        :return a list of Lap objects for the specified session
+        :return an OrderedDict of Lap objects for the specified session. Key is lap id
         """
         return self.session_info_cache.get(session_id)
 
