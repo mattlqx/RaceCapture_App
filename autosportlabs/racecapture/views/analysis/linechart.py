@@ -458,7 +458,6 @@ class LineChart(ChannelAnalysisWidget):
         total_distance = distance_values[-1]
         distance_ratio = total_distance / total_time_ms
 
-        print('{} {} {}'.format(total_time_ms, total_distance, distance_ratio))
         return distance_ratio > LineChart.MEANINGFUL_DISTANCE_RATIO_THRESHOLD
 
     def _add_unselected_channels(self, channels, source_ref):
