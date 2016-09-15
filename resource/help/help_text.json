@@ -5,6 +5,6 @@
     },
     "beta_analysis_welcome":{
         "title": "Beta Analysis",
-        "text": "To get started, touch the (+) icon to import a log file. Sample logfiles are available from our support forums.\n\nBeta software! Expect significant improvements. Side effects may include needing to re-import your data."    
+        "text": "To get started, select a recently recorded session or import a log file. Sample logfiles are available from our support forums.\n\nBeta software! Expect significant improvements. Side effects may include needing to re-import your data."    
     }
 }
