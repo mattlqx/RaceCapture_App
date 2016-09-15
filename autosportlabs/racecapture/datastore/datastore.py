@@ -996,7 +996,9 @@ class DataStore(object):
                                 GROUP BY LapCount, session_id
                                 ORDER BY datapoint.LapCount ASC;''',
                                 (session_id,)):
-            laps.append(Lap(session_id=row[0], lap=row[1] - 1, lap_time=row[2]))
+            lap = row[1]
+            lap = 0 if lap is None else lap
+            laps.append(Lap(session_id=row[0], lap=lap - 1, lap_time=row[2]))
 
         # Figure out if there are samples beyond the last lap
         extra_lap_query = '''SELECT COUNT(*) FROM sample JOIN datapoint ON datapoint.sample_id=sample.id
@@ -1010,8 +1012,8 @@ class DataStore(object):
             for row in c.execute(extra_lap_query, [session_id, laps[-1].lap]):
                 laps.append(Lap(session_id=session_id, lap=(laps[-1].lap + 1), lap_time=None))
                 break
-        
-        #Filter so we only include valid laps
+
+        # Filter so we only include valid laps
         laps = [lap for lap in laps if lap.lap >= 0]
         return laps
 
