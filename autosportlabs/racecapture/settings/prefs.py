@@ -173,8 +173,9 @@ class UserPrefs(EventDispatcher):
         self.config.setdefault('preferences', 'config_file_dir', default_user_files_dir)
         self.config.setdefault('preferences', 'firmware_dir', default_user_files_dir)
         self.config.setdefault('preferences', 'import_datalog_dir', default_user_files_dir)
-        self.config.setdefault('preferences', 'first_time_setup', True)
-        self.config.setdefault('preferences', 'send_telemetry', False)
+        self.config.setdefault('preferences', 'first_time_setup', '1')
+        self.config.setdefault('preferences', 'send_telemetry', '0')
+        self.config.setdefault('preferences', 'record_session', '1')
         self.config.setdefault('preferences', 'last_dash_screen', 'gaugeView')
         self.config.setdefault('preferences', 'global_help', True)
 

@@ -10,6 +10,14 @@
     },
     {
         "type": "bool",
+        "title": "Record Session",
+        "desc": "App will automatically record session data while in Dashboard mode and will be available for immediate analysis",
+        "section": "preferences",
+        "key": "record_session",
+        "true": "auto"
+    },
+    {
+        "type": "bool",
         "title": "Send telemetry",
         "desc": "App will send telemetry to race-capture.com using the connected RaceCapture device ID. NOTE: app will not send telemetry if RaceCapture's telemetry module is on.",
         "section": "preferences",
