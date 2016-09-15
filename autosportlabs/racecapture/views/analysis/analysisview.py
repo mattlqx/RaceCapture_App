@@ -208,7 +208,6 @@ class AnalysisView(Screen):
     def on_stream_connected(self, instance, new_session_id):
         self.stream_connecting = False
         self._dismiss_popup()
-        self._datastore.refresh_session_data()
         session = self._datastore.get_session_by_id(new_session_id)
         self.ids.sessions_view.append_session(session)
         self.check_load_suggested_lap(new_session_id)
