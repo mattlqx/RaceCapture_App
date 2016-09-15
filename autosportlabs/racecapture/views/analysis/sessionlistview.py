@@ -79,7 +79,8 @@ class Session(BoxLayout):
         return len(self.ids.lap_list.children)
 
     def append_lap(self, session, lap, laptime):
-        text = '{} :: {}'.format(int(lap), format_laptime(laptime))
+        lap_number = int(lap) if isinstance( lap, (int)) else ''
+        text = '{} :: {}'.format(lap_number, format_laptime(laptime))
         lapitem = LapItemButton(session=session, text=text, lap=lap, laptime=laptime)
         self.ids.lap_list.add_widget(lapitem)
         return lapitem
