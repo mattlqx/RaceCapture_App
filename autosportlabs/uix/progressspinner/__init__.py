@@ -260,22 +260,21 @@ class ProgressSpinnerBase(Widget):
 class ProgressSpinner(ProgressSpinnerBase):
 	busy_refcount = 0
 	instance = None
-	
+
 	@staticmethod
 	def increment_refcount():
 		ProgressSpinner.busy_refcount += 1
 		if ProgressSpinner.instance is None:
-			ProgressSpinner.instance = ProgressSpinner(size_hint=(None, None), size=(100,100), center=Window.center)
+			ProgressSpinner.instance = ProgressSpinner(size_hint=(None, None), size=(100, 100), center=Window.center)
 			Window.add_widget(ProgressSpinner.instance)
-	
+
 	@staticmethod
 	def decrement_refcount():
 		ProgressSpinner.busy_refcount -= 1 if ProgressSpinner.busy_refcount > 0 else 0
-		print(str(ProgressSpinner.busy_refcount))
 		if ProgressSpinner.busy_refcount == 0 and ProgressSpinner.instance:
 			Window.remove_widget(ProgressSpinner.instance)
 			ProgressSpinner.instance = None
-			
+
 class TextureProgressSpinnerBase(ProgressSpinnerBase):
 	texture = ObjectProperty()
 	'''Texture to render for the spinner.
@@ -330,7 +329,7 @@ if __name__ == '__main__':
 
 		def build(self):
 			Clock.schedule_once(self.blittex, -1)
-			
+
 			return Builder.load_string(dedent('''\
 				<ProgressSpinnerBase>:
 					on_touch_down: self.stop_spinning() if self._spinning else self.start_spinning()
