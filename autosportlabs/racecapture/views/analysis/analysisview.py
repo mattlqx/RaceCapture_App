@@ -74,7 +74,7 @@ ANALYSIS_VIEW_KV = '''
                     anchor_y: 'top'
                     ChannelValuesView:
                         size_hint_x: None
-                        width: min(dp(320), 0.5 * root.width)
+                        width: min(dp(390), 0.55 * root.width)
                         id: channelvalues
 
         FlyinPanel:
@@ -253,7 +253,7 @@ class AnalysisView(Screen):
         Logger.info("AnalysisView: on_add_session: {}".format(session))
         self.check_load_suggested_lap(session.session_id)
         self.ids.sessions_view.append_session(session)
-        self.check_load_suggested_lap(session.session_id)        
+        self.check_load_suggested_lap(session.session_id)
 
     def on_delete_session(self, instance, session):
         self.ids.sessions_view.session_deleted(session)

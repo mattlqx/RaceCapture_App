@@ -49,6 +49,20 @@ class CachingAnalysisDatastore(DataStore):
         super(CachingAnalysisDatastore, self).__init__(**kwargs)
         self._channel_data_cache = {}
         self._session_location_cache = {}
+        self._session_info_cache = {}
+
+    @property
+    def session_info_cache(self):
+        """
+        Provides a cached representation of the list of sessions and laps.
+        @return dict of Session objects
+        """
+        session_info = self._session_info_cache
+
+        # Populate our cache if necessary
+        if len(session_info.keys()) == 0:
+            self._refresh_session_data()
+        return session_info
 
     @timing
     def _query_channel_data(self, source_ref, channels, combined_channel_data):
@@ -90,6 +104,46 @@ class CachingAnalysisDatastore(DataStore):
             channel_d = self._query_channel_data(source_ref, channels_to_query, channel_data)
 
         Clock.schedule_once(lambda dt: callback(channel_data))
+
+    @timing
+    def _refresh_session_data(self):
+        self._session_info_cache.clear()
+        sessions = self.get_sessions()
+        for session in sessions:
+            session_id = session.session_id
+            self._session_info_cache[session_id] = self.get_laps(session_id)
+
+    def get_cached_lap_info(self, source_ref):
+        """
+        Retrieves cached information for a specific lap
+        :param source_ref the session / lap reference
+        :type source_ref SourceRef
+        :return a Lap object representing the lap information if found; None if not found
+        """
+        lap = None
+        session = self.session_info_cache.get(source_ref.session)
+        if session is not None:
+            lap = session[source_ref.lap]
+        return lap
+
+    def get_cached_session_laps(self, session_id):
+        """
+        Returns a list of Lap objects for the specified session
+        :param session_id the session to get
+        :type session_id int
+        :return a list of Lap objects for the specified session
+        """
+        return self.session_info_cache.get(session_id)
+
+    def delete_session(self, session_id):
+        """
+        Deletes the specified session. 
+        Removes the session from the local cache as needed.
+        :param session_id The session to delete
+        :type session_id int
+        """
+        super(CachingAnalysisDatastore, self).delete_session(session_id)
+        self.session_info_cache.pop(session_id, None)
 
     def get_channel_data(self, source_ref, channels, callback):
         '''
