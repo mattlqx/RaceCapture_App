@@ -292,10 +292,13 @@ class SessionListView(AnchorLayout):
         popup = editor_popup('Edit Session', session_editor, _on_answer)
 
     def remove_session(self, instance, accordion):
-        self.sessions.remove(instance.session)
-        self._save()
-        self.deselect_laps(instance.get_all_laps())
         self._accordion.remove_widget(accordion)
+        self.deselect_laps(instance.get_all_laps())
+        try:
+            self.sessions.remove(instance.session)
+        except ValueError:
+            pass
+        self._save()
 
     def append_lap(self, session_view, lap, laptime):
         lapitem = session_view.append_lap(session_view.session.session_id, lap, laptime)
