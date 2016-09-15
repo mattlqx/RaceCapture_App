@@ -56,7 +56,7 @@ class ChannelValueView(BoxLayout):
 
     @lap.setter
     def lap(self, value):
-        self.lap_view.text = str(int(value))
+        self.lap_view.text = str(value)
 
     @property
     def channel(self):
