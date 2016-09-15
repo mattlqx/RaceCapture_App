@@ -61,7 +61,7 @@ class CachingAnalysisDatastore(DataStore):
 
         # Populate our cache if necessary
         if len(session_info.keys()) == 0:
-            self._refresh_session_data()
+            self.refresh_session_data()
         return session_info
 
     @timing
@@ -106,7 +106,7 @@ class CachingAnalysisDatastore(DataStore):
         Clock.schedule_once(lambda dt: callback(channel_data))
 
     @timing
-    def _refresh_session_data(self):
+    def refresh_session_data(self):
         self._session_info_cache.clear()
         sessions = self.get_sessions()
         for session in sessions:
