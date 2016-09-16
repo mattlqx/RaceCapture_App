@@ -24,7 +24,7 @@ import json
 import errno
 
 PORT = 7223
-READ_TIMEOUT = 1
+READ_TIMEOUT = 2
 SCAN_TIMEOUT = 3
 
 class InvalidAddressException(Exception):
@@ -98,7 +98,8 @@ class SocketConnection(object):
         Closes the socket connection
         :return: None
         """
-        self.socket.close()
+        if self.socket is not None:
+            self.socket.close()
         self.socket = None
 
     def read_line(self, keep_reading):
