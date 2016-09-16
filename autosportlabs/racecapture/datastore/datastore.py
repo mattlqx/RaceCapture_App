@@ -5,6 +5,7 @@ import os, os.path
 import time
 import datetime
 from kivy.logger import Logger
+from collections import OrderedDict
 
 class DatastoreException(Exception):
     pass
@@ -1015,7 +1016,13 @@ class DataStore(object):
 
         # Filter so we only include valid laps
         laps = [lap for lap in laps if lap.lap >= 0]
-        return laps
+
+        # Transform into an ordered dict so lap IDs are preserved as keys.
+        laps_dict = OrderedDict()
+        for lap in laps:
+            laps_dict[lap.lap] = lap
+
+        return laps_dict
 
     def update_session(self, session):
         self._conn.execute("""UPDATE session SET name=?, notes=?, date=? WHERE id=?;""", (session.name, session.notes, unix_time(datetime.datetime.now()), session.session_id ,))
