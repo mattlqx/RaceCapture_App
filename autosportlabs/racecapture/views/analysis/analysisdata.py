@@ -144,7 +144,11 @@ class CachingAnalysisDatastore(DataStore):
         :type session_id int
         :return an OrderedDict of Lap objects for the specified session. Key is lap id
         """
-        return self.session_info_cache.get(session_id)
+        laps = self.session_info_cache.get(session_id)
+        if laps is None:  # if it's not in the cache it could be because the cache is stale
+            self._refresh_session_data()
+            laps = self.session_info_cache.get(session_id)
+        return laps
 
     def delete_session(self, session_id):
         """
