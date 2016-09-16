@@ -847,7 +847,7 @@ class RcpApi:
                 else:
                     Logger.debug('RCPAPI: Did not find device')
                     comms.close()
-                    comms.port = None
+                    comms.device = None
                     if self.detect_fail_callback: self.detect_fail_callback()
             except Exception as e:
                 Logger.error('RCPAPI: Error running auto detect: ' + str(e))
