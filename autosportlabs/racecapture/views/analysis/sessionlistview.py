@@ -224,14 +224,17 @@ class SessionListView(AnchorLayout):
         return len(self.sessions)
 
     def on_session_collapsed(self, instance, value):
+        session_widget = instance.session_widget
         if value == False:
-            session_count = len(self._accordion.children)
+            accordion = self._accordion
+            session_count = len(self.sessions)
             # minimum space needed in case there are no laps in the session, plus the session toolbar
-            item_count = max(instance.session_widget.item_count, 1) + 1
+            item_count = max(session_widget.item_count, 1) + 1
             session_items_height = (item_count * self.ITEM_HEIGHT)
-            session_titles_height = (session_count * self.SESSION_TITLE_HEIGHT)
-            accordion_height = session_items_height + session_titles_height
-            self._accordion.height = accordion_height
+            # accordion height is:
+            # number of accordion title bars, plus the space needed for the current list of laps
+            accordion_height = (accordion.min_space * session_count) + session_items_height
+            accordion.height = accordion_height
 
     def append_session(self, session):
         self.sessions.append(session)
@@ -246,7 +249,6 @@ class SessionListView(AnchorLayout):
         self._session_accordion_items.append(item)
         item.add_widget(session_view)
 
-        self._accordion.add_widget(item)
 
         laps = self.datastore.get_cached_session_laps(session.session_id)
 
@@ -256,6 +258,10 @@ class SessionListView(AnchorLayout):
             for lap in laps:
                 self.append_lap(session_view, lap.lap, lap.lap_time)
 
+        accordion = self._accordion
+        # the accordion height needs to be adjusted by the size of the title
+        accordion.height += accordion.min_space
+        accordion.add_widget(item)
         self._save()
 
         return session_view

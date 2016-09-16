@@ -106,6 +106,16 @@ class CachingAnalysisDatastore(DataStore):
         Clock.schedule_once(lambda dt: callback(channel_data))
 
     @timing
+    def import_datalog(self, path, name, notes='', progress_cb=None):
+        session_id = super(CachingAnalysisDatastore, self).import_datalog(path, name, notes, progress_cb)
+        self._refresh_session_data()
+        return session_id
+
+    def delete_session(self, session_id):
+        super(CachingAnalysisDatastore, self).delete_session(session_id)
+        self._refresh_session_data()
+
+    @timing
     def _refresh_session_data(self):
         self._session_info_cache.clear()
         sessions = self.get_sessions()
