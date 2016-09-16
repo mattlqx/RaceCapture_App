@@ -1,3 +1,22 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
 from kivy.clock import Clock
 from time import sleep
 from kivy.logger import Logger
@@ -194,6 +213,9 @@ class DataBusPump(object):
     SAMPLE_POLL_EXCEPTION_RECOVERY = 10.0
     SAMPLES_TO_WAIT_FOR_META = 5
 
+    # Main app views that the DataBusPump should set the active telemetry rate
+    TELEMETRY_ACTIVE_VIEWS = ['dash']
+
     def __init__(self, **kwargs):
         super(DataBusPump, self).__init__(**kwargs)
 
@@ -210,14 +232,29 @@ class DataBusPump(object):
         self._running = False
         self._starting = False
         self._auto_streaming_supported = False
-        self._telemetry_active = False
+        self._current_view = None
+        self._is_recording = False
+
+    @property
+    def is_telemetry_active(self):
+        return self._current_view in DataBusPump.TELEMETRY_ACTIVE_VIEWS or self._is_recording
 
     @property
     def current_sample_rate(self):
-        return DataBusPump.TELEMETRY_RATE_ACTIVE_HZ if self._telemetry_active else DataBusPump.TELEMETRY_RATE_IDLE_HZ
+        return DataBusPump.TELEMETRY_RATE_ACTIVE_HZ if self.is_telemetry_active else DataBusPump.TELEMETRY_RATE_IDLE_HZ
+
+    def on_view_change(self, view_name):
+        """
+        View change listener, if the view being displayed is a view we want to record for, start recording.
+        If not and we are currently recording, stop
+        :param view_name:
+        :return:
+        """
+        self._current_view = view_name
+        self._start_telemetry()
 
     def _on_session_recording(self, instance, is_recording):
-        self._telemetry_active = is_recording
+        self._is_recording = is_recording
         self._start_telemetry()
 
     def _start_telemetry(self):

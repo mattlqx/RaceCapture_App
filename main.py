@@ -320,6 +320,7 @@ class RaceCaptureApp(App):
             self.mainViews[view_name] = view
         self.screenMgr.current = view_name
         self._session_recorder.on_view_change(view_name)
+        self._data_bus_pump.on_view_change(view_name)
 
     def switchMainView(self, view_name):
             self.mainNav.anim_to_state('closed')
