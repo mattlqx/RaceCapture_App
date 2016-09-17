@@ -9,6 +9,7 @@
 * Added preferences switch for in-app recording
 * Show lap times for selected laps
 * Numerous fixes around selection/display of analysis data
+* Improved reconnection logic for WiFi mode
 
 ==1.7.4==
 * Ensure realtime values update in line chart, even if there is no location detected
