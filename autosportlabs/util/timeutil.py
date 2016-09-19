@@ -1,6 +1,7 @@
 __all__ = ('time_to_epoch', 'format_time')
 import calendar
 from datetime import datetime
+from kivy import platform
 
 def time_to_epoch(timestamp):
     """
@@ -18,7 +19,8 @@ def format_time(dt=datetime.now()):
     :type datetime
     :return returns the formatted string
     """
-    return dt.strftime("%Ex %EX")
+    format = '%x %X' if platform == 'win' else '%Ex %EX'
+    return dt.strftime(format)
 
 
 
