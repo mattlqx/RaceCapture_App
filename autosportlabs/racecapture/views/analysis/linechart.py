@@ -31,6 +31,7 @@ from kivy.logger import Logger
 import bisect
 import copy
 
+from autosportlabs.racecapture.views.util.alertview import alertPopup
 from autosportlabs.racecapture.views.analysis.analysiswidget import ChannelAnalysisWidget
 from autosportlabs.racecapture.views.analysis.markerevent import MarkerEvent
 from autosportlabs.uix.color.colorsequence import ColorSequence
@@ -69,9 +70,9 @@ class LineChartMode(object):
     TIME = 1
     DISTANCE = 2
 
-    #conversion factor for milliseconds to minutes
+    # conversion factor for milliseconds to minutes
     MS_TO_MINUTES = 0.000016666
-    
+
     @staticmethod
     def format_value(mode, value):
         '''
@@ -98,6 +99,14 @@ class LineChart(ChannelAnalysisWidget):
     TOUCH_ZOOM_SCALING = 0.000001
     MAX_SAMPLES_TO_DISPLAY = 1000
 
+    # The meaningful distance is an approximate distance / time threshold to consider
+    # a dataset to have meaningful distance data. The threshold is:
+    # 0.000001 miles (or km, close enough) within 1 seconds.
+    #
+    # This is to provide a smart-ish way to auto-select time vs distance when a lap
+    # is loaded loaded.
+    MEANINGFUL_DISTANCE_RATIO_THRESHOLD = 0.000001
+
     def __init__(self, **kwargs):
         super(LineChart, self).__init__(**kwargs)
         self.register_event_type('on_marker')
@@ -119,6 +128,9 @@ class LineChart(ChannelAnalysisWidget):
         self.marker_pct = 0
         self.line_chart_mode = LineChartMode.DISTANCE
         self._channel_plots = {}
+        self.x_axis_value_label = None
+
+        self._user_refresh_requested = False
 
     def add_option_buttons(self):
         '''
@@ -133,17 +145,18 @@ class LineChart(ChannelAnalysisWidget):
     def _refresh_chart_mode_toggle(self):
         if self.line_chart_mode == LineChartMode.DISTANCE:
             self.chart_mode_toggle_button.text = u'\uf178'
+            toast('Distance')
         else:
             self.chart_mode_toggle_button.text = u'\uf017'
+            toast('Time')
 
     def on_toggle_chart_mode(self, *args):
         if self.line_chart_mode == LineChartMode.DISTANCE:
             self.line_chart_mode = LineChartMode.TIME
-            toast('Time')
         else:
             self.line_chart_mode = LineChartMode.DISTANCE
-            toast('Distance')
 
+        self._user_refresh_requested = True
         self._redraw_plots()
         self._refresh_chart_mode_toggle()
 
@@ -221,8 +234,10 @@ class LineChart(ChannelAnalysisWidget):
         Update the value of the marker distance / time widget based on the current marker percent
         '''
         marker_x = self._get_adjusted_offset()
-        self.x_axis_value_label.text = LineChartMode.format_value(self.line_chart_mode, marker_x)
-    
+        label = self.x_axis_value_label
+        if label is not None:
+            self.x_axis_value_label.text = LineChartMode.format_value(self.line_chart_mode, marker_x)
+
     def _update_marker_pct(self, x, y):
         '''
         Synchronize the marker percent based on the x / y screen position
@@ -231,7 +246,7 @@ class LineChart(ChannelAnalysisWidget):
         width = self.size[0]
         pct = mouse_x / width
         self.marker_pct = pct
-        
+
     def _dispatch_marker(self, x, y):
         '''
         Update the marker and notify parent about marker selection
@@ -240,7 +255,7 @@ class LineChart(ChannelAnalysisWidget):
         self.ids.chart.marker_x = data_index
 
         self._update_x_marker_value()
-        
+
         for channel_plot in self._channel_plots.itervalues():
             try:
                 value_index = bisect.bisect_right(channel_plot.chart_x_index.keys(), data_index)
@@ -257,7 +272,7 @@ class LineChart(ChannelAnalysisWidget):
             touches = len(self._touches)
             if touches == 1:
                 # regular dragging / updating marker
-                self._update_marker_pct(x,y)            
+                self._update_marker_pct(x, y)
                 self._dispatch_marker(x, y)
             elif touches == 2:
                 zoom_scaling = self.max_x * self.TOUCH_ZOOM_SCALING
@@ -297,7 +312,7 @@ class LineChart(ChannelAnalysisWidget):
         if not self.collide_point(pos[0], pos[1]):
             return False
 
-        self._update_marker_pct(pos[0],pos[1])            
+        self._update_marker_pct(pos[0], pos[1])
         self._dispatch_marker(pos[0] * self.metrics_base.density, pos[1] * self.metrics_base.density)
 
     def remove_channel(self, channel, source_ref):
@@ -422,22 +437,60 @@ class LineChart(ChannelAnalysisWidget):
                 # sync max chart distances
                 self._update_max_chart_x()
                 self._update_x_marker_value()
-                
+
         finally:
             ProgressSpinner.decrement_refcount()
+
+    def _results_has_distance(self, results):
+        distance_values = results.get('Distance')
+        interval_values = results.get('Interval')
+        # Some sanity checking
+        if not (distance_values and interval_values):
+            return False
+
+        distance_values = distance_values.values
+        interval_values = interval_values.values
+        if not (len(distance_values) > 0 and len(interval_values) > 0):
+            return False
+
+        # calculate the ratio of total distance / time
+        total_time_ms = interval_values[-1] - interval_values[0]
+        total_distance = distance_values[-1]
+        distance_ratio = total_distance / total_time_ms
+
+        Logger.debug('Checking distance threshold. Time: {} Distance: {} Ratio: {}'.format(total_time_ms, total_distance, distance_ratio))
+        return distance_ratio > LineChart.MEANINGFUL_DISTANCE_RATIO_THRESHOLD
 
     def _add_unselected_channels(self, channels, source_ref):
         ProgressSpinner.increment_refcount()
         def get_results(results):
+            # Auto-switch to time mode in charts only if the user
+            # did not request it.
+            if (
+                    self.line_chart_mode == LineChartMode.DISTANCE and
+                    not self._results_has_distance(results)
+                ):
+                    if self._user_refresh_requested == True:
+                        toast("Warning: one or more selected laps have missing distance data", length_long=True)
+                        self._user_refresh_requested = False
+                    else:
+                        self.line_chart_mode = LineChartMode.TIME
+                        self._refresh_chart_mode_toggle()
+
             # clone the incoming list of channels and pass it to the handler
-            if self.line_chart_mode == LineChartMode.DISTANCE:
-                Clock.schedule_once(lambda dt: self._add_channels_results_distance(channels[:], results))
-            elif self.line_chart_mode == LineChartMode.TIME:
+            if self.line_chart_mode == LineChartMode.TIME:
                 Clock.schedule_once(lambda dt: self._add_channels_results_time(channels[:], results))
+            elif self.line_chart_mode == LineChartMode.DISTANCE:
+                Clock.schedule_once(lambda dt: self._add_channels_results_distance(channels[:], results))
             else:
                 Logger.error('LineChart: Unknown line chart mode ' + str(self.line_chart_mode))
-
-        self.datastore.get_channel_data(source_ref, ['Interval', 'Distance'] + channels, get_results)
+        try:
+            self.datastore.get_channel_data(source_ref, ['Interval', 'Distance'] + channels, get_results)
+        except Exception as e:
+            alertPopup('Could not load lap', "There was a problem loading the lap due to missing data:\r\n\r\n{}".format(e))
+            raise  # allow CrashHandler to record the issue
+        finally:
+            ProgressSpinner.decrement_refcount()
 
     def _redraw_plots(self):
         selected_channels = self.selected_channels

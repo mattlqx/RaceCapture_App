@@ -9,7 +9,7 @@ from utils import *
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseMultiChannelConfigView, BaseChannelView
 from autosportlabs.racecapture.config.rcpconfig import *
 from mappedspinner import MappedSpinner
-from kivy.metrics import dp
+from kivy.metrics import sp
 
 GPIO_CHANNELS_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/gpiochannelsview.kv'
 
@@ -20,7 +20,7 @@ class GPIOChannelsView(BaseMultiChannelConfigView):
     def __init__(self, **kwargs):
         super(GPIOChannelsView, self).__init__(**kwargs)
         self.channel_title = 'Digital Input/Output '
-        self.accordion_item_height = dp(85)
+        self.accordion_item_height = sp(120)
 
     def channel_builder(self, index, max_sample_rate):
         editor = GPIOChannel(id = 'gpio' + str(index), channels=self.channels)

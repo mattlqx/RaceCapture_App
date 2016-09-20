@@ -1,3 +1,16 @@
+==1.7.5==
+* Touching right side of analysis chart now updates values displayed
+* Analog channels view displays correctly when 1 analog channel is present
+* Incrementally load sessions and laps in analysis view, allowing slower devices to show progress
+* Improve responsiveness when switching between Bluetooth and WiFi connection type
+* Ensure only valid laps are shown in Analysis (-1 lap issue)
+* Smarter selection of time vs Distance analysis charts
+* Present user with add session screen if no sessions are selected
+* Added preferences switch for in-app recording
+* Show lap times for selected laps
+* Numerous fixes around selection/display of analysis data
+* Improved reconnection logic for WiFi mode
+
 ==1.7.4==
 * Ensure realtime values update in line chart, even if there is no location detected
 * Order saved sessions by most recent first

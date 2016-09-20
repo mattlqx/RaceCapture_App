@@ -20,7 +20,7 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "1.7.4"
+__version__ = "1.7.5"
 import sys
 import os
 
@@ -170,7 +170,7 @@ class RaceCaptureApp(App):
         self._databus = DataBusFactory().create_standard_databus(self.settings.systemChannels)
         self.settings.runtimeChannels.data_bus = self._databus
         self._datastore = DataStore(databus=self._databus)
-        self._session_recorder = SessionRecorder(self._datastore, self._databus, self._rc_api, self.trackManager)
+        self._session_recorder = SessionRecorder(self._datastore, self._databus, self._rc_api, self.settings, self.trackManager)
         self._session_recorder.bind(on_recording=self._on_session_recording)
 
 
@@ -320,6 +320,7 @@ class RaceCaptureApp(App):
             self.mainViews[view_name] = view
         self.screenMgr.current = view_name
         self._session_recorder.on_view_change(view_name)
+        self._data_bus_pump.on_view_change(view_name)
 
     def switchMainView(self, view_name):
             self.mainNav.anim_to_state('closed')
@@ -549,7 +550,7 @@ class RaceCaptureApp(App):
         if token == ('preferences', 'conn_type'):
             # User changed their RC connection type
             Logger.info("Racecaptureapp: RC connection type changed to {}, restarting comms".format(value))
-            Clock.schedule_once(lambda dt: self._restart_comms(), 0.5)
+            Clock.schedule_once(lambda dt: self._restart_comms())
 
     def _enable_telemetry(self):
         self._telemetry_connection.telemetry_enabled = True

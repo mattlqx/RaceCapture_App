@@ -24,7 +24,7 @@ from kivy.graphics import Color
 from kivy.app import Builder
 from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
-from kivy.properties import ObjectProperty
+from kivy.properties import ObjectProperty, StringProperty
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.racecapture.datastore import DataStore, Filter
 from autosportlabs.racecapture.views.analysis.markerevent import SourceRef
@@ -35,36 +35,13 @@ Builder.load_file('autosportlabs/racecapture/views/analysis/channelvaluesview.kv
 
 class ChannelValueView(BoxLayout):
 
+    session = StringProperty('')
+    lap = StringProperty('')
+    channel = StringProperty('')
     def __init__(self, **kwargs):
         super(ChannelValueView, self).__init__(**kwargs)
-        self.session_view = self.ids.session
-        self.lap_view = self.ids.lap
         self.channel_view = self.ids.channel
         self.value_view = self.ids.value
-
-    @property
-    def session(self):
-        return self.session_view.text
-
-    @session.setter
-    def session(self, value):
-        self.session_view.text = str(value)
-
-    @property
-    def lap(self):
-        return self.lap_view.text
-
-    @lap.setter
-    def lap(self, value):
-        self.lap_view.text = str(int(value))
-
-    @property
-    def channel(self):
-        return self.channel_view.text
-
-    @channel.setter
-    def channel(self, value):
-        self.channel_view.text = value
 
     @property
     def value(self):
@@ -137,7 +114,7 @@ class ChannelValuesView(ChannelAnalysisWidget):
                 view = ChannelValueView()
                 view.channel = channel
                 view.color = self.color_sequence.get_color(key)
-                view.lap = channel_data.source.lap
+                view.lap = str(channel_data.source.lap)
                 session_id = channel_data.source.session
                 session = self.datastore.get_session_by_id(session_id, self.sessions)
                 view.session = session.name
@@ -174,6 +151,9 @@ class ChannelValuesView(ChannelAnalysisWidget):
         self.datastore.get_channel_data(source_ref, channels, get_results)
 
     def refresh_view(self):
+        """
+        Refresh the current view
+        """
         self._refresh_channels()
 
     def remove_channel(self, channel, source_ref):
@@ -181,4 +161,8 @@ class ChannelValuesView(ChannelAnalysisWidget):
         channels = self.channel_stats.get(source_key)
         channels.pop(channel, None)
 
+
+    def on_touch_down(self, touch):
+        super(ChannelValuesView, self).on_touch_down(touch)
+        return False
 

@@ -31,8 +31,9 @@ from autosportlabs.uix.track.racetrackview import RaceTrackView
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.racecapture.datastore import Filter
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
+from autosportlabs.racecapture.views.util.viewutils import format_laptime
 from iconbutton import IconButton, LabelIconButton
-from autosportlabs.uix.legends.gradientlegends import GradientLapLegend, LapLegend
+from autosportlabs.uix.legends.laplegends import GradientLapLegend, LapLegend
 from autosportlabs.uix.options.optionsview import OptionsView, BaseOptionsScreen
 
 # The scaling we use while we zoom
@@ -86,7 +87,7 @@ class AnalysisMap(AnalysisWidget):
             BoxLayout:
                 id: legend_box
                 orientation: 'vertical'
-                size_hint_x: None
+                size_hint_x: 0.4
 
                 width: min(dp(300), 0.35 * root.width)
                 BoxLayout:
@@ -145,6 +146,12 @@ class AnalysisMap(AnalysisWidget):
         Window.bind(on_motion=self.on_motion)
 
 
+    def refresh_view(self):
+        """
+        Refresh the current view
+        """
+        self._refresh_lap_legends()
+
     def add_option_buttons(self):
         """
         Add additional buttons needed by this widget
@@ -190,7 +197,7 @@ class AnalysisMap(AnalysisWidget):
             self.ids.heat_channel_name.text = '{} {}'.format(self.heatmap_channel, '' if len(units) == 0 else '({})'.format(units))
         else:
             self.ids.top_bar.size_hint_x = 0.75
-            self.ids.legend_box.size_hint_x = 0.25
+            self.ids.legend_box.size_hint_x = 0.4
             self.ids.heat_channel_name.text = ''
 
     def _update_trackmap(self, values):
@@ -386,10 +393,12 @@ class AnalysisMap(AnalysisWidget):
                                                )
             else:
                 session_info = self.datastore.get_session_by_id(source_ref.session)
+                lap = self.datastore.get_cached_lap_info(source_ref)
                 path_color = self.ids.track.get_path(source_key).color
                 lap_legend = LapLegend(color=path_color,
                                        session=session_info.name,
-                                       lap=str(source_ref.lap))
+                                       lap=str(source_ref.lap),
+                                       lap_time=format_laptime(lap.lap_time))
             self.ids.legend_list.add_widget(lap_legend)
             height_pct *= 0.6
 

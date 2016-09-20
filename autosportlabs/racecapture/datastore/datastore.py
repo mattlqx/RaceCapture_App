@@ -5,6 +5,7 @@ import os, os.path
 import time
 import datetime
 from kivy.logger import Logger
+from collections import OrderedDict
 
 class DatastoreException(Exception):
     pass
@@ -996,7 +997,9 @@ class DataStore(object):
                                 GROUP BY LapCount, session_id
                                 ORDER BY datapoint.LapCount ASC;''',
                                 (session_id,)):
-            laps.append(Lap(session_id=row[0], lap=row[1] - 1, lap_time=row[2]))
+            lap = row[1]
+            lap = 0 if lap is None else lap
+            laps.append(Lap(session_id=row[0], lap=lap - 1, lap_time=row[2]))
 
         # Figure out if there are samples beyond the last lap
         extra_lap_query = '''SELECT COUNT(*) FROM sample JOIN datapoint ON datapoint.sample_id=sample.id
@@ -1011,7 +1014,15 @@ class DataStore(object):
                 laps.append(Lap(session_id=session_id, lap=(laps[-1].lap + 1), lap_time=None))
                 break
 
-        return laps
+        # Filter so we only include valid laps
+        laps = [lap for lap in laps if lap.lap >= 0]
+
+        # Transform into an ordered dict so lap IDs are preserved as keys.
+        laps_dict = OrderedDict()
+        for lap in laps:
+            laps_dict[lap.lap] = lap
+
+        return laps_dict
 
     def update_session(self, session):
         self._conn.execute("""UPDATE session SET name=?, notes=?, date=? WHERE id=?;""", (session.name, session.notes, unix_time(datetime.datetime.now()), session.session_id ,))

@@ -100,7 +100,7 @@ class AnalysisWidget(AnchorLayout):
         :type SourceRef
         '''
         self.on_lap_removed(source_ref)
-        del(self.selected_laps[str(source_ref)])
+        self.selected_laps.pop(str(source_ref), None)
         self.laps_selected = bool(self.selected_laps)
 
 class ChannelAnalysisWidget(AnalysisWidget):

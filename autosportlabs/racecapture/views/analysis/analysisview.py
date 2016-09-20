@@ -74,7 +74,7 @@ ANALYSIS_VIEW_KV = '''
                     anchor_y: 'top'
                     ChannelValuesView:
                         size_hint_x: None
-                        width: min(dp(320), 0.5 * root.width)
+                        width: min(dp(390), 0.55 * root.width)
                         id: channelvalues
 
         FlyinPanel:
@@ -115,12 +115,14 @@ class AnalysisView(Screen):
         self._settings = kwargs.get('settings')
         self._track_manager = kwargs.get('track_manager')
         self.ids.sessions_view.bind(on_lap_selection=self.lap_selection)
+        self.ids.sessions_view.bind(on_session_updated=self.session_updated)
+        self.ids.sessions_view.bind(on_sessions_loaded=self.sessions_loaded)
         self.ids.channelvalues.color_sequence = self._color_sequence
         self.ids.mainchart.color_sequence = self._color_sequence
         self.stream_connecting = False
         Window.bind(mouse_pos=self.on_mouse_pos)
         Window.bind(on_motion=self.on_motion)
-        self.init_view()
+        self._layout_complete = False
 
     def on_motion(self, instance, event, motion_event):
         flyin = self.ids.laps_flyin
@@ -142,6 +144,14 @@ class AnalysisView(Screen):
 
     def on_sessions(self, instance, value):
         self.ids.channelvalues.sessions = value
+
+    def session_updated(self, instance, session):
+        self.ids.channelvalues.refresh_view()
+        self.ids.analysismap.refresh_view()
+
+    def sessions_loaded(self, instance):
+        if self.ids.sessions_view.session_count == 0:
+            self.show_add_stream_dialog()
 
     def lap_selection(self, instance, source_ref, selected):
         source_key = str(source_ref)
@@ -216,7 +226,8 @@ class AnalysisView(Screen):
                 sessions_view.select_lap(new_session_id, best_lap_id, True)
                 HelpInfo.help_popup('suggested_lap', main_chart, arrow_pos='left_mid')
             else:
-                Logger.warn('AnalysisView: Could not determine best lap for session {}'.format(new_session_id))
+                Logger.info('AnalysisView: No best lap could be determined; selecting first lap by default for session {}'.format(new_session_id))
+                sessions_view.select_lap(new_session_id, 0, True)
 
     def on_stream_connecting(self, *args):
         self.stream_connecting = True
@@ -242,6 +253,7 @@ class AnalysisView(Screen):
         Logger.info("AnalysisView: on_add_session: {}".format(session))
         self.check_load_suggested_lap(session.session_id)
         self.ids.sessions_view.append_session(session)
+        self.check_load_suggested_lap(session.session_id)
 
     def on_delete_session(self, instance, session):
         self.ids.sessions_view.session_deleted(session)
@@ -260,6 +272,12 @@ class AnalysisView(Screen):
         self.ids.sessions_view.settings = self._settings
         self.ids.sessions_view.init_view()
         Clock.schedule_once(lambda dt: HelpInfo.help_popup('beta_analysis_welcome', self, arrow_pos='right_mid'), 0.5)
+
+    def do_layout(self, *largs):
+        super(AnalysisView, self).do_layout(largs)
+        if not self._layout_complete:
+            Clock.schedule_once(lambda dt: self.init_view(), 0.5)
+        self._layout_complete = True
 
     def _init_datastore(self):
         dstore_path = self._settings.userPrefs.datastore_location

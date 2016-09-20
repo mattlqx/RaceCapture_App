@@ -7,7 +7,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.accordion import Accordion, AccordionItem
 from kivy.logger import Logger
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
-from kivy.metrics import dp
+from kivy.metrics import dp, sp
 from utils import *
 
 class BaseChannelView(BoxLayout):
@@ -94,13 +94,12 @@ class BaseMultiChannelConfigView(BaseConfigView):
         sv.add_widget(accordion)
         self._accordion = accordion
         self.add_widget(sv)
-        self._min_height = 0
         
     def update_channel_editors(self, channel_count, max_sample_rate):
         accordion = self._accordion
         if self._channel_count != channel_count:
             self._channel_editors = []
-            accordion.height = max((self.accordion_item_height * channel_count), self._min_height)
+            accordion.height = (accordion.min_space * channel_count) + self.accordion_item_height
             title = self.channel_title
             for i in range(channel_count):
                 channel = LazyloadAccordionItem(title=title + str(i + 1), builder=self.channel_builder, channel_index=i, max_sample_rate=max_sample_rate)

@@ -21,6 +21,7 @@ from autosportlabs.uix.textwidget import FieldInput
 from autosportlabs.racecapture.views.util.alertview import alertPopup, confirmPopup
 from autosportlabs.racecapture.views.file.loaddialogview import LoadDialog
 from autosportlabs.racecapture.views.file.savedialogview import SaveDialog
+from autosportlabs.util.timeutil import format_time
 from iconbutton import IconButton
 from fieldlabel import FieldLabel
 from iconbutton import LabelIconButton
@@ -33,15 +34,15 @@ class AddStreamView(BoxLayout):
         super(AddStreamView, self).__init__(**kwargs)
         stream_select_view = self.ids.streamSelectScreen
         stream_select_view.bind(on_select_stream=self.on_select_stream)
-                
+
         cloud_connect_view = self.ids.cloudConnectScreen
         cloud_connect_view.settings = settings
         cloud_connect_view.datastore = datastore
-        
+
         wireless_connect_view = self.ids.wirelessConnectScreen
         wireless_connect_view.settings = settings
         wireless_connect_view.datastore = datastore
-        
+
         file_connect_view = self.ids.fileConnectScreen
         file_connect_view.settings = settings
         file_connect_view.datastore = datastore
@@ -74,16 +75,16 @@ class AddStreamView(BoxLayout):
 
     def on_connect_stream_start(self, *args):
         pass
-        
+
     def on_connect_stream_complete(self, *args):
         pass
-    
+
     def on_select_stream(self, instance, stream_type):
         self.ids.screens.current = stream_type
 
     def connect_stream_start(self, *args):
         self.dispatch('on_connect_stream_start')
-        
+
     def connect_stream_complete(self, instance, session_id):
         self.dispatch('on_connect_stream_complete', session_id)
 
@@ -92,18 +93,18 @@ class AddStreamView(BoxLayout):
 
     def on_close(self, *args):
         pass
-        
-class AddStreamSelectView(Screen):    
+
+class AddStreamSelectView(Screen):
     def __init__(self, **kwargs):
         super(AddStreamSelectView, self).__init__(**kwargs)
         self.register_event_type('on_select_stream')
 
     def select_stream(self, stream):
-        self.dispatch('on_select_stream', stream )
+        self.dispatch('on_select_stream', stream)
 
     def on_select_stream(self, stream):
         pass
-    
+
 class BaseStreamConnectView(Screen):
     settings = None
     datastore = None
@@ -111,10 +112,10 @@ class BaseStreamConnectView(Screen):
         super(BaseStreamConnectView, self).__init__(**kwargs)
         self.register_event_type('on_connect_stream_complete')
         self.register_event_type('on_connect_stream_start')
-        
+
     def on_connect_stream_complete(self, *args):
         pass
-    
+
     def on_connect_stream_start(self, *args):
         pass
 
@@ -134,10 +135,10 @@ class FileConnectView(BaseStreamConnectView):
         log_import_view.bind(on_import_start=self.import_start)
         log_import_view.datastore = self.datastore
         log_import_view.settings = self.settings
-            
+
     def import_start(self, *args):
         self.dispatch('on_connect_stream_start')
-        
+
     def import_complete(self, instance, session_id):
         self.dispatch('on_connect_stream_complete', session_id)
 
@@ -160,7 +161,7 @@ class SessionImportView(BaseStreamConnectView):
         for session in sessions:
             session_view = SessionListItem(session)
             session_view.ids.name.text = session.name
-            session_view.ids.date.text = datetime.fromtimestamp(session.date).strftime("%x %X")
+            session_view.ids.date.text = format_time(datetime.fromtimestamp(session.date))
             session_view.bind(on_delete=self.delete_session)
             session_view.bind(on_add=self.add_session)
 
@@ -173,11 +174,11 @@ class SessionImportView(BaseStreamConnectView):
         self.datastore.delete_session(list_item.session.session_id)
         self.ids.session_list.remove_widget(list_item)
         self.dispatch('on_delete', list_item.session)
-        toast("Session deleted")
+        toast("Session deleted", center_on=self)
 
     def add_session(self, list_item):
         self.dispatch('on_add', list_item.session)
-        toast("Session loaded")
+        toast("Session loaded", center_on=self)
 
     def close(self, *args):
         self.dispatch('on_close')
@@ -233,16 +234,16 @@ class LogImportWidget(BoxLayout):
 
     def on_import_start(self, *args):
         pass
-    
+
     def on_import_complete(self, session_id):
         pass
-    
+
     def close_dstore_select(self, *args):
         self.datastore_select.dismiss()
         self.datastore_select = None
 
     def set_dstore_path(self, instance):
-        filename = os.path.join(instance.path, instance.filename)        
+        filename = os.path.join(instance.path, instance.filename)
         if not filename.endswith('.sq3'):
             filename = filename + '.sq3'
         self.ids.dstore_path.text = filename
@@ -264,10 +265,10 @@ class LogImportWidget(BoxLayout):
         path = instance.selection[0]
         self._log_path = path
         base_name = self._extract_base_logfile_name(path)
-        self.ids.session_name.text =  base_name
+        self.ids.session_name.text = base_name
         self.ids.log_path.text = base_name
         self.ids.import_button.disabled = False
-        
+
         self._log_select.dismiss()
         self.set_import_file_path(instance.path)
 
@@ -277,15 +278,15 @@ class LogImportWidget(BoxLayout):
 
     def set_import_file_path(self, path):
         self.settings.userPrefs.set_pref('preferences', 'import_datalog_dir', path)
-        
+
     def get_import_file_path(self):
         return self.settings.userPrefs.get_pref('preferences', 'import_datalog_dir')
- 
+
     def select_log(self):
         ok_cb = self.close_log_select
         content = LoadDialog(ok=self.set_log_path,
                              cancel=self.close_log_select,
-                             filters=['*' + '.LOG','*' + '.log'],
+                             filters=['*' + '.LOG', '*' + '.log'],
                              user_path=self.get_import_file_path())
         self._log_select = Popup(title="Select Log", content=content, size_hint=(0.9, 0.9))
         self._log_select.open()
@@ -310,7 +311,7 @@ class LogImportWidget(BoxLayout):
         logpath = self._log_path
         session_name = self.ids.session_name.text.strip()
         session_notes = self.ids.session_notes.text.strip()
-        
+
         dstore_path = self.settings.userPrefs.datastore_location
 
         if not os.path.isfile(logpath):
@@ -321,7 +322,7 @@ class LogImportWidget(BoxLayout):
         if self.datastore.db_path != dstore_path:
             if self.datastore.is_open:
                 self.datastore.close()
-            
+
             if os.path.isfile(dstore_path):
                 self.datastore.open_db(dstore_path)
             else:
@@ -329,8 +330,8 @@ class LogImportWidget(BoxLayout):
 
         Logger.info("LogImportWidget: loading log: {}".format(self.ids.log_path.text))
 
-        #choose a default name if the user deletes the suggested name
-        if not session_name or len(session_name) == 0: 
+        # choose a default name if the user deletes the suggested name
+        if not session_name or len(session_name) == 0:
             session_name = self._extract_base_logfile_name(logpath)
             self.ids.session_name.text = session_name
 

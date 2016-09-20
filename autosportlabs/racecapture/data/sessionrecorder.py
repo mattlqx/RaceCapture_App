@@ -22,7 +22,7 @@ from datetime import datetime
 from autosportlabs.racecapture.datastore import Session
 from kivy.logger import Logger
 from kivy.event import EventDispatcher
-
+from autosportlabs.util.timeutil import format_time
 
 class SessionRecorder(EventDispatcher) :
     """
@@ -32,7 +32,7 @@ class SessionRecorder(EventDispatcher) :
     # Main app views that the SessionRecorder should start recording when displayed
     RECORDING_VIEWS = ['dash']
 
-    def __init__(self, datastore, databus, rcpapi, track_manager=None, current_view=None):
+    def __init__(self, datastore, databus, rcpapi, settings, track_manager=None, current_view=None):
         """
         Initializer.
         :param datastore: Datastore for saving data
@@ -43,6 +43,7 @@ class SessionRecorder(EventDispatcher) :
         self._datastore = datastore
         self._databus = databus
         self._rcapi = rcpapi
+        self._settings = settings
         self._channels = None
         self.recording = False
         self._current_session_id = None
@@ -97,6 +98,10 @@ class SessionRecorder(EventDispatcher) :
 
     @property
     def _should_record(self):
+
+        if self._settings.userPrefs.get_pref('preferences', 'record_session') == '0':
+            return False
+
         if self._current_view not in SessionRecorder.RECORDING_VIEWS:
             return False
 
@@ -119,10 +124,7 @@ class SessionRecorder(EventDispatcher) :
         Creates a session name
         :return: String name
         """
-        date = datetime.now()
-
-        date_string = date.strftime("%x %X%p")
-
+        date_string = format_time()
         return date_string
 
     def on_view_change(self, view_name):
