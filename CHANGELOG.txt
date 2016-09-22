@@ -1,5 +1,6 @@
 ==1.7.6==
-
+* Add exit menu item
+* Improved reconnection logic for WiFi connections
 
 ==1.7.5==
 * Touching right side of analysis chart now updates values displayed
