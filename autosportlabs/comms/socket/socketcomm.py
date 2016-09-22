@@ -231,7 +231,6 @@ class SocketComm(object):
                         reader_writer_should_run.clear()
                 except Empty:
                     Logger.debug('SocketComm: keep alive timeout')
-                    reader_writer_should_run.clear()
             Logger.debug('SocketComm: connection worker exiting')
 
             reader_thread.join()
