@@ -1,3 +1,6 @@
+==1.7.6==
+
+
 ==1.7.5==
 * Touching right side of analysis chart now updates values displayed
 * Analog channels view displays correctly when 1 analog channel is present
