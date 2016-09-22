@@ -32,36 +32,45 @@ MAIN_MENU_KV = """
         Rectangle:
             pos: self.pos
             size: self.size
-    GridLayout:
-        spacing: sp(5)    
-        cols: 1
-        row_default_height: root.height * 0.1
-        row_force_default: True        
+    BoxLayout:
+        orientation: 'vertical'
+        GridLayout:
+            size_hint: 1, .9
+            spacing: sp(5)
+            cols: 1
+            row_default_height: root.height * 0.1
+            row_force_default: True
+            MainMenuItem:
+                rcid: 'dash'
+                icon: '\357\203\244'
+                description: 'Dashboard'
+                on_main_menu_item_selected: root.on_main_menu_item_selected(*args)
+            MainMenuItem:
+                rcid: 'analysis'
+                icon: '\357\202\200'
+                description: 'Analysis'
+                on_main_menu_item_selected: root.on_main_menu_item_selected(*args)
+            MainMenuItem:
+                rcid: 'config'
+                icon: '\357\202\205'
+                description: 'Setup'
+                on_main_menu_item_selected: root.on_main_menu_item_selected(*args)
+            MainMenuItem:
+                rcid: 'preferences'
+                icon: '\357\200\207'
+                description: 'Preferences'
+                on_main_menu_item_selected: root.on_main_menu_item_selected(*args)
+            MainMenuItem:
+                rcid: 'status'
+                icon: u'\uf05a'
+                description: 'System Status'
+                on_main_menu_item_selected: root.on_main_menu_item_selected(*args)
         MainMenuItem:
-            rcid: 'dash'
-            icon: '\357\203\244'
-            description: 'Dashboard'
-            on_main_menu_item_selected: root.on_main_menu_item_selected(*args)
-        MainMenuItem:
-            rcid: 'analysis'
-            icon: '\357\202\200'
-            description: 'Analysis'
-            on_main_menu_item_selected: root.on_main_menu_item_selected(*args)
-        MainMenuItem:
-            rcid: 'config'
-            icon: '\357\202\205'
-            description: 'Setup'
-            on_main_menu_item_selected: root.on_main_menu_item_selected(*args)        
-        MainMenuItem:
-            rcid: 'preferences'
-            icon: '\357\200\207'
-            description: 'Preferences'
-            on_main_menu_item_selected: root.on_main_menu_item_selected(*args)
-        MainMenuItem:
-            rcid: 'status'
-            icon: u'\uf05a'
-            description: 'System Status'
-            on_main_menu_item_selected: root.on_main_menu_item_selected(*args)
+            size_hint: 1, .1
+            rcid: 'exit'
+            icon: '\357\200\221'
+            description: 'Exit'
+            on_main_menu_item_selected: app.stop()
 """
 class MainMenu(BoxLayout):
     Builder.load_string(MAIN_MENU_KV)

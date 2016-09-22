@@ -101,6 +101,7 @@ class SocketConnection(object):
         if self.socket is not None:
             self.socket.close()
         self.socket = None
+        self._data = ''
 
     def read_line(self, keep_reading):
         """
