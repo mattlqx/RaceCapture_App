@@ -68,6 +68,7 @@ class RcpApi:
     _auto_detect_busy = Event()
 
     COMMAND_SEQUENCE_TIMEOUT = 1.0
+    COMMAND_DELIMETER = "\r\n"
 
     def __init__(self, settings, on_disconnect=None, on_connect=None, **kwargs):
         self.comms = kwargs.get('comms', self.comms)
@@ -398,7 +399,8 @@ class RcpApi:
 
             comms = self.comms
 
-            cmdStr = json.dumps(cmd, separators=(',', ':')) + '\r'
+            cmdStr = json.dumps(cmd, separators=(',', ':')) + \
+                                                 self.COMMAND_DELIMETER
 
             Logger.debug('RCPAPI: Tx: ' + cmdStr)
             comms.write_message(cmdStr)
@@ -862,4 +864,3 @@ class RcpApi:
 
         safe_thread_exit()
         Logger.debug('RCPAPI: auto_detect_worker exiting')
-
