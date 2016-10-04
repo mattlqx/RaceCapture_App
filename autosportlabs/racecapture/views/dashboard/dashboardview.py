@@ -222,7 +222,7 @@ class DashboardView(Screen):
 
                 Clock.schedule_once(lambda dt: self._rc_api.get_capabilities(capabilities_success, capabilities_fail))
             else:
-                self._set_rc_track(self._selected_track)
+                self._set_rc_track(self._selected_track, self._track_config)
 
     def _load_race_setup_view(self):
         content = TrackSelectView(self._track_manager)
