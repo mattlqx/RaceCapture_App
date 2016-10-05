@@ -164,6 +164,9 @@
 <ManualTrackConfigScreen>:
 	BoxLayout:
 		orientation: 'vertical'
+		Button:
+            text: 'track builder'
+            on_press: root.track_builder(*args)
 		SettingsView:
 			size_hint_y: 0.4
 			rcid: 'sepStartFinish'
