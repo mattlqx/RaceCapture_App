@@ -21,13 +21,14 @@ import kivy
 import math
 kivy.require('1.9.1')
 from autosportlabs.uix.color import colorgradient
+from kivy.core.image import Image as CoreImage
 from kivy.uix.label import Label
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.widget import Widget
 from kivy.uix.scatter import Scatter
 from kivy.app import Builder
 from kivy.metrics import sp
-from kivy.properties import ListProperty, NumericProperty
+from kivy.properties import ListProperty, NumericProperty, ObjectProperty
 from kivy.graphics import Color, Line, Bezier, Rectangle
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.uix.color.colorgradient import HeatColorGradient, SimpleColorGradient
@@ -53,25 +54,33 @@ class TrackPath(object):
         self.path = path
 
 class TrackMapView(Widget):
+    start_image = CoreImage('resource/trackmap/startfinish_64px.png')
+    finish_image = CoreImage('resource/trackmap/startfinish_64px.png')
     # min / max for heat map range
     heat_min = NumericProperty(0.0)
     heat_max = NumericProperty(100.0)
+    start_point = ObjectProperty(None, allownone=True)
+    finish_point = ObjectProperty(None, allownone=True)
 
     track_color = ListProperty([1.0, 1.0, 1.0, 0.5])
     marker_scale = NumericProperty(1.0)
 
     MIN_PADDING = sp(1)
+    DEFAULT_TARGET_WIDTH_SCALE = 0.05
     DEFAULT_TRACK_WIDTH_SCALE = 0.01
     DEFAULT_MARKER_WIDTH_SCALE = 0.02
     DEFAULT_PATH_WIDTH_SCALE = 0.004
     DEFAULT_HEAT_WIDTH_SCALE = 0.01
     HEAT_MAP_WIDTH_STEP = 2
+    DEFAULT_MARKER_SCALE = 1.0
 
+    target_scale = NumericProperty(1.0)
     def __init__(self, **kwargs):
         super(TrackMapView, self).__init__(**kwargs)
         self.bind(pos=self._update_map)
         self.bind(size=self._update_map)
 
+        self.target_width_scale = self.DEFAULT_TARGET_WIDTH_SCALE
         self.track_width_scale = self.DEFAULT_TRACK_WIDTH_SCALE
         self.marker_width_scale = self.DEFAULT_MARKER_WIDTH_SCALE
         self.path_width_scale = self.DEFAULT_PATH_WIDTH_SCALE
@@ -93,6 +102,9 @@ class TrackMapView(Widget):
         self._marker_points = {}
         self._marker_locations = {}
 
+        # start / finish points
+        self._start_finish_width_scale = self.DEFAULT_MARKER_WIDTH_SCALE
+
         # The map _paths
         self._paths = {}
         self._scaled_paths = {}
@@ -112,6 +124,13 @@ class TrackMapView(Widget):
         '''
         self._gen_map_points(geoPoints)
         self._update_map()
+
+    def on_start_point(self, instance, value):
+        self._draw_current_map()
+
+    def on_finish_point(self, instance, value):
+        print('basfasdf')
+        self._draw_current_map()
 
     def get_path(self, key):
         '''
@@ -361,6 +380,30 @@ class TrackMapView(Widget):
                 scaled_point = self._scale_point(marker_point, self.height, left, bottom)
                 Color(*marker_point.color)
                 self._marker_locations[key] = Line(circle=(scaled_point.x, scaled_point.y, marker_size), width=marker_size, closed=True)
+
+            target_size = (self.target_width_scale * self.height) * self.target_scale
+            # draw start point
+            if self.start_point is not None:
+                Color(0.0, 1.0, 0.0, 1.0)
+                scaled_point = self._scale_geopoint(self.start_point)
+                Rectangle(texture=TrackMapView.start_image.texture, pos=self._center_point(scaled_point, target_size), size=[target_size, target_size])
+
+            # draw finish point
+            if self.finish_point is not None:
+                Color(1.0, 0.0, 0.0, 1.0)
+                scaled_point = self._scale_geopoint(self.finish_point)
+                Rectangle(texture=TrackMapView.finish_image.texture, pos=self._center_point(scaled_point, target_size), size=[target_size, target_size])
+
+    def _center_point(self, point, size):
+        size = size / 2
+        return (point.x - size, point.y - size)
+
+    def _scale_geopoint(self, geopoint):
+        left = self.pos[0]
+        bottom = self.pos[1]
+        point = self._offset_track_point(self._project_point(geopoint))
+        scaled_point = self._scale_point(point, self.height, left, bottom)
+        return scaled_point
 
     def _offset_track_point(self, point):
         point.x = point.x - self._min_XY.x

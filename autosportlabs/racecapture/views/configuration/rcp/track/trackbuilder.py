@@ -29,10 +29,11 @@ from autosportlabs.racecapture.geo.geopoint import GeoPoint
 
 TRACK_BUILDER_KV = """
 <TrackBuilderView>:
+    spacing: sp(25)
+    padding: (sp(25),sp(25)) 
     BoxLayout:
         orientation: 'horizontal'
         size_hint_x: 0.7
-        padding: (sp(5), sp(5))
         TrackMapView:
             id: track
         
@@ -42,14 +43,16 @@ TRACK_BUILDER_KV = """
         spacing: sp(20)
         padding: (sp(5), sp(5))
         Button:
-            text: 'walk!'
-            on_press: root.add_track_point(*args)
+            text: 'simulate walking!'
+            on_press: root.walk(*args)
         Button:
             text: 'Start'
+            on_press: root.set_start_point(*args)
         Button:
             text: 'Sector'
         Button:
             text: 'Finish'
+            on_press: root.set_finish_point(*args)
 """
 
 
@@ -64,13 +67,26 @@ class TrackBuilderView(BoxLayout):
     def _update_trackmap(self):
         self.ids.track.setTrackPoints(self.track.map_points)
 
+    def walk(self, *args):
+        track = self.ids.track
+        if track.start_point is not None and track.finish_point is None:
+            self.track.map_points.append(GeoPoint.fromPoint(TRACKMAP_POINTS[self.trackmap_index][0], TRACKMAP_POINTS[self.trackmap_index][1]))
+            self.trackmap_index += 1
+            self._update_trackmap()
+
+    def set_start_point(self, *args):
+        self.track.map_points = []
+        self._update_trackmap()
+        self.ids.track.start_point = GeoPoint.fromPoint(TRACKMAP_POINTS[0][0], TRACKMAP_POINTS[0][1])
+        self.ids.track.finish_point = None
+        self.trackmap_index = 0
+
+    def set_finish_point(self, *args):
+        self.ids.track.finish_point = GeoPoint.fromPoint(TRACKMAP_POINTS[self.trackmap_index - 1][0], TRACKMAP_POINTS[self.trackmap_index - 1][1])
+
+# fake GPS data source
     trackmap_index = 0
     sector_index = 0
-    def add_track_point(self, *args):
-
-        self.track.map_points.append(GeoPoint.fromPoint(TRACKMAP_POINTS[self.trackmap_index][0], TRACKMAP_POINTS[self.trackmap_index][1]))
-        self.trackmap_index += 1
-        self._update_trackmap()
 
 TRACKMAP_SECTORS = [
                     [
