@@ -50,6 +50,7 @@ TRACK_BUILDER_KV = """
             on_press: root.set_start_point(*args)
         Button:
             text: 'Sector'
+            on_press: root.add_sector_point(*args)
         Button:
             text: 'Finish'
             on_press: root.set_finish_point(*args)
@@ -66,6 +67,7 @@ class TrackBuilderView(BoxLayout):
 
     def _update_trackmap(self):
         self.ids.track.setTrackPoints(self.track.map_points)
+        self.ids.track.sector_points = self.track.sector_points
 
     def walk(self, *args):
         track = self.ids.track
@@ -76,6 +78,7 @@ class TrackBuilderView(BoxLayout):
 
     def set_start_point(self, *args):
         self.track.map_points = []
+        self.track.sector_points = []
         self._update_trackmap()
         self.ids.track.start_point = GeoPoint.fromPoint(TRACKMAP_POINTS[0][0], TRACKMAP_POINTS[0][1])
         self.ids.track.finish_point = None
@@ -83,6 +86,11 @@ class TrackBuilderView(BoxLayout):
 
     def set_finish_point(self, *args):
         self.ids.track.finish_point = GeoPoint.fromPoint(TRACKMAP_POINTS[self.trackmap_index - 1][0], TRACKMAP_POINTS[self.trackmap_index - 1][1])
+
+    def add_sector_point(self, *args):
+        self.track.sector_points.append(GeoPoint.fromPoint(TRACKMAP_POINTS[self.trackmap_index - 1][0], TRACKMAP_POINTS[self.trackmap_index - 1][1]))
+        self.sector_index += 1
+        self._update_trackmap()
 
 # fake GPS data source
     trackmap_index = 0
