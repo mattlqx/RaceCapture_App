@@ -59,10 +59,16 @@ class TrackMapView(Widget):
     # min / max for heat map range
     heat_min = NumericProperty(0.0)
     heat_max = NumericProperty(100.0)
+
+    # start and finish points
     start_point = ObjectProperty(None, allownone=True)
+    start_point_color = ListProperty([0.0, 1.0, 0.0, 1.0])
+
     finish_point = ObjectProperty(None, allownone=True)
+    finish_point_color = ListProperty([1.0, 0.0, 0.0, 1.0])
 
     track_color = ListProperty([1.0, 1.0, 1.0, 0.5])
+    alt_track_color = ListProperty([1.0, 0.0, 0.0, 0.5])
     marker_scale = NumericProperty(1.0)
 
     MIN_PADDING = sp(1)
@@ -113,7 +119,10 @@ class TrackMapView(Widget):
     def on_marker_scale(self, instance, value):
         self._draw_current_markers()
 
-    def on_trackColor(self, instance, value):
+    def on_track_color(self, instance, value):
+        self._draw_current_map()
+
+    def on_alt_track_color(self, instance, value):
         self._draw_current_map()
 
     def setTrackPoints(self, geoPoints):
@@ -128,8 +137,13 @@ class TrackMapView(Widget):
     def on_start_point(self, instance, value):
         self._draw_current_map()
 
+    def on_start_point_color(self, instance, value):
+        self._draw_current_map()
+
     def on_finish_point(self, instance, value):
-        print('basfasdf')
+        self._draw_current_map()
+
+    def on_finish_point_color(self, instance, value):
         self._draw_current_map()
 
     def get_path(self, key):
@@ -382,15 +396,16 @@ class TrackMapView(Widget):
                 self._marker_locations[key] = Line(circle=(scaled_point.x, scaled_point.y, marker_size), width=marker_size, closed=True)
 
             target_size = (self.target_width_scale * self.height) * self.target_scale
+
             # draw start point
             if self.start_point is not None:
-                Color(0.0, 1.0, 0.0, 1.0)
+                Color(*self.start_point_color)
                 scaled_point = self._scale_geopoint(self.start_point)
                 Rectangle(texture=TrackMapView.start_image.texture, pos=self._center_point(scaled_point, target_size), size=[target_size, target_size])
 
             # draw finish point
             if self.finish_point is not None:
-                Color(1.0, 0.0, 0.0, 1.0)
+                Color(*self.finish_point_color)
                 scaled_point = self._scale_geopoint(self.finish_point)
                 Rectangle(texture=TrackMapView.finish_image.texture, pos=self._center_point(scaled_point, target_size), size=[target_size, target_size])
 
