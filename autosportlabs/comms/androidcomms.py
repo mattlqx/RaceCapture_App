@@ -58,3 +58,9 @@ class AndroidComms(object):
     def write_message(self, message):
         if not self._bt_conn.write(message):
             raise CommsErrorException()
+
+    def is_wireless(self):
+        """Returns if this comms object uses wireless communications or not.
+        :return: True
+        """
+        return True

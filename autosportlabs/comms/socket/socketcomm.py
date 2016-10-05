@@ -137,6 +137,12 @@ class SocketComm(object):
         if not self.isOpen(): raise PortNotOpenException('Port Closed')
         self._tx_queue.put(message, True, SocketComm.QUEUE_FULL_TIMEOUT)
 
+    def is_wireless(self):
+        """Returns if this comms object uses wireless communications or not.
+        :return: True
+        """
+        return True
+
     def _connection_thread_message_reader(self, rx_queue, connection, should_run):
         """This method is designed to be run in a thread, it will loop infinitely as long as should_run.is_set()
         returns True. In its loop it will attempt to read data from the socket connection

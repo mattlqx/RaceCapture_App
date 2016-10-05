@@ -152,3 +152,9 @@ class Comms():
     def write_message(self, message):
         if not self.isOpen(): raise PortNotOpenException('Port Closed')
         self._tx_queue.put(message, True, Comms.QUEUE_FULL_TIMEOUT)
+
+    def is_wireless(self):
+        """Returns if this comms object uses wireless communications or not.
+        :return: False
+        """
+        return False
