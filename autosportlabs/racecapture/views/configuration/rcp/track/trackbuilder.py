@@ -46,24 +46,62 @@ TRACK_BUILDER_KV = """
             text: 'simulate walking!'
             on_press: root.walk(*args)
         Button:
+            id: start_button
             text: 'Start'
             on_press: root.set_start_point(*args)
         Button:
+            id: add_sector_button
             text: 'Sector'
             on_press: root.add_sector_point(*args)
         Button:
+            id: add_finish_button
             text: 'Finish'
             on_press: root.set_finish_point(*args)
 """
 
 
 class TrackBuilderView(BoxLayout):
+    MINIMUM_TARGET_SEPARATION_METERS = 50
     Builder.load_string(TRACK_BUILDER_KV)
 
     def __init__(self, **kwargs):
         super(TrackBuilderView, self).__init__(**kwargs)
+        self.current_point = None
         self.track = TrackMap()
         self._update_trackmap()
+        self._update_button_states()
+
+    def _update_button_states(self):
+        current_point = self.current_point
+        start_point = self.track.start_finish_point
+        finish_point = self.track.finish_point
+
+        sector_points = self.track.sector_points
+        # to determine if we can add another sector, we reference the start line
+        # or the last sector point, if it exists
+        last_sector_point = None if len(sector_points) == 0 else self.track.sector_points[-1]
+        reference_point = last_sector_point if last_sector_point is not None else start_point
+
+        # Can only add a sector if we're the minimum distance from the reference point
+        can_add_sector = (start_point is not None and
+                current_point is not None and
+                current_point.dist_pythag(reference_point) >= TrackBuilderView.MINIMUM_TARGET_SEPARATION_METERS)
+
+        # we can't add a sector if the finish point is defined
+        can_add_sector = False if finish_point is not None else can_add_sector
+
+        self.ids.add_sector_button.disabled = not can_add_sector
+
+        # must be minimum distance from start point to create a finish point
+        can_finish = (start_point is not None and
+                    current_point is not None and
+                    current_point.dist_pythag(start_point) >= TrackBuilderView.MINIMUM_TARGET_SEPARATION_METERS)
+
+        # also must be minimum distance from last sector point, if it exists
+        can_finish = False if (last_sector_point is not None and
+                    current_point.dist_pythag(last_sector_point) < TrackBuilderView.MINIMUM_TARGET_SEPARATION_METERS) else can_finish
+
+        self.ids.add_finish_button.disabled = not can_finish
 
     def _update_trackmap(self):
         self.ids.track.setTrackPoints(self.track.map_points)
@@ -72,25 +110,37 @@ class TrackBuilderView(BoxLayout):
     def walk(self, *args):
         track = self.ids.track
         if track.start_point is not None and track.finish_point is None:
-            self.track.map_points.append(GeoPoint.fromPoint(TRACKMAP_POINTS[self.trackmap_index][0], TRACKMAP_POINTS[self.trackmap_index][1]))
+            current_point = GeoPoint.fromPoint(TRACKMAP_POINTS[self.trackmap_index][0], TRACKMAP_POINTS[self.trackmap_index][1])
+            self.track.map_points.append(current_point)
             self.trackmap_index += 1
             self._update_trackmap()
+            self.current_point = current_point
+        self._update_button_states()
 
     def set_start_point(self, *args):
+        self.current_point = None
         self.track.map_points = []
         self.track.sector_points = []
+        self.track.finish_point = None
         self._update_trackmap()
-        self.ids.track.start_point = GeoPoint.fromPoint(TRACKMAP_POINTS[0][0], TRACKMAP_POINTS[0][1])
+        start_point = GeoPoint.fromPoint(TRACKMAP_POINTS[0][0], TRACKMAP_POINTS[0][1])
+        self.track.start_finish_point = start_point
+        self.ids.track.start_point = start_point
         self.ids.track.finish_point = None
         self.trackmap_index = 0
+        self._update_button_states()
 
     def set_finish_point(self, *args):
-        self.ids.track.finish_point = GeoPoint.fromPoint(TRACKMAP_POINTS[self.trackmap_index - 1][0], TRACKMAP_POINTS[self.trackmap_index - 1][1])
+        finish_point = GeoPoint.fromPoint(TRACKMAP_POINTS[self.trackmap_index - 1][0], TRACKMAP_POINTS[self.trackmap_index - 1][1])
+        self.ids.track.finish_point = finish_point
+        self.track.finish_point = finish_point
+        self._update_button_states()
 
     def add_sector_point(self, *args):
         self.track.sector_points.append(GeoPoint.fromPoint(TRACKMAP_POINTS[self.trackmap_index - 1][0], TRACKMAP_POINTS[self.trackmap_index - 1][1]))
         self.sector_index += 1
         self._update_trackmap()
+        self._update_button_states()
 
 # fake GPS data source
     trackmap_index = 0
