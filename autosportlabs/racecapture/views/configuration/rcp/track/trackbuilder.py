@@ -128,7 +128,7 @@ class TrackBuilderView(BoxLayout):
         self.last_point = point
 
     def _on_location(self, instance, point):
-        print('on location {}'.format(point))
+        print('on location {} {}'.format(point.latitude, point.longitude))
         self._update_current_point(point)
 
     def _update_current_point(self, point):
