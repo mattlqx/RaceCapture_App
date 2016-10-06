@@ -27,6 +27,7 @@ from autosportlabs.uix.track.trackmap import TrackMapView
 from autosportlabs.racecapture.tracks.trackmanager import TrackMap
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.racecapture.views.util.alertview import confirmPopup
+from autosportlabs.racecapture.config.rcpconfig import GpsConfig
 
 TRACK_BUILDER_KV = """
 <TrackBuilderView>:
@@ -60,7 +61,6 @@ TRACK_BUILDER_KV = """
             on_press: root.on_set_finish_point(*args)
 """
 
-
 class TrackBuilderView(BoxLayout):
     Builder.load_string(TRACK_BUILDER_KV)
 
@@ -70,13 +70,23 @@ class TrackBuilderView(BoxLayout):
     # minimum distance needed to travel before registering a trackmap point
     MINIMUM_TRAVEL_DISTANCE_METERS = 5
 
-    def __init__(self, **kwargs):
+    def __init__(self, databus, **kwargs):
         super(TrackBuilderView, self).__init__(**kwargs)
+        self._databus = databus
         self.current_point = None
         self.last_point = None
         self.track = TrackMap()
         self._update_trackmap()
         self._update_button_states()
+        self._databus.addSampleListener(self._on_sample)
+
+    def _on_sample(self, sample):
+        gps_quality = sample.get('GPSQual')
+        latitude = sample.get('Latitude')
+        longitude = sample.get('Longitude')
+        if gps_quality >= GpsConfig.GPS_QUALITY_2D:
+            self._update_current_point(GeoPoint.fromPoint(latitude, longitude))
+            print('{} {} {}'.format(gps_quality, latitude, longitude))
 
     def _update_button_states(self):
         current_point = self.current_point
@@ -114,10 +124,8 @@ class TrackBuilderView(BoxLayout):
         self.ids.track.setTrackPoints(self.track.map_points)
         self.ids.track.sector_points = self.track.sector_points
 
-    def add_trackmap_point(self, point):
+    def _add_trackmap_point(self, point):
         self.track.map_points.append(point)
-        self._update_trackmap()
-        self._update_button_states()
         self.last_point = point
 
     def _update_current_point(self, point):
@@ -132,7 +140,9 @@ class TrackBuilderView(BoxLayout):
                                   self.last_point.dist_pythag(point) < TrackBuilderView.MINIMUM_TRAVEL_DISTANCE_METERS) else can_add_point
 
         if can_add_point:
-            self.add_trackmap_point(point)
+            self._add_trackmap_point(point)
+            self._update_trackmap()
+            self._update_button_states()
 
     def on_set_start_point(self, *args):
         popup = None
@@ -147,16 +157,14 @@ class TrackBuilderView(BoxLayout):
             self._start_new_track()
 
     def _start_new_track(self):
-        self.current_point = None
         self.track.map_points = []
         self.track.sector_points = []
         self.track.finish_point = None
-        self._update_trackmap()
-        start_point = GeoPoint.fromPoint(TRACKMAP_POINTS[0][0], TRACKMAP_POINTS[0][1])
+        start_point = self.current_point
         self.track.start_finish_point = start_point
         self.ids.track.start_point = start_point
         self.ids.track.finish_point = None
-        self.trackmap_index = 0
+        self._add_trackmap_point(start_point)
         self._update_button_states()
 
     def on_set_finish_point(self, *args):

@@ -18,6 +18,7 @@ from fieldlabel import FieldLabel
 from settingsview import *
 from utils import *
 from valuefield import FloatValueField
+from autosportlabs.racecapture.config.rcpconfig import GpsConfig
 from autosportlabs.racecapture.views.util.alertview import alertPopup
 from autosportlabs.racecapture.views.tracks.tracksview import TrackInfoView, TracksView
 from autosportlabs.racecapture.views.configuration.rcp.trackselectview import TrackSelectView
@@ -364,7 +365,7 @@ class ManualTrackConfigScreen(Screen):
         pass
 
     def track_builder(self, *args):
-        content = TrackBuilderView()
+        content = TrackBuilderView(databus=self._databus)
         popup = Popup(title='Track Builder', content=content, size_hint=(1.0, 1.0), auto_dismiss=False)
         popup.open()
 
