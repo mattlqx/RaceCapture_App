@@ -758,6 +758,9 @@ class RcpApi:
         else:
             self.sendCommand({'s':0})
 
+    def is_firmware_update_supported(self):
+        return self.comms and not self.comms.is_wireless()
+
     def start_auto_detect_worker(self):
         self._auto_detect_event.clear()
         t = Thread(target=self.auto_detect_worker)
