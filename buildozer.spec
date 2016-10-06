@@ -33,7 +33,7 @@ version.filename = %(source.dir)s/main.py
 
 # (list) Application requirements
 # comma seperated e.g. requirements = sqlite3, kivy, pygments
-requirements = kivy==1.9.1, sqlite3, openssl, pygments, raven
+requirements = kivy==1.9.1, sqlite3, openssl, pygments, raven, plyer
 
 # (list) Garden requirements
 #garden_requirements =
@@ -56,7 +56,7 @@ fullscreen = 1
 #
 
 # (list) Permissions
-android.permissions = INTERNET, BLUETOOTH, BLUETOOTH_ADMIN , WRITE_EXTERNAL_STORAGE, WAKE_LOCK
+android.permissions = INTERNET, BLUETOOTH, BLUETOOTH_ADMIN , WRITE_EXTERNAL_STORAGE, WAKE_LOCK, ACCESS_FINE_LOCATION
 
 # (int) Android API to use
 #android.api = 14

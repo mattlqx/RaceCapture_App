@@ -339,9 +339,10 @@ class ManualTrackConfigScreen(Screen):
     separateStartFinish = False
     _databus = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, databus, rc_api, **kwargs):
         super(ManualTrackConfigScreen, self).__init__(**kwargs)
-        self._databus = kwargs.get('databus')
+        self._databus = databus
+        self._rc_api = rc_api
         sepStartFinish = kvFind(self, 'rcid', 'sepStartFinish')
         sepStartFinish.bind(on_setting=self.on_separate_start_finish)
         sepStartFinish.setControl(SettingsSwitch())
@@ -365,8 +366,8 @@ class ManualTrackConfigScreen(Screen):
         pass
 
     def track_builder(self, *args):
-        content = TrackBuilderView(databus=self._databus)
-        popup = Popup(title='Track Builder', content=content, size_hint=(1.0, 1.0), auto_dismiss=False)
+        content = TrackBuilderView(databus=self._databus, rc_api=self._rc_api)
+        popup = Popup(title='Track Builder', content=content, size_hint=(1.0, 1.0), auto_dismiss=True)
         popup.open()
 
     def on_separate_start_finish(self, instance, value):
@@ -436,12 +437,13 @@ class TrackConfigView(BaseConfigView):
     autoConfigView = None
     _databus = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, databus, rc_api, **kwargs):
         super(TrackConfigView, self).__init__(**kwargs)
-        self._databus = kwargs.get('databus')
+        self._databus = databus
+        self._rc_api = rc_api
         self.register_event_type('on_config_updated')
 
-        self.manualTrackConfigView = ManualTrackConfigScreen(name='manual', databus=self._databus)
+        self.manualTrackConfigView = ManualTrackConfigScreen(name='manual', databus=self._databus, rc_api=self._rc_api)
         self.manualTrackConfigView.bind(on_modified=self.on_modified)
 
         self.autoConfigView = AutomaticTrackConfigScreen(name='auto')

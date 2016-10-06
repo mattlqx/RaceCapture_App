@@ -175,7 +175,8 @@ class ConfigView(Screen):
                                                                                         self._settings,
                                                                                         self.track_manager))
         else:
-            default_node = attach_node('Race Tracks', None, lambda: TrackConfigView(databus=self._databus))
+            default_node = attach_node('Race Tracks', None, lambda: TrackConfigView(databus=self._databus,
+                                                                                    rc_api=self.rc_api))
 
         attach_node('GPS', None, lambda: GPSChannelsView())
         attach_node('Race Timing', None, lambda: LapStatsView())

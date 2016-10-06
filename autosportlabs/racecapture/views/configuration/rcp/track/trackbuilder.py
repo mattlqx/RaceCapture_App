@@ -26,8 +26,10 @@ from kivy.metrics import sp
 from autosportlabs.uix.track.trackmap import TrackMapView
 from autosportlabs.racecapture.tracks.trackmanager import TrackMap
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
+from autosportlabs.racecapture.geo.geoprovider import GeoProvider
 from autosportlabs.racecapture.views.util.alertview import confirmPopup
 from autosportlabs.racecapture.config.rcpconfig import GpsConfig
+from plyer import gps
 
 TRACK_BUILDER_KV = """
 <TrackBuilderView>:
@@ -70,23 +72,16 @@ class TrackBuilderView(BoxLayout):
     # minimum distance needed to travel before registering a trackmap point
     MINIMUM_TRAVEL_DISTANCE_METERS = 5
 
-    def __init__(self, databus, **kwargs):
+    def __init__(self, rc_api, databus, **kwargs):
         super(TrackBuilderView, self).__init__(**kwargs)
         self._databus = databus
+        self._rc_api = rc_api
+        self._geo_provider = GeoProvider(rc_api=rc_api, databus=databus)
         self.current_point = None
         self.last_point = None
         self.track = TrackMap()
         self._update_trackmap()
         self._update_button_states()
-        self._databus.addSampleListener(self._on_sample)
-
-    def _on_sample(self, sample):
-        gps_quality = sample.get('GPSQual')
-        latitude = sample.get('Latitude')
-        longitude = sample.get('Longitude')
-        if gps_quality >= GpsConfig.GPS_QUALITY_2D:
-            self._update_current_point(GeoPoint.fromPoint(latitude, longitude))
-            print('{} {} {}'.format(gps_quality, latitude, longitude))
 
     def _update_button_states(self):
         current_point = self.current_point
@@ -118,6 +113,9 @@ class TrackBuilderView(BoxLayout):
         can_finish = False if (last_sector_point is not None and
                     current_point.dist_pythag(last_sector_point) < TrackBuilderView.MINIMUM_TARGET_SEPARATION_METERS) else can_finish
 
+        # can't finish twice
+        can_finish = False if finish_point is not None else can_finish
+        
         self.ids.add_finish_button.disabled = not can_finish
 
     def _update_trackmap(self):
@@ -166,6 +164,7 @@ class TrackBuilderView(BoxLayout):
         self.ids.track.finish_point = None
         self._add_trackmap_point(start_point)
         self._update_button_states()
+        self._update_trackmap()
 
     def on_set_finish_point(self, *args):
         finish_point = GeoPoint.fromPoint(TRACKMAP_POINTS[self.trackmap_index - 1][0], TRACKMAP_POINTS[self.trackmap_index - 1][1])
