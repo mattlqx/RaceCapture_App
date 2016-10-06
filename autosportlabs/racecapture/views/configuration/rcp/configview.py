@@ -25,7 +25,6 @@ from autosportlabs.racecapture.views.configuration.rcp.canconfigview import *
 from autosportlabs.racecapture.views.configuration.rcp.telemetry.telemetryconfigview import *
 from autosportlabs.racecapture.views.configuration.rcp.wirelessconfigview import *
 from autosportlabs.racecapture.views.configuration.rcp.scriptview import *
-from autosportlabs.racecapture.views.configuration.rcp.firmwareupdateview import *
 from autosportlabs.racecapture.views.file.loaddialogview import LoadDialog
 from autosportlabs.racecapture.views.file.savedialogview import SaveDialog
 from autosportlabs.racecapture.views.util.alertview import alertPopup, confirmPopup
@@ -204,6 +203,7 @@ class ConfigView(Screen):
         attach_node(node_name, None, lambda: create_scripting_view(self.rc_config.capabilities))
 
         if self.rc_api.is_firmware_update_supported():
+            from autosportlabs.racecapture.views.configuration.rcp.firmwareupdateview import FirmwareUpdateView
             attach_node('Firmware', None, lambda: FirmwareUpdateView(rc_api=self.rc_api, settings=self._settings))
 
         self.ids.menu.select_node(default_node)
