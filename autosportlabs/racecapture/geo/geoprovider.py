@@ -30,7 +30,7 @@ from kivy.event import EventDispatcher
 class GeoProvider(EventDispatcher):
     INTERNAL_GPS_MIN_DISTANCE = 0
     INTERNAL_GPS_MIN_TIME = 1000
-    
+
     def __init__(self, rc_api, databus, **kwargs):
         super(GeoProvider, self).__init__(**kwargs)
         self.internal_gps_supported = False
@@ -40,10 +40,10 @@ class GeoProvider(EventDispatcher):
         self._rc_api = rc_api
         databus.addSampleListener(self._on_sample)
         self.register_event_type('on_location')
-        
-    def on_location(self, point, is_internal_source):
+
+    def on_location(self, point):
         pass
-    
+
     def _on_sample(self, sample):
         gps_quality = sample.get('GPSQual')
         latitude = sample.get('Latitude')
@@ -59,21 +59,22 @@ class GeoProvider(EventDispatcher):
                 self._start_internal_gps()
 
     def _update_current_location(self, point):
-        pass
-        
+        self.dispatch('on_location', point)
+
     @mainthread
     def _on_internal_gps_location(self, **kwargs):
         print('internal gps location: ' + str(kwargs))
-    
+
     @mainthread
     def _on_internal_gps_status(self, **kwargs):
         print('internal gps status: ' + str(kwargs))
-        
+
     def shutdown(self):
         self._stop_internal_gps()
         self._databus.remove_sample_listener(self._on_sample)
-        
+
     def _init_internal_gps(self):
+        return
         try:
             gps.configure(on_location=self._on_internal_gps_location, on_status=self._on_internal_gps_status)
             self.internal_gps_supported = True
@@ -81,12 +82,13 @@ class GeoProvider(EventDispatcher):
         except NotImplementedError:
             self.internal_gps_supported = False
             Logger.info('GeoProvider: Internal GPS is not implemented for your platform')
-        
+
     def _start_internal_gps(self):
+        return
         Logger.info('GeoProvider: starting internal GPS')
         gps.start()
         self.internal_gps_active = True
-        
+
     def _stop_internal_gps(self):
         Logger.info('GeoProvider: stopping internal GPS')
         gps.stop()

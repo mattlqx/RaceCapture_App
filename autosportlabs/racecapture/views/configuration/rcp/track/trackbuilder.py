@@ -77,6 +77,7 @@ class TrackBuilderView(BoxLayout):
         self._databus = databus
         self._rc_api = rc_api
         self._geo_provider = GeoProvider(rc_api=rc_api, databus=databus)
+        self._geo_provider.bind(on_location=self._on_location)
         self.current_point = None
         self.last_point = None
         self.track = TrackMap()
@@ -115,7 +116,7 @@ class TrackBuilderView(BoxLayout):
 
         # can't finish twice
         can_finish = False if finish_point is not None else can_finish
-        
+
         self.ids.add_finish_button.disabled = not can_finish
 
     def _update_trackmap(self):
@@ -125,6 +126,10 @@ class TrackBuilderView(BoxLayout):
     def _add_trackmap_point(self, point):
         self.track.map_points.append(point)
         self.last_point = point
+
+    def _on_location(self, instance, point):
+        print('on location {}'.format(point))
+        self._update_current_point(point)
 
     def _update_current_point(self, point):
         self.current_point = point

@@ -367,7 +367,7 @@ class ManualTrackConfigScreen(Screen):
 
     def track_builder(self, *args):
         content = TrackBuilderView(databus=self._databus, rc_api=self._rc_api)
-        popup = Popup(title='Track Builder', content=content, size_hint=(1.0, 1.0), auto_dismiss=True)
+        popup = Popup(title='Track Builder', content=content, size_hint=(1.0, 0.9), auto_dismiss=True)
         popup.open()
 
     def on_separate_start_finish(self, instance, value):
