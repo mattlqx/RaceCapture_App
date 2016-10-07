@@ -20,6 +20,7 @@
 
 import kivy
 kivy.require('1.9.1')
+from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
 from kivy.app import Builder
 from kivy.metrics import sp
@@ -29,18 +30,42 @@ from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.racecapture.geo.geoprovider import GeoProvider
 from autosportlabs.racecapture.views.util.alertview import confirmPopup
 from autosportlabs.racecapture.config.rcpconfig import GpsConfig
+from autosportlabs.racecapture.theme.color import ColorScheme
 from plyer import gps
 
 TRACK_BUILDER_KV = """
 <TrackBuilderView>:
     spacing: sp(25)
     padding: (sp(25),sp(25)) 
-    BoxLayout:
-        orientation: 'horizontal'
+    orientation: 'horizontal'
+    canvas.before:
+        Color:
+            rgba: ColorScheme.get_widget_translucent_background()
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    AnchorLayout:
         size_hint_x: 0.7
         TrackMapView:
             id: track
-        
+        AnchorLayout:
+            anchor_y: 'top'
+            anchor_x: 'right'
+            GridLayout:
+                cols:2
+                rows:1
+                size_hint_y: 0.1
+                size_hint_x: 0.1
+                IconButton:
+                    id: internal_status
+                    text: u'\uf10b'
+                    color: [0.3, 0.3, 0.3, 0.2]        
+                    font_size: self.height * 0.8            
+                IconButton:
+                    id: gps_status
+                    text: u'\uf041'
+                    color: [0.3, 0.3, 0.3, 0.2]
+                    font_size: self.height * 0.8
     BoxLayout:
         orientation: 'vertical'
         size_hint_x: 0.3
@@ -64,6 +89,11 @@ TRACK_BUILDER_KV = """
 """
 
 class TrackBuilderView(BoxLayout):
+    GPS_ACTIVE_COLOR = [0.0, 1.0, 0.0, 1.0]
+    GPS_INACTIVE_COLOR = [1.0, 0.0, 0.0, 1.0]
+    INTERNAL_ACTIVE_COLOR = [0.0, 0.0, 1.0, 1.0]
+    INTERNAL_INACTIVE_COLOR = [0.3, 0.3, 0.3, 0.3]
+
     Builder.load_string(TRACK_BUILDER_KV)
 
     # minimum separation needed between start, finish and sector targets
@@ -71,6 +101,9 @@ class TrackBuilderView(BoxLayout):
 
     # minimum distance needed to travel before registering a trackmap point
     MINIMUM_TRAVEL_DISTANCE_METERS = 5
+
+    # how long until we time out
+    STATUS_LINGER_DURATION = 2.0
 
     def __init__(self, rc_api, databus, **kwargs):
         super(TrackBuilderView, self).__init__(**kwargs)
@@ -82,7 +115,23 @@ class TrackBuilderView(BoxLayout):
         self.last_point = None
         self.track = TrackMap()
         self._update_trackmap()
+        self._init_status_monitor()
         self._update_button_states()
+
+    def _init_status_monitor(self):
+        self._status_decay = Clock.create_trigger(self._on_status_decay, TrackBuilderView.STATUS_LINGER_DURATION)
+        self._status_decay()
+
+    def _on_status_decay(self, *args):
+        self.ids.internal_status.color = TrackBuilderView.INTERNAL_INACTIVE_COLOR
+        self.ids.gps_status.color = TrackBuilderView.GPS_INACTIVE_COLOR
+
+    def _update_status_indicators(self):
+        self._status_decay.cancel()
+        internal_active = self._geo_provider.location_source_internal
+        self.ids.internal_status.color = TrackBuilderView.INTERNAL_ACTIVE_COLOR if internal_active else TrackBuilderView.INTERNAL_INACTIVE_COLOR
+        self.ids.gps_status.color = TrackBuilderView.GPS_ACTIVE_COLOR
+        self._status_decay()
 
     def _update_button_states(self):
         current_point = self.current_point
@@ -128,8 +177,8 @@ class TrackBuilderView(BoxLayout):
         self.last_point = point
 
     def _on_location(self, instance, point):
-        print('on location {} {}'.format(point.latitude, point.longitude))
         self._update_current_point(point)
+        self._update_status_indicators()
 
     def _update_current_point(self, point):
         self.current_point = point
