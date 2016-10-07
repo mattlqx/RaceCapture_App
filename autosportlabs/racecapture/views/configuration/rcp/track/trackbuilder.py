@@ -60,7 +60,7 @@ TRACK_BUILDER_KV = """
                 size_hint_x: 0.1
                 IconButton:
                     id: internal_status
-                    text: u'\uf10b'
+                    text: u'\uf10a'
                     color: [0.3, 0.3, 0.3, 0.2]        
                     font_size: self.height * 0.8            
                 IconButton:
