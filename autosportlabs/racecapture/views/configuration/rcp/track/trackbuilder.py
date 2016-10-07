@@ -168,6 +168,10 @@ class TrackBuilderView(BoxLayout):
 
         self.ids.add_finish_button.disabled = not can_finish
 
+        # can we start?
+        can_start = self.current_point is not None
+        self.ids.start_button.disabled = not can_start
+
     def _update_trackmap(self):
         self.ids.track.setTrackPoints(self.track.map_points)
         self.ids.track.sector_points = self.track.sector_points
@@ -194,7 +198,8 @@ class TrackBuilderView(BoxLayout):
         if can_add_point:
             self._add_trackmap_point(point)
             self._update_trackmap()
-            self._update_button_states()
+
+        self._update_button_states()
 
     def on_set_start_point(self, *args):
         popup = None
@@ -203,7 +208,7 @@ class TrackBuilderView(BoxLayout):
                 self._start_new_track()
             popup.dismiss()
 
-        if len(self.track.map_points) > 0 and self.track.start_finish_point is not None:
+        if len(self.track.map_points) > 1 and self.track.start_finish_point is not None:
             popup = confirmPopup("Restart", "Restart Track Map?", confirm_restart)
         else:
             self._start_new_track()
@@ -221,9 +226,11 @@ class TrackBuilderView(BoxLayout):
         self._update_trackmap()
 
     def on_set_finish_point(self, *args):
-        finish_point = GeoPoint.fromPoint(TRACKMAP_POINTS[self.trackmap_index - 1][0], TRACKMAP_POINTS[self.trackmap_index - 1][1])
+        finish_point = self.current_point
+        self._add_trackmap_point(finish_point)
         self.ids.track.finish_point = finish_point
         self.track.finish_point = finish_point
+        self._update_trackmap()
         self._update_button_states()
 
     def on_add_sector_point(self, *args):
