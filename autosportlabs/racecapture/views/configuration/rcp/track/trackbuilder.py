@@ -24,6 +24,7 @@ from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
 from kivy.app import Builder
 from kivy.metrics import sp
+from kivy.properties import NumericProperty
 from autosportlabs.uix.track.trackmap import TrackMapView
 from autosportlabs.racecapture.tracks.trackmanager import TrackMap
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
@@ -31,6 +32,7 @@ from autosportlabs.racecapture.geo.geoprovider import GeoProvider
 from autosportlabs.racecapture.views.util.alertview import confirmPopup
 from autosportlabs.racecapture.config.rcpconfig import GpsConfig
 from autosportlabs.racecapture.theme.color import ColorScheme
+from autosportlabs.uix.toast.kivytoast import toast
 from plyer import gps
 
 TRACK_BUILDER_KV = """
@@ -91,7 +93,7 @@ TRACK_BUILDER_KV = """
 class TrackBuilderView(BoxLayout):
     GPS_ACTIVE_COLOR = [0.0, 1.0, 0.0, 1.0]
     GPS_INACTIVE_COLOR = [1.0, 0.0, 0.0, 1.0]
-    INTERNAL_ACTIVE_COLOR = [0.0, 0.0, 1.0, 1.0]
+    INTERNAL_ACTIVE_COLOR = [0.0, 1.0, 1.0, 1.0]
     INTERNAL_INACTIVE_COLOR = [0.3, 0.3, 0.3, 0.3]
 
     Builder.load_string(TRACK_BUILDER_KV)
@@ -99,11 +101,13 @@ class TrackBuilderView(BoxLayout):
     # minimum separation needed between start, finish and sector targets
     MINIMUM_TARGET_SEPARATION_METERS = 50
 
-    # minimum distance needed to travel before registering a trackmap point
-    MINIMUM_TRAVEL_DISTANCE_METERS = 5
+    # default minimum distance needed to travel before registering a trackmap point
+    DEFAULT_MINIMUM_TRAVEL_DISTANCE_METERS = 1
 
     # how long until we time out
     STATUS_LINGER_DURATION = 2.0
+    
+    minimum_travel_distance = NumericProperty(DEFAULT_MINIMUM_TRAVEL_DISTANCE_METERS)
 
     def __init__(self, rc_api, databus, **kwargs):
         super(TrackBuilderView, self).__init__(**kwargs)
@@ -111,12 +115,16 @@ class TrackBuilderView(BoxLayout):
         self._rc_api = rc_api
         self._geo_provider = GeoProvider(rc_api=rc_api, databus=databus)
         self._geo_provider.bind(on_location=self._on_location)
+        self._geo_provider.bind(on_internal_gps_available=self._on_internal_gps_available)
+        self._geo_provider.bind(on_gps_source=self._on_gps_source)
         self.current_point = None
         self.last_point = None
         self.track = TrackMap()
         self._update_trackmap()
         self._init_status_monitor()
         self._update_button_states()
+        if not self._rc_api.connected:
+            self._geo_provider._start_internal_gps() 
 
     def _init_status_monitor(self):
         self._status_decay = Clock.create_trigger(self._on_status_decay, TrackBuilderView.STATUS_LINGER_DURATION)
@@ -184,6 +192,19 @@ class TrackBuilderView(BoxLayout):
         self._update_current_point(point)
         self._update_status_indicators()
 
+    def _on_internal_gps_available(self, instance, available):
+        if not available:
+            toast("Could not activate internal GPS on this device", length_long=True)
+    
+    def _on_gps_source(self, instance, source):
+        msg = None
+        if source == GeoProvider.GPS_SOURCE_RACECAPTURE:
+            msg = "GPS Source: RaceCapture"
+        elif source == GeoProvider.GPS_SOURCE_INTERNAL:
+            msg = "GPS source: this device"
+        if msg is not None:
+            toast(msg, length_long=True)
+        
     def _update_current_point(self, point):
         self.current_point = point
         track = self.ids.track
@@ -193,7 +214,7 @@ class TrackBuilderView(BoxLayout):
 
         # however, we can't add a point if we're too close to the last point
         can_add_point = False if (self.last_point is not None and
-                                  self.last_point.dist_pythag(point) < TrackBuilderView.MINIMUM_TRAVEL_DISTANCE_METERS) else can_add_point
+                                  self.last_point.dist_pythag(point) < self.minimum_travel_distance) else can_add_point
 
         if can_add_point:
             self._add_trackmap_point(point)

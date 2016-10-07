@@ -21,37 +21,57 @@
 import kivy
 kivy.require('1.9.1')
 from plyer import gps
-from kivy.clock import mainthread
+from kivy.clock import mainthread, Clock
 from kivy.logger import Logger
 from autosportlabs.racecapture.config.rcpconfig import GpsConfig
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from kivy.event import EventDispatcher
+import jnius
+from jnius import autoclass, java_method, PythonJavaClass
+from kivy.logger import Logger
+
 
 class GeoProvider(EventDispatcher):
+    
+    GPS_SOURCE_NONE = 0
+    GPS_SOURCE_RACECAPTURE = 1
+    GPS_SOURCE_INTERNAL = 2
+    
     INTERNAL_GPS_MIN_DISTANCE = 0
     INTERNAL_GPS_MIN_TIME = 1000
-
+    INTERNAL_GPS_UPDATE_INTERVAL = 0.5
     def __init__(self, rc_api, databus, **kwargs):
         super(GeoProvider, self).__init__(**kwargs)
-        self._internal_gps_supported = False
-        self._internal_gps_active = False
-        self._init_internal_gps()
         self._databus = databus
         self._rc_api = rc_api
+
+        self._internal_gps_active = False
+        self._rc_gps_quality = GpsConfig.GPS_QUALITY_NO_FIX
+        self._last_internal_location_time = 0
+        self._current_gps_source = GeoProvider.GPS_SOURCE_NONE
+        
         databus.addSampleListener(self._on_sample)
         self.register_event_type('on_location')
-        self._init_internal_gps()
+        self.register_event_type('on_internal_gps_available')
+        self.register_event_type('on_gps_source')
+        self._start_internal_gps()
 
     def on_location(self, point):
         pass
 
+    def on_internal_gps_available(self, available):
+        pass
+    
+    def on_gps_source(self, source):
+        pass
+    
     @property
     def location_source_internal(self):
         """
         Indicates if location data is currently provided by an internal source
         :return True if source is internal
         """
-        return self._internal_gps_active
+        return self._internal_gps_active and self._should_use_internal_source
 
     @property
     def rc_connection_active(self):
@@ -60,55 +80,56 @@ class GeoProvider(EventDispatcher):
         """
         return self._rc_api.connected
 
+    @property
+    def _should_use_internal_source(self):
+        return not self._rc_api.connected or self._rc_gps_quality < GpsConfig.GPS_QUALITY_2D
+            
     def _on_sample(self, sample):
         gps_quality = sample.get('GPSQual')
         latitude = sample.get('Latitude')
         longitude = sample.get('Longitude')
 
         if self._rc_api.connected and gps_quality >= GpsConfig.GPS_QUALITY_2D:
-            self._update_current_location(GeoPoint.fromPoint(latitude, longitude))
-            if self._internal_gps_active:
-                self._stop_internal_gps()
-        else:
-            if self._internal_gps_supported and not self._internal_gps_active:
-                self._start_internal_gps()
+            self._update_current_location(GeoPoint.fromPoint(latitude, longitude), GeoProvider.GPS_SOURCE_RACECAPTURE)
 
-    def _update_current_location(self, point):
+        self._rc_gps_quality = gps_quality
+
+    def _update_current_location(self, point, gps_source):
         self.dispatch('on_location', point)
-
-    @mainthread
-    def _on_internal_gps_location(self, **kwargs):
-        print('internal gps location: ' + str(kwargs))
-        latitude = kwargs.get('lat')
-        longitude = lwargs.get('lon')
-        self._update_current_location(GeoPoint.fromPoint(latitude, longitude))
-
-    @mainthread
-    def _on_internal_gps_status(self, **kwargs):
-        print('internal gps status: ' + str(kwargs))
+        if gps_source != self._current_gps_source:
+            self.dispatch('on_gps_source', gps_source)
+            self._current_gps_source = gps_source
 
     def shutdown(self):
         self._stop_internal_gps()
         self._databus.remove_sample_listener(self._on_sample)
-
-    def _init_internal_gps(self):
-        self._internal_gps_supported = False
-        return
-        try:
-            gps.configure(on_location=self._on_internal_gps_location, on_status=self._on_internal_gps_status)
-            self._internal_gps_supported = True
-            Logger.info('GeoProvider: internal GPS configured')
-        except NotImplementedError:
-            self._internal_gps_supported = False
-            Logger.info('GeoProvider: Internal GPS is not implemented for your platform')
+        Clock.unschedule(self._check_internal_gps_update)
 
     def _start_internal_gps(self):
-        return
-        Logger.info('GeoProvider: starting internal GPS')
-        gps.start()
-        self._internal_gps_active = True
+        started = False
+        gps_conn = autoclass('com.autosportlabs.racecapture.GpsConnection')
+        self._gps_conn = gps_conn.createInstance();        
+        configured = self._gps_conn.configure()
+        if configured:
+            started = self._gps_conn.start()
+        Logger.info('GeoProvider: internal GPS started: {}'.format(started))
+        self.dispatch('on_internal_gps_available', started)
+        if started:
+            Clock.schedule_interval(self._check_internal_gps_update, GeoProvider.INTERNAL_GPS_UPDATE_INTERVAL)
 
+    def _check_internal_gps_update(self, *args):
+        location = self._gps_conn.getCurrentLocation()
+        if not location:
+            return
+        location_time = location.getTime()
+        if location_time != self._last_internal_location_time:
+            self._internal_gps_active = True
+            if self._should_use_internal_source:
+                point = GeoPoint.fromPoint(location.getLatitude(), location.getLongitude())
+                self._update_current_location(point, GeoProvider.GPS_SOURCE_INTERNAL)
+            self._last_internal_location_time = location_time 
+            
     def _stop_internal_gps(self):
         Logger.info('GeoProvider: stopping internal GPS')
-        gps.stop()
+        self._gps_conn.stop()
         self._internal_gps_active = False
