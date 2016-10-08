@@ -28,6 +28,10 @@ class GeoPoint:
         return g
 
     @classmethod
+    def is_valid(cls, point):
+        return point is not None and point.latitude is not None and point.longitude is not None and point.latitude != 0 and point.longitude != 0
+
+    @classmethod
     def fromPointJson(cls, geoPointJson):
         g = None
         if geoPointJson:

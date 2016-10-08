@@ -406,13 +406,13 @@ class TrackMapView(Widget):
 
             target_size = (self.target_width_scale * self.height) * self.target_scale
             # draw start point
-            if self.start_point is not None:
+            if GeoPoint.is_valid(self.start_point):
                 Color(*self.start_point_color)
                 scaled_point = self._scale_geopoint(self.start_point)
                 Rectangle(texture=TrackMapView.start_image.texture, pos=self._center_point(scaled_point, (target_size, target_size)), size=[target_size, target_size])
 
             # draw finish point
-            if self.finish_point is not None:
+            if GeoPoint.is_valid(self.finish_point):
                 Color(*self.finish_point_color)
                 scaled_point = self._scale_geopoint(self.finish_point)
                 Rectangle(texture=TrackMapView.finish_image.texture, pos=self._center_point(scaled_point, (target_size, target_size)), size=[target_size, target_size])

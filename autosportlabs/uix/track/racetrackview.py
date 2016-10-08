@@ -22,6 +22,9 @@ class RaceTrackView(BoxLayout):
 
     def initMap(self, track):
         self.ids.trackmap.setTrackPoints(track.map_points)
+        self.ids.trackmap.sector_points = track.sector_points
+        self.ids.trackmap.start_point = track.start_finish_point
+        self.ids.trackmap.finish_point = track.finish_point
 
     def remove_reference_mark(self, key):
         self.ids.trackmap.remove_marker(key)
