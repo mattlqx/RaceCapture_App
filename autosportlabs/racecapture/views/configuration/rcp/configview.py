@@ -166,13 +166,10 @@ class ConfigView(Screen):
 
         runtime_channels = self._settings.runtimeChannels
 
-        if self.rc_config.capabilities.storage.tracks == 0:
-            default_node = attach_node('Race Tracks', None, lambda: SimpleTrackConfigView(self.rc_api, self._databus,
-                                                                                        self._settings,
-                                                                                        self.track_manager))
-        else:
-            default_node = attach_node('Race Tracks', None, lambda: TrackConfigView(databus=self._databus,
-                                                                                    rc_api=self.rc_api))
+        default_node = attach_node('Race Tracks', None, lambda: TrackConfigView(databus=self._databus,
+                                                                                    rc_api=self.rc_api,
+                                                                                    settings=self._settings,
+                                                                                    track_manager=self.track_manager))
 
         attach_node('GPS', None, lambda: GPSChannelsView())
         attach_node('Race Timing', None, lambda: LapStatsView())

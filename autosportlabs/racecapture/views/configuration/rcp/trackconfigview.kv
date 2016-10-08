@@ -79,7 +79,7 @@
 		orientation: 'vertical'
 		size_hint_y: 0.20
 		SettingsView:
-			rcid: 'autoDetect'
+			id: auto_detect
 			label_text: 'Automatic race track detection'
 			help_text: 'Automatically detect and configure your favorite tracks'
 	ScreenManager:
@@ -159,22 +159,33 @@
     	    	disabled: True
     	    	rcid: 'addtrack'
 	        
+<CustomTrackConfigScreen>:
+    AnchorLayout:
+    Label:
+        text: 'Custom track'
+    AnchorLayout:
+        anchor_x: 'right'
+        Button:
+            size_hint: (0.2, 0.2)
+            text: 'Advanced'
+            on_press: root.on_advanced_track_editor()        
+        
 
-
+<SingleAutoConfigScreen>:
+    Label:
+        text: 'Single Auto config screen'
+        
 <ManualTrackConfigScreen>:
 	BoxLayout:
 		orientation: 'vertical'
-		Button:
-            text: 'track builder'
-            on_press: root.track_builder(*args)
 		SettingsView:
-			size_hint_y: 0.4
+			size_hint_y: 0.2
 			rcid: 'sepStartFinish'
 			label_text: 'Separate start and finish lines'
 			help_text: 'Enable for Stage, Hill Climb or AutoX type courses'
 		BoxLayout:
 			orientation: 'vertical'
-			size_hint_y: 0.6
+			size_hint_y: 0.8
 
 			SectorPointView:
 				id: start_line

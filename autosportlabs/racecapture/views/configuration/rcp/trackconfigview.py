@@ -16,7 +16,7 @@ from kivy.app import Builder
 from helplabel import HelpLabel
 from fieldlabel import FieldLabel
 from settingsview import *
-from utils import *
+from utils import is_mobile_platform
 from valuefield import FloatValueField
 from autosportlabs.racecapture.config.rcpconfig import GpsConfig
 from autosportlabs.racecapture.views.util.alertview import alertPopup
@@ -27,40 +27,11 @@ from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.uix.toast.kivytoast import toast
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.racecapture.views.util.alertview import editor_popup
-from autosportlabs.racecapture.views.configuration.rcp.track.trackbuilder import TrackBuilderView
+# if is_mobile_platform:
+    # from autosportlabs.racecapture.views.configuration.rcp.track.trackbuilder import TrackBuilderView
 
 TRACK_CONFIG_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/trackconfigview.kv'
 
-SIMPLE_TRACK_CONFIG_VIEW = """
-<SimpleTrackConfigView>:
-    GridLayout:
-        spacing: [0, dp(20)]
-        padding: dp(20)
-        id: content
-        cols: 1
-        GridLayout:
-            size_hint_y: 0.4
-            cols: 1
-            SettingsView:
-                id: current_track
-                label_text: 'Track: Unknown'
-            SettingsView:
-                id: custom_start_finish
-                label_text: 'Custom start/finish'
-        GridLayout:
-            id: custom
-            canvas.before:
-                Color:
-                    rgba: 0.1, 0.1, 0.1, 1.0
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
-            row_default_height: root.height * 0.12
-            row_force_default: True
-            size_hint_y: 1
-            cols: 1
-
-"""
 
 GPS_STATUS_POLL_INTERVAL = 1.0
 GPS_NOT_LOCKED_COLOR = [0.7, 0.7, 0.0, 1.0]
@@ -241,7 +212,6 @@ class TrackSelectionPopup(BoxLayout):
     def confirmAddTracks(self):
         self.dispatch('on_tracks_selected', self.track_browser.selectedTrackIds)
 
-
 class AutomaticTrackConfigScreen(Screen):
     trackDb = None
     tracksGrid = None
@@ -257,8 +227,8 @@ class AutomaticTrackConfigScreen(Screen):
     def on_modified(self, *args):
         pass
 
-    def on_config_updated(self, rcpCfg):
-        self.trackDb = rcpCfg.trackDb
+    def on_config_updated(self, trackDb):
+        self.trackDb = trackDb
         self.init_tracks_list()
 
     def on_track_manager(self, instance, value):
@@ -331,6 +301,21 @@ class AutomaticTrackConfigScreen(Screen):
     def disableView(self, disabled):
         kvFind(self, 'rcid', 'addtrack').disabled = disabled
 
+class SingleAutoConfigScreen(Screen):
+    pass
+
+class CustomTrackConfigScreen(Screen):
+
+    def __init__(self, **kwargs):
+        super(CustomTrackConfigScreen, self).__init__(**kwargs)
+        self.register_event_type('on_advanced_editor')
+
+    def on_advanced_track_editor(self, *args):
+        self.dispatch('on_advanced_editor')
+
+    def on_advanced_editor(self):
+        pass
+
 class ManualTrackConfigScreen(Screen):
     trackCfg = None
     sectorViews = []
@@ -402,9 +387,7 @@ class ManualTrackConfigScreen(Screen):
             self.finishLineView.setTitle('Finish Line')
             self.finishLineView.disabled = False
 
-    def on_config_updated(self, rcpCfg):
-        trackCfg = rcpCfg.trackConfig
-
+    def on_config_updated(self, trackCfg):
         separateStartFinishSwitch = kvFind(self, 'rcid', 'sepStartFinish')
         self.separateStartFinish = trackCfg.track.trackType == TRACK_TYPE_STAGE
         separateStartFinishSwitch.setValue(self.separateStartFinish)
@@ -429,62 +412,146 @@ class ManualTrackConfigScreen(Screen):
 class TrackConfigView(BaseConfigView):
 
     Builder.load_file(TRACK_CONFIG_VIEW_KV)
-    trackCfg = None
-    trackDb = None
 
-    screenManager = None
-    manualTrackConfigView = None
-    autoConfigView = None
-    _databus = None
-
-    def __init__(self, databus, rc_api, **kwargs):
+    def __init__(self, settings, databus, rc_api, track_manager, **kwargs):
         super(TrackConfigView, self).__init__(**kwargs)
+
+        self._track_db_capable = False
+
+        self.trackCfg = None
+        self.trackDb = None
+
         self._databus = databus
         self._rc_api = rc_api
+        self._settings = settings
+        self._track_manager = track_manager
+
+        self.autoConfigView = None
+        self.manualTrackConfigView = None
+        self.single_autoconfig_screen = None
+        self._custom_track_screen = None
+
         self.register_event_type('on_config_updated')
 
-        self.manualTrackConfigView = ManualTrackConfigScreen(name='manual', databus=self._databus, rc_api=self._rc_api)
-        self.manualTrackConfigView.bind(on_modified=self.on_modified)
-
-        self.autoConfigView = AutomaticTrackConfigScreen(name='auto')
-        self.autoConfigView.bind(on_modified=self.on_modified)
-
         screenMgr = kvFind(self, 'rcid', 'screenmgr')
-        screenMgr.add_widget(self.manualTrackConfigView)
         self.screenManager = screenMgr
 
-        autoDetect = kvFind(self, 'rcid', 'autoDetect')
+        autoDetect = self.ids.auto_detect
         autoDetect.bind(on_setting=self.on_auto_detect)
         autoDetect.setControl(SettingsSwitch())
 
-        self.autoConfigView.track_manager = kwargs.get('track_manager')
+    def _get_track_db_view(self):
+        if self.autoConfigView is None:
+            self.autoConfigView = AutomaticTrackConfigScreen(name='trackdb')
+            self.autoConfigView.bind(on_modified=self.on_modified)
+            self.autoConfigView.track_manager = self._track_manager
+            if self.trackDb is not None:
+                self.autoConfigView.on_config_updated(self.trackDb)
+        return self.autoConfigView
+
+    def _get_single_track_view(self):
+        if self.single_autoconfig_screen is None:
+            self.single_autoconfig_screen = SingleAutoConfigScreen(name='single')
+        return self.single_autoconfig_screen
+
+    def _get_custom_track_screen(self):
+        if self._custom_track_screen is None:
+            self._custom_track_screen = CustomTrackConfigScreen(name='custom')
+            self._custom_track_screen.bind(on_advanced_editor=self._on_advanced_editor)
+        return self._custom_track_screen
+
+    def _get_advanced_editor_screen(self, *args):
+        if self.manualTrackConfigView is None:
+            self.manualTrackConfigView = ManualTrackConfigScreen(name='advanced', databus=self._databus, rc_api=self._rc_api)
+            self.manualTrackConfigView.bind(on_modified=self.on_modified)
+            if self.trackCfg is not None:
+                self.manualTrackConfigView.on_config_updated(self.trackCfg)
+        return self.manualTrackConfigView
 
     def on_tracks_updated(self, track_manager):
-        self.autoConfigView.track_manager = track_manager
+        if self.autoConfigView is not None:
+            self.autoConfigView.track_manager = track_manager
 
     def on_config_updated(self, rcpCfg):
         trackCfg = rcpCfg.trackConfig
         trackDb = rcpCfg.trackDb
 
-        autoDetectSwitch = kvFind(self, 'rcid', 'autoDetect')
-        autoDetectSwitch.setValue(trackCfg.autoDetect)
+        self._track_db_capable = rcpCfg.capabilities.storage.tracks > 0
 
-        self.manualTrackConfigView.on_config_updated(rcpCfg)
-        self.autoConfigView.on_config_updated(rcpCfg)
+        self.ids.auto_detect.setValue(trackCfg.autoDetect)
+
+        if self.manualTrackConfigView is not None:
+            self.manualTrackConfigView.on_config_updated(trackCfg)
+
+        if self.autoConfigView is not None:
+            self.autoConfigView.on_config_updated(trackDb)
+
         self.trackCfg = trackCfg
         self.trackDb = trackDb
 
-    def on_auto_detect(self, instance, value):
-        if value:
-            self.screenManager.switch_to(self.autoConfigView)
-        else:
-            self.screenManager.switch_to(self.manualTrackConfigView)
+        self._select_screen()
 
+    def _select_screen(self):
+        auto_detect_enabled = self.ids.auto_detect.control.active
+
+        next_screen = None
+        if auto_detect_enabled:
+            if self._track_db_capable:
+                next_screen = self._get_track_db_view()
+            else:
+                next_screen = self._get_single_track_view()
+        else:
+            next_screen = self._get_custom_track_screen()
+
+        self._switch_to_screen(next_screen)
+
+    def _switch_to_screen(self, screen):
+        if self.screenManager.current_screen != screen:
+            self.screenManager.switch_to(screen)
+
+    def on_auto_detect(self, instance, value):
+        self._select_screen()
         if self.trackCfg:
             self.trackCfg.autoDetect = value
             self.trackCfg.stale = True
             self.dispatch('on_modified')
 
+    def _on_advanced_editor(self, *args):
+        self._switch_to_screen(self._get_advanced_editor_screen())
+
+SIMPLE_TRACK_CONFIG_VIEW = """
+<SimpleTrackConfigView>:
+    GridLayout:
+        spacing: [0, dp(20)]
+        padding: dp(20)
+        id: content
+        cols: 1
+        GridLayout:
+            cols: 1
+            size_hint_y: 0.3
+            SettingsView:
+                id: current_track
+                label_text: 'Track: Unknown'
+            SettingsView:
+                id: custom_track
+                label_text: 'Custom Track'
+        AnchorLayout:
+            id: custom
+            size_hint_y: 0.7
+            TrackMapView:
+                id: custom_track_view
+            FieldLabel:
+                size_hint_y: 0.1
+                id: custom_track_note
+                text: 'No Custom Track defined'
+            AnchorLayout:
+                anchor_x: 'right'
+                Button:
+                    size_hint: (0.3, 0.3)
+                    text: 'Build Track'
+                    on_press: root.track_builder(*args)
+
+"""
 
 class SimpleTrackConfigView(BaseConfigView):
 
@@ -505,21 +572,13 @@ class SimpleTrackConfigView(BaseConfigView):
         button.bind(on_press=self.on_set_track_press)
         self.ids.current_track.setControl(button)
 
-        self.ids.custom_start_finish.bind(on_setting=self.on_custom_start_finish)
-        self.ids.custom_start_finish.setControl(SettingsSwitch())
+        self.ids.custom_track.bind(on_setting=self.on_custom_track)
+        self.ids.custom_track.setControl(SettingsSwitch())
 
         self._track_select_view = None
         self._popup = None
         self._manual_track_config_view = None
         self._old_track_id = None
-
-        start_line = SectorPointView(databus=self._databus)
-        start_line.set_point(GeoPoint())
-        start_line.setTitle("Start/Finish")
-        start_line.bind(on_config_changed=self._on_custom_change)
-        self.ids.custom.add_widget(start_line)
-
-        self._start_line = start_line
 
     def on_set_track_press(self, instance):
         content = TrackSelectView(self._track_manager)
@@ -545,7 +604,7 @@ class SimpleTrackConfigView(BaseConfigView):
                 self.ids.current_track.label_text = 'Track: ' + track_name
         self._popup.dismiss()
 
-    def on_custom_start_finish(self, instance, value):
+    def on_custom_track(self, instance, value):
         # Show or hide custom start/finish points
         if value:
             if self._track_config:
@@ -621,4 +680,4 @@ class SimpleTrackConfigView(BaseConfigView):
         elif rcp_config.trackConfig.track.trackId == 0:
             Logger.info("TempTrackConfig: custom start/finish: {}".format(rcp_config.trackConfig.track.startLine.toJson()))
             self._start_line.set_point(rcp_config.trackConfig.track.startLine)
-            self.ids.custom_start_finish.setValue(True)
+            self.ids.custom_track.setValue(True)
