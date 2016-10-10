@@ -77,9 +77,8 @@ from os.path import sep, dirname, expanduser, isdir
 from os import walk
 from functools import partial
 from utils import is_mobile_platform
-from autosportlabs.widgets.scrollcontainer import ScrollContainer
 
-platform = core_platform()
+platform = core_platform
 if platform == 'win':
     from ctypes import windll, create_unicode_buffer
 
