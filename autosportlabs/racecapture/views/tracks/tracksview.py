@@ -23,6 +23,7 @@ from utils import *
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from iconbutton import LabelIconButton
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
+from autosportlabs.racecapture.tracks.trackmanager import TrackMap
 
 Builder.load_file('autosportlabs/racecapture/views/tracks/tracksview.kv')
 
@@ -100,29 +101,30 @@ class TrackInfoView(BoxLayout):
         super(TrackInfoView, self).__init__(**kwargs)
 
     def setTrack(self, track):
-        if track:
-            raceTrackView = self.ids.track
-            raceTrackView.loadTrack(track)
+        if track is None:  # create a default, empty track if none provided
+            track = TrackMap()
 
-            trackLabel = self.ids.name
-            trackLabel.text = track.name
+        raceTrackView = self.ids.track
+        raceTrackView.loadTrack(track)
 
-            trackConfigLabel = self.ids.configuration
-            trackConfigLabel.text = 'Main Configuration' if not track.configuration else track.configuration
+        self.ids.name.text = track.name
 
-            lengthLabel = self.ids.length
-            lengthLabel.text = str(track.length) + ' mi.'
+        self.ids.configuration.text = '' if not track.configuration else track.configuration
 
-            flagImage = self.ids.flag
-            cc = track.country_code
-            if cc:
-                cc = cc.lower()
-                try:
-                    flagImagePath = 'resource/flags/' + str(track.country_code.lower()) + '.png'
-                    flagImage.source = flagImagePath
-                except Exception as detail:
-                    print('Error loading flag for country code: ' + str(detail))
-            self.track = track
+        self.ids.length = '' if track.length == 0 else '{} mi.'.format(track.length)
+
+        flag_image = self.ids.flag
+        cc = track.country_code
+        if cc:
+            cc = cc.lower()
+            try:
+                flagImagePath = 'resource/flags/' + str(track.country_code.lower()) + '.png'
+                flag_image.source = flagImagePath
+            except Exception as detail:
+                Logger.warn('Error loading flag for country code: {}'.format(detail))
+        else:
+            flag_image.source = 'resource/flags/blank.png'
+        self.track = track
 
 class TracksView(Screen):
     loaded = False
@@ -250,7 +252,7 @@ class TracksBrowser(BoxLayout):
     def on_update_check_error(self, details):
         self.dismissPopups()
         Clock.schedule_once(lambda dt: self.refreshTrackList())
-        print('Error updating: ' + str(details))
+        Logger.error('TracksBrowser: Error updating: {}'.format(details))
         alertPopup('Error Updating', 'There was an error updating the track list.\n\nPlease check your network connection and try again')
 
     def on_update_check(self):
