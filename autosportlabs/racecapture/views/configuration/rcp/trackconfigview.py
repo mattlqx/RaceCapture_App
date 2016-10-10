@@ -27,8 +27,9 @@ from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.uix.toast.kivytoast import toast
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.racecapture.views.util.alertview import editor_popup
-# if is_mobile_platform:
-    # from autosportlabs.racecapture.views.configuration.rcp.track.trackbuilder import TrackBuilderView
+from autosportlabs.racecapture.tracks.trackmanager import TrackManager, TrackMap
+if is_mobile_platform():
+    from autosportlabs.racecapture.views.configuration.rcp.track.trackbuilder import TrackBuilderView
 
 TRACK_CONFIG_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/trackconfigview.kv'
 
@@ -296,7 +297,7 @@ class AutomaticTrackConfigScreen(Screen):
                 self.dispatch('on_modified')
 
             except Exception as detail:
-                print('Error removing track from list ' + str(detail))
+                Logger.error('AutomaticTrackConfigScreen: Error removing track from list ' + str(detail))
 
     def disableView(self, disabled):
         kvFind(self, 'rcid', 'addtrack').disabled = disabled
@@ -305,34 +306,64 @@ class SingleAutoConfigScreen(Screen):
     def __init__(self, track_manager, **kwargs):
         super(SingleAutoConfigScreen, self).__init__(**kwargs)
         self._track_manager = track_manager
+        self.track_cfg = None
 
-    def on_advanced_editor(self):
-        pass
-    
-    def on_config_updated(self, trackCfg):
-        print('the track id {}'.format(trackCfg.track.trackId))
-        track = self._track_manager.find_track_by_short_id(trackCfg.track.trackId)
-        if track is not None:
-            self.ids.track_info.setTrack(track)
+    def _update_track(self):
+        if self.track_cfg is None:
+            return
+        track = self._track_manager.find_track_by_short_id(self.track_cfg.track.trackId)
+        self.ids.track_info.setTrack(track)
+        self.ids.info_message.text = 'Waiting to detect track' if track is None else ''
 
+    def on_config_updated(self, track_cfg):
+        self.track_cfg = track_cfg
+        self._update_track()
+
+    def on_pre_enter(self, *args):
+        self._update_track()
 
 class CustomTrackConfigScreen(Screen):
 
-    def __init__(self, track_manager, **kwargs):
+    def __init__(self, track_manager, databus, rc_api, **kwargs):
         super(CustomTrackConfigScreen, self).__init__(**kwargs)
         self._track_manager = track_manager
+        self._databus = databus
+        self._rc_api = rc_api
         self.register_event_type('on_advanced_editor')
+        self.track_cfg = None
+        self._init_ui()
 
     def on_advanced_track_editor(self, *args):
         self.dispatch('on_advanced_editor')
 
     def on_advanced_editor(self):
         pass
-    
-    def on_config_updated(self, trackCfg):
-        self.ids.track_info.setTrack(trackCfg)
-        
-    
+
+    def _init_ui(self):
+        # if we're on a mobile platform we get a tool to interactively design a track map
+        if is_mobile_platform():
+            track_builder_button = Button(size_hint=(0.2, 0.2), text='Create Track', on_press=self.track_builder)
+            self.ids.create_track_container.add_widget(track_builder_button)
+
+    def track_builder(self, *args):
+        content = TrackBuilderView(databus=self._databus, rc_api=self._rc_api)
+        popup = Popup(title='Track Builder', content=content, size_hint=(1.0, 1.0), auto_dismiss=True)
+        popup.open()
+
+    def _update_track(self):
+        if self.track_cfg is None:
+            return
+
+        track = self._track_manager.find_track_by_short_id(self.track_cfg.track.trackId)
+        self.ids.track_info.setTrack(track)
+        self.ids.info_message.text = 'No track map defined' if track is None else ''
+
+    def on_pre_enter(self, *args):
+        self._update_track()
+
+    def on_config_updated(self, track_cfg):
+        self.track_cfg = track_cfg
+        self._update_track()
 
 class ManualTrackConfigScreen(Screen):
     trackCfg = None
@@ -367,11 +398,6 @@ class ManualTrackConfigScreen(Screen):
 
     def on_modified(self, *args):
         pass
-
-    def track_builder(self, *args):
-        content = TrackBuilderView(databus=self._databus, rc_api=self._rc_api)
-        popup = Popup(title='Track Builder', content=content, size_hint=(1.0, 1.0), auto_dismiss=True)
-        popup.open()
 
     def on_separate_start_finish(self, instance, value):
         if self.trackCfg:
@@ -476,7 +502,7 @@ class TrackConfigView(BaseConfigView):
 
     def _get_custom_track_screen(self):
         if self._custom_track_screen is None:
-            self._custom_track_screen = CustomTrackConfigScreen(name='custom', track_manager=self._track_manager)
+            self._custom_track_screen = CustomTrackConfigScreen(name='custom', track_manager=self._track_manager, rc_api=self._rc_api, databus=self._databus)
             self._custom_track_screen.bind(on_advanced_editor=self._on_advanced_editor)
             self._custom_track_screen.on_config_updated(self.trackCfg)
         return self._custom_track_screen
@@ -506,9 +532,12 @@ class TrackConfigView(BaseConfigView):
 
         if self.autoConfigView is not None:
             self.autoConfigView.on_config_updated(trackDb)
-            
+
+        if self.single_autoconfig_screen is not None:
+            self.single_autoconfig_screen.on_config_updated(trackCfg)
+
         if self._custom_track_screen is not None:
-            self._custom_track_screen(trackCfg)
+            self._custom_track_screen.on_config_updated(trackCfg)
 
         self.trackCfg = trackCfg
         self.trackDb = trackDb
@@ -534,11 +563,14 @@ class TrackConfigView(BaseConfigView):
             self.screenManager.switch_to(screen)
 
     def on_auto_detect(self, instance, value):
-        self._select_screen()
-        if self.trackCfg:
-            self.trackCfg.autoDetect = value
-            self.trackCfg.stale = True
+        track_cfg = self.trackCfg
+        if track_cfg:
+            if value == False and track_cfg.autoDetect == True:
+                track_cfg.track.trackId = 0
+            track_cfg.autoDetect = value
+            track_cfg.stale = True
             self.dispatch('on_modified')
+        self._select_screen()
 
     def _on_advanced_editor(self, *args):
         self._switch_to_screen(self._get_advanced_editor_screen())

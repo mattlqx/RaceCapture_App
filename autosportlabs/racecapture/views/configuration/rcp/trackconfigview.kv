@@ -125,7 +125,6 @@
                 size_hint: (0.5, 0.15)
     			text: '\357\200\224'
     			on_release: root.removeTrack()
-			
 
 <AutomaticTrackConfigScreen>:
     AnchorLayout:
@@ -162,7 +161,7 @@
 <CustomTrackConfigScreen>:
     AnchorLayout:
         TrackInfoView:
-            id: track_info        
+            id: track_info
         AnchorLayout:
             anchor_x: 'right'
             anchor_y: 'bottom'
@@ -170,10 +169,26 @@
                 size_hint: (0.2, 0.2)
                 text: 'Advanced'
                 on_press: root.on_advanced_track_editor()
+        AnchorLayout:
+            anchor_x: 'left'
+            anchor_y: 'bottom'
+            id: create_track_container
+        FieldLabel:
+            id: info_message
+            size_hint_y: 0.2
+            halign: 'center'
+            text: ''    
+                
 
 <SingleAutoConfigScreen>:
-    TrackInfoView:
-        id: track_info        
+    AnchorLayout:
+        TrackInfoView:
+            id: track_info        
+        FieldLabel:
+            id: info_message
+            size_hint_y: 0.2
+            halign: 'center'
+            text: ''    
         
 <ManualTrackConfigScreen>:
 	BoxLayout:
