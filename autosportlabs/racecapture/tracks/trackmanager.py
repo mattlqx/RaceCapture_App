@@ -24,6 +24,7 @@ class TrackMap:
     """
 
     def __init__(self):
+        self.custom = False
         self.map_points = []
         self.sector_points = []
         self.name = ''
@@ -44,11 +45,10 @@ class TrackMap:
     @classmethod
     def from_track_cfg(cls, track_cfg):
         track_map = TrackMap()
-        track_map.start_finish_point = track_cfg.starLine
-        track_map.finish_point = track_cfg.finishLine
-        track_map.sector_points = track_cfg.sectors
-        
-        
+        track_map.start_finish_point = track_cfg.track.startLine
+        track_map.finish_point = track_cfg.track.finishLine
+        track_map.sector_points = track_cfg.track.sectors
+
     @property
     def centerpoint(self):
         if len(self.map_points) > 0:
@@ -71,6 +71,7 @@ class TrackMap:
         """Populate this object's values with values from a dict, either from RCL's API or a file
         """
 
+        self.custom = bool(track_dict.get('custom', self.custom))
         self.start_finish_point = GeoPoint.fromPointJson(track_dict.get('start_finish'))
         self.finish_point = GeoPoint.fromPointJson(track_dict.get('finish'))
         self.country_code = track_dict.get('country_code', self.country_code)
@@ -107,6 +108,7 @@ class TrackMap:
         if self.finish_point:
             track_dict['finish'] = self.finish_point.toJson()
 
+        track_dict['custom'] = self.custom
         track_dict['country_code'] = self.country_code
         track_dict['created'] = self.created
         track_dict['updated'] = self.updated
