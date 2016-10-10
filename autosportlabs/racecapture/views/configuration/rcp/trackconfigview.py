@@ -302,12 +302,25 @@ class AutomaticTrackConfigScreen(Screen):
         kvFind(self, 'rcid', 'addtrack').disabled = disabled
 
 class SingleAutoConfigScreen(Screen):
-    pass
+    def __init__(self, track_manager, **kwargs):
+        super(SingleAutoConfigScreen, self).__init__(**kwargs)
+        self._track_manager = track_manager
+
+    def on_advanced_editor(self):
+        pass
+    
+    def on_config_updated(self, trackCfg):
+        print('the track id {}'.format(trackCfg.track.trackId))
+        track = self._track_manager.find_track_by_short_id(trackCfg.track.trackId)
+        if track is not None:
+            self.ids.track_info.setTrack(track)
+
 
 class CustomTrackConfigScreen(Screen):
 
-    def __init__(self, **kwargs):
+    def __init__(self, track_manager, **kwargs):
         super(CustomTrackConfigScreen, self).__init__(**kwargs)
+        self._track_manager = track_manager
         self.register_event_type('on_advanced_editor')
 
     def on_advanced_track_editor(self, *args):
@@ -315,6 +328,11 @@ class CustomTrackConfigScreen(Screen):
 
     def on_advanced_editor(self):
         pass
+    
+    def on_config_updated(self, trackCfg):
+        self.ids.track_info.setTrack(trackCfg)
+        
+    
 
 class ManualTrackConfigScreen(Screen):
     trackCfg = None
@@ -451,13 +469,16 @@ class TrackConfigView(BaseConfigView):
 
     def _get_single_track_view(self):
         if self.single_autoconfig_screen is None:
-            self.single_autoconfig_screen = SingleAutoConfigScreen(name='single')
+            self.single_autoconfig_screen = SingleAutoConfigScreen(name='single', track_manager=self._track_manager)
+            if self.trackCfg is not None:
+                self.single_autoconfig_screen.on_config_updated(self.trackCfg)
         return self.single_autoconfig_screen
 
     def _get_custom_track_screen(self):
         if self._custom_track_screen is None:
-            self._custom_track_screen = CustomTrackConfigScreen(name='custom')
+            self._custom_track_screen = CustomTrackConfigScreen(name='custom', track_manager=self._track_manager)
             self._custom_track_screen.bind(on_advanced_editor=self._on_advanced_editor)
+            self._custom_track_screen.on_config_updated(self.trackCfg)
         return self._custom_track_screen
 
     def _get_advanced_editor_screen(self, *args):
@@ -485,6 +506,9 @@ class TrackConfigView(BaseConfigView):
 
         if self.autoConfigView is not None:
             self.autoConfigView.on_config_updated(trackDb)
+            
+        if self._custom_track_screen is not None:
+            self._custom_track_screen(trackCfg)
 
         self.trackCfg = trackCfg
         self.trackDb = trackDb

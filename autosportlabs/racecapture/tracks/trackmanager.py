@@ -11,6 +11,7 @@ from StringIO import StringIO
 import gzip
 import zipfile
 from autosportlabs.racecapture.geo.geopoint import GeoPoint, Region
+from autosportlabs.racecapture.config.rcpconfig import Track
 from autosportlabs.util.timeutil import time_to_epoch
 from kivy.logger import Logger
 
@@ -40,6 +41,14 @@ class TrackMap:
             return self.track_id == other.track_id
         return False
 
+    @classmethod
+    def from_track_cfg(cls, track_cfg):
+        track_map = TrackMap()
+        track_map.start_finish_point = track_cfg.starLine
+        track_map.finish_point = track_cfg.finishLine
+        track_map.sector_points = track_cfg.sectors
+        
+        
     @property
     def centerpoint(self):
         if len(self.map_points) > 0:

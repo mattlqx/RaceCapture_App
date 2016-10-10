@@ -161,19 +161,19 @@
 	        
 <CustomTrackConfigScreen>:
     AnchorLayout:
-    Label:
-        text: 'Custom track'
-    AnchorLayout:
-        anchor_x: 'right'
-        Button:
-            size_hint: (0.2, 0.2)
-            text: 'Advanced'
-            on_press: root.on_advanced_track_editor()        
-        
+        TrackInfoView:
+            id: track_info        
+        AnchorLayout:
+            anchor_x: 'right'
+            anchor_y: 'bottom'
+            Button:
+                size_hint: (0.2, 0.2)
+                text: 'Advanced'
+                on_press: root.on_advanced_track_editor()
 
 <SingleAutoConfigScreen>:
-    Label:
-        text: 'Single Auto config screen'
+    TrackInfoView:
+        id: track_info        
         
 <ManualTrackConfigScreen>:
 	BoxLayout:
