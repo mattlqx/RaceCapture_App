@@ -16,7 +16,6 @@ from kivy.app import Builder
 from helplabel import HelpLabel
 from fieldlabel import FieldLabel
 from settingsview import *
-from utils import is_mobile_platform
 from valuefield import FloatValueField
 from autosportlabs.racecapture.config.rcpconfig import GpsConfig
 from autosportlabs.racecapture.views.util.alertview import alertPopup
@@ -28,8 +27,7 @@ from autosportlabs.uix.toast.kivytoast import toast
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.racecapture.views.util.alertview import editor_popup
 from autosportlabs.racecapture.tracks.trackmanager import TrackManager, TrackMap
-if is_mobile_platform():
-    from autosportlabs.racecapture.views.configuration.rcp.track.trackbuilder import TrackBuilderView
+from autosportlabs.racecapture.views.configuration.rcp.track.trackbuilder import TrackBuilderView
 
 TRACK_CONFIG_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/trackconfigview.kv'
 
@@ -341,9 +339,8 @@ class CustomTrackConfigScreen(Screen):
 
     def _init_ui(self):
         # if we're on a mobile platform we get a tool to interactively design a track map
-        if is_mobile_platform():
-            track_builder_button = Button(size_hint=(0.2, 0.2), text='Create Track', on_press=self.track_builder)
-            self.ids.create_track_container.add_widget(track_builder_button)
+        track_builder_button = Button(size_hint=(0.2, 0.2), text='Create Track', on_press=self.track_builder)
+        self.ids.create_track_container.add_widget(track_builder_button)
 
     def track_builder(self, *args):
         content = TrackBuilderView(databus=self._databus, rc_api=self._rc_api)

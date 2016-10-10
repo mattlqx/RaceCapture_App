@@ -32,68 +32,166 @@ from autosportlabs.racecapture.geo.geoprovider import GeoProvider
 from autosportlabs.racecapture.views.util.alertview import confirmPopup
 from autosportlabs.racecapture.config.rcpconfig import GpsConfig
 from autosportlabs.racecapture.theme.color import ColorScheme
+from autosportlabs.uix.button.betterbutton import BetterButton
 from autosportlabs.uix.toast.kivytoast import toast
-from plyer import gps
+from kivy.uix.screenmanager import Screen, ScreenManager
 
 TRACK_BUILDER_KV = """
 <TrackBuilderView>:
-    spacing: sp(25)
-    padding: (sp(25),sp(25)) 
-    orientation: 'horizontal'
-    canvas.before:
-        Color:
-            rgba: ColorScheme.get_widget_translucent_background()
-        Rectangle:
-            pos: self.pos
-            size: self.size
-    AnchorLayout:
-        size_hint_x: 0.7
-        TrackMapView:
-            id: track
-        AnchorLayout:
-            anchor_y: 'top'
-            anchor_x: 'right'
-            GridLayout:
-                cols:2
-                rows:1
-                size_hint_y: 0.1
-                size_hint_x: 0.1
-                IconButton:
-                    id: internal_status
-                    text: u'\uf10a'
-                    color: [0.3, 0.3, 0.3, 0.2]        
-                    font_size: self.height * 0.8            
-                IconButton:
-                    id: gps_status
-                    text: u'\uf041'
-                    color: [0.3, 0.3, 0.3, 0.2]
-                    font_size: self.height * 0.8
-    BoxLayout:
-        orientation: 'vertical'
-        size_hint_x: 0.3
-        spacing: sp(20)
-        padding: (sp(5), sp(5))
-        Button:
-            id: start_button
-            text: 'Start'
-            on_press: root.on_set_start_point(*args)
-        Button:
-            id: add_sector_button
-            text: 'Sector'
-            on_press: root.on_add_sector_point(*args)
-        Button:
-            id: add_finish_button
-            text: 'Finish'
-            on_press: root.on_set_finish_point(*args)
+    ScreenManager:
+        id: screen_manager        
 """
 
 class TrackBuilderView(BoxLayout):
+    Builder.load_string(TRACK_BUILDER_KV)
+    def __init__(self, rc_api, databus, **kwargs):
+        super(TrackBuilderView, self).__init__(**kwargs)
+        self._rc_api = rc_api
+        self._databus = databus
+        self._track_map_creator = None
+        self._track_type_selector = None
+        self._init_view()
+
+    def _init_view(self):
+        screen = self._get_track_type_selector()
+        self._switch_to_screen(screen)
+
+    def _get_track_map_creator(self, type):
+        screen = TrackMapCreator(rc_api=self._rc_api, databus=self._databus, track_type=type)
+        screen.bind(on_trackmap_complete=self._on_trackmap_complete)
+        return screen
+
+    def _get_track_type_selector(self):
+        screen = TrackTypeSelector()
+        screen.bind(on_track_type_selected=self._on_track_type_selected)
+        return screen
+
+    def _on_track_type_selected(self, instance, type):
+        screen = self._get_track_map_creator(type)
+        self._switch_to_screen(screen)
+
+    def _on_trackmap_complete(self, instance):
+        print('complete!')
+
+    def _switch_to_screen(self, screen):
+        if self.ids.screen_manager.current_screen != screen:
+            self.ids.screen_manager.switch_to(screen)
+
+
+TRACK_TYPE_SELECTOR_KV = """
+<TrackTypeSelector>:
+    BoxLayout:
+        orientation: 'vertical'
+        FieldLabel:
+            size_hint_y: 0.1
+            text: 'Select Track Type'
+            font_size: self.height * 0.7
+        BoxLayout:
+            size_hint_y: 0.9
+            orientation: 'vertical'
+            spacing: sp(10)
+            AnchorLayout:
+                anchor_x: 'right'
+                Image:
+                    allow_stretch: True
+                    keep_ratio: False
+                    source: 'resource/trackmap/circuit_racing.jpg'
+                BetterButton:
+                    text: 'Circuit'
+                    size_hint: (0.3, 0.3)
+                    on_press: root.select_track_type('circuit')
+            AnchorLayout:
+                anchor_x: 'right'
+                Image:
+                    allow_stretch: True
+                    keep_ratio: False
+                    source: 'resource/trackmap/point_point_racing.jpg'
+                BetterButton:
+                    text: 'Autocross'
+                    size_hint: (0.3, 0.3)
+                    on_press: root.select_track_type('point2point')
+"""
+
+class TrackTypeSelector(Screen):
+    TRACK_TYPE_CIRCUIT = 'circuit'
+    TRACK_TYPE_POINT_POINT = 'point2point'
+
+    Builder.load_string(TRACK_TYPE_SELECTOR_KV)
+
+    def __init__(self, **kwargs):
+        super(TrackTypeSelector, self).__init__(**kwargs)
+        self.register_event_type('on_track_type_selected')
+
+    def on_track_type_selected(self, type):
+        pass
+
+    def select_track_type(self, type):
+        self.dispatch('on_track_type_selected', type)
+
+
+TRACK_MAP_CREATOR_KV = """
+<TrackMapCreator>:
+    BoxLayout:
+        spacing: sp(25)
+        padding: (sp(25),sp(25)) 
+        orientation: 'horizontal'
+        canvas.before:
+            Color:
+                rgba: ColorScheme.get_widget_translucent_background()
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        AnchorLayout:
+            size_hint_x: 0.7
+            FieldLabel:
+                id: info_message
+                size_hint_y: 0.1
+                font_size: self.height * 0.9
+                halign: 'center'
+            TrackMapView:
+                id: track
+            AnchorLayout:
+                anchor_y: 'top'
+                anchor_x: 'right'
+                GridLayout:
+                    cols:2
+                    rows:1
+                    size_hint_y: 0.1
+                    size_hint_x: 0.1
+                    IconButton:
+                        id: internal_status
+                        text: u'\uf10a'
+                        color: [0.3, 0.3, 0.3, 0.2]        
+                        font_size: self.height * 0.8            
+                    IconButton:
+                        id: gps_status
+                        text: u'\uf041'
+                        color: [0.3, 0.3, 0.3, 0.2]
+                        font_size: self.height * 0.8
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_x: 0.3
+            spacing: sp(20)
+            padding: (sp(5), sp(5))
+            BetterButton:
+                id: start_button
+                text: 'Start'
+                on_press: root.on_set_start_point(*args)
+            BetterButton:
+                id: add_sector_button
+                text: 'Sector'
+                on_press: root.on_add_sector_point(*args)
+            BetterButton:
+                id: add_finish_button
+                text: 'Finish'
+                on_press: root.on_finish(*args)
+"""
+
+class TrackMapCreator(Screen):
     GPS_ACTIVE_COLOR = [0.0, 1.0, 0.0, 1.0]
     GPS_INACTIVE_COLOR = [1.0, 0.0, 0.0, 1.0]
     INTERNAL_ACTIVE_COLOR = [0.0, 1.0, 1.0, 1.0]
     INTERNAL_INACTIVE_COLOR = [0.3, 0.3, 0.3, 0.3]
-
-    Builder.load_string(TRACK_BUILDER_KV)
 
     # minimum separation needed between start, finish and sector targets
     MINIMUM_TARGET_SEPARATION_METERS = 50
@@ -106,16 +204,21 @@ class TrackBuilderView(BoxLayout):
 
     minimum_travel_distance = NumericProperty(DEFAULT_MINIMUM_TRAVEL_DISTANCE_METERS)
 
-    def __init__(self, rc_api, databus, **kwargs):
-        super(TrackBuilderView, self).__init__(**kwargs)
+    Builder.load_string(TRACK_MAP_CREATOR_KV)
+
+    def __init__(self, rc_api, databus, track_type, **kwargs):
+        super(TrackMapCreator, self).__init__(**kwargs)
         self._databus = databus
         self._rc_api = rc_api
+        self._track_type = track_type
         self._geo_provider = GeoProvider(rc_api=rc_api, databus=databus)
         self._geo_provider.bind(on_location=self._on_location)
         self._geo_provider.bind(on_internal_gps_available=self._on_internal_gps_available)
         self._geo_provider.bind(on_gps_source=self._on_gps_source)
+        self.register_event_type('on_trackmap_complete')
         self.current_point = None
         self.last_point = None
+        self._is_finished = False
         self.track = TrackMap()
         self._update_trackmap()
         self._init_status_monitor()
@@ -123,19 +226,22 @@ class TrackBuilderView(BoxLayout):
         if not self._rc_api.connected:
             self._geo_provider._start_internal_gps()
 
+    def on_trackmap_complete(self):
+        pass
+
     def _init_status_monitor(self):
-        self._status_decay = Clock.create_trigger(self._on_status_decay, TrackBuilderView.STATUS_LINGER_DURATION)
+        self._status_decay = Clock.create_trigger(self._on_status_decay, TrackMapCreator.STATUS_LINGER_DURATION)
         self._status_decay()
 
     def _on_status_decay(self, *args):
-        self.ids.internal_status.color = TrackBuilderView.INTERNAL_INACTIVE_COLOR
-        self.ids.gps_status.color = TrackBuilderView.GPS_INACTIVE_COLOR
+        self.ids.internal_status.color = TrackMapCreator.INTERNAL_INACTIVE_COLOR
+        self.ids.gps_status.color = TrackMapCreator.GPS_INACTIVE_COLOR
 
     def _update_status_indicators(self):
         self._status_decay.cancel()
         internal_active = self._geo_provider.location_source_internal
-        self.ids.internal_status.color = TrackBuilderView.INTERNAL_ACTIVE_COLOR if internal_active else TrackBuilderView.INTERNAL_INACTIVE_COLOR
-        self.ids.gps_status.color = TrackBuilderView.GPS_ACTIVE_COLOR
+        self.ids.internal_status.color = TrackMapCreator.INTERNAL_ACTIVE_COLOR if internal_active else TrackMapCreator.INTERNAL_INACTIVE_COLOR
+        self.ids.gps_status.color = TrackMapCreator.GPS_ACTIVE_COLOR
         self._status_decay()
 
     def _update_button_states(self):
@@ -152,7 +258,7 @@ class TrackBuilderView(BoxLayout):
         # Can only add a sector if we're the minimum distance from the reference point
         can_add_sector = (start_point is not None and
                 current_point is not None and
-                current_point.dist_pythag(reference_point) >= TrackBuilderView.MINIMUM_TARGET_SEPARATION_METERS)
+                current_point.dist_pythag(reference_point) >= TrackMapCreator.MINIMUM_TARGET_SEPARATION_METERS)
 
         # we can't add a sector if the finish point is defined
         can_add_sector = False if finish_point is not None else can_add_sector
@@ -162,11 +268,11 @@ class TrackBuilderView(BoxLayout):
         # must be minimum distance from start point to create a finish point
         can_finish = (start_point is not None and
                     current_point is not None and
-                    current_point.dist_pythag(start_point) >= TrackBuilderView.MINIMUM_TARGET_SEPARATION_METERS)
+                    current_point.dist_pythag(start_point) >= TrackMapCreator.MINIMUM_TARGET_SEPARATION_METERS)
 
         # also must be minimum distance from last sector point, if it exists
         can_finish = False if (last_sector_point is not None and
-                    current_point.dist_pythag(last_sector_point) < TrackBuilderView.MINIMUM_TARGET_SEPARATION_METERS) else can_finish
+                    current_point.dist_pythag(last_sector_point) < TrackMapCreator.MINIMUM_TARGET_SEPARATION_METERS) else can_finish
 
         # can't finish twice
         can_finish = False if finish_point is not None else can_finish
@@ -176,6 +282,8 @@ class TrackBuilderView(BoxLayout):
         # can we start?
         can_start = self.current_point is not None
         self.ids.start_button.disabled = not can_start
+
+        self.ids.info_message.text = 'Go to start line and press Start!' if self.track.start_finish_point is None else ''
 
     def _update_trackmap(self):
         self.ids.track.setTrackPoints(self.track.map_points)
@@ -243,13 +351,35 @@ class TrackBuilderView(BoxLayout):
         self._update_button_states()
         self._update_trackmap()
 
-    def on_set_finish_point(self, *args):
-        finish_point = self.current_point
-        self._add_trackmap_point(finish_point)
+    def _on_finish_circuit(self):
+        # close the circuit by adding the start point as the last point,
+        # so there's no gap in the circuit
+        first_point = self.track.map_points[0]
+        self._add_trackmap_point(GeoPoint(first_point.latitude, first_point.longitude))
+
+    def _on_finish_point_point(self):
         self.ids.track.finish_point = finish_point
         self.track.finish_point = finish_point
+
+    def on_finish(self, *args):
+        if self._is_finished:
+            self.dispatch('on_trackmap_complete')
+            return
+
+        # add one more point of the current location
+        finish_point = self.current_point
+        self._add_trackmap_point(finish_point)
+
+        if self._track_type == TrackTypeSelector.TRACK_TYPE_CIRCUIT:
+            self._on_finish_circuit()
+        elif self._track_type == TrackTypeSelector.TRACK_TYPE_POINT_POINT:
+            self._on_finish_point_point()
+
+        # finish button turns into next button
+        self.ids.add_finish_button.text = 'Next >'
         self._update_trackmap()
         self._update_button_states()
+        self._is_finished = True
 
     def on_add_sector_point(self, *args):
         self.track.sector_points.append(self.current_point)
@@ -257,3 +387,23 @@ class TrackBuilderView(BoxLayout):
         self._update_button_states()
 
 
+TRACK_CUSTOMIZATION_VIEW_KV = """
+<TrackCustomizationView>:
+    BoxLayout:
+        FieldLabel:
+            text: 'customize track'
+"""
+
+class TrackCustomizationView(Screen):
+
+    Builder.load_string(TRACK_CUSTOMIZATION_VIEW_KV)
+
+    def __init__(self, **kwargs):
+        super(TrackCustomizationView, self).__init__(**kwargs)
+        self.register_event_type('on_track_customized')
+
+    def on_track_customized(self, type):
+        pass
+
+    def on_next(self, type):
+        self.dispatch('on_track_customized')

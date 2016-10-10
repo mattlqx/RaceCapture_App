@@ -20,23 +20,24 @@
 
 import kivy
 kivy.require('1.9.1')
+from utils import is_mobile_platform
 from plyer import gps
 from kivy.clock import mainthread, Clock
 from kivy.logger import Logger
 from autosportlabs.racecapture.config.rcpconfig import GpsConfig
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from kivy.event import EventDispatcher
-import jnius
-from jnius import autoclass, java_method, PythonJavaClass
+if is_mobile_platform():
+    from jnius import autoclass
 from kivy.logger import Logger
 
 
 class GeoProvider(EventDispatcher):
-    
+
     GPS_SOURCE_NONE = 0
     GPS_SOURCE_RACECAPTURE = 1
     GPS_SOURCE_INTERNAL = 2
-    
+
     INTERNAL_GPS_MIN_DISTANCE = 0
     INTERNAL_GPS_MIN_TIME = 1000
     INTERNAL_GPS_UPDATE_INTERVAL = 0.5
@@ -49,22 +50,23 @@ class GeoProvider(EventDispatcher):
         self._rc_gps_quality = GpsConfig.GPS_QUALITY_NO_FIX
         self._last_internal_location_time = 0
         self._current_gps_source = GeoProvider.GPS_SOURCE_NONE
-        
+
         databus.addSampleListener(self._on_sample)
         self.register_event_type('on_location')
         self.register_event_type('on_internal_gps_available')
         self.register_event_type('on_gps_source')
-        self._start_internal_gps()
+        if is_mobile_platform():
+            self._start_internal_gps()
 
     def on_location(self, point):
         pass
 
     def on_internal_gps_available(self, available):
         pass
-    
+
     def on_gps_source(self, source):
         pass
-    
+
     @property
     def location_source_internal(self):
         """
@@ -83,7 +85,7 @@ class GeoProvider(EventDispatcher):
     @property
     def _should_use_internal_source(self):
         return not self._rc_api.connected or self._rc_gps_quality < GpsConfig.GPS_QUALITY_2D
-            
+
     def _on_sample(self, sample):
         gps_quality = sample.get('GPSQual')
         latitude = sample.get('Latitude')
@@ -108,7 +110,7 @@ class GeoProvider(EventDispatcher):
     def _start_internal_gps(self):
         started = False
         gps_conn = autoclass('com.autosportlabs.racecapture.GpsConnection')
-        self._gps_conn = gps_conn.createInstance();        
+        self._gps_conn = gps_conn.createInstance();
         configured = self._gps_conn.configure()
         if configured:
             started = self._gps_conn.start()
@@ -127,8 +129,8 @@ class GeoProvider(EventDispatcher):
             if self._should_use_internal_source:
                 point = GeoPoint.fromPoint(location.getLatitude(), location.getLongitude())
                 self._update_current_location(point, GeoProvider.GPS_SOURCE_INTERNAL)
-            self._last_internal_location_time = location_time 
-            
+            self._last_internal_location_time = location_time
+
     def _stop_internal_gps(self):
         Logger.info('GeoProvider: stopping internal GPS')
         self._gps_conn.stop()
