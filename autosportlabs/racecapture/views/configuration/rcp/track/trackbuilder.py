@@ -203,14 +203,17 @@ TRACK_MAP_CREATOR_KV = """
                 id: start_button
                 text: 'Start'
                 on_press: root.on_set_start_point(*args)
+                font_size: self.height * 0.4
             BetterButton:
                 id: add_sector_button
                 text: 'Sector'
                 on_press: root.on_add_sector_point(*args)
+                font_size: self.height * 0.4
             BetterButton:
                 id: finish_button
                 text: 'Finish'
                 on_press: root.on_finish(*args)
+                font_size: self.height * 0.4
 """
 
 class TrackMapCreator(Screen):
@@ -474,6 +477,7 @@ TRACK_CUSTOMIZATION_VIEW_KV = """
                         text: 'Name'
                         halign: 'right'
                         valign: 'middle'
+                        font_size: self.height * 0.5
                     TextValueField:
                         id: track_name
                         size_hint_x: 0.6
@@ -489,6 +493,7 @@ TRACK_CUSTOMIZATION_VIEW_KV = """
                         text: 'Configuration'
                         halign: 'right'
                         valign: 'middle'
+                        font_size: self.height * 0.5
                     TextValueField:
                         id: track_configuration
                         size_hint_x: 0.6
@@ -505,6 +510,7 @@ TRACK_CUSTOMIZATION_VIEW_KV = """
                             text: 'Finish'
                             size_hint: (0.7, 0.5)
                             on_press: root.on_finish()
+                            font_size: self.height * 0.4
         
 """
 
