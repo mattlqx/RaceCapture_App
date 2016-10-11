@@ -438,8 +438,9 @@ class TrackMapCreator(Screen):
 
         
     #test key sequence to simulate walking a course - needed for testing
+    #key sequence is ctrl-w
     def key_action(self, instance, keyboard, keycode, text, modifiers):
-        if 'alt' in modifiers and text=='w':
+        if 'ctrl' in modifiers and keycode==25:
             self.simulate_walk()        
 
 TRACK_CUSTOMIZATION_VIEW_KV = """
