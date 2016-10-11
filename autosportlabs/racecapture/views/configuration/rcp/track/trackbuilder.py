@@ -429,19 +429,18 @@ class TrackMapCreator(Screen):
         self._update_button_states()
 
 # fake GPS data source - this is for debugging.
-# to enable, un-comment the 'simulate walking' button above
-    trackmap_index = 0
-    def simulate_walk(self, *args):
-        point = GeoPoint.fromPoint(TRACKMAP_POINTS[self.trackmap_index][0], TRACKMAP_POINTS[self.trackmap_index][1])
-        self._update_current_point(point)
-        self.trackmap_index += 1
-
+    _simulated_trackmap_index = 0
         
     #test key sequence to simulate walking a course - needed for testing
     #key sequence is ctrl-w
     def key_action(self, instance, keyboard, keycode, text, modifiers):
         if 'ctrl' in modifiers and keycode==25:
-            self.simulate_walk()        
+            point = GeoPoint.fromPoint(SIMULATED_TRACKMAP_POINTS[self._simulated_trackmap_index][0], 
+                                       SIMULATED_TRACKMAP_POINTS[self._simulated_trackmap_index][1])
+            self._update_current_point(point)
+            self._simulated_trackmap_index += 1
+            if self._simulated_trackmap_index >=len(SIMULATED_TRACKMAP_POINTS):
+                self._simulated_trackmap_index = 0
 
 TRACK_CUSTOMIZATION_VIEW_KV = """
 <TrackCustomizationView>:
@@ -567,7 +566,7 @@ class TrackCustomizationView(Screen):
     def cleanup(self):
         pass
     
-TRACKMAP_POINTS = [
+SIMULATED_TRACKMAP_POINTS = [
 [
   38.1615364765,
   - 122.454711706
