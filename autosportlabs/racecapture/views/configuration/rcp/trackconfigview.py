@@ -346,9 +346,16 @@ class CustomTrackConfigScreen(Screen):
         def popup_dismissed(instance):
             content.cleanup()
             
+        def on_track_complete(instance, track_map):
+            popup.dismiss()
+            self._track_manager.add_track(track_map)
+            self.track_cfg.track.import_trackmap(track_map)
+            self._update_track()
+            
         content = TrackBuilderView(databus=self._databus, rc_api=self._rc_api)
         popup = Popup(title='Track Builder', content=content, size_hint=(1.0, 1.0), auto_dismiss=True)
         popup.bind(on_dismiss=popup_dismissed)
+        content.bind(on_track_complete=on_track_complete)
         popup.open()
 
     def _update_track(self):

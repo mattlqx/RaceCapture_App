@@ -37,7 +37,7 @@ class TextValueField(ValueField):
 
     def insert_text(self, substring, from_undo=False):
         if len(self.text) < self.max_len:
-            super(TextValueField, self).insert_text(substring, from_undo=from_undo)
+            super(TextValueField, self).insert_text(substring.strip(), from_undo=from_undo)
 
 class NumericValueField(ValueField):
     min_value = NumericProperty(None, allownone=True)

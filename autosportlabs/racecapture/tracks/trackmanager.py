@@ -352,6 +352,14 @@ class TrackManager:
         except Warning:
             return None
 
+    def add_track(self, track):
+        """ Add the specified track
+        :param track the track to add
+        :type track TrackMap
+        """
+        self.save_track(track)
+        self.tracks[track.track_id] = track
+        
     def save_track(self, track):
         path = os.path.join(self.tracks_user_dir, track.track_id + '.json')
         track_json_string = json.dumps(track.to_dict(), sort_keys=True, indent=2, separators=(',', ': '))

@@ -683,21 +683,24 @@ class Track(object):
             self.stale = False
 
     @classmethod
-    def fromTrackMap(cls, trackMap):
+    def fromTrackMap(cls, track_map):
         t = Track()
-        t.trackId = trackMap.short_id
-        t.trackType = TRACK_TYPE_STAGE if trackMap.finish_point else TRACK_TYPE_CIRCUIT
-        t.startLine = copy(trackMap.start_finish_point)
-        t.finishLine = copy(trackMap.finish_point)
-
-        maxSectorCount = CONFIG_SECTOR_COUNT_CIRCUIT if t.trackType == TRACK_TYPE_CIRCUIT else CONFIG_SECTOR_COUNT_STAGE
-        sectorCount = 0
-        for point in trackMap.sector_points:
-            sectorCount += 1
-            if sectorCount > maxSectorCount: break
-            t.sectors.append(copy(point))
+        t.import_trackmap(track_map)
         return t
 
+    def import_trackmap(self, track_map):
+        self.trackId = track_map.short_id
+        self.trackType = TRACK_TYPE_STAGE if track_map.finish_point else TRACK_TYPE_CIRCUIT
+        self.startLine = copy(track_map.start_finish_point)
+        self.finishLine = copy(track_map.finish_point)
+
+        maxSectorCount = CONFIG_SECTOR_COUNT_CIRCUIT if self.trackType == TRACK_TYPE_CIRCUIT else CONFIG_SECTOR_COUNT_STAGE
+        sectorCount = 0
+        for point in track_map.sector_points:
+            sectorCount += 1
+            if sectorCount > maxSectorCount: break
+            self.sectors.append(copy(point))
+        
     def toJson(self):
         sectors = []
         for sector in self.sectors:

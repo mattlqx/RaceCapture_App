@@ -51,7 +51,13 @@ class TrackBuilderView(BoxLayout):
         self._databus = databus
         self._screens=[]
         self._init_view()
-
+        self._track = TrackMap.create_new()
+        self._track.custom = True
+        self.register_event_type('on_track_complete')
+        
+    def on_track_complete(self, track):
+        pass
+    
     def cleanup(self):
         for screen in self._screens:
             screen.cleanup()
@@ -61,7 +67,7 @@ class TrackBuilderView(BoxLayout):
         self._switch_to_screen(screen)
 
     def _get_track_map_creator(self, type):
-        screen = TrackMapCreator(rc_api=self._rc_api, databus=self._databus, track_type=type)
+        screen = TrackMapCreator(rc_api=self._rc_api, databus=self._databus, track=self._track, track_type=type)
         screen.bind(on_trackmap_complete=self._on_trackmap_complete)
         self._screens.append(screen)
         return screen
@@ -87,7 +93,7 @@ class TrackBuilderView(BoxLayout):
         self._switch_to_screen(screen)
 
     def _on_track_customized(self, instance, track):
-        print('customized!')
+        self.dispatch('on_track_complete', track)
 
     def _switch_to_screen(self, screen):
         if self.ids.screen_manager.current_screen != screen:
@@ -192,7 +198,7 @@ TRACK_MAP_CREATOR_KV = """
             size_hint_x: 0.3
             spacing: sp(20)
             padding: (sp(5), sp(5))
-                        
+            
             BetterButton:
                 id: start_button
                 text: 'Start'
@@ -226,7 +232,7 @@ class TrackMapCreator(Screen):
 
     Builder.load_string(TRACK_MAP_CREATOR_KV)
 
-    def __init__(self, rc_api, databus, track_type, **kwargs):
+    def __init__(self, rc_api, databus, track, track_type, **kwargs):
         super(TrackMapCreator, self).__init__(**kwargs)
         self._databus = databus
         self._rc_api = rc_api
@@ -239,7 +245,7 @@ class TrackMapCreator(Screen):
         self.current_point = None
         self.last_point = None
         self._is_finished = False
-        self.track = TrackMap()
+        self._track = track
         self._update_trackmap()
         self._init_status_monitor()
         self._update_button_states()
@@ -268,7 +274,7 @@ class TrackMapCreator(Screen):
 
     def _update_button_states(self):
         current_point = self.current_point
-        track = self.track
+        track = self._track
         start_point = track.start_finish_point
         finish_point = track.finish_point
 
@@ -299,9 +305,6 @@ class TrackMapCreator(Screen):
         can_finish = False if (last_sector_point is not None and
                     current_point.dist_pythag(last_sector_point) < TrackMapCreator.MINIMUM_TARGET_SEPARATION_METERS) else can_finish
 
- #       # can't finish twice
-#        can_finish = False if finish_point is not None else can_finish
-
         self.ids.finish_button.disabled = not can_finish
 
         # can we start?
@@ -314,11 +317,11 @@ class TrackMapCreator(Screen):
         self.ids.info_message.text = 'Go to start line and press Start!' if track.start_finish_point is None else ''
 
     def _update_trackmap(self):
-        self.ids.track.setTrackPoints(self.track.map_points)
-        self.ids.track.sector_points = self.track.sector_points
+        self.ids.track.setTrackPoints(self._track.map_points)
+        self.ids.track.sector_points = self._track.sector_points
 
     def _add_trackmap_point(self, point):
-        self.track.map_points.append(point)
+        self._track.map_points.append(point)
         self.last_point = point
 
     def _on_location(self, instance, point):
@@ -365,7 +368,7 @@ class TrackMapCreator(Screen):
                 self._start_new_track()
             popup.dismiss()
 
-        if len(self.track.map_points) > 1 and self.track.start_finish_point is not None:
+        if len(self._track.map_points) > 1 and self._track.start_finish_point is not None:
             popup = confirmPopup("Restart", "Restart Track Map?", confirm_restart)
         else:
             self._start_new_track()
@@ -373,11 +376,11 @@ class TrackMapCreator(Screen):
     def _start_new_track(self):
         self._is_finished = False
         self.ids.finish_button.text = 'Finish'
-        self.track.map_points = []
-        self.track.sector_points = []
-        self.track.finish_point = None
+        self._track.map_points = []
+        self._track.sector_points = []
+        self._track.finish_point = None
         start_point = self.current_point
-        self.track.start_finish_point = start_point
+        self._track.start_finish_point = start_point
         self.ids.track.start_point = start_point
         self.ids.track.finish_point = None
         self._add_trackmap_point(start_point)
@@ -387,17 +390,17 @@ class TrackMapCreator(Screen):
     def _on_finish_circuit(self):
         # close the circuit by adding the start point as the last point,
         # so there's no gap in the circuit
-        first_point = self.track.map_points[0]
+        first_point = self._track.map_points[0]
         self._add_trackmap_point(GeoPoint.fromPoint(first_point.latitude, first_point.longitude))
 
     def _on_finish_point_point(self):
         finish_point = self.current_point
         self.ids.track.finish_point = finish_point
-        self.track.finish_point = finish_point
+        self._track.finish_point = finish_point
 
     def on_finish(self, *args):
         if self._is_finished:
-            self.dispatch('on_trackmap_complete', self.track)
+            self.dispatch('on_trackmap_complete', self._track)
             return
 
         # add one more point of the current location
@@ -416,7 +419,7 @@ class TrackMapCreator(Screen):
         self._update_button_states()
 
     def on_add_sector_point(self, *args):
-        self.track.sector_points.append(self.current_point)
+        self._track.sector_points.append(self.current_point)
         self._update_trackmap()
         self._update_button_states()
 
@@ -471,10 +474,12 @@ TRACK_CUSTOMIZATION_VIEW_KV = """
                         text: 'Name'
                         halign: 'right'
                         valign: 'middle'
-                    ValueField:
-                        size_hint_x: 0.6
-                        text: root.track_name
+                    TextValueField:
                         id: track_name
+                        size_hint_x: 0.6
+                        max_len: 60
+                        text: root.track_name
+                        hint_text: 'Give your track a name'
                 BoxLayout:
                     spacing: sp(5)
                     size_hint_y: 0.15
@@ -484,10 +489,12 @@ TRACK_CUSTOMIZATION_VIEW_KV = """
                         text: 'Configuration'
                         halign: 'right'
                         valign: 'middle'
-                    ValueField:
+                    TextValueField:
+                        id: track_configuration
                         size_hint_x: 0.6
+                        max_len: 60                        
                         text: root.track_configuration
-                        id: configuration
+                        hint_text: 'Main / short-track / etc.'
                 BoxLayout:
                     size_hint_y: 0.7
                     BoxLayout:
@@ -515,15 +522,31 @@ class TrackCustomizationView(Screen):
         self._track = track
         self._init_view()
 
+    def on_track_customized(self, track):
+        pass
+
     def _init_view(self):
+        self.ids.track_name.bind(text=self._on_track_name)
+        self.ids.track_configuration.bind(text=self._on_track_configuration)
+        self.ids.track_name.next = self.ids.track_configuration
+        self.ids.track_configuration.next = self.ids.track_name
         self._track.name = TrackCustomizationView.DEFAULT_TRACK_NAME
         self.track_name = self._track.name
         self.track_configuration = self._track.configuration
         self.ids.track.loadTrack(self._track)
 
-    def on_track_customized(self, track):
-        pass
-
+    def _on_track_name(self, instance, value):
+        self.track_name = value
+        
+    def _on_track_configuration(self, instance, value):
+        self.track_configuration = value
+    
+    def on_track_name(self, instance, value):
+        self._track.name = value
+    
+    def on_track_configuration(self, instance, value):
+        self._track.configuration = value
+        
     def _validate_configuration(self):
         if self._track.name == '':
             self._track.name = TrackCustomizationView.DEFAULT_TRACK_NAME
@@ -531,12 +554,6 @@ class TrackCustomizationView(Screen):
     def on_finish(self, *args):
         self._validate_configuration()
         self.dispatch('on_track_customized', self._track)
-
-    def on_track_name(self, instance, value):
-        self._track.name = value
-
-    def on_track_configuration(self, instance, value):
-        self._track.configuration = value
 
     def cleanup(self):
         pass
