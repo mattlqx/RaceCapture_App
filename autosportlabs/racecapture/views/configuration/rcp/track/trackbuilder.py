@@ -25,6 +25,8 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.app import Builder
 from kivy.metrics import sp
 from kivy.properties import NumericProperty, StringProperty
+from kivy.uix.screenmanager import Screen, ScreenManager
+from kivy.core.window import Window
 from autosportlabs.uix.track.trackmap import TrackMapView
 from autosportlabs.uix.track.racetrackview import RaceTrackView
 from autosportlabs.racecapture.tracks.trackmanager import TrackMap
@@ -35,8 +37,6 @@ from autosportlabs.racecapture.config.rcpconfig import GpsConfig
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.uix.button.betterbutton import BetterButton
 from autosportlabs.uix.toast.kivytoast import toast
-from kivy.uix.screenmanager import Screen, ScreenManager
-
 TRACK_BUILDER_KV = """
 <TrackBuilderView>:
     ScreenManager:
@@ -49,10 +49,13 @@ class TrackBuilderView(BoxLayout):
         super(TrackBuilderView, self).__init__(**kwargs)
         self._rc_api = rc_api
         self._databus = databus
-        self._track_map_creator = None
-        self._track_type_selector = None
+        self._screens=[]
         self._init_view()
 
+    def cleanup(self):
+        for screen in self._screens:
+            screen.cleanup()
+            
     def _init_view(self):
         screen = self._get_track_type_selector()
         self._switch_to_screen(screen)
@@ -60,16 +63,19 @@ class TrackBuilderView(BoxLayout):
     def _get_track_map_creator(self, type):
         screen = TrackMapCreator(rc_api=self._rc_api, databus=self._databus, track_type=type)
         screen.bind(on_trackmap_complete=self._on_trackmap_complete)
+        self._screens.append(screen)
         return screen
 
     def _get_track_type_selector(self):
         screen = TrackTypeSelector()
         screen.bind(on_track_type_selected=self._on_track_type_selected)
+        self._screens.append(screen)
         return screen
 
     def _get_track_customization_view(self, track):
         screen = TrackCustomizationView(track=track)
         screen.bind(on_track_customized=self._on_track_customized)
+        self._screens.append(screen)
         return screen
 
     def _on_track_type_selected(self, instance, type):
@@ -134,6 +140,9 @@ class TrackTypeSelector(Screen):
 
     def on_track_type_selected(self, type):
         pass
+    
+    def cleanup(self):
+        pass
 
     def select_track_type(self, type):
         self.dispatch('on_track_type_selected', type)
@@ -183,11 +192,7 @@ TRACK_MAP_CREATOR_KV = """
             size_hint_x: 0.3
             spacing: sp(20)
             padding: (sp(5), sp(5))
-            
-            Button:
-                text: 'simulate walking!'
-                on_press: root.simulate_walk(*args)
-            
+                        
             BetterButton:
                 id: start_button
                 text: 'Start'
@@ -238,7 +243,11 @@ class TrackMapCreator(Screen):
         self._update_trackmap()
         self._init_status_monitor()
         self._update_button_states()
+        Window.bind(on_key_down=self.key_action)
 
+    def cleanup(self):
+        Window.unbind(on_key_down=self.key_action)
+        
     def on_trackmap_complete(self, track):
         pass
 
@@ -416,6 +425,12 @@ class TrackMapCreator(Screen):
         self._update_current_point(point)
         self.trackmap_index += 1
 
+        
+    #test key sequence to simulate walking a course - needed for testing
+    def key_action(self, instance, keyboard, keycode, text, modifiers):
+        print(str(modifiers) + ' ' + str(text))
+        if 'alt' in modifiers and text=='w':
+            self.simulate_walk()        
 
 TRACK_CUSTOMIZATION_VIEW_KV = """
 <TrackCustomizationView>:
@@ -443,6 +458,7 @@ TRACK_CUSTOMIZATION_VIEW_KV = """
                         size: self.size
                 size_hint_x: 0.6
                 padding: (sp(10), sp(10))
+                spacing: sp(10)
                 orientation: 'vertical'
                 BoxLayout:
                     size_hint_y: 0.1
@@ -514,7 +530,9 @@ class TrackCustomizationView(Screen):
     def on_track_configuration(self, instance, value):
         self._track.configuration = value
 
-
+    def cleanup(self):
+        pass
+    
 TRACKMAP_POINTS = [
 [
   38.1615364765,

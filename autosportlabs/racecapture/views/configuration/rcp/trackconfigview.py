@@ -343,8 +343,12 @@ class CustomTrackConfigScreen(Screen):
         self.ids.create_track_container.add_widget(track_builder_button)
 
     def track_builder(self, *args):
+        def popup_dismissed(instance):
+            content.cleanup()
+            
         content = TrackBuilderView(databus=self._databus, rc_api=self._rc_api)
         popup = Popup(title='Track Builder', content=content, size_hint=(1.0, 1.0), auto_dismiss=True)
+        popup.bind(on_dismiss=popup_dismissed)
         popup.open()
 
     def _update_track(self):
