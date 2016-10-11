@@ -342,13 +342,16 @@ class TrackMapCreator(Screen):
         self.current_point = point
         track = self.ids.track
 
-        # we can add a point if we have started, but not finished yet
-        can_add_point = track.start_point is not None and track.finish_point is None
+        # we can add a point if we have started
+        can_add_point = track.start_point is not None
 
         # however, we can't add a point if we're too close to the last point
         can_add_point = False if (self.last_point is not None and
                                   self.last_point.dist_pythag(point) < self.minimum_travel_distance) else can_add_point
 
+        # but ultimately, we can't add points if we're finished
+        can_add_point = False if self._is_finished else can_add_point
+        
         if can_add_point:
             self._add_trackmap_point(point)
             self._update_trackmap()
@@ -428,7 +431,6 @@ class TrackMapCreator(Screen):
         
     #test key sequence to simulate walking a course - needed for testing
     def key_action(self, instance, keyboard, keycode, text, modifiers):
-        print(str(modifiers) + ' ' + str(text))
         if 'alt' in modifiers and text=='w':
             self.simulate_walk()        
 
@@ -461,29 +463,35 @@ TRACK_CUSTOMIZATION_VIEW_KV = """
                 spacing: sp(10)
                 orientation: 'vertical'
                 BoxLayout:
-                    size_hint_y: 0.1
+                    spacing: sp(5)
+                    size_hint_y: 0.15
                     orientation: 'horizontal'
                     FieldLabel:
-                        size_hint_x: 0.3
+                        size_hint_x: 0.4
                         text: 'Name'
+                        halign: 'right'
+                        valign: 'middle'
                     ValueField:
-                        size_hint_x: 0.7
+                        size_hint_x: 0.6
                         text: root.track_name
                         id: track_name
                 BoxLayout:
-                    size_hint_y: 0.1
+                    spacing: sp(5)
+                    size_hint_y: 0.15
                     orientation: 'horizontal'
                     FieldLabel:
-                        size_hint_x: 0.3
+                        size_hint_x: 0.4
                         text: 'Configuration'
+                        halign: 'right'
+                        valign: 'middle'
                     ValueField:
-                        size_hint_x: 0.7
+                        size_hint_x: 0.6
                         text: root.track_configuration
                         id: configuration
                 BoxLayout:
-                    size_hint_y: 0.8
+                    size_hint_y: 0.7
                     BoxLayout:
-                        size_hint_x: 0.3
+                        size_hint_x: 0.4
                     AnchorLayout:
                         size_hint_x: 0.7
                         BetterButton:

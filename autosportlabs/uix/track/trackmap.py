@@ -78,7 +78,7 @@ class TrackMapView(Widget):
     marker_scale = NumericProperty(1.0)
 
     MIN_PADDING = sp(1)
-    DEFAULT_TARGET_WIDTH_SCALE = 0.05
+    DEFAULT_TARGET_WIDTH_SCALE = 0.075
     DEFAULT_TRACK_WIDTH_SCALE = 0.01
     DEFAULT_MARKER_WIDTH_SCALE = 0.02
     DEFAULT_PATH_WIDTH_SCALE = 0.004
