@@ -17,6 +17,7 @@ from helplabel import HelpLabel
 from fieldlabel import FieldLabel
 from settingsview import *
 from valuefield import FloatValueField
+from iconbutton import LabelIconButton
 from autosportlabs.racecapture.config.rcpconfig import GpsConfig
 from autosportlabs.racecapture.views.util.alertview import alertPopup
 from autosportlabs.racecapture.views.tracks.tracksview import TrackInfoView, TracksView
@@ -329,7 +330,6 @@ class CustomTrackConfigScreen(Screen):
         self._rc_api = rc_api
         self.register_event_type('on_advanced_editor')
         self.track_cfg = None
-        self._init_ui()
 
     def on_advanced_track_editor(self, *args):
         self.dispatch('on_advanced_editor')
@@ -337,21 +337,16 @@ class CustomTrackConfigScreen(Screen):
     def on_advanced_editor(self):
         pass
 
-    def _init_ui(self):
-        # if we're on a mobile platform we get a tool to interactively design a track map
-        track_builder_button = Button(size_hint=(0.2, 0.2), text='Create Track', on_press=self.track_builder)
-        self.ids.create_track_container.add_widget(track_builder_button)
-
     def track_builder(self, *args):
         def popup_dismissed(instance):
             content.cleanup()
-            
+
         def on_track_complete(instance, track_map):
             popup.dismiss()
             self._track_manager.add_track(track_map)
             self.track_cfg.track.import_trackmap(track_map)
             self._update_track()
-            
+
         content = TrackBuilderView(databus=self._databus, rc_api=self._rc_api)
         popup = Popup(title='Track Builder', content=content, size_hint=(1.0, 1.0), auto_dismiss=True)
         popup.bind(on_dismiss=popup_dismissed)

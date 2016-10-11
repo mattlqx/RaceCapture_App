@@ -165,20 +165,26 @@
         AnchorLayout:
             anchor_x: 'right'
             anchor_y: 'bottom'
-            Button:
-                size_hint: (0.2, 0.2)
-                text: 'Advanced'
+            padding: (sp(10), sp(10))
+            LabelIconButton:
+                icon: u'\uf044'
+                title: 'Edit Points'
+                size_hint: (0.25, 0.2)
                 on_press: root.on_advanced_track_editor()
         AnchorLayout:
             anchor_x: 'left'
             anchor_y: 'bottom'
-            id: create_track_container
+            padding: (sp(10), sp(10))            
+            LabelIconButton:
+                icon: u'\uf018'
+                title: 'Create Track'
+                on_press: root.track_builder()
+                size_hint: (0.25, 0.2)
         FieldLabel:
             id: info_message
             size_hint_y: 0.2
             halign: 'center'
             text: ''    
-                
 
 <SingleAutoConfigScreen>:
     AnchorLayout:
