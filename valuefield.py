@@ -2,13 +2,19 @@ import re
 from kivy.uix.textinput import TextInput
 from kivy.properties import NumericProperty
 from kivy.core.window import Window
+from kivy.app import Builder
 
+VALUE_FIELD_KV = """
+<ValueField>:
+    font_size: self.height * 0.5
+    multiline: False
+"""
 class ValueField(TextInput):
-    
+
+    Builder.load_string(VALUE_FIELD_KV)
+
     def __init__(self, *args, **kwargs):
         self.next = kwargs.pop('next', None)
-        self.multiline = False
-        self.font_size = '20sp'
         super(ValueField, self).__init__(*args, **kwargs)
 
     def on_focus(self, instance, value):
@@ -22,17 +28,17 @@ class ValueField(TextInput):
         self.next = next
 
     def _on_keyboard(self, keyboard, keycode, *args):
-        if keycode == 9: #tab
+        if keycode == 9:  # tab
             self.next.focus = True
             self.dispatch('on_text_validate')
 
 class TextValueField(ValueField):
     max_len = NumericProperty(100)
-    
+
     def insert_text(self, substring, from_undo=False):
         if len(self.text) < self.max_len:
-            super(TextValueField, self).insert_text(substring, from_undo=from_undo)    
-    
+            super(TextValueField, self).insert_text(substring, from_undo=from_undo)
+
 class NumericValueField(ValueField):
     min_value = NumericProperty(None, allownone=True)
     max_value = NumericProperty(None, allownone=True)
@@ -40,7 +46,7 @@ class NumericValueField(ValueField):
     def __init__(self, *args, **kwargs):
         super(NumericValueField, self).__init__(*args, **kwargs)
         self.bind(on_text_validate=self.validate_minmax)
-    
+
     def validate_minmax(self, *args):
         try:
             value = int(self.text)
@@ -49,22 +55,22 @@ class NumericValueField(ValueField):
             if self.max_value is not None and value > self.max_value:
                 self.text = str(self.max_value)
         except:
-            pass        
+            pass
 
 class IntegerValueField(NumericValueField):
     pat = re.compile('[^0-9]')
-        
+
     def insert_text(self, substring, from_undo=False):
         if '-'  in substring and not '-' in self.text:
             return super(IntegerValueField, self).insert_text(substring, from_undo=from_undo)
-        
+
         s = re.sub(self.pat, '', substring)
         super(IntegerValueField, self).insert_text(s, from_undo=from_undo)
-        
-    
+
+
 class FloatValueField(NumericValueField):
     pat = re.compile('[^0-9]')
-    
+
     def insert_text(self, substring, from_undo=False):
         if '-' in substring and not '-' in self.text:
             return super(FloatValueField, self).insert_text(substring, from_undo=from_undo)
@@ -74,4 +80,4 @@ class FloatValueField(NumericValueField):
         else:
             s = '.'.join([re.sub(pat, '', s) for s in substring.split('.', 1)])
         super(FloatValueField, self).insert_text(s, from_undo=from_undo)
-            
+

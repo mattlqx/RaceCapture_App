@@ -5,12 +5,23 @@ from kivy import platform
 
 def time_to_epoch(timestamp):
     """
-    convert a timestamp to a Unix epoch
-    :param timestamp in "YYYY-MM-DDTHH:MM:SSS" format
+    convert a timestamp to a Unix epoch. Timestamp formats supported
+    "YYYY-MM-DDTHH:MM:SSSZ"
+    "YYYY-MM-DDTHH:MM:SSS.SSSZ"
+    "YYYY-MM-DDTHH:MM:SSS"
+    "YYYY-MM-DDTHH:MM:SSS.SSS"
+    :param timestamp  
     :type string
     :return returns the epoch time as int
     """
-    return int(calendar.timegm(datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ").timetuple()))
+    if len(timestamp) and timestamp[-1] == 'Z':
+        timestamp = timestamp[:-1]
+    try:
+        t = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S")
+    except ValueError:
+        t = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")
+
+    return int(calendar.timegm(t.timetuple()))
 
 def format_time(dt=datetime.now()):
     """

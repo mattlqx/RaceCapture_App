@@ -1,3 +1,25 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
+import uuid
+from datetime import datetime
 import json
 import time
 import copy
@@ -22,12 +44,15 @@ TRACK_DOWNLOAD_TIMEOUT = 30
 class TrackMap:
     """Very generic object wrapper around RCL's API endpoint for venues
     """
+    DEFAULT_TRACK_NAME = 'Track'
+    DEFAULT_CONFIGURATION = ''
 
     def __init__(self):
         self.custom = False
         self.map_points = []
         self.sector_points = []
-        self.name = ''
+        self.name = TrackMap.DEFAULT_TRACK_NAME
+        self.configuration = TrackMap.DEFAULT_CONFIGURATION
         self.created = None
         self.updated = None
         self.length = 0
@@ -35,12 +60,18 @@ class TrackMap:
         self.start_finish_point = None
         self.finish_point = None
         self.country_code = None
-        self.configuration = None
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return self.track_id == other.track_id
         return False
+
+    @classmethod
+    def create_new(cls):
+        t = TrackMap()
+        t.track_id = str(uuid.uuid1().hex)
+        t.created = datetime.utcnow().isoformat()
+        return t
 
     @classmethod
     def from_track_cfg(cls, track_cfg):
