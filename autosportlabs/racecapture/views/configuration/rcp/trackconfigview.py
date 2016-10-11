@@ -330,6 +330,10 @@ class CustomTrackConfigScreen(Screen):
         self._rc_api = rc_api
         self.register_event_type('on_advanced_editor')
         self.track_cfg = None
+        self.register_event_type('on_modified')
+
+    def on_modified(self, *args):
+        pass
 
     def on_advanced_track_editor(self, *args):
         self.dispatch('on_advanced_editor')
@@ -345,7 +349,9 @@ class CustomTrackConfigScreen(Screen):
             popup.dismiss()
             self._track_manager.add_track(track_map)
             self.track_cfg.track.import_trackmap(track_map)
+            self.track_cfg.stale = True
             self._update_track()
+            self.dispatch('on_modified')
 
         content = TrackBuilderView(databus=self._databus, rc_api=self._rc_api)
         popup = Popup(title='Track Builder', content=content, size_hint=(1.0, 1.0), auto_dismiss=True)
@@ -443,7 +449,7 @@ class ManualTrackConfigScreen(Screen):
 
         sectorsContainer.clear_widgets()
         for i in range(0, len(trackCfg.track.sectors)):
-            sectorView = SectorPointView(title='Sector ' + str(i), databus=self._databus)
+            sectorView = SectorPointView(title='Sector {}'.format(i + 1), databus=self._databus)
             sectorView.bind(on_config_changed=self.on_config_changed)
             sectorsContainer.add_widget(sectorView)
             sectorView.set_point(trackCfg.track.sectors[i])
@@ -507,6 +513,7 @@ class TrackConfigView(BaseConfigView):
         if self._custom_track_screen is None:
             self._custom_track_screen = CustomTrackConfigScreen(name='custom', track_manager=self._track_manager, rc_api=self._rc_api, databus=self._databus)
             self._custom_track_screen.bind(on_advanced_editor=self._on_advanced_editor)
+            self._custom_track_screen.bind(on_modified=self.on_modified)
             self._custom_track_screen.on_config_updated(self.trackCfg)
         return self._custom_track_screen
 
