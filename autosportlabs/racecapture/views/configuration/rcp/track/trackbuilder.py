@@ -316,8 +316,10 @@ class TrackMapCreator(Screen):
 
         self.ids.start_button.text = 'Re-start' if len(track.map_points) > 1 else 'Start'
 
-
-        self.ids.info_message.text = 'Go to start line and press Start!' if track.start_finish_point is None else ''
+        if current_point is None:
+            self.ids.info_message.text = 'Waiting for GPS'
+        else:
+            self.ids.info_message.text = 'Go to start line and press Start!' if track.start_finish_point is None else ''
 
     def _update_trackmap(self):
         self.ids.track.setTrackPoints(self._track.map_points)
