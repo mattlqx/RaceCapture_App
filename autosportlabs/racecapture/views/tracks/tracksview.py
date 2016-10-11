@@ -107,11 +107,11 @@ class TrackInfoView(BoxLayout):
         raceTrackView = self.ids.track
         raceTrackView.loadTrack(track)
 
-        self.ids.name.text = track.name
+        name = track.name
+        configuration = '' if len(track.configuration) == 0 else ' : {}'.format(track.configuration)
+        self.ids.name.text = name + configuration
 
-        self.ids.configuration.text = '' if not track.configuration else track.configuration
-
-        self.ids.length = '' if track.length == 0 else '{} mi.'.format(track.length)
+        self.ids.length.text = '' if track.length == 0 else '{} mi.'.format(track.length)
 
         flag_image = self.ids.flag
         cc = track.country_code
