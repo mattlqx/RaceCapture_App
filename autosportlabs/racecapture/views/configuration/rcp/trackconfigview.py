@@ -494,7 +494,7 @@ class TrackConfigView(BaseConfigView):
     def _get_track_db_view(self):
         if self._auto_config_screen is None:
             self._auto_config_screen = AutomaticTrackConfigScreen()
-            self._auto_config_screen.bind(on_modified=self.on_modified)
+            self._auto_config_screen.bind(on_modified=self.on_editor_modified)
             self._auto_config_screen.track_manager = self._track_manager
             if self._track_db is not None:
                 self._auto_config_screen.on_config_updated(self._track_db)
@@ -503,7 +503,7 @@ class TrackConfigView(BaseConfigView):
     def _get_single_track_view(self):
         if self._single_autoconfig_screen is None:
             self._single_autoconfig_screen = SingleAutoConfigScreen(track_manager=self._track_manager)
-            self._single_autoconfig_screen.bind(on_modified=self.on_modified)
+            self._single_autoconfig_screen.bind(on_modified=self.on_editor_modified)
             if self._track_cfg is not None:
                 self._single_autoconfig_screen.on_config_updated(self._track_cfg)
         return self._single_autoconfig_screen
@@ -512,23 +512,24 @@ class TrackConfigView(BaseConfigView):
         if self._custom_track_screen is None:
             self._custom_track_screen = CustomTrackConfigScreen(track_manager=self._track_manager, rc_api=self._rc_api, databus=self._databus)
             self._custom_track_screen.bind(on_advanced_editor=self._on_advanced_editor)
-            self._custom_track_screen.bind(on_modified=self.on_custom_modified)
+            self._custom_track_screen.bind(on_modified=self.on_editor_modified)
             self._custom_track_screen.on_config_updated(self._track_cfg)
         return self._custom_track_screen
-
-    def on_custom_modified(self, *args):
-        if self._advanced_config_screen is not None:
-            #synchronize the advanced config view with the updated track config
-            self._advanced_config_screen.on_config_updated(self._track_cfg)
-        self.dispatch('on_modified')
         
     def _get_advanced_editor_screen(self, *args):
         if self._advanced_config_screen is None:
             self._advanced_config_screen = ManualTrackConfigScreen(databus=self._databus, rc_api=self._rc_api)
-            self._advanced_config_screen.bind(on_modified=self.on_modified)
+            self._advanced_config_screen.bind(on_modified=self.on_editor_modified)
             if self._track_cfg is not None:
                 self._advanced_config_screen.on_config_updated(self._track_cfg)
         return self._advanced_config_screen
+
+    def on_editor_modified(self, *args):
+        if self._advanced_config_screen is not None:
+            #synchronize the advanced config view with the updated track config
+            self._advanced_config_screen.on_config_updated(self._track_cfg)
+            
+        self.dispatch('on_modified')
 
     def on_tracks_updated(self, track_manager):
         if self._auto_config_screen is not None:
