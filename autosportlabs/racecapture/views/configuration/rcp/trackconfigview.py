@@ -486,9 +486,6 @@ class TrackConfigView(BaseConfigView):
 
         self.register_event_type('on_config_updated')
 
-        screenMgr = kvFind(self, 'rcid', 'screenmgr')
-        self.screenManager = screenMgr
-
         autoDetect = self.ids.auto_detect
         autoDetect.bind(on_setting=self.on_auto_detect)
         autoDetect.setControl(SettingsSwitch())
@@ -575,8 +572,8 @@ class TrackConfigView(BaseConfigView):
         self._switch_to_screen(next_screen)
 
     def _switch_to_screen(self, screen):
-        if self.screenManager.current_screen != screen:
-            self.screenManager.switch_to(screen)
+        if self.ids.screen_manager.current_screen != screen:
+            self.ids.screen_manager.switch_to(screen)
 
     def on_auto_detect(self, instance, value):
         track_cfg = self.trackCfg
