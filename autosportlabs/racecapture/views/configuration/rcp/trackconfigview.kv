@@ -168,7 +168,9 @@
             padding: (sp(10), sp(10))
             LabelIconButton:
                 icon: u'\uf044'
-                title: 'Edit Points'
+                title: 'Edit'
+                icon_size: self.height * 0.5
+                title_font_size: self.height * 0.5
                 size_hint: (0.25, 0.2)
                 on_press: root.on_advanced_track_editor()
         AnchorLayout:
@@ -177,7 +179,9 @@
             padding: (sp(10), sp(10))            
             LabelIconButton:
                 icon: u'\uf018'
-                title: 'Create Track'
+                title: 'Create'
+                icon_size: self.height * 0.5
+                title_font_size: self.height * 0.5
                 on_press: root.track_builder()
                 size_hint: (0.25, 0.2)
         FieldLabel:
