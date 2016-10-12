@@ -29,7 +29,8 @@ class ValueField(TextInput):
 
     def _on_keyboard(self, keyboard, keycode, *args):
         if keycode == 9:  # tab
-            self.next.focus = True
+            if self.next is not None:
+                self.next.focus = True
             self.dispatch('on_text_validate')
 
 class TextValueField(ValueField):
