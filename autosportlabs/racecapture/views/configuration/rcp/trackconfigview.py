@@ -479,32 +479,31 @@ class TrackConfigView(BaseConfigView):
         self._settings = settings
         self._track_manager = track_manager
 
-        self.autoConfigView = None
-        self.manualTrackConfigView = None
-        self.single_autoconfig_screen = None
+        self._auto_config_screen = None
+        self._advanced_config_screen = None
+        self._single_autoconfig_screen = None
         self._custom_track_screen = None
 
         self.register_event_type('on_config_updated')
 
-        autoDetect = self.ids.auto_detect
-        autoDetect.bind(on_setting=self.on_auto_detect)
-        autoDetect.setControl(SettingsSwitch())
+        self.ids.auto_detect.bind(on_setting=self.on_auto_detect)
+        self.ids.auto_detect.setControl(SettingsSwitch())
 
     def _get_track_db_view(self):
-        if self.autoConfigView is None:
-            self.autoConfigView = AutomaticTrackConfigScreen(name='trackdb')
-            self.autoConfigView.bind(on_modified=self.on_modified)
-            self.autoConfigView.track_manager = self._track_manager
+        if self._auto_config_screen is None:
+            self._auto_config_screen = AutomaticTrackConfigScreen(name='trackdb')
+            self._auto_config_screen.bind(on_modified=self.on_modified)
+            self._auto_config_screen.track_manager = self._track_manager
             if self.trackDb is not None:
-                self.autoConfigView.on_config_updated(self.trackDb)
-        return self.autoConfigView
+                self._auto_config_screen.on_config_updated(self.trackDb)
+        return self._auto_config_screen
 
     def _get_single_track_view(self):
-        if self.single_autoconfig_screen is None:
-            self.single_autoconfig_screen = SingleAutoConfigScreen(name='single', track_manager=self._track_manager)
+        if self._single_autoconfig_screen is None:
+            self._single_autoconfig_screen = SingleAutoConfigScreen(name='single', track_manager=self._track_manager)
             if self.trackCfg is not None:
-                self.single_autoconfig_screen.on_config_updated(self.trackCfg)
-        return self.single_autoconfig_screen
+                self._single_autoconfig_screen.on_config_updated(self.trackCfg)
+        return self._single_autoconfig_screen
 
     def _get_custom_track_screen(self):
         if self._custom_track_screen is None:
@@ -515,45 +514,45 @@ class TrackConfigView(BaseConfigView):
         return self._custom_track_screen
 
     def on_custom_modified(self, *args):
-        if self.manualTrackConfigView is not None:
+        if self._advanced_config_screen is not None:
             #synchronize the advanced config view with the updated track config
-            self.manualTrackConfigView.on_config_updated(self.trackCfg)
+            self._advanced_config_screen.on_config_updated(self.trackCfg)
         self.dispatch('on_modified')
         
     def _get_advanced_editor_screen(self, *args):
-        if self.manualTrackConfigView is None:
-            self.manualTrackConfigView = ManualTrackConfigScreen(name='advanced', databus=self._databus, rc_api=self._rc_api)
-            self.manualTrackConfigView.bind(on_modified=self.on_modified)
+        if self._advanced_config_screen is None:
+            self._advanced_config_screen = ManualTrackConfigScreen(name='advanced', databus=self._databus, rc_api=self._rc_api)
+            self._advanced_config_screen.bind(on_modified=self.on_modified)
             if self.trackCfg is not None:
-                self.manualTrackConfigView.on_config_updated(self.trackCfg)
-        return self.manualTrackConfigView
+                self._advanced_config_screen.on_config_updated(self.trackCfg)
+        return self._advanced_config_screen
 
     def on_tracks_updated(self, track_manager):
-        if self.autoConfigView is not None:
-            self.autoConfigView.track_manager = track_manager
+        if self._auto_config_screen is not None:
+            self._auto_config_screen.track_manager = track_manager
 
     def on_config_updated(self, rcpCfg):
-        trackCfg = rcpCfg.trackConfig
-        trackDb = rcpCfg.trackDb
+        track_cfg = rcpCfg.trackConfig
+        track_db = rcpCfg.trackDb
 
         self._track_db_capable = rcpCfg.capabilities.storage.tracks > 0
 
-        self.ids.auto_detect.setValue(trackCfg.autoDetect)
+        self.ids.auto_detect.setValue(track_cfg.autoDetect)
 
-        if self.manualTrackConfigView is not None:
-            self.manualTrackConfigView.on_config_updated(trackCfg)
+        if self._advanced_config_screen is not None:
+            self._advanced_config_screen.on_config_updated(track_cfg)
 
-        if self.autoConfigView is not None:
-            self.autoConfigView.on_config_updated(trackDb)
+        if self._auto_config_screen is not None:
+            self._auto_config_screen.on_config_updated(track_db)
 
-        if self.single_autoconfig_screen is not None:
-            self.single_autoconfig_screen.on_config_updated(trackCfg)
+        if self._single_autoconfig_screen is not None:
+            self._single_autoconfig_screen.on_config_updated(track_cfg)
 
         if self._custom_track_screen is not None:
-            self._custom_track_screen.on_config_updated(trackCfg)
+            self._custom_track_screen.on_config_updated(track_cfg)
 
-        self.trackCfg = trackCfg
-        self.trackDb = trackDb
+        self.trackCfg = track_cfg
+        self.trackDb = track_db
 
         self._select_screen()
 
