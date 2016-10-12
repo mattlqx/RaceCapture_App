@@ -202,12 +202,15 @@
         
         AnchorLayout:
             anchor_x: 'right'
-            anchor_y: 'top'
-            padding: (sp(5), sp(5))
-            BetterButton:
-                size_hint: (0.15, 0.15)
-                text: 'Change'
+            anchor_y: 'bottom'
+            padding: (sp(10), sp(10))
+            LabelIconButton:
+                icon: u'\uf018'
+                title: 'Change'
+                icon_size: self.height * 0.5
+                title_font_size: self.height * 0.5
                 on_press: root.on_set_track_press()                    
+                size_hint: (0.25, 0.2)
                      
 <ManualTrackConfigScreen>:
 	BoxLayout:
