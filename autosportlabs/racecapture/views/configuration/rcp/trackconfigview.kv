@@ -176,7 +176,7 @@
         AnchorLayout:
             anchor_x: 'left'
             anchor_y: 'bottom'
-            padding: (sp(10), sp(10))            
+            padding: (sp(10), sp(10))
             LabelIconButton:
                 icon: u'\uf018'
                 title: 'Create'
@@ -200,6 +200,15 @@
             halign: 'center'
             text: ''    
         
+        AnchorLayout:
+            anchor_x: 'right'
+            anchor_y: 'top'
+            padding: (sp(5), sp(5))
+            BetterButton:
+                size_hint: (0.15, 0.15)
+                text: 'Change'
+                on_press: root.on_set_track_press()                    
+                     
 <ManualTrackConfigScreen>:
 	BoxLayout:
 		orientation: 'vertical'

@@ -296,9 +296,13 @@ class AutomaticTrackConfigScreen(Screen):
 class SingleAutoConfigScreen(Screen):
     def __init__(self, track_manager, **kwargs):
         super(SingleAutoConfigScreen, self).__init__(**kwargs)
+        self.register_event_type('on_modified')
         self._track_manager = track_manager
         self._track_cfg = None
 
+    def on_modified(self, *args):
+        pass
+    
     def _update_track(self):
         if self._track_cfg is None:
             return
@@ -312,6 +316,25 @@ class SingleAutoConfigScreen(Screen):
 
     def on_pre_enter(self, *args):
         self._update_track()
+
+    def on_set_track_press(self, *args):
+        def on_track_select_close(instance, answer):
+            if answer:
+                if self._track_cfg:
+                    selected_track = self._track_select_view.selected_track
+                    Logger.info("SingleAutoConfigScreen: setting track: {}".format(selected_track))
+                    track_cfg = Track.fromTrackMap(selected_track)
+                    self._track_cfg.track = track_cfg
+                    self._track_cfg.stale = True
+                    self._update_track()
+                    self.dispatch('on_modified')
+            popup.dismiss()
+
+        content = TrackSelectView(self._track_manager)
+        self._track_select_view = content
+        popup = editor_popup("Select a track", content, on_track_select_close)
+        popup.open()
+
 
 class CustomTrackConfigScreen(Screen):
     def __init__(self, track_manager, databus, rc_api, **kwargs):
@@ -480,6 +503,7 @@ class TrackConfigView(BaseConfigView):
     def _get_single_track_view(self):
         if self._single_autoconfig_screen is None:
             self._single_autoconfig_screen = SingleAutoConfigScreen(track_manager=self._track_manager)
+            self._single_autoconfig_screen.bind(on_modified=self.on_modified)
             if self._track_cfg is not None:
                 self._single_autoconfig_screen.on_config_updated(self._track_cfg)
         return self._single_autoconfig_screen

@@ -26,7 +26,7 @@
     BoxLayout:
         orientation: 'horizontal'
         BoxLayout:
-            size_hint_x: 0.9
+            size_hint_x: 0.8
             padding: (dp(10), dp(10))
             spacing: dp(30)
             orientation: 'horizontal'
@@ -34,18 +34,23 @@
                 id: track
                 size_hint_x: 0.7
         BoxLayout:
-            size_hint_x: 0.1
+            size_hint_x: 0.2
             orientation: 'vertical'
+            BoxLayout:
+                size_hint_y: 0.3
             AnchorLayout:
                 anchor_x: 'center'
-                size_hint_y: 0.7
+                size_hint_y: 0.3
                 Image:
                     id: flag
                     size_hint_x: None                   
             FieldLabel:
                 id: length
-                valign: 'middle'
-                size_hint_y: 0.3                
+                valign: 'top'
+                halign: 'center'
+                size_hint_y: 0.1                
+            BoxLayout:
+                size_hint_y: 0.3
         
 <SingleTrackItemView>:
     group: 'track'
