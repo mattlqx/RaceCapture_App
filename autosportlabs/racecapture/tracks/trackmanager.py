@@ -219,14 +219,15 @@ class TrackManager:
                 return track
         return None
 
-    def find_nearby_track(self, point, searchRadius=TRACK_DEFAULT_SEARCH_RADIUS_METERS, searchBearing=TRACK_DEFAULT_SEARCH_BEARING_DEGREES):
+    def find_nearby_tracks(self, point, searchRadius=TRACK_DEFAULT_SEARCH_RADIUS_METERS, searchBearing=TRACK_DEFAULT_SEARCH_BEARING_DEGREES):
+        tracks = []
         radius = point.metersToDegrees(searchRadius, searchBearing)
         for trackId in self.tracks.keys():
             track = self.tracks[trackId]
             trackCenter = track.centerpoint
             if trackCenter and trackCenter.withinCircle(point, radius):
-                return track
-        return None
+                tracks.append(track)
+        return tracks
 
     def filter_tracks_by_name(self, name, track_ids=None):
         if track_ids is None:
