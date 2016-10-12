@@ -104,7 +104,7 @@ class TrackInfoView(BoxLayout):
         raceTrackView.loadTrack(track)
 
         name = track.name
-        configuration = '' if len(track.configuration) == 0 else ' : {}'.format(track.configuration)
+        configuration = '' if len(track.configuration) == 0 else ' ({})'.format(track.configuration)
         self.ids.name.text = name + configuration
 
         self.ids.length.text = '' if track.length == 0 else '{} mi.'.format(track.length)
