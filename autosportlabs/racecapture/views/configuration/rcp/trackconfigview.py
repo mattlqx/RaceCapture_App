@@ -210,9 +210,9 @@ class AutomaticTrackConfigScreen(Screen):
     TRACK_ITEM_MIN_HEIGHT = 200
     def __init__(self, **kwargs):
         super(AutomaticTrackConfigScreen, self).__init__(**kwargs)
-        self.track_select_popup = None
-        self.track_db = None
-        self.tracks_grid = self.ids.tracksgrid
+        self._track_select_popup = None
+        self._track_db = None
+        self._tracks_grid = self.ids.tracksgrid
         self.register_event_type('on_tracks_selected')
         self.register_event_type('on_modified')
 
@@ -220,7 +220,7 @@ class AutomaticTrackConfigScreen(Screen):
         pass
 
     def on_config_updated(self, track_db):
-        self.track_db = track_db
+        self._track_db = track_db
         self.init_tracks_list()
 
     def on_track_manager(self, instance, value):
@@ -228,7 +228,7 @@ class AutomaticTrackConfigScreen(Screen):
         self.init_tracks_list()
 
     def on_tracks_selected(self, instance, selected_track_ids):
-        if self.track_db:
+        if self._track_db:
             failures = False
             for trackId in selected_track_ids:
                 trackMap = self.track_manager.get_track_by_id(trackId)
@@ -237,38 +237,38 @@ class AutomaticTrackConfigScreen(Screen):
                     if startFinish and startFinish.latitude and startFinish.longitude:
                         Logger.info("TrackConfigView:  adding track " + str(trackMap))
                         track = Track.fromTrackMap(trackMap)
-                        self.track_db.tracks.append(track)
+                        self._track_db.tracks.append(track)
                     else:
                         failures = True
             if failures:
                 alertPopup('Cannot Add Tracks', 'One or more tracks could not be added due to missing start/finish points.\n\nPlease check for track map updates and try again.')
             self.init_tracks_list()
-            self.track_select_popup.dismiss()
-            self.track_db.stale = True
+            self._track_select_popup.dismiss()
+            self._track_db.stale = True
             self.dispatch('on_modified')
 
     def on_add_track_db(self):
-        trackSelectionPopup = TrackSelectionPopup(track_manager=self.track_manager)
-        popup = Popup(title='Add Race Tracks', content=trackSelectionPopup, size_hint=(0.9, 0.9))
-        trackSelectionPopup.bind(on_tracks_selected=self.on_tracks_selected)
+        content = TrackSelectionPopup(track_manager=self.track_manager)
+        popup = Popup(title='Add Race Tracks', content=content, size_hint=(0.9, 0.9))
+        content.bind(on_tracks_selected=self.on_tracks_selected)
         popup.open()
-        self.track_select_popup = popup
+        self._track_select_popup = popup
 
     def init_tracks_list(self):
-        if self.track_manager and self.track_db:
+        if self.track_manager and self._track_db:
             matched_tracks = []
-            for track in self.track_db.tracks:
-                matchedTrack = self.track_manager.find_track_by_short_id(track.trackId)
-                if matchedTrack:
-                    matched_tracks.append(matchedTrack)
+            for track in self._track_db.tracks:
+                matched_track = self.track_manager.find_track_by_short_id(track.trackId)
+                if matched_track:
+                    matched_tracks.append(matched_track)
 
             grid = self.ids.tracksgrid
             grid.clear_widgets()
             if len(matched_tracks) == 0:
                 grid.add_widget(EmptyTrackDbView())
-                self.tracks_grid.height = dp(self.TRACK_ITEM_MIN_HEIGHT)
+                self._tracks_grid.height = dp(self.TRACK_ITEM_MIN_HEIGHT)
             else:
-                self.tracks_grid.height = dp(self.TRACK_ITEM_MIN_HEIGHT) * (len(matched_tracks) + 1)
+                self._tracks_grid.height = dp(self.TRACK_ITEM_MIN_HEIGHT) * (len(matched_tracks) + 1)
                 index = 0
                 for track in matched_tracks:
                     track_db_view = TrackDbItemView(track=track, index=index)
@@ -282,9 +282,9 @@ class AutomaticTrackConfigScreen(Screen):
 
     def on_remove_track(self, instance, index):
             try:
-                del self.track_db.tracks[index]
+                del self._track_db.tracks[index]
                 self.init_tracks_list()
-                self.track_db.stale = True
+                self._track_db.stale = True
                 self.dispatch('on_modified')
 
             except Exception as detail:
@@ -297,17 +297,17 @@ class SingleAutoConfigScreen(Screen):
     def __init__(self, track_manager, **kwargs):
         super(SingleAutoConfigScreen, self).__init__(**kwargs)
         self._track_manager = track_manager
-        self.track_cfg = None
+        self._track_cfg = None
 
     def _update_track(self):
-        if self.track_cfg is None:
+        if self._track_cfg is None:
             return
-        track = self._track_manager.find_track_by_short_id(self.track_cfg.track.trackId)
+        track = self._track_manager.find_track_by_short_id(self._track_cfg.track.trackId)
         self.ids.track_info.setTrack(track)
         self.ids.info_message.text = 'Waiting to detect track' if track is None else ''
 
     def on_config_updated(self, track_cfg):
-        self.track_cfg = track_cfg
+        self._track_cfg = track_cfg
         self._update_track()
 
     def on_pre_enter(self, *args):
@@ -320,7 +320,7 @@ class CustomTrackConfigScreen(Screen):
         self._databus = databus
         self._rc_api = rc_api
         self.register_event_type('on_advanced_editor')
-        self.track_cfg = None
+        self._track_cfg = None
         self.register_event_type('on_modified')
 
     def on_modified(self, *args):
@@ -339,8 +339,8 @@ class CustomTrackConfigScreen(Screen):
         def on_track_complete(instance, track_map):
             popup.dismiss()
             self._track_manager.add_track(track_map)
-            self.track_cfg.track.import_trackmap(track_map)
-            self.track_cfg.stale = True
+            self._track_cfg.track.import_trackmap(track_map)
+            self._track_cfg.stale = True
             self._update_track()
             self.dispatch('on_modified')
 
@@ -351,10 +351,10 @@ class CustomTrackConfigScreen(Screen):
         popup.open()
 
     def _update_track(self):
-        if self.track_cfg is None:
+        if self._track_cfg is None:
             return
 
-        track = self._track_manager.find_track_by_short_id(self.track_cfg.track.trackId)
+        track = self._track_manager.find_track_by_short_id(self._track_cfg.track.trackId)
         self.ids.track_info.setTrack(track)
         self.ids.info_message.text = 'No track map defined' if track is None else ''
 
@@ -362,7 +362,7 @@ class CustomTrackConfigScreen(Screen):
         self._update_track()
 
     def on_config_updated(self, track_cfg):
-        self.track_cfg = track_cfg
+        self._track_cfg = track_cfg
         self._update_track()
 
 class ManualTrackConfigScreen(Screen):
@@ -370,23 +370,20 @@ class ManualTrackConfigScreen(Screen):
         super(ManualTrackConfigScreen, self).__init__(**kwargs)
         self._databus = databus
         self._rc_api = rc_api
-        self.trackCfg = None
+        self._track_cfg = None
         
         self.ids.sep_startfinish.bind(on_setting=self.on_separate_start_finish)
         self.ids.sep_startfinish.setControl(SettingsSwitch())
 
-        self.startLineView = self.ids.start_line
-        self.startLineView.databus = self._databus
-        self.finishLineView = self.ids.finish_line
-        self.finishLineView.databus = self._databus
+        self.ids.start_line.databus = self._databus
+        self.ids.finish_line.databus = self._databus
 
-        self.separateStartFinish = False
-        sectorsContainer = self.ids.sectors_grid
-        self.sectorsContainer = sectorsContainer
-        self.initSectorViews()
+        self.separate_startfinish = False
+        self._init_sector_views()
 
-        sectorsContainer.height = dp(35) * CONFIG_SECTOR_COUNT
-        sectorsContainer.size_hint = (1.0, None)
+        sectors_container = self.ids.sectors_grid
+        sectors_container.height = dp(35) * CONFIG_SECTOR_COUNT
+        sectors_container.size_hint = (1.0, None)
 
         self.register_event_type('on_modified')
 
@@ -394,55 +391,54 @@ class ManualTrackConfigScreen(Screen):
         pass
 
     def on_separate_start_finish(self, instance, value):
-        if self.trackCfg:
-            self.trackCfg.track.trackType = 1 if value else 0
-            self.trackCfg.stale = True
+        if self._track_cfg:
+            self._track_cfg.track.trackType = 1 if value else 0
+            self._track_cfg.stale = True
             self.dispatch('on_modified')
-            self.separateStartFinish = value
+            self.separate_startfinish = value
             self.updateTrackViewState()
 
-    def initSectorViews(self):
+    def _init_sector_views(self):
 
-        sectorsContainer = self.sectorsContainer
-        sectorsContainer.clear_widgets()
+        self.ids.sectors_grid.clear_widgets()
 
-        self.startLineView.bind(on_config_changed=self.on_config_changed)
-        self.finishLineView.bind(on_config_changed=self.on_config_changed)
+        self.ids.start_line.bind(on_config_changed=self.on_config_changed)
+        self.ids.finish_line.bind(on_config_changed=self.on_config_changed)
 
         self.updateTrackViewState()
 
     def on_config_changed(self, *args):
-        self.trackCfg.stale = True
+        self._track_cfg.stale = True
         self.dispatch('on_modified')
 
     def updateTrackViewState(self):
-        if not self.separateStartFinish:
-            self.startLineView.setTitle('Start / Finish')
-            self.finishLineView.setTitle('- - -')
-            self.finishLineView.disabled = True
+        if not self.separate_startfinish:
+            self.ids.start_line.setTitle('Start / Finish')
+            self.ids.finish_line.setTitle('- - -')
+            self.ids.finish_line.disabled = True
         else:
-            self.startLineView.setTitle('Start Line')
-            self.finishLineView.setTitle('Finish Line')
-            self.finishLineView.disabled = False
+            self.ids.start_line.setTitle('Start Line')
+            self.ids.finish_line.setTitle('Finish Line')
+            self.ids.finish_line.disabled = False
 
-    def on_config_updated(self, trackCfg):
+    def on_config_updated(self, track_cfg):
         separateStartFinishSwitch = self.ids.sep_startfinish
-        self.separateStartFinish = trackCfg.track.trackType == TRACK_TYPE_STAGE
-        separateStartFinishSwitch.setValue(self.separateStartFinish)
+        self.separate_startfinish = track_cfg.track.trackType == TRACK_TYPE_STAGE
+        separateStartFinishSwitch.setValue(self.separate_startfinish)
 
-        sectorsContainer = self.sectorsContainer
+        sectors_container = self.ids.sectors_grid
 
-        sectorsContainer.clear_widgets()
-        for i in range(0, len(trackCfg.track.sectors)):
+        sectors_container.clear_widgets()
+        for i in range(0, len(track_cfg.track.sectors)):
             sectorView = SectorPointView(title='Sector {}'.format(i + 1), databus=self._databus)
             sectorView.bind(on_config_changed=self.on_config_changed)
-            sectorsContainer.add_widget(sectorView)
-            sectorView.set_point(trackCfg.track.sectors[i])
+            sectors_container.add_widget(sectorView)
+            sectorView.set_point(track_cfg.track.sectors[i])
 
-        self.startLineView.set_point(trackCfg.track.startLine)
-        self.finishLineView.set_point(trackCfg.track.finishLine)
+        self.ids.start_line.set_point(track_cfg.track.startLine)
+        self.ids.finish_line.set_point(track_cfg.track.finishLine)
 
-        self.trackCfg = trackCfg
+        self._track_cfg = track_cfg
         self.updateTrackViewState()
 
 
@@ -454,8 +450,8 @@ class TrackConfigView(BaseConfigView):
 
         self._track_db_capable = False
 
-        self.trackCfg = None
-        self.track_db = None
+        self._track_cfg = None
+        self._track_db = None
 
         self._databus = databus
         self._rc_api = rc_api
@@ -477,15 +473,15 @@ class TrackConfigView(BaseConfigView):
             self._auto_config_screen = AutomaticTrackConfigScreen(name='trackdb')
             self._auto_config_screen.bind(on_modified=self.on_modified)
             self._auto_config_screen.track_manager = self._track_manager
-            if self.track_db is not None:
-                self._auto_config_screen.on_config_updated(self.track_db)
+            if self._track_db is not None:
+                self._auto_config_screen.on_config_updated(self._track_db)
         return self._auto_config_screen
 
     def _get_single_track_view(self):
         if self._single_autoconfig_screen is None:
             self._single_autoconfig_screen = SingleAutoConfigScreen(name='single', track_manager=self._track_manager)
-            if self.trackCfg is not None:
-                self._single_autoconfig_screen.on_config_updated(self.trackCfg)
+            if self._track_cfg is not None:
+                self._single_autoconfig_screen.on_config_updated(self._track_cfg)
         return self._single_autoconfig_screen
 
     def _get_custom_track_screen(self):
@@ -493,21 +489,21 @@ class TrackConfigView(BaseConfigView):
             self._custom_track_screen = CustomTrackConfigScreen(name='custom', track_manager=self._track_manager, rc_api=self._rc_api, databus=self._databus)
             self._custom_track_screen.bind(on_advanced_editor=self._on_advanced_editor)
             self._custom_track_screen.bind(on_modified=self.on_custom_modified)
-            self._custom_track_screen.on_config_updated(self.trackCfg)
+            self._custom_track_screen.on_config_updated(self._track_cfg)
         return self._custom_track_screen
 
     def on_custom_modified(self, *args):
         if self._advanced_config_screen is not None:
             #synchronize the advanced config view with the updated track config
-            self._advanced_config_screen.on_config_updated(self.trackCfg)
+            self._advanced_config_screen.on_config_updated(self._track_cfg)
         self.dispatch('on_modified')
         
     def _get_advanced_editor_screen(self, *args):
         if self._advanced_config_screen is None:
             self._advanced_config_screen = ManualTrackConfigScreen(name='advanced', databus=self._databus, rc_api=self._rc_api)
             self._advanced_config_screen.bind(on_modified=self.on_modified)
-            if self.trackCfg is not None:
-                self._advanced_config_screen.on_config_updated(self.trackCfg)
+            if self._track_cfg is not None:
+                self._advanced_config_screen.on_config_updated(self._track_cfg)
         return self._advanced_config_screen
 
     def on_tracks_updated(self, track_manager):
@@ -534,8 +530,8 @@ class TrackConfigView(BaseConfigView):
         if self._custom_track_screen is not None:
             self._custom_track_screen.on_config_updated(track_cfg)
 
-        self.trackCfg = track_cfg
-        self.track_db = track_db
+        self._track_cfg = track_cfg
+        self._track_db = track_db
 
         self._select_screen()
 
@@ -558,7 +554,7 @@ class TrackConfigView(BaseConfigView):
             self.ids.screen_manager.switch_to(screen)
 
     def on_auto_detect(self, instance, value):
-        track_cfg = self.trackCfg
+        track_cfg = self._track_cfg
         if track_cfg:
             track_cfg.autoDetect = value
             track_cfg.stale = True
