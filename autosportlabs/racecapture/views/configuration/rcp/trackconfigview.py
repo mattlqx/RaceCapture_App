@@ -45,7 +45,7 @@ class SectorPointView(BoxLayout):
         self.point = None
         title = kwargs.get('title', None)
         if title:
-            self.setTitle(title)
+            self.set_title(title)
         Clock.schedule_interval(lambda dt: self.update_gps_status(), GPS_STATUS_POLL_INTERVAL)
 
     def _get_gps_quality(self):
@@ -59,7 +59,7 @@ class SectorPointView(BoxLayout):
     def on_config_changed(self):
         pass
 
-    def setTitle(self, title):
+    def set_title(self, title):
         self.ids.title.text = title
 
     def on_update_target(self, *args):
@@ -186,7 +186,7 @@ class TrackDbItemView(BoxLayout):
     def on_remove_track(self, index):
         pass
 
-    def removeTrack(self):
+    def remove_track(self):
         self.dispatch('on_remove_track', self.index)
 
 class TrackSelectionPopup(BoxLayout):
@@ -202,7 +202,7 @@ class TrackSelectionPopup(BoxLayout):
     def on_tracks_selected(self, selectedTrackIds):
         pass
 
-    def confirmAddTracks(self):
+    def confirm_add_tracks(self):
         self.dispatch('on_tracks_selected', self.track_browser.selectedTrackIds)
 
 class AutomaticTrackConfigScreen(Screen):
@@ -396,7 +396,7 @@ class ManualTrackConfigScreen(Screen):
             self._track_cfg.stale = True
             self.dispatch('on_modified')
             self.separate_startfinish = value
-            self.updateTrackViewState()
+            self.update_trackview_state()
 
     def _init_sector_views(self):
 
@@ -405,20 +405,20 @@ class ManualTrackConfigScreen(Screen):
         self.ids.start_line.bind(on_config_changed=self.on_config_changed)
         self.ids.finish_line.bind(on_config_changed=self.on_config_changed)
 
-        self.updateTrackViewState()
+        self.update_trackview_state()
 
     def on_config_changed(self, *args):
         self._track_cfg.stale = True
         self.dispatch('on_modified')
 
-    def updateTrackViewState(self):
+    def update_trackview_state(self):
         if not self.separate_startfinish:
-            self.ids.start_line.setTitle('Start / Finish')
-            self.ids.finish_line.setTitle('- - -')
+            self.ids.start_line.set_title('Start / Finish')
+            self.ids.finish_line.set_title('- - -')
             self.ids.finish_line.disabled = True
         else:
-            self.ids.start_line.setTitle('Start Line')
-            self.ids.finish_line.setTitle('Finish Line')
+            self.ids.start_line.set_title('Start Line')
+            self.ids.finish_line.set_title('Finish Line')
             self.ids.finish_line.disabled = False
 
     def on_config_updated(self, track_cfg):
@@ -439,7 +439,7 @@ class ManualTrackConfigScreen(Screen):
         self.ids.finish_line.set_point(track_cfg.track.finishLine)
 
         self._track_cfg = track_cfg
-        self.updateTrackViewState()
+        self.update_trackview_state()
 
 
 class TrackConfigView(BaseConfigView):
