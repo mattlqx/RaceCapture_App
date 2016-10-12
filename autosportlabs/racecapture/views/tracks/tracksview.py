@@ -66,15 +66,11 @@ class TracksUpdateStatusView(BoxLayout):
 
 
 class BaseTrackItemView(BoxLayout):
-    track = None
-    trackInfoView = None
     def __init__(self, **kwargs):
         super(BaseTrackItemView, self).__init__(**kwargs)
         track = kwargs.get('track', None)
-        trackInfoView = self.ids.trackinfo
-        trackInfoView.setTrack(track)
+        self.ids.trackinfo.setTrack(track)
         self.track = track
-        self.trackInfoView = trackInfoView
         self.register_event_type('on_track_selected')
 
     def on_track_selected(self, selected, trackId):

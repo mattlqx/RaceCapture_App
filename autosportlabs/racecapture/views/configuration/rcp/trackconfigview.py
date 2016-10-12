@@ -61,7 +61,7 @@ class SectorPointView(BoxLayout):
         pass
 
     def setTitle(self, title):
-        kvFind(self, 'rcid', 'title').text = title
+        self.ids.title.text = title
 
     def on_update_target(self, *args):
         try:
@@ -176,17 +176,12 @@ class EmptyTrackDbView(BoxLayout):
         super(EmptyTrackDbView, self).__init__(**kwargs)
 
 class TrackDbItemView(BoxLayout):
-    track = None
-    trackInfoView = None
-    index = 0
     def __init__(self, **kwargs):
         super(TrackDbItemView, self).__init__(**kwargs)
         track = kwargs.get('track', None)
         self.index = kwargs.get('index', 0)
-        trackInfoView = kvFind(self, 'rcid', 'trackinfo')
-        trackInfoView.setTrack(track)
+        self.ids.trackinfo.setTrack(track)
         self.track = track
-        self.trackInfoView = trackInfoView
         self.register_event_type('on_remove_track')
 
     def on_remove_track(self, index):
@@ -196,12 +191,11 @@ class TrackDbItemView(BoxLayout):
         self.dispatch('on_remove_track', self.index)
 
 class TrackSelectionPopup(BoxLayout):
-    track_browser = None
     def __init__(self, **kwargs):
         super(TrackSelectionPopup, self).__init__(**kwargs)
         self.register_event_type('on_tracks_selected')
         track_manager = kwargs.get('track_manager', None)
-        track_browser = kvFind(self, 'rcid', 'browser')
+        track_browser = self.ids.browser
         track_browser.set_trackmanager(track_manager)
         track_browser.init_view()
         self.track_browser = track_browser
@@ -213,14 +207,13 @@ class TrackSelectionPopup(BoxLayout):
         self.dispatch('on_tracks_selected', self.track_browser.selectedTrackIds)
 
 class AutomaticTrackConfigScreen(Screen):
-    trackDb = None
-    tracksGrid = None
     track_manager = ObjectProperty(None)
     TRACK_ITEM_MIN_HEIGHT = 200
     trackSelectionPopup = None
     def __init__(self, **kwargs):
         super(AutomaticTrackConfigScreen, self).__init__(**kwargs)
-        self.tracksGrid = kvFind(self, 'rcid', 'tracksgrid')
+        self.trackDb = None
+        self.tracks_grid = self.ids.tracksgrid
         self.register_event_type('on_tracks_selected')
         self.register_event_type('on_modified')
 
@@ -270,13 +263,13 @@ class AutomaticTrackConfigScreen(Screen):
                 if matchedTrack:
                     matchedTracks.append(matchedTrack)
 
-            grid = kvFind(self, 'rcid', 'tracksgrid')
+            grid = self.ids.tracksgrid
             grid.clear_widgets()
             if len(matchedTracks) == 0:
                 grid.add_widget(EmptyTrackDbView())
-                self.tracksGrid.height = dp(self.TRACK_ITEM_MIN_HEIGHT)
+                self.tracks_grid.height = dp(self.TRACK_ITEM_MIN_HEIGHT)
             else:
-                self.tracksGrid.height = dp(self.TRACK_ITEM_MIN_HEIGHT) * (len(matchedTracks) + 1)
+                self.tracks_grid.height = dp(self.TRACK_ITEM_MIN_HEIGHT) * (len(matchedTracks) + 1)
                 index = 0
                 for track in matchedTracks:
                     trackDbView = TrackDbItemView(track=track, index=index)
@@ -299,7 +292,7 @@ class AutomaticTrackConfigScreen(Screen):
                 Logger.error('AutomaticTrackConfigScreen: Error removing track from list ' + str(detail))
 
     def disableView(self, disabled):
-        kvFind(self, 'rcid', 'addtrack').disabled = disabled
+        self.ids.addtrack.disabled = disabled
 
 class SingleAutoConfigScreen(Screen):
     def __init__(self, track_manager, **kwargs):
@@ -386,9 +379,8 @@ class ManualTrackConfigScreen(Screen):
         super(ManualTrackConfigScreen, self).__init__(**kwargs)
         self._databus = databus
         self._rc_api = rc_api
-        sepStartFinish = kvFind(self, 'rcid', 'sepStartFinish')
-        sepStartFinish.bind(on_setting=self.on_separate_start_finish)
-        sepStartFinish.setControl(SettingsSwitch())
+        self.ids.sep_startfinish.bind(on_setting=self.on_separate_start_finish)
+        self.ids.sep_startfinish.setControl(SettingsSwitch())
 
         self.startLineView = self.ids.start_line
         self.startLineView.databus = self._databus
@@ -441,7 +433,7 @@ class ManualTrackConfigScreen(Screen):
             self.finishLineView.disabled = False
 
     def on_config_updated(self, trackCfg):
-        separateStartFinishSwitch = kvFind(self, 'rcid', 'sepStartFinish')
+        separateStartFinishSwitch = self.ids.sep_startfinish
         self.separateStartFinish = trackCfg.track.trackType == TRACK_TYPE_STAGE
         separateStartFinishSwitch.setValue(self.separateStartFinish)
 

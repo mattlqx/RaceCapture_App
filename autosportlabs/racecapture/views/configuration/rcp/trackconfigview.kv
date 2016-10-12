@@ -6,7 +6,7 @@
 		orientation: 'horizontal'
 		Label:
 			text: "Sector"
-			rcid: 'title'
+			id: title
             size_hint_x: 0.25
 		FieldLabel:
             size_hint_x: 0.25		
@@ -102,7 +102,7 @@
 	orientation: 'vertical'
 	TracksBrowser:
 		trackHeight: dp(200)
-		rcid: 'browser'
+		id: browser
 		size_hint_y: 0.90
 	BoxLayout:
 		size_hint_y: 0.1
@@ -118,7 +118,7 @@
 		orientation: 'horizontal'
 		TrackInfoView:
 			size_hint_x: 0.92
-			rcid: 'trackinfo'
+			id: trackinfo
 		AnchorLayout:
             size_hint_x: 0.08
     		IconButton:
@@ -142,7 +142,7 @@
     		    do_scroll_x:False
     		    do_scroll_y:True
     		    GridLayout:
-    		    	rcid: 'tracksgrid'
+    		    	id: tracksgrid
     		        padding: [dp(10), dp(10)]
     		        spacing: [dp(10), dp(10)]
     		        size_hint_y: None
@@ -156,7 +156,7 @@
         		text: u'\uf055'
         		on_release: root.on_add_track_db()
     	    	disabled: True
-    	    	rcid: 'addtrack'
+    	    	id: addtrack
 	        
 <CustomTrackConfigScreen>:
     AnchorLayout:
@@ -201,7 +201,7 @@
 		orientation: 'vertical'
 		SettingsView:
 			size_hint_y: 0.2
-			rcid: 'sepStartFinish'
+			id: sep_startfinish
 			label_text: 'Separate start and finish lines'
 			help_text: 'Enable for Stage, Hill Climb or AutoX type courses'
 		BoxLayout:
