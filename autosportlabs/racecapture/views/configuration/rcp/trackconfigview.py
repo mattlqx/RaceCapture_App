@@ -513,10 +513,16 @@ class TrackConfigView(BaseConfigView):
         if self._custom_track_screen is None:
             self._custom_track_screen = CustomTrackConfigScreen(name='custom', track_manager=self._track_manager, rc_api=self._rc_api, databus=self._databus)
             self._custom_track_screen.bind(on_advanced_editor=self._on_advanced_editor)
-            self._custom_track_screen.bind(on_modified=self.on_modified)
+            self._custom_track_screen.bind(on_modified=self.on_custom_modified)
             self._custom_track_screen.on_config_updated(self.trackCfg)
         return self._custom_track_screen
 
+    def on_custom_modified(self, *args):
+        if self.manualTrackConfigView is not None:
+            #synchronize the advanced config view with the updated track config
+            self.manualTrackConfigView.on_config_updated(self.trackCfg)
+        self.dispatch('on_modified')
+        
     def _get_advanced_editor_screen(self, *args):
         if self.manualTrackConfigView is None:
             self.manualTrackConfigView = ManualTrackConfigScreen(name='advanced', databus=self._databus, rc_api=self._rc_api)
@@ -575,8 +581,6 @@ class TrackConfigView(BaseConfigView):
     def on_auto_detect(self, instance, value):
         track_cfg = self.trackCfg
         if track_cfg:
-            if value == False and track_cfg.autoDetect == True:
-                track_cfg.track.trackId = 0
             track_cfg.autoDetect = value
             track_cfg.stale = True
             self.dispatch('on_modified')

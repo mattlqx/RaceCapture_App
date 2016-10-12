@@ -692,8 +692,7 @@ class Track(object):
         self.trackId = track_map.short_id
         self.trackType = TRACK_TYPE_STAGE if track_map.finish_point else TRACK_TYPE_CIRCUIT
         self.startLine = copy(track_map.start_finish_point)
-        self.finishLine = copy(track_map.finish_point)
-
+        self.finishLine = GeoPoint() if self.trackType == TRACK_TYPE_CIRCUIT else copy(track_map.finish_point)
         max_sectors = CONFIG_SECTOR_COUNT_CIRCUIT if self.trackType == TRACK_TYPE_CIRCUIT else CONFIG_SECTOR_COUNT_STAGE
 
         del self.sectors[:]
