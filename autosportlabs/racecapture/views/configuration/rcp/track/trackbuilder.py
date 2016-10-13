@@ -432,9 +432,9 @@ class TrackMapCreator(Screen):
     _simulated_trackmap_index = 0
 
     # test key sequence to simulate walking a course - needed for testing
-    # key sequence is ctrl-w
+    # key sequence is ctrl-F1
     def key_action(self, instance, keyboard, keycode, text, modifiers):
-        if 'ctrl' in modifiers and keycode == 69:
+        if 'ctrl' in modifiers and keycode == 58:
             point = GeoPoint.fromPoint(SIMULATED_TRACKMAP_POINTS[self._simulated_trackmap_index][0],
                                        SIMULATED_TRACKMAP_POINTS[self._simulated_trackmap_index][1])
             self._update_current_point(point)
