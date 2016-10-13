@@ -150,24 +150,26 @@ class TracksView(Screen):
         self.ids.browser.on_update_check()
 
 class TracksBrowser(BoxLayout):
-    multi_select = BooleanProperty(True)
-    trackmap = None
-    trackHeight = NumericProperty(dp(200))
-    trackManager = None
-    tracksUpdatePopup = None
-    initialized = False
-    tracksGrid = None
-    selectedTrackIds = None
-    tracks_loading = False
-    last_scroll_y = 1.0
     INITIAL_DISPLAY_LIMIT = 10
     LAZY_DISPLAY_CHUNK_COUNT = 1
     LOOK_AHEAD_TRACKS = 10
     TRACK_HEIGHT_PADDING = dp(10)
 
+    multi_select = BooleanProperty(True)
+    trackHeight = NumericProperty(dp(200))
+    current_location = ObjectProperty(allownone=True)
+
     def __init__(self, **kwargs):
         super(TracksBrowser, self).__init__(**kwargs)
         self.register_event_type('on_track_selected')
+        self.current_location = kwargs.get('current_location')
+        self.trackmap = None
+        self.trackManager = None
+        self.tracksUpdatePopup = None
+        self.initialized = False
+        self.tracksGrid = None
+        self.tracks_loading = False
+        self.last_scroll_y = 1.0
         self.selectedTrackIds = set()
 
     def on_track_selected(self, value):
@@ -275,7 +277,10 @@ class TracksBrowser(BoxLayout):
 
     def refreshTrackList(self):
         region = self.ids.regions.text
-        foundIds = self.trackManager.filter_tracks_by_region(region)
+        if region == 'Nearby':
+            foundIds = [t.track_id for t in self.trackManager.find_nearby_tracks(self.current_location)]
+        else:
+            foundIds = self.trackManager.filter_tracks_by_region(region)
         search = self.ids.namefilter.text
         if search != None and len(search) > 0:
             foundIds = self.trackManager.filter_tracks_by_name(search, foundIds)
@@ -309,14 +314,21 @@ class TracksBrowser(BoxLayout):
 
     def initRegionsList(self):
         regions = self.trackManager.regions
-        regionsSpinner = self.ids.regions
+        regions_spinner = self.ids.regions
         values = []
+        # if we're specifying our current location, then the first option is to
+        # show nearby tracks
+        if self.current_location is not None:
+            values.append('Nearby')
+
         for region in regions:
             name = region.name
-            if regionsSpinner.text == '':
-                regionsSpinner.text = name
+            if regions_spinner.text == '':
+                regions_spinner.text = name
             values.append(name)
-        regionsSpinner.values = values
+
+        regions_spinner.values = values
+        regions_spinner.text = values[0]
 
     def track_selected(self, instance, selected, trackId):
         if selected:
