@@ -96,6 +96,7 @@ class DashboardView(Screen):
     """
     _POPUP_SIZE_HINT = (0.75, 0.8)
     _POPUP_DISMISS_TIMEOUT_LONG = 60.0
+    AUTO_CONFIGURE_WAIT_PERIOD_DAYS = 1
     Builder.load_string(DASHBOARD_VIEW_KV)
 
     def __init__(self, status_pump, track_manager, rc_api, rc_config, databus, settings, **kwargs):
@@ -213,10 +214,12 @@ class DashboardView(Screen):
         Clock.schedule_once(lambda dt: self._race_setup())
 
     def _race_setup(self):
+
+        # skip if we're not connected
         if not self._rc_api.connected:
             return
 
-        # cannot autodetect until we have some GPS
+        # cannot autodetect until we have valid GPS data
         if self._gps_sample.gps_qual <= GpsConfig.GPS_QUALITY_NO_FIX:
             return
 
@@ -235,20 +238,19 @@ class DashboardView(Screen):
         tracks = self._track_manager.find_nearby_tracks(self._gps_sample.geopoint)
 
         last_track_set_time = datetime.datetime.fromtimestamp(self._settings.userPrefs.get_last_selected_track_timestamp())
-        current_time = datetime.datetime.now()
-        track_was_recently_set = current_time < last_track_set_time + datetime.timedelta(seconds=30)
+        track_set_a_while_ago = datetime.datetime.now() > last_track_set_time + datetime.timedelta(days=DashboardView.AUTO_CONFIGURE_WAIT_PERIOD_DAYS)
 
         # is the currently configured track in the area?
         current_track_is_nearby = current_track.short_id in (t.short_id for t in tracks)
 
         # no need to re-detect a nearby track that was recently set
-        if current_track_is_nearby and track_was_recently_set:
+        if current_track_is_nearby and not track_set_a_while_ago:
             Logger.info('DashboardView: Nearby track was recently set, skipping auto configuration')
             return
 
         # if we're in an area with many local configurations, ask the user
         if len(tracks) > 1:
-            Clock.schedule_once(lambda dt: self._load_race_setup_view(track_cfg))
+            Clock.schedule_once(lambda dt: self._load_track_select_view(track_cfg))
 
         # otherwise, maybe select the only track in the area
         elif len(tracks) == 1:
@@ -259,7 +261,7 @@ class DashboardView(Screen):
         else:
             Logger.info('DashboardView: could not find track to select in local area')
 
-    def _load_race_setup_view(self, track_cfg):
+    def _load_track_select_view(self, track_cfg):
 
         def on_race_setup_close(instance, answer):
             if answer:
