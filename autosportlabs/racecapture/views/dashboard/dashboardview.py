@@ -23,13 +23,14 @@ from autosportlabs.racecapture.views.util.alertview import editor_popup
 from autosportlabs.racecapture.config.rcpconfig import Track
 from autosportlabs.racecapture.config.rcpconfig import TrackConfig
 from autosportlabs.racecapture.config.rcpconfig import Capabilities
-
+from autosportlabs.racecapture.tracks.trackmanager import TrackMap
 # Dashboard screens
 from autosportlabs.racecapture.views.dashboard.gaugeview import GaugeView
 from autosportlabs.racecapture.views.dashboard.tachometerview import TachometerView
 from autosportlabs.racecapture.views.dashboard.laptimeview import LaptimeView
 from autosportlabs.racecapture.views.dashboard.rawchannelview import RawChannelView
 from autosportlabs.racecapture.views.dashboard.comboview import ComboView
+from autosportlabs.racecapture.geo.geopoint import GeoPoint
 
 from collections import OrderedDict
 DASHBOARD_VIEW_KV = """
@@ -78,7 +79,12 @@ DASHBOARD_VIEW_KV = """
                 on_press: root.on_preferences()
 """
 
-
+class GpsSample(object):
+    def __init__(self, **kwargs):    
+        self.gps_qual = 0
+        self.latitude = 0
+        self.longitude = 0
+    
 class DashboardView(Screen):
     """
     The main dashboard view.
@@ -93,6 +99,7 @@ class DashboardView(Screen):
         self._view_builders = OrderedDict()
         super(DashboardView, self).__init__(**kwargs)
         self.register_event_type('on_tracks_updated')
+        self.register_event_type('on_config_updated')
         self._databus = kwargs.get('dataBus')
         self._settings = kwargs.get('settings')
         self._track_manager = track_manager
@@ -102,10 +109,23 @@ class DashboardView(Screen):
         self._dismiss_popup_trigger = Clock.create_trigger(self._dismiss_popup, DashboardView._POPUP_DISMISS_TIMEOUT_LONG)
         self._popup = None
         self._race_setup_view = None
-        self._selected_track = None
         self._track_config = None
+        self._gps_sample = GpsSample()
+        self._databus.addSampleListener(self._on_sample)
+        
+    def _on_sample(self, sample):
+        self._gps_sample.gps_qual = sample.get('GPSQual')
+        self._gps_sample.latitude = sample.get('Latitude')
+        self._gps_sample.longitude = sample.get('Longitude')
 
     def on_tracks_updated(self, trackmanager):
+        pass
+
+    def on_config_updated(self, rc_config):
+        self._rc_config = rc_config
+        self._race_setup()
+
+    def on_config_written(self, *args):
         pass
 
     def _init_view_builders(self):
@@ -177,7 +197,37 @@ class DashboardView(Screen):
         Clock.schedule_once(lambda dt: self._race_setup())
 
     def _race_setup(self):
-
+        if not self._rc_api.connected:
+            return
+        
+        track_cfg = self._rc_config.trackConfig
+        auto_detect = track_cfg.autoDetect
+        
+        # skip if we haven't enabled auto detection
+        if not auto_detect:
+            return
+        
+        # what track is currently configured?
+        current_track = TrackMap.from_track_cfg(track_cfg.track)
+        
+        # is the currently configured track in the list of nearby tracks?
+        # if so, just keep this one
+        tracks = self._track_manager.find_nearby_tracks(GeoPoint.fromPoint(self._gps_sample.latitude, self._gps_sample.longitude))
+                
+        if current_track.short_id in (t.short_id for t in tracks):
+            Logger.info('DashboardView: current track {} found in area'.format(current_track.short_id))
+            return
+        
+        # ok, let's select the first track found in list 
+        if len(tracks) > 0:
+            new_track = tracks[0]
+            Logger.info('DashboardView: auto selecting track {}'.format(new_track.short_id))
+            track_cfg.track.import_trackmap(new_track)
+            self._set_rc_track(track_cfg)
+            
+            
+            
+    def _race_setupx(self):
         """
         Beginnings of a 'race setup' screen that checks everything is working and set correctly. Currently
         just checks that a track map is detected/set.
@@ -208,6 +258,7 @@ class DashboardView(Screen):
                             self._track_config.fromJson(track_config['trackCfg'])
                             Logger.debug("DashboardView: _race_setup(), got track config: {}".format(self._track_config))
 
+                            
                             # Only clear way to know if the track in the track config is a real track or not is by
                             # checking start/finish point. If both are 0, not a track. Can't use track id because a
                             # track id of 0 can be a user defined track
@@ -238,7 +289,14 @@ class DashboardView(Screen):
 
         self._popup.dismiss()
 
-    def _set_rc_track(self, track, track_config):
+    def _set_rc_track(self, track_cfg):
+        self._rc_api.setTrackCfg(track_cfg.toJson())
+        self._rc_api.sendFlashConfig()
+
+        now = int(time.time())
+        self._settings.userPrefs.set_last_selected_track(track_cfg.track.trackId, now)
+
+    def _set_rc_track2(self, track, track_config):
         new_track = Track.fromTrackMap(track)
         new_track.trackId = track.short_id
         track_config.track = new_track

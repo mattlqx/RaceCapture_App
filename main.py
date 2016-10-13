@@ -348,6 +348,7 @@ class RaceCaptureApp(App):
 
     def build_dash_view(self):
         dash_view = DashboardView(self.trackManager, self._rc_api, self.rc_config, name='dash', dataBus=self._databus, settings=self.settings)
+        self.config_listeners.append(dash_view)
         self.tracks_listeners.append(dash_view)
         return dash_view
 

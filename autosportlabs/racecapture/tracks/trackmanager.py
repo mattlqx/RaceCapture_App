@@ -34,7 +34,7 @@ import gzip
 import zipfile
 from autosportlabs.racecapture.geo.geopoint import GeoPoint, Region
 from autosportlabs.racecapture.config.rcpconfig import Track
-from autosportlabs.util.timeutil import time_to_epoch
+from autosportlabs.util.timeutil import time_to_epoch, epoch_to_time
 from kivy.logger import Logger
 
 TRACK_DEFAULT_SEARCH_RADIUS_METERS = 2000
@@ -74,11 +74,13 @@ class TrackMap:
         return t
 
     @classmethod
-    def from_track_cfg(cls, track_cfg):
+    def from_track_cfg(cls, track):
         track_map = TrackMap()
-        track_map.start_finish_point = track_cfg.track.startLine
-        track_map.finish_point = track_cfg.track.finishLine
-        track_map.sector_points = track_cfg.track.sectors
+        track_map.start_finish_point = track.startLine
+        track_map.finish_point = track.finishLine
+        track_map.sector_points = track.sectors
+        track_map.created = epoch_to_time(track.trackId)
+        return track_map
 
     @property
     def centerpoint(self):
@@ -220,6 +222,15 @@ class TrackManager:
         return None
 
     def find_nearby_tracks(self, point, searchRadius=TRACK_DEFAULT_SEARCH_RADIUS_METERS, searchBearing=TRACK_DEFAULT_SEARCH_BEARING_DEGREES):
+        """
+        find a list of nearby tracks near the specified point, ordered by most recent first.
+        :param point the point to reference
+        :type point GeoPoint
+        :param searchRadius the search radius in meters. Defaults to TRACK_DEFAULT_SEARCH_RADIUS_METERS
+        :type searchRadius float
+        :param searchBearing the bearing in degrees to search. 
+        :type searchBearing float. Defaults to TRACK_DEFAULT_SEARCH_BEARING_DEGREES
+        """
         tracks = []
         radius = point.metersToDegrees(searchRadius, searchBearing)
         for trackId in self.tracks.keys():
@@ -227,6 +238,9 @@ class TrackManager:
             trackCenter = track.centerpoint
             if trackCenter and trackCenter.withinCircle(point, radius):
                 tracks.append(track)
+
+        #order by short id, which is timestamp                
+        tracks.sort(key=lambda x: x.short_id, reverse=True)
         return tracks
 
     def filter_tracks_by_name(self, name, track_ids=None):
