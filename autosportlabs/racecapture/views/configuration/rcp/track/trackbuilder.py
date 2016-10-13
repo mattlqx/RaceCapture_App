@@ -49,19 +49,19 @@ class TrackBuilderView(BoxLayout):
         super(TrackBuilderView, self).__init__(**kwargs)
         self._rc_api = rc_api
         self._databus = databus
-        self._screens=[]
+        self._screens = []
         self._init_view()
         self._track = TrackMap.create_new()
         self._track.custom = True
         self.register_event_type('on_track_complete')
-        
+
     def on_track_complete(self, track):
         pass
-    
+
     def cleanup(self):
         for screen in self._screens:
             screen.cleanup()
-            
+
     def _init_view(self):
         screen = self._get_track_type_selector()
         self._switch_to_screen(screen)
@@ -146,7 +146,7 @@ class TrackTypeSelector(Screen):
 
     def on_track_type_selected(self, type):
         pass
-    
+
     def cleanup(self):
         pass
 
@@ -256,7 +256,7 @@ class TrackMapCreator(Screen):
 
     def cleanup(self):
         Window.unbind(on_key_down=self.key_action)
-        
+
     def on_trackmap_complete(self, track):
         pass
 
@@ -359,7 +359,7 @@ class TrackMapCreator(Screen):
 
         # but ultimately, we can't add points if we're finished
         can_add_point = False if self._is_finished else can_add_point
-        
+
         if can_add_point:
             self._add_trackmap_point(point)
             self._update_trackmap()
@@ -430,16 +430,16 @@ class TrackMapCreator(Screen):
 
 # fake GPS data source - this is for debugging.
     _simulated_trackmap_index = 0
-        
-    #test key sequence to simulate walking a course - needed for testing
-    #key sequence is ctrl-w
+
+    # test key sequence to simulate walking a course - needed for testing
+    # key sequence is ctrl-w
     def key_action(self, instance, keyboard, keycode, text, modifiers):
-        if 'ctrl' in modifiers and keycode==25:
-            point = GeoPoint.fromPoint(SIMULATED_TRACKMAP_POINTS[self._simulated_trackmap_index][0], 
+        if 'ctrl' in modifiers and keycode == 69:
+            point = GeoPoint.fromPoint(SIMULATED_TRACKMAP_POINTS[self._simulated_trackmap_index][0],
                                        SIMULATED_TRACKMAP_POINTS[self._simulated_trackmap_index][1])
             self._update_current_point(point)
             self._simulated_trackmap_index += 1
-            if self._simulated_trackmap_index >=len(SIMULATED_TRACKMAP_POINTS):
+            if self._simulated_trackmap_index >= len(SIMULATED_TRACKMAP_POINTS):
                 self._simulated_trackmap_index = 0
 
 TRACK_CUSTOMIZATION_VIEW_KV = """
@@ -545,16 +545,16 @@ class TrackCustomizationView(Screen):
 
     def _on_track_name(self, instance, value):
         self.track_name = value
-        
+
     def _on_track_configuration(self, instance, value):
         self.track_configuration = value
-    
+
     def on_track_name(self, instance, value):
         self._track.name = value
-    
+
     def on_track_configuration(self, instance, value):
         self._track.configuration = value
-        
+
     def _validate_configuration(self):
         if self._track.name == '':
             self._track.name = TrackCustomizationView.DEFAULT_TRACK_NAME
@@ -565,7 +565,7 @@ class TrackCustomizationView(Screen):
 
     def cleanup(self):
         pass
-    
+
 SIMULATED_TRACKMAP_POINTS = [
 [
   38.1615364765,

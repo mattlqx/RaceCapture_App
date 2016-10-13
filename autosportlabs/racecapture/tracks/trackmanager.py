@@ -239,7 +239,7 @@ class TrackManager:
             if trackCenter and trackCenter.withinCircle(point, radius):
                 tracks.append(track)
 
-        #order by short id, which is timestamp                
+        # order by short id, which is timestamp
         tracks.sort(key=lambda x: x.short_id, reverse=True)
         return tracks
 
@@ -374,7 +374,7 @@ class TrackManager:
         """
         self.save_track(track)
         self.tracks[track.track_id] = track
-        
+
     def save_track(self, track):
         path = os.path.join(self.tracks_user_dir, track.track_id + '.json')
         track_json_string = json.dumps(track.to_dict(), sort_keys=True, indent=2, separators=(',', ': '))

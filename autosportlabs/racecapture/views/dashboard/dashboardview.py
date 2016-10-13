@@ -20,9 +20,7 @@ from autosportlabs.racecapture.settings.systemsettings import SettingsListener
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
 from autosportlabs.racecapture.views.configuration.rcp.trackselectview import TrackSelectView
 from autosportlabs.racecapture.views.util.alertview import editor_popup
-from autosportlabs.racecapture.config.rcpconfig import Track
-from autosportlabs.racecapture.config.rcpconfig import TrackConfig
-from autosportlabs.racecapture.config.rcpconfig import Capabilities
+from autosportlabs.racecapture.config.rcpconfig import Track, TrackConfig, Capabilities, GpsConfig
 from autosportlabs.racecapture.tracks.trackmanager import TrackMap
 # Dashboard screens
 from autosportlabs.racecapture.views.dashboard.gaugeview import GaugeView
@@ -80,11 +78,11 @@ DASHBOARD_VIEW_KV = """
 """
 
 class GpsSample(object):
-    def __init__(self, **kwargs):    
+    def __init__(self, **kwargs):
         self.gps_qual = 0
         self.latitude = 0
         self.longitude = 0
-    
+
 class DashboardView(Screen):
     """
     The main dashboard view.
@@ -94,14 +92,16 @@ class DashboardView(Screen):
     _POPUP_DISMISS_TIMEOUT_LONG = 60.0
     Builder.load_string(DASHBOARD_VIEW_KV)
 
-    def __init__(self, track_manager, rc_api, rc_config, **kwargs):
+    def __init__(self, status_pump, track_manager, rc_api, rc_config, databus, settings, **kwargs):
         self._initialized = False
         self._view_builders = OrderedDict()
         super(DashboardView, self).__init__(**kwargs)
         self.register_event_type('on_tracks_updated')
         self.register_event_type('on_config_updated')
-        self._databus = kwargs.get('dataBus')
-        self._settings = kwargs.get('settings')
+        self.register_event_type('on_config_written')
+        self._status_pump = status_pump
+        self._databus = databus
+        self._settings = settings
         self._track_manager = track_manager
         self._rc_api = rc_api
         self._rc_config = rc_config
@@ -111,12 +111,22 @@ class DashboardView(Screen):
         self._race_setup_view = None
         self._track_config = None
         self._gps_sample = GpsSample()
-        self._databus.addSampleListener(self._on_sample)
-        
-    def _on_sample(self, sample):
-        self._gps_sample.gps_qual = sample.get('GPSQual')
-        self._gps_sample.latitude = sample.get('Latitude')
-        self._gps_sample.longitude = sample.get('Longitude')
+        status_pump.add_listener(self.status_updated)
+
+    def status_updated(self, status):
+        status = status['status']['GPS']
+
+        quality = status['qual']
+        latitude = status['lat']
+        longitude = status['lon']
+        current_gps_qual = self._gps_sample.gps_qual
+        self._gps_sample.gps_qual = quality
+        self._gps_sample.latitude = latitude
+        self._gps_sample.longitude = longitude
+
+        if quality > GpsConfig.GPS_QUALITY_NO_FIX and current_gps_qual <= GpsConfig.GPS_QUALITY_NO_FIX:
+            # We have transition to having valid GPS
+            self._race_setup()
 
     def on_tracks_updated(self, trackmanager):
         pass
@@ -125,8 +135,9 @@ class DashboardView(Screen):
         self._rc_config = rc_config
         self._race_setup()
 
-    def on_config_written(self, *args):
-        pass
+    def on_config_written(self, rc_config):
+        self._rc_config = rc_config
+        self._race_setup()
 
     def _init_view_builders(self):
         # Factory / builder functions for views
@@ -199,34 +210,40 @@ class DashboardView(Screen):
     def _race_setup(self):
         if not self._rc_api.connected:
             return
-        
+
+        # cannot autodetect until we have some GPS
+        if self._gps_sample.gps_qual <= GpsConfig.GPS_QUALITY_NO_FIX:
+            return
+
         track_cfg = self._rc_config.trackConfig
         auto_detect = track_cfg.autoDetect
-        
+
         # skip if we haven't enabled auto detection
         if not auto_detect:
             return
-        
+
         # what track is currently configured?
         current_track = TrackMap.from_track_cfg(track_cfg.track)
-        
+
         # is the currently configured track in the list of nearby tracks?
         # if so, just keep this one
         tracks = self._track_manager.find_nearby_tracks(GeoPoint.fromPoint(self._gps_sample.latitude, self._gps_sample.longitude))
-                
+
         if current_track.short_id in (t.short_id for t in tracks):
-            Logger.info('DashboardView: current track {} found in area'.format(current_track.short_id))
+            Logger.info('DashboardView: current track {}({}) found in area'.format(current_track.name, current_track.short_id))
             return
-        
-        # ok, let's select the first track found in list 
+
+        # ok, let's select the first track found in list
         if len(tracks) > 0:
             new_track = tracks[0]
-            Logger.info('DashboardView: auto selecting track {}'.format(new_track.short_id))
+            Logger.info('DashboardView: auto selecting track {}({})'.format(new_track.name, new_track.short_id))
             track_cfg.track.import_trackmap(new_track)
             self._set_rc_track(track_cfg)
-            
-            
-            
+        else:
+            Logger.info('DashboardView: could not find track to select in local area')
+
+
+
     def _race_setupx(self):
         """
         Beginnings of a 'race setup' screen that checks everything is working and set correctly. Currently
@@ -258,7 +275,7 @@ class DashboardView(Screen):
                             self._track_config.fromJson(track_config['trackCfg'])
                             Logger.debug("DashboardView: _race_setup(), got track config: {}".format(self._track_config))
 
-                            
+
                             # Only clear way to know if the track in the track config is a real track or not is by
                             # checking start/finish point. If both are 0, not a track. Can't use track id because a
                             # track id of 0 can be a user defined track
