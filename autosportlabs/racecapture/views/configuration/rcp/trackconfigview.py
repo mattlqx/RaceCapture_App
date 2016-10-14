@@ -29,6 +29,7 @@ from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.racecapture.views.util.alertview import editor_popup
 from autosportlabs.racecapture.tracks.trackmanager import TrackManager, TrackMap
 from autosportlabs.racecapture.views.configuration.rcp.track.trackbuilder import TrackBuilderView
+from autosportlabs.racecapture.geo.geopoint import GpsSample
 
 TRACK_CONFIG_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/trackconfigview.kv'
 
@@ -40,21 +41,19 @@ GPS_LOCKED_COLOR = [0.0, 1.0, 0.0, 1.0]
 class SectorPointView(BoxLayout):
     def __init__(self, **kwargs):
         super(SectorPointView, self).__init__(**kwargs)
-        self.databus = kwargs.get('databus')
+        self.gps_sample = kwargs.get('gps_sample')
         self.register_event_type('on_config_changed')
         self.point = None
         title = kwargs.get('title', None)
         if title:
             self.set_title(title)
-        Clock.schedule_interval(lambda dt: self.update_gps_status(), GPS_STATUS_POLL_INTERVAL)
+        Clock.schedule_interval(self.update_gps_status, GPS_STATUS_POLL_INTERVAL)
 
     def _get_gps_quality(self):
-        gps_quality = self.databus.channel_data.get('GPSQual')
-        return 0 if gps_quality is None else int(gps_quality)
+        return 0 if self.gps_sample is None else self.gps_sample.gps_qual
 
     def update_gps_status(self, *args):
-        gps_quality = self._get_gps_quality()
-        self.ids.gps_target.color = GPS_NOT_LOCKED_COLOR if gps_quality < GpsConfig.GPS_QUALITY_2D else GPS_LOCKED_COLOR
+        self.ids.gps_target.color = GPS_NOT_LOCKED_COLOR if self._get_gps_quality() < GpsConfig.GPS_QUALITY_2D else GPS_LOCKED_COLOR
 
     def on_config_changed(self):
         pass
@@ -65,10 +64,9 @@ class SectorPointView(BoxLayout):
     def on_update_target(self, *args):
         try:
             if self._get_gps_quality() >= GpsConfig.GPS_QUALITY_2D:
-                channel_data = self.databus.channel_data
                 point = self.point
-                point.latitude = channel_data.get('Latitude')
-                point.longitude = channel_data.get('Longitude')
+                point.latitude = self.gps_sample.latitude
+                point.longitude = self.gps_sample.longitude
                 self._refresh_point_view()
                 self.dispatch('on_config_changed')
                 toast('Target updated')
@@ -83,7 +81,7 @@ class SectorPointView(BoxLayout):
 
     def on_customize(self, *args):
         if self.point:
-            content = GeoPointEditor(point=self.point, databus=self.databus)
+            content = GeoPointEditor(self.point, self.gps_sample)
             popup = Popup(title='Edit Track Target',
                           content=content,
                           size_hint=(None, None), size=(dp(500), dp(220)))
@@ -100,10 +98,10 @@ class SectorPointView(BoxLayout):
         self._refresh_point_view()
 
 class GeoPointEditor(BoxLayout):
-    def __init__(self, point, databus, **kwargs):
+    def __init__(self, point, gps_sample, **kwargs):
         super(GeoPointEditor, self).__init__(**kwargs)
         self.point = point
-        self.databus = databus
+        self._gps_sample = gps_sample
         self.register_event_type('on_point_edited')
         self.register_event_type('on_close')
         self._refresh_view(self.point.latitude, self.point.longitude)
@@ -139,19 +137,17 @@ class GeoPointEditor(BoxLayout):
             Logger.error("GeoPointEditor: error handling paste: {}".format(e))
             toast('Required format is: Latitude, Longitude\nin NN.NNNNN decimal format', True)
 
-    def update_gps_status(self, dt, *args):
+    def update_gps_status(self, *args):
         gps_quality = self._get_gps_quality()
         self.ids.gps_target.color = GPS_NOT_LOCKED_COLOR if gps_quality < GpsConfig.GPS_QUALITY_2D else GPS_LOCKED_COLOR
 
     def _get_gps_quality(self):
-        gps_quality = self.databus.channel_data.get('GPSQual')
-        return 0 if gps_quality is None else int(gps_quality)
+        return 0 if self._gps_sample is None else self._gps_sample.gps_qual
 
     def on_update_target(self, *args):
         try:
             if self._get_gps_quality() >= GpsConfig.GPS_QUALITY_2D:
-                channel_data = self.databus.channel_data
-                self._refresh_view(channel_data.get('Latitude'), channel_data.get('Longitude'))
+                self._refresh_view(self._gps_sample.latitude, self._gps_sample.longitude)
             else:
                 toast('No GPS Fix', True)
         except Exception:
@@ -302,7 +298,7 @@ class SingleAutoConfigScreen(Screen):
 
     def on_modified(self, *args):
         pass
-    
+
     def _update_track(self):
         if self._track_cfg is None:
             return
@@ -389,17 +385,15 @@ class CustomTrackConfigScreen(Screen):
         self._update_track()
 
 class ManualTrackConfigScreen(Screen):
-    def __init__(self, databus, rc_api, **kwargs):
+    def __init__(self, gps_sample, **kwargs):
         super(ManualTrackConfigScreen, self).__init__(**kwargs)
-        self._databus = databus
-        self._rc_api = rc_api
         self._track_cfg = None
-        
+        self._gps_sample = gps_sample
         self.ids.sep_startfinish.bind(on_setting=self.on_separate_start_finish)
         self.ids.sep_startfinish.setControl(SettingsSwitch())
 
-        self.ids.start_line.databus = self._databus
-        self.ids.finish_line.databus = self._databus
+        self.ids.start_line.gps_sample = gps_sample
+        self.ids.finish_line.gps_sample = gps_sample
 
         self.separate_startfinish = False
         self._init_sector_views()
@@ -453,7 +447,7 @@ class ManualTrackConfigScreen(Screen):
 
         sectors_container.clear_widgets()
         for i in range(0, len(track_cfg.track.sectors)):
-            sectorView = SectorPointView(title='Sector {}'.format(i + 1), databus=self._databus)
+            sectorView = SectorPointView(title='Sector {}'.format(i + 1), gps_sample=self._gps_sample)
             sectorView.bind(on_config_changed=self.on_config_changed)
             sectors_container.add_widget(sectorView)
             sectorView.set_point(track_cfg.track.sectors[i])
@@ -467,8 +461,8 @@ class ManualTrackConfigScreen(Screen):
 
 class TrackConfigView(BaseConfigView):
     Builder.load_file(TRACK_CONFIG_VIEW_KV)
-    
-    def __init__(self, settings, databus, rc_api, track_manager, **kwargs):
+
+    def __init__(self, status_pump, settings, databus, rc_api, track_manager, **kwargs):
         super(TrackConfigView, self).__init__(**kwargs)
 
         self._track_db_capable = False
@@ -490,6 +484,20 @@ class TrackConfigView(BaseConfigView):
 
         self.ids.auto_detect.bind(on_setting=self.on_auto_detect)
         self.ids.auto_detect.setControl(SettingsSwitch())
+
+        self._gps_sample = GpsSample()
+        status_pump.add_listener(self.status_updated)
+
+    def status_updated(self, status):
+        status = status['status']['GPS']
+
+        quality = status['qual']
+        latitude = status['lat']
+        longitude = status['lon']
+        self._gps_sample.gps_qual = quality
+        self._gps_sample.latitude = latitude
+        self._gps_sample.longitude = longitude
+
 
     def _get_track_db_view(self):
         if self._auto_config_screen is None:
@@ -515,10 +523,10 @@ class TrackConfigView(BaseConfigView):
             self._custom_track_screen.bind(on_modified=self.on_editor_modified)
             self._custom_track_screen.on_config_updated(self._track_cfg)
         return self._custom_track_screen
-        
+
     def _get_advanced_editor_screen(self, *args):
         if self._advanced_config_screen is None:
-            self._advanced_config_screen = ManualTrackConfigScreen(databus=self._databus, rc_api=self._rc_api)
+            self._advanced_config_screen = ManualTrackConfigScreen(gps_sample=self._gps_sample, rc_api=self._rc_api)
             self._advanced_config_screen.bind(on_modified=self.on_editor_modified)
             if self._track_cfg is not None:
                 self._advanced_config_screen.on_config_updated(self._track_cfg)
@@ -526,9 +534,9 @@ class TrackConfigView(BaseConfigView):
 
     def on_editor_modified(self, *args):
         if self._advanced_config_screen is not None:
-            #synchronize the advanced config view with the updated track config
+            # synchronize the advanced config view with the updated track config
             self._advanced_config_screen.on_config_updated(self._track_cfg)
-            
+
         self.dispatch('on_modified')
 
     def on_tracks_updated(self, track_manager):

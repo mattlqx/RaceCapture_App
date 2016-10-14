@@ -30,7 +30,7 @@ from autosportlabs.racecapture.views.dashboard.tachometerview import TachometerV
 from autosportlabs.racecapture.views.dashboard.laptimeview import LaptimeView
 from autosportlabs.racecapture.views.dashboard.rawchannelview import RawChannelView
 from autosportlabs.racecapture.views.dashboard.comboview import ComboView
-from autosportlabs.racecapture.geo.geopoint import GeoPoint
+from autosportlabs.racecapture.geo.geopoint import GeoPoint, GpsSample
 
 from collections import OrderedDict
 DASHBOARD_VIEW_KV = """
@@ -78,16 +78,6 @@ DASHBOARD_VIEW_KV = """
                 color: [1.0, 1.0, 1.0, 0.2]
                 on_press: root.on_preferences()
 """
-
-class GpsSample(object):
-    def __init__(self, **kwargs):
-        self.gps_qual = 0
-        self.latitude = 0
-        self.longitude = 0
-
-    @property
-    def geopoint(self):
-        return GeoPoint.fromPoint(self.latitude, self.longitude)
 
 class DashboardView(Screen):
     """

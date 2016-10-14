@@ -129,3 +129,13 @@ class Region:
                                 inside = not inside
                 p1x, p1y = p2x, p2y
         return inside
+
+class GpsSample(object):
+    def __init__(self, **kwargs):
+        self.gps_qual = 0
+        self.latitude = 0
+        self.longitude = 0
+
+    @property
+    def geopoint(self):
+        return GeoPoint.fromPoint(self.latitude, self.longitude)

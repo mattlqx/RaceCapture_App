@@ -62,6 +62,7 @@ class ConfigView(Screen):
     def __init__(self, **kwargs):
         super(ConfigView, self).__init__(**kwargs)
 
+        self._status_pump = kwargs.get('status_pump')
         self._databus = kwargs.get('databus')
         self.rc_config = kwargs.get('rcpConfig', None)
         self.rc_api = kwargs.get('rc_api', None)
@@ -166,7 +167,8 @@ class ConfigView(Screen):
 
         runtime_channels = self._settings.runtimeChannels
 
-        default_node = attach_node('Race Tracks', None, lambda: TrackConfigView(databus=self._databus,
+        default_node = attach_node('Race Tracks', None, lambda: TrackConfigView(status_pump=self._status_pump,
+                                                                                    databus=self._databus,
                                                                                     rc_api=self.rc_api,
                                                                                     settings=self._settings,
                                                                                     track_manager=self.track_manager))
