@@ -22,7 +22,7 @@ from autosportlabs.racecapture.settings.systemsettings import SettingsListener
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
 from autosportlabs.racecapture.views.configuration.rcp.trackselectview import TrackSelectView
 from autosportlabs.racecapture.views.util.alertview import editor_popup
-from autosportlabs.racecapture.config.rcpconfig import Track, TrackConfig, Capabilities, GpsConfig
+from autosportlabs.racecapture.config.rcpconfig import Track, TrackConfig, Capabilities, GpsConfig, GpsSample
 from autosportlabs.racecapture.tracks.trackmanager import TrackMap
 # Dashboard screens
 from autosportlabs.racecapture.views.dashboard.gaugeview import GaugeView
@@ -30,7 +30,7 @@ from autosportlabs.racecapture.views.dashboard.tachometerview import TachometerV
 from autosportlabs.racecapture.views.dashboard.laptimeview import LaptimeView
 from autosportlabs.racecapture.views.dashboard.rawchannelview import RawChannelView
 from autosportlabs.racecapture.views.dashboard.comboview import ComboView
-from autosportlabs.racecapture.geo.geopoint import GeoPoint, GpsSample
+from autosportlabs.racecapture.geo.geopoint import GeoPoint
 
 from collections import OrderedDict
 DASHBOARD_VIEW_KV = """

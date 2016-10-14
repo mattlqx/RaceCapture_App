@@ -460,6 +460,26 @@ class GpsConfig(object):
 
         return gpsJson
 
+class GpsSample(object):
+    def __init__(self, **kwargs):
+        self.gps_qual = 0
+        self.latitude = 0
+        self.longitude = 0
+
+    @property
+    def is_locked(self):
+        """
+        :return True if the GPS is fixed and latitude / longitude values are valid.
+        """
+        return self.gps_qual >= GpsConfig.GPS_QUALITY_NO_FIX and self.latitude != 0 and self.longitude !=0
+    
+    @property
+    def geopoint(self):
+        """
+        Convert the GPS sample to a GeoPoint
+        :return GeoPoint 
+        """
+        return GeoPoint.fromPoint(self.latitude, self.longitude)
 
 TIMER_CHANNEL_COUNT = 3
 

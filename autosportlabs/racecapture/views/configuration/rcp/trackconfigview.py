@@ -18,7 +18,7 @@ from fieldlabel import FieldLabel
 from settingsview import *
 from valuefield import FloatValueField
 from iconbutton import LabelIconButton
-from autosportlabs.racecapture.config.rcpconfig import GpsConfig
+from autosportlabs.racecapture.config.rcpconfig import GpsConfig, GpsSample
 from autosportlabs.racecapture.views.util.alertview import alertPopup
 from autosportlabs.racecapture.views.tracks.tracksview import TrackInfoView, TracksView
 from autosportlabs.racecapture.views.configuration.rcp.trackselectview import TrackSelectView
@@ -29,7 +29,7 @@ from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.racecapture.views.util.alertview import editor_popup
 from autosportlabs.racecapture.tracks.trackmanager import TrackManager, TrackMap
 from autosportlabs.racecapture.views.configuration.rcp.track.trackbuilder import TrackBuilderView
-from autosportlabs.racecapture.geo.geopoint import GpsSample
+
 
 TRACK_CONFIG_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/trackconfigview.kv'
 
@@ -290,10 +290,11 @@ class AutomaticTrackConfigScreen(Screen):
         self.ids.addtrack.disabled = disabled
 
 class SingleAutoConfigScreen(Screen):
-    def __init__(self, track_manager, **kwargs):
+    def __init__(self, track_manager, gps_sample, **kwargs):
         super(SingleAutoConfigScreen, self).__init__(**kwargs)
         self.register_event_type('on_modified')
         self._track_manager = track_manager
+        self._gps_sample = gps_sample
         self._track_cfg = None
 
     def on_modified(self, *args):
@@ -326,7 +327,9 @@ class SingleAutoConfigScreen(Screen):
                     self.dispatch('on_modified')
             popup.dismiss()
 
-        content = TrackSelectView(self._track_manager)
+        #use the current location, if available
+        current_point = self._gps_sample.geopoint() if self._gps_sample.is_locked else None
+        content = TrackSelectView(self._track_manager, current_location=current_point)
         self._track_select_view = content
         popup = editor_popup("Select a track", content, on_track_select_close)
         popup.open()
@@ -510,7 +513,7 @@ class TrackConfigView(BaseConfigView):
 
     def _get_single_track_view(self):
         if self._single_autoconfig_screen is None:
-            self._single_autoconfig_screen = SingleAutoConfigScreen(track_manager=self._track_manager)
+            self._single_autoconfig_screen = SingleAutoConfigScreen(track_manager=self._track_manager, gps_sample=self._gps_sample)
             self._single_autoconfig_screen.bind(on_modified=self.on_editor_modified)
             if self._track_cfg is not None:
                 self._single_autoconfig_screen.on_config_updated(self._track_cfg)
