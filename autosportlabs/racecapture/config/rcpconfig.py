@@ -461,6 +461,9 @@ class GpsConfig(object):
         return gpsJson
 
 class GpsSample(object):
+    """
+    Represents a GPS sample with accompanying quality indicator
+    """
     def __init__(self, **kwargs):
         self.gps_qual = 0
         self.latitude = 0
