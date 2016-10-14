@@ -256,6 +256,8 @@ class DashboardView(Screen):
         def on_race_setup_close(instance, answer):
             if answer:
                 selected_track = content.selected_track
+                if selected_track is None:
+                    return
                 Logger.debug("DashboardView: setting track: {}".format(selected_track))
                 track_cfg.track.import_trackmap(selected_track)
                 self._set_rc_track(track_cfg)

@@ -317,8 +317,10 @@ class SingleAutoConfigScreen(Screen):
     def on_set_track_press(self, *args):
         def on_track_select_close(instance, answer):
             if answer:
+                selected_track = content.selected_track
+                if selected_track is None:
+                    return
                 if self._track_cfg:
-                    selected_track = self._track_select_view.selected_track
                     Logger.info("SingleAutoConfigScreen: setting track: {}".format(selected_track))
                     track_cfg = Track.fromTrackMap(selected_track)
                     self._track_cfg.track = track_cfg
@@ -327,10 +329,9 @@ class SingleAutoConfigScreen(Screen):
                     self.dispatch('on_modified')
             popup.dismiss()
 
-        #use the current location, if available
-        current_point = self._gps_sample.geopoint() if self._gps_sample.is_locked else None
+        # use the current location, if available
+        current_point = self._gps_sample.geopoint if self._gps_sample.is_locked else None
         content = TrackSelectView(self._track_manager, current_location=current_point)
-        self._track_select_view = content
         popup = editor_popup("Select a track", content, on_track_select_close)
         popup.open()
 
