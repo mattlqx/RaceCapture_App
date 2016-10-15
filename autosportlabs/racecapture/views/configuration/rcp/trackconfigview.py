@@ -30,15 +30,39 @@ from autosportlabs.racecapture.views.util.alertview import editor_popup
 from autosportlabs.racecapture.tracks.trackmanager import TrackManager, TrackMap
 from autosportlabs.racecapture.views.configuration.rcp.track.trackbuilder import TrackBuilderView
 
-
-TRACK_CONFIG_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/trackconfigview.kv'
-
-
 GPS_STATUS_POLL_INTERVAL = 1.0
 GPS_NOT_LOCKED_COLOR = [0.7, 0.7, 0.0, 1.0]
 GPS_LOCKED_COLOR = [0.0, 1.0, 0.0, 1.0]
 
+SECTOR_POINT_VIEW_KV = """
+<SectorPointView>:
+    BoxLayout:
+        orientation: 'horizontal'
+        Label:
+            text: "Sector"
+            id: title
+            size_hint_x: 0.25
+        FieldLabel:
+            size_hint_x: 0.25        
+            id: lat
+        FieldLabel:
+            size_hint_x: 0.25
+            id: lon
+        IconButton:
+            id: gps_target
+            size_hint_x: 0.125
+            text: u'\uf05b'
+            font_size: self.height * 0.6
+            on_release: root.on_update_target(*args)
+        IconButton:
+            size_hint_x: 0.125
+            text: u'\uf013'
+            font_size: self.height * 0.6
+            on_release: root.on_customize(*args)
+"""
+
 class SectorPointView(BoxLayout):
+    Builder.load_string(SECTOR_POINT_VIEW_KV)
     def __init__(self, **kwargs):
         super(SectorPointView, self).__init__(**kwargs)
         self.gps_sample = kwargs.get('gps_sample')
@@ -97,7 +121,57 @@ class SectorPointView(BoxLayout):
         self.point = point
         self._refresh_point_view()
 
+GEOPOINT_EDITOR_KV = """
+<GeoPointEditor>:
+    orientation: 'vertical'
+    BoxLayout:
+        size_hint_y: 0.75
+        orientation: 'horizontal'
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_x: 0.8
+            BoxLayout:
+                size_hint_y: 0.3
+                orientation: 'horizontal'
+                FieldLabel:
+                    halign: 'center'
+                    text: 'Latitude'
+                FieldLabel:
+                    halign: 'center'
+                    text: 'Longitude'
+            BoxLayout:
+                size_hint_y: 0.3
+                orientation: 'horizontal'
+                FloatValueField:
+                    id: lat
+                    on_text: root.on_latitude(*args)                
+                FloatValueField:
+                    id: lon
+                    on_text: root.on_longitude(*args)
+            BoxLayout:
+                size_hint_y: 0.4
+                
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: dp(20)
+            padding: (dp(5), dp(5))
+            size_hint_x: 0.2
+            IconButton: 
+                text: u'\uf0ea'
+                id: paste
+                on_press: root.on_paste_point()
+            IconButton:
+                text: u'\uf05b'
+                id: gps_target
+                on_press: root.on_update_target()
+    IconButton:
+        size_hint_y: 0.25
+        text: "\357\200\214"
+        on_press: root.close()
+"""
+
 class GeoPointEditor(BoxLayout):
+    Builder.load_string(GEOPOINT_EDITOR_KV)
     def __init__(self, point, gps_sample, **kwargs):
         super(GeoPointEditor, self).__init__(**kwargs)
         self.point = point
@@ -165,12 +239,42 @@ class GeoPointEditor(BoxLayout):
             toast('NN.NNNNN decimal latitude/longitude format required', True)
         self.dispatch('on_close')
 
+EMPTY_TRACK_DB_VIEW_KV = """
+<EmptyTrackDbView>:
+    BoxLayout:
+        orientation: 'vertical'
+        pos_hint: {'center_x': .5, 'center_y': .5}        
+        Label:
+            font_size: dp(20)
+            text: 'No tracks selected'
+        Label:
+            height: dp(30)
+        Label:
+            text: 'Press the add button to select your favorite tracks'
+"""
 
 class EmptyTrackDbView(BoxLayout):
+    Builder.load_string(EMPTY_TRACK_DB_VIEW_KV)
     def __init__(self, **kwargs):
         super(EmptyTrackDbView, self).__init__(**kwargs)
 
+TRACK_DB_ITEM_VIEW_KV = """
+<TrackDbItemView>:
+    BoxLayout:
+        orientation: 'horizontal'
+        TrackInfoView:
+            size_hint_x: 0.92
+            id: trackinfo
+        AnchorLayout:
+            size_hint_x: 0.08
+            IconButton:
+                size_hint: (0.5, 0.15)
+                text: '\357\200\224'
+                on_release: root.remove_track()
+"""
+
 class TrackDbItemView(BoxLayout):
+    Builder.load_string(TRACK_DB_ITEM_VIEW_KV)
     def __init__(self, **kwargs):
         super(TrackDbItemView, self).__init__(**kwargs)
         track = kwargs.get('track', None)
@@ -185,7 +289,24 @@ class TrackDbItemView(BoxLayout):
     def remove_track(self):
         self.dispatch('on_remove_track', self.index)
 
+TRACK_SELECTION_POPUP_KV = """
+<TrackSelectionPopup>:
+    orientation: 'vertical'
+    TracksBrowser:
+        trackHeight: dp(200)
+        id: browser
+        size_hint_y: 0.90
+    BoxLayout:
+        size_hint_y: 0.1
+        orientation: 'horizontal'
+        IconButton:
+            text: '\357\200\214'
+            color: ColorScheme.get_accent()
+            on_release: root.confirm_add_tracks()
+"""
+
 class TrackSelectionPopup(BoxLayout):
+    Builder.load_string(TRACK_SELECTION_POPUP_KV)
     def __init__(self, **kwargs):
         super(TrackSelectionPopup, self).__init__(**kwargs)
         self.register_event_type('on_tracks_selected')
@@ -201,7 +322,41 @@ class TrackSelectionPopup(BoxLayout):
     def confirm_add_tracks(self):
         self.dispatch('on_tracks_selected', self.track_browser.selectedTrackIds)
 
+AUTOMATIC_TRACK_CONFIG_SCREEN_KV = """
+<AutomaticTrackConfigScreen>:
+    AnchorLayout:
+        AnchorLayout:
+            spacing: dp(10)
+            ScrollContainer:
+                canvas.before:
+                    Color:
+                        rgba: 0.05, 0.05, 0.05, 1
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                size_hint_y: 0.95
+                id: scrltracks
+                do_scroll_x:False
+                do_scroll_y:True
+                GridLayout:
+                    id: tracksgrid
+                    padding: [dp(10), dp(10)]
+                    spacing: [dp(10), dp(10)]
+                    size_hint_y: None
+                    cols: 1
+        AnchorLayout:
+            anchor_y: 'bottom'
+            IconButton:
+                color: ColorScheme.get_accent()
+                size_hint: (None, None)
+                height: root.height * .15
+                text: u'\uf055'
+                on_release: root.on_add_track_db()
+                disabled: True
+                id: addtrack
+"""
 class AutomaticTrackConfigScreen(Screen):
+    Builder.load_string(AUTOMATIC_TRACK_CONFIG_SCREEN_KV)
     track_manager = ObjectProperty(None)
     TRACK_ITEM_MIN_HEIGHT = 200
     def __init__(self, **kwargs):
@@ -289,7 +444,31 @@ class AutomaticTrackConfigScreen(Screen):
     def disableView(self, disabled):
         self.ids.addtrack.disabled = disabled
 
+SINGLE_AUTO_CONFIG_SCREEN_KV = """
+<SingleAutoConfigScreen>:
+    AnchorLayout:
+        TrackInfoView:
+            id: track_info        
+        FieldLabel:
+            id: info_message
+            size_hint_y: 0.2
+            halign: 'center'
+            text: ''    
+        
+        AnchorLayout:
+            anchor_x: 'right'
+            anchor_y: 'bottom'
+            padding: (sp(10), sp(10))
+            IconButton:
+                color: ColorScheme.get_accent()
+                size_hint: (None, None)
+                height: root.height * .15
+                text: u'\uf044'
+                on_release: root.on_set_track_press()
+"""
+
 class SingleAutoConfigScreen(Screen):
+    Builder.load_string(SINGLE_AUTO_CONFIG_SCREEN_KV)
     def __init__(self, track_manager, gps_sample, **kwargs):
         super(SingleAutoConfigScreen, self).__init__(**kwargs)
         self.register_event_type('on_modified')
@@ -337,7 +516,42 @@ class SingleAutoConfigScreen(Screen):
         popup.open()
 
 
+CUSTOM_TRACK_CONFIG_SCREEN_KV = """
+<CustomTrackConfigScreen>:
+    AnchorLayout:
+        TrackInfoView:
+            id: track_info
+        AnchorLayout:
+            anchor_x: 'right'
+            anchor_y: 'bottom'
+            padding: (sp(10), sp(10))
+
+            IconButton:
+                color: ColorScheme.get_accent()
+                size_hint: (None, None)
+                height: root.height * .15
+                text: u'\uf044'
+                on_release: root.on_advanced_track_editor()
+        AnchorLayout:
+            anchor_x: 'left'
+            anchor_y: 'bottom'
+            padding: (sp(10), sp(10))
+            
+            IconButton:
+                color: ColorScheme.get_accent()
+                size_hint: (None, None)
+                height: root.height * .15
+                text: u'\uf055'
+                on_release: root.track_builder()
+        FieldLabel:
+            id: info_message
+            size_hint_y: 0.2
+            halign: 'center'
+            text: ''    
+"""
+
 class CustomTrackConfigScreen(Screen):
+    Builder.load_string(CUSTOM_TRACK_CONFIG_SCREEN_KV)
     def __init__(self, track_manager, databus, rc_api, **kwargs):
         super(CustomTrackConfigScreen, self).__init__(**kwargs)
         self._track_manager = track_manager
@@ -391,7 +605,46 @@ class CustomTrackConfigScreen(Screen):
         self._track_cfg = track_cfg
         self._update_track()
 
+MANUAL_TRACK_CONFIG_SCREEN_KV = """
+<ManualTrackConfigScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        SettingsView:
+            size_hint_y: 0.2
+            id: sep_startfinish
+            label_text: 'Separate start and finish lines'
+            help_text: 'Enable for Stage, Hill Climb or AutoX type courses'
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: 0.8
+
+            SectorPointView:
+                id: start_line
+                size_hint_y: 0.15
+            SectorPointView:
+                id: finish_line
+                size_hint_y: 0.15
+
+            ScrollContainer:
+                id: scroller
+                size_hint_y: 0.6
+                do_scroll_x: False
+                GridLayout:
+                    canvas.before:
+                        Color:
+                            rgba: 0.1, 0.1, 0.1, 1.0
+                        Rectangle:
+                            pos: self.pos
+                            size: self.size
+                    id: sectors_grid
+                    row_default_height: root.height * 0.12
+                    row_force_default: True
+                    size_hint_y: None
+                    height: max(self.minimum_height, scroller.height)
+                    cols: 1
+"""
 class ManualTrackConfigScreen(Screen):
+    Builder.load_string(MANUAL_TRACK_CONFIG_SCREEN_KV)
     def __init__(self, gps_sample, **kwargs):
         super(ManualTrackConfigScreen, self).__init__(**kwargs)
         self._track_cfg = None
@@ -465,9 +718,22 @@ class ManualTrackConfigScreen(Screen):
         self._track_cfg = track_cfg
         self.update_trackview_state()
 
-
+TRACK_CONFIG_VIEW_KV = """
+<TrackConfigView>:
+    orientation: 'vertical'
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint_y: 0.20
+        SettingsView:
+            id: auto_detect
+            label_text: 'Automatic race track detection'
+            help_text: 'Automatically detect and configure your favorite tracks'
+    ScreenManager:
+        id: screen_manager
+        size_hint_y: 0.80
+"""
 class TrackConfigView(BaseConfigView):
-    Builder.load_file(TRACK_CONFIG_VIEW_KV)
+    Builder.load_string(TRACK_CONFIG_VIEW_KV)
 
     def __init__(self, status_pump, settings, databus, rc_api, track_manager, **kwargs):
         super(TrackConfigView, self).__init__(**kwargs)
