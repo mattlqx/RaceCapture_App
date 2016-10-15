@@ -599,6 +599,7 @@ class TrackConfigView(BaseConfigView):
             track_cfg.autoDetect = value
             track_cfg.stale = True
             self.dispatch('on_modified')
+            self.ids.auto_detect.help_text = 'Automatically detect and configure your favorite tracks' if value else 'Build and customize your own track map'
         self._select_screen()
 
     def _on_advanced_editor(self, *args):
