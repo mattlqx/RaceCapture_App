@@ -142,10 +142,14 @@ class UserPrefs(EventDispatcher):
     def get_last_selected_track_timestamp(self):
         return self.get_pref_int('track_detection', 'last_selected_track_timestamp')
 
-    def set_last_selected_track(self, track_id, timestamp):
+    def get_user_cancelled_location(self):
+        return self.get_pref('track_detection', 'user_cancelled_location')
+    
+    def set_last_selected_track(self, track_id, timestamp, user_cancelled_location='0,0'):
         self.set_pref('track_detection', 'last_selected_track_id', track_id)
         self.set_pref('track_detection', 'last_selected_track_timestamp', timestamp)
-
+        self.set_pref('track_detection', 'user_cancelled_location', user_cancelled_location)
+        
     @property
     def datastore_location(self):
         return os.path.join(self.data_dir, 'datastore.sq3')
@@ -193,6 +197,7 @@ class UserPrefs(EventDispatcher):
         self.config.adddefaultsection('track_detection')
         self.config.setdefault('track_detection', 'last_selected_track_id', 0)
         self.config.setdefault('track_detection', 'last_selected_track_timestamp', 0)
+        self.config.setdefault('track_detection', 'user_cancelled_location', '0,0')
 
         self.config.adddefaultsection('analysis_preferences')
         self.config.setdefault('analysis_preferences', 'selected_sessions_laps', '{"sessions":{}}')

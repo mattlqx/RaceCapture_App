@@ -54,9 +54,10 @@ Builder.load_string('''
         id: buttons
         cols: 2
         size_hint_y: None
-        height: '44sp'
-        spacing: '5sp'
+        height: '60sp'
+        #spacing: '5sp'
         IconButton:
+            id: ok
             text: u'\uf00c'
             on_press: root.dispatch('on_answer', True)
         IconButton:
@@ -93,8 +94,8 @@ class ConfirmPopup(GridLayout):
     def on_answer(self, *args):
         pass    
 
-def editor_popup(title, content, answerCallback, size_hint=(0.8, 1.0)):
-    content = EditorPopup(content=content)
+def editor_popup(title, content, answerCallback, size_hint=(0.8, 1.0), hide_ok=False):
+    content = EditorPopup(content=content, hide_ok=hide_ok)
     content.bind(on_answer=answerCallback)
     popup = Popup(title=title,
                     content=content,
@@ -107,9 +108,11 @@ def editor_popup(title, content, answerCallback, size_hint=(0.8, 1.0)):
 class EditorPopup(GridLayout):
     content = ObjectProperty(None)
     
-    def __init__(self,**kwargs):
+    def __init__(self, hide_ok = False, **kwargs):
         self.register_event_type('on_answer')
         super(EditorPopup,self).__init__(**kwargs)
+        if hide_ok:
+            self.ids.buttons.remove_widget(self.ids.ok)
     
     def on_content(self, instance, value):
         Clock.schedule_once(lambda dt: self.ids.content.add_widget(value))

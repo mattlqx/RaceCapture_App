@@ -23,7 +23,7 @@ from utils import *
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from iconbutton import LabelIconButton
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
-from autosportlabs.racecapture.tracks.trackmanager import TrackMap
+from autosportlabs.racecapture.tracks.trackmanager import TrackManager, TrackMap
 
 Builder.load_file('autosportlabs/racecapture/views/tracks/tracksview.kv')
 

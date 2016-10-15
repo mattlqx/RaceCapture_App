@@ -37,11 +37,8 @@ from autosportlabs.racecapture.config.rcpconfig import Track
 from autosportlabs.util.timeutil import time_to_epoch, epoch_to_time
 from kivy.logger import Logger
 
-TRACK_DEFAULT_SEARCH_RADIUS_METERS = 2000
-TRACK_DEFAULT_SEARCH_BEARING_DEGREES = 360
-TRACK_DOWNLOAD_TIMEOUT = 30
 
-class TrackMap:
+class TrackMap(object):
     """Very generic object wrapper around RCL's API endpoint for venues
     """
     DEFAULT_TRACK_NAME = 'Track'
@@ -159,12 +156,15 @@ class TrackMap:
         return track_dict
 
 
-class TrackManager:
+class TrackManager(object):
     """Manages fetching tracks from RCL's API, figuring out if any tracks have been updated, saving and loading tracks
     """
     RCP_VENUE_URL = 'https://podium.live/api/v1/venues'
     READ_RETRIES = 3
     RETRY_DELAY = 1.0
+    TRACK_DEFAULT_SEARCH_RADIUS_METERS = 2000
+    TRACK_DEFAULT_SEARCH_BEARING_DEGREES = 360
+    TRACK_DOWNLOAD_TIMEOUT = 30
 
     def __init__(self, **kwargs):
         self.on_progress = lambda self, value: value
@@ -221,7 +221,7 @@ class TrackManager:
                 return track
         return None
 
-    def find_nearby_tracks(self, point, searchRadius=TRACK_DEFAULT_SEARCH_RADIUS_METERS, searchBearing=TRACK_DEFAULT_SEARCH_BEARING_DEGREES):
+    def find_nearby_tracks(self, point, searchRadius=None, searchBearing=None):
         """
         find a list of nearby tracks near the specified point, ordered by most recent first.
         :param point the point to reference
@@ -231,6 +231,11 @@ class TrackManager:
         :param searchBearing the bearing in degrees to search. 
         :type searchBearing float. Defaults to TRACK_DEFAULT_SEARCH_BEARING_DEGREES
         """
+        if searchRadius is None:
+            searchRadius = TrackManager.TRACK_DEFAULT_SEARCH_RADIUS_METERS
+        if searchBearing is None:
+            searchBearing = TrackManager.TRACK_DEFAULT_SEARCH_BEARING_DEGREES
+            
         tracks = []
         radius = point.metersToDegrees(searchRadius, searchBearing)
         for trackId in self.tracks.keys():
@@ -285,7 +290,7 @@ class TrackManager:
             try:
                 opener = urllib2.build_opener()
                 opener.addheaders = [('Accept', 'application/json'), ('Accept-encoding', 'gzip')]
-                response = opener.open(uri, timeout=TRACK_DOWNLOAD_TIMEOUT)
+                response = opener.open(uri, timeout=TrackMap.TRACK_DOWNLOAD_TIMEOUT)
                 data = response.read()
                 if response.info().get('Content-Encoding') == 'gzip':
                     string_buffer = StringIO(data)

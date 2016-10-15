@@ -321,7 +321,7 @@ class SingleAutoConfigScreen(Screen):
                 if selected_track is None:
                     return
                 if self._track_cfg:
-                    Logger.info("SingleAutoConfigScreen: setting track: {}".format(selected_track))
+                    Logger.info("SingleAutoConfigScreen: setting track: {}".format(selected_track.name))
                     track_cfg = Track.fromTrackMap(selected_track)
                     self._track_cfg.track = track_cfg
                     self._track_cfg.stale = True

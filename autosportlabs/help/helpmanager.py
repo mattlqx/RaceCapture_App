@@ -24,14 +24,14 @@ HELP_INFO_LAYOUT='''
             pos: self.pos
             size: self.size
     padding: (sp(10), sp(10))
-    Label:
+    FieldLabel:
         text: root.title_text
-        font_name: 'resource/fonts/ASL_light.ttf'
-        font_size: self.height * 0.8
+        font_size: self.height * 1.0
+        halign: 'center'
         size_hint_y: 0.15
-    Label:
+    FieldLabel:
         size_hint_y: 0.65
-        font_name: 'resource/fonts/ASL_light.ttf'
+        halign: 'center'
         text: root.help_text
         #size_hint_y: None
         text_size: self.width, None

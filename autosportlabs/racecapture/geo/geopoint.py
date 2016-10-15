@@ -20,7 +20,7 @@ class GeoPoint:
         :returns the new instance
         :type GeoPoint
         """
-        if not latitude or not longitude:
+        if latitude is None or longitude is None:
             raise ValueError("Latitude and Longitude must be provided")
         g = GeoPoint()
         g.latitude = latitude
@@ -40,6 +40,22 @@ class GeoPoint:
             g.longitude = geoPointJson[1]
         return g
 
+    @classmethod
+    def from_string(cls, point_string):
+        try:
+            lat_lon = point_string.split(',')
+            lat = float(lat_lon[0])
+            lon = float(lat_lon[1])
+            g = GeoPoint()
+            g.latitude = lat
+            g.longitude = lon
+            return g
+        except (ValueError, IndexError) as e:
+            raise Exception('GeoPoint: Invalid point string specified {} {}'.format(point_string, e))
+
+    def __str__(self):
+        return '{},{}'.format(self.latitude, self.longitude)
+            
     def fromJson(self, geoPointJson):
         try:
             self.latitude = geoPointJson[0]

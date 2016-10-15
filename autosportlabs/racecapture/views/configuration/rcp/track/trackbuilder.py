@@ -145,7 +145,7 @@ TRACK_TYPE_SELECTOR_KV = """
         orientation: 'vertical'
         FieldLabel:
             size_hint_y: 0.1
-            text: 'Select Track Type'
+            text: 'Setup Race Track'
             font_size: self.height * 0.7
         BoxLayout:
             size_hint_y: 0.9

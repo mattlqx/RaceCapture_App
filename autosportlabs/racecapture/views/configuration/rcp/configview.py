@@ -31,6 +31,7 @@ from autosportlabs.racecapture.views.util.alertview import alertPopup, confirmPo
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.racecapture.theme.color import ColorScheme
 
+
 RCP_CONFIG_FILE_EXTENSION = '.rcp'
 
 CONFIG_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/configview.kv'
