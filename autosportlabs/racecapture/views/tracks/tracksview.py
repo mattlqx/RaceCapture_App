@@ -244,14 +244,20 @@ class TracksBrowser(BoxLayout):
         self.tracksUpdatePopup = popup
 
     def on_update_check_success(self):
-        self.tracksUpdatePopup.content.on_message('Processing...')
-        Clock.schedule_once(lambda dt: self.refreshTrackList())
+        def success():
+            # do this in the UI thread
+            self.tracksUpdatePopup.content.on_message('Processing...')
+            Clock.schedule_once(lambda dt: self.refreshTrackList())
+        Clock.schedule_once(lambda dt: success())
+        
 
     def on_update_check_error(self, details):
-        self.dismissPopups()
-        Clock.schedule_once(lambda dt: self.refreshTrackList())
-        Logger.error('TracksBrowser: Error updating: {}'.format(details))
-        alertPopup('Error Updating', 'There was an error updating the track list.\n\nPlease check your network connection and try again')
+        def error(details):
+            self.dismissPopups(details)
+            Clock.schedule_once(lambda dt: self.refreshTrackList())
+            Logger.error('TracksBrowser: Error updating: {}'.format(details))
+            alertPopup('Error Updating', 'There was an error updating the track list.\n\nPlease check your network connection and try again')
+        Clock.schedule_once(lambda dt: error(details))
 
     def on_update_check(self):
         self.setViewDisabled(True)

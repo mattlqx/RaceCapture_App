@@ -290,7 +290,7 @@ class TrackManager(object):
             try:
                 opener = urllib2.build_opener()
                 opener.addheaders = [('Accept', 'application/json'), ('Accept-encoding', 'gzip')]
-                response = opener.open(uri, timeout=TrackMap.TRACK_DOWNLOAD_TIMEOUT)
+                response = opener.open(uri, timeout=TrackManager.TRACK_DOWNLOAD_TIMEOUT)
                 data = response.read()
                 if response.info().get('Content-Encoding') == 'gzip':
                     string_buffer = StringIO(data)

@@ -319,6 +319,7 @@ class SingleAutoConfigScreen(Screen):
             if answer:
                 selected_track = content.selected_track
                 if selected_track is None:
+                    toast('Please select a track')
                     return
                 if self._track_cfg:
                     Logger.info("SingleAutoConfigScreen: setting track: {}".format(selected_track.name))
