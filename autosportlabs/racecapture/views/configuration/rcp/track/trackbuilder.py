@@ -216,17 +216,18 @@ TRACK_MAP_CREATOR_KV = """
                 id: track
             AnchorLayout:
                 anchor_y: 'top'
-                anchor_x: 'right'
+                anchor_x: 'left'
                 GridLayout:
+                    spacing: sp(10)
                     cols:2
                     rows:1
-                    size_hint_y: 0.1
+                    size_hint_y: 0.12
                     size_hint_x: 0.1
                     IconButton:
                         id: internal_status
-                        text: u'\uf10a'
+                        text: u'\uf10b'
                         color: [0.3, 0.3, 0.3, 0.2]        
-                        font_size: self.height * 0.8            
+                        font_size: self.height
                     IconButton:
                         id: gps_status
                         text: u'\uf041'

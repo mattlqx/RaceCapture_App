@@ -150,14 +150,14 @@
         AnchorLayout:
             anchor_y: 'bottom'
         	IconButton:
-                color: ColorScheme.get_accent()        	
+                color: ColorScheme.get_accent()
                 size_hint: (None, None)
                 height: root.height * .15
         		text: u'\uf055'
         		on_release: root.on_add_track_db()
     	    	disabled: True
     	    	id: addtrack
-	        
+
 <CustomTrackConfigScreen>:
     AnchorLayout:
         TrackInfoView:
@@ -166,24 +166,24 @@
             anchor_x: 'right'
             anchor_y: 'bottom'
             padding: (sp(10), sp(10))
-            LabelIconButton:
-                icon: u'\uf044'
-                title: 'Edit'
-                icon_size: self.height * 0.5
-                title_font_size: self.height * 0.5
-                size_hint: (0.25, 0.2)
-                on_press: root.on_advanced_track_editor()
+
+            IconButton:
+                color: ColorScheme.get_accent()
+                size_hint: (None, None)
+                height: root.height * .15
+                text: u'\uf044'
+                on_release: root.on_advanced_track_editor()
         AnchorLayout:
             anchor_x: 'left'
             anchor_y: 'bottom'
             padding: (sp(10), sp(10))
-            LabelIconButton:
-                icon: u'\uf018'
-                title: 'Create'
-                icon_size: self.height * 0.5
-                title_font_size: self.height * 0.5
-                on_press: root.track_builder()
-                size_hint: (0.25, 0.2)
+            
+            IconButton:
+                color: ColorScheme.get_accent()
+                size_hint: (None, None)
+                height: root.height * .15
+                text: u'\uf055'
+                on_release: root.track_builder()
         FieldLabel:
             id: info_message
             size_hint_y: 0.2
