@@ -216,7 +216,7 @@ class RaceCaptureApp(App):
         Clock.schedule_once(lambda dt: self.notifyTracksUpdated())
 
     def loadCurrentTracksError(self, details):
-        alertPopup('Error Loading Tracks', str(details))
+        Clock.schedule_once(lambda dt: alertPopup('Error Loading Tracks', str(details)))
 
     def init_data(self):
         self.trackManager.init(None, self.loadCurrentTracksSuccess, self.loadCurrentTracksError)
