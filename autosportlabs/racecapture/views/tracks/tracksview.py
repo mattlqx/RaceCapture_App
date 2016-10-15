@@ -278,7 +278,7 @@ class TracksBrowser(BoxLayout):
     def refreshTrackList(self):
         region = self.ids.regions.text
         if region == 'Nearby':
-            foundIds = [t.track_id for t in self.trackManager.find_nearby_tracks(self.current_location)]
+            foundIds = [t.track_id for t in self._get_nearby_tracks()]
         else:
             foundIds = self.trackManager.filter_tracks_by_region(region)
         search = self.ids.namefilter.text
@@ -312,13 +312,19 @@ class TracksBrowser(BoxLayout):
             self.addNextTrack(0, track_ids)
             self.tracks_loading = True
 
+    def _get_nearby_tracks(self):
+        if self.current_location is not None:
+            return self.trackManager.find_nearby_tracks(self.current_location)
+        else:
+            return []
+        
     def initRegionsList(self):
         regions = self.trackManager.regions
         regions_spinner = self.ids.regions
         values = []
         # if we're specifying our current location, then the first option is to
         # show nearby tracks
-        if self.current_location is not None:
+        if len(self._get_nearby_tracks()) > 0:
             values.append('Nearby')
 
         for region in regions:

@@ -45,17 +45,19 @@ TRACK_BUILDER_KV = """
 
 class TrackBuilderView(BoxLayout):
     Builder.load_string(TRACK_BUILDER_KV)
-    def __init__(self, rc_api, databus, **kwargs):
+    def __init__(self, rc_api, databus, track_manager, current_point = None, **kwargs):
         super(TrackBuilderView, self).__init__(**kwargs)
         self._rc_api = rc_api
         self._databus = databus
+        self._track_manager = track_manager
+        self._current_point = current_point
         self._screens = []
         self._init_view()
         self._track = TrackMap.create_new()
         self._track.custom = True
         self.register_event_type('on_track_complete')
 
-    def on_track_complete(self, track):
+    def on_track_complete(self, track_map):
         pass
 
     def cleanup(self):
@@ -63,11 +65,20 @@ class TrackBuilderView(BoxLayout):
             screen.cleanup()
 
     def _init_view(self):
-        screen = self._get_track_type_selector()
-        self._switch_to_screen(screen)
+        # show the track builder immediately, or select an existing track, if any are in the area
+        if self._current_point is None or len(self._track_manager.find_nearby_tracks(self._current_point)) == 0:
+            self._switch_to_screen(self._get_track_type_selector())
+        else:
+            self._switch_to_screen(self._get_existing_track_selector())
 
-    def _get_track_map_creator(self, type):
-        screen = TrackMapCreator(rc_api=self._rc_api, databus=self._databus, track=self._track, track_type=type)
+    def _get_existing_track_selector(self):
+        screen = ExistingTrackSelector(self._track_manager, self._current_point)
+        screen.bind(on_track_selected = self._on_existing_track_selected)
+        self._screens.append(screen)
+        return screen
+        
+    def _get_track_map_creator(self, track_type):
+        screen = TrackMapCreator(rc_api=self._rc_api, databus=self._databus, track=self._track, track_type=track_type)
         screen.bind(on_trackmap_complete=self._on_trackmap_complete)
         self._screens.append(screen)
         return screen
@@ -95,9 +106,37 @@ class TrackBuilderView(BoxLayout):
     def _on_track_customized(self, instance, track):
         self.dispatch('on_track_complete', track)
 
+    def _on_existing_track_selected(self, instance, track):
+        self.dispatch('on_track_complete', track)
+        
     def _switch_to_screen(self, screen):
         if self.ids.screen_manager.current_screen != screen:
             self.ids.screen_manager.switch_to(screen)
+
+EXISTING_TRACK_SELECTOR_KV = """
+<ExistingTrackSelector>:
+    TrackSelectView:
+        id: track_select
+"""
+class ExistingTrackSelector(Screen):
+
+    Builder.load_string(EXISTING_TRACK_SELECTOR_KV)
+
+    def __init__(self, track_manager, current_point, **kwargs):
+        super(ExistingTrackSelector, self).__init__(**kwargs)
+        self.register_event_type('on_track_selected')
+        self.ids.track_select.bind(on_track_selected=self.track_selected)
+        self.ids.track_select.init_view(track_manager, current_point)
+
+    def track_selected(self, instance, track):
+        self.dispatch('on_track_selected', track)
+        
+    def on_track_selected(self, track):
+        pass
+
+    def cleanup(self):
+        pass
+
 
 
 TRACK_TYPE_SELECTOR_KV = """
@@ -432,9 +471,9 @@ class TrackMapCreator(Screen):
     _simulated_trackmap_index = 0
 
     # test key sequence to simulate walking a course - needed for testing
-    # key sequence is ctrl-F1
+    # the special key is '`'
     def key_action(self, instance, keyboard, keycode, text, modifiers):
-        if 'ctrl' in modifiers and keycode == 58:
+        if text == '`':
             point = GeoPoint.fromPoint(SIMULATED_TRACKMAP_POINTS[self._simulated_trackmap_index][0],
                                        SIMULATED_TRACKMAP_POINTS[self._simulated_trackmap_index][1])
             self._update_current_point(point)

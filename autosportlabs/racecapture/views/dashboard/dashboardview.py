@@ -20,7 +20,7 @@ from autosportlabs.racecapture.views.dashboard.widgets.digitalgauge import Digit
 from autosportlabs.racecapture.views.dashboard.widgets.stopwatch import PitstopTimerView
 from autosportlabs.racecapture.settings.systemsettings import SettingsListener
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
-from autosportlabs.racecapture.views.configuration.rcp.trackselectview import TrackSelectView
+from autosportlabs.racecapture.views.configuration.rcp.track.trackbuilder import TrackBuilderView
 from autosportlabs.racecapture.views.util.alertview import editor_popup
 from autosportlabs.racecapture.config.rcpconfig import Track, TrackConfig, Capabilities, GpsConfig, GpsSample
 from autosportlabs.racecapture.tracks.trackmanager import TrackMap
@@ -205,6 +205,10 @@ class DashboardView(Screen):
 
     def _race_setup(self):
 
+        # skip if this screen is not active
+        if self.manager.current_screen != self:
+            return
+
         # skip if we're not connected
         if not self._rc_api.connected:
             return
@@ -238,22 +242,29 @@ class DashboardView(Screen):
             Logger.info('DashboardView: Nearby track was recently set, skipping auto configuration')
             return
 
-        # if we're in an area with many local configurations, ask the user
-        if len(tracks) > 1:
-            Clock.schedule_once(lambda dt: self._load_track_select_view(track_cfg))
-
-        # otherwise, maybe select the only track in the area
-        elif len(tracks) == 1:
+        if len(tracks) == 1:
             new_track = tracks[0]
             Logger.info('DashboardView: auto selecting track {}({})'.format(new_track.name, new_track.short_id))
             track_cfg.track.import_trackmap(new_track)
             self._set_rc_track(track_cfg)
         else:
+            Clock.schedule_once(lambda dt: self._load_track_wizard_view(track_cfg))
+
             Logger.info('DashboardView: could not find track to select in local area')
 
-    def _load_track_select_view(self, track_cfg):
+    def _load_track_wizard_view(self, track_cfg):
 
-        def on_race_setup_close(instance, answer):
+        def on_track_complete(instance, track_map):
+            Logger.debug("DashboardView: setting track_map: {}".format(track_map))
+            self._track_manager.add_track(track_map)
+            track_cfg.track.import_trackmap(track_map)
+            track_cfg.stale = True
+            self._set_rc_track(track_cfg)
+
+            self._popup.dismiss()
+            
+            
+        def on_track_wizard_close(instance, answer):
             if answer:
                 selected_track = content.selected_track
                 if selected_track is None:
@@ -264,8 +275,10 @@ class DashboardView(Screen):
 
             self._popup.dismiss()
 
-        content = TrackSelectView(self._track_manager, current_location=self._gps_sample.geopoint)
-        self._popup = editor_popup("Select your track", content, on_race_setup_close)
+        content = TrackBuilderView(self._rc_api, self._databus, self._track_manager, current_point=self._gps_sample.geopoint)
+        self._popup = editor_popup("Race track setup", content, on_track_wizard_close)
+        content.bind(on_track_complete=on_track_complete)
+        
         self._popup.open()
 
 
