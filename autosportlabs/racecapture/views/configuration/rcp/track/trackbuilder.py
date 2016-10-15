@@ -196,8 +196,8 @@ class TrackTypeSelector(Screen):
 TRACK_MAP_CREATOR_KV = """
 <TrackMapCreator>:
     BoxLayout:
-        spacing: sp(25)
-        padding: (sp(25),sp(25)) 
+        spacing: dp(10)
+        padding: (dp(10),dp(10)) 
         orientation: 'horizontal'
         canvas.before:
             Color:
@@ -218,7 +218,7 @@ TRACK_MAP_CREATOR_KV = """
                 anchor_y: 'top'
                 anchor_x: 'left'
                 GridLayout:
-                    spacing: sp(10)
+                    spacing: dp(10)
                     cols:2
                     rows:1
                     size_hint_y: 0.12
@@ -236,8 +236,8 @@ TRACK_MAP_CREATOR_KV = """
         BoxLayout:
             orientation: 'vertical'
             size_hint_x: 0.3
-            spacing: sp(20)
-            padding: (sp(5), sp(5))
+            spacing: dp(20)
+            padding: (dp(5), dp(5))
             
             BetterButton:
                 id: start_button

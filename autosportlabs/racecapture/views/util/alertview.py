@@ -50,12 +50,11 @@ Builder.load_string('''
     cols:1
     BoxLayout:
         id: content
+        size_hint_y: 0.9
     GridLayout:
         id: buttons
         cols: 2
-        size_hint_y: None
-        height: '60sp'
-        #spacing: '5sp'
+        size_hint_y: 0.1
         IconButton:
             id: ok
             text: u'\uf00c'
