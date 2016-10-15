@@ -262,9 +262,9 @@ class DashboardView(Screen):
             return
         
         # if we made it this far, we're going to ask the user to help select or create a track
-        Clock.schedule_once(lambda dt: self._load_track_wizard_view(track_cfg))
+        Clock.schedule_once(lambda dt: self._load_track_setup_view(track_cfg))
 
-    def _load_track_wizard_view(self, track_cfg):
+    def _load_track_setup_view(self, track_cfg):
 
         def on_track_complete(instance, track_map):
             Logger.debug("DashboardView: setting track_map: {}".format(track_map))
@@ -276,7 +276,7 @@ class DashboardView(Screen):
             self._popup.dismiss()
             
             
-        def on_track_wizard_close(instance, answer):
+        def on_close(instance, answer):
             if not answer:
                 # user cancelled, store current location as where they cancelled
                 # so we prevent bugging the user again
@@ -286,7 +286,7 @@ class DashboardView(Screen):
             self._popup.dismiss()
 
         content = TrackBuilderView(self._rc_api, self._databus, self._track_manager, current_point=self._gps_sample.geopoint)
-        self._popup = editor_popup("Race track setup", content, on_track_wizard_close, hide_ok=True)
+        self._popup = editor_popup("Race track setup", content, on_close, hide_ok=True)
         content.bind(on_track_complete=on_track_complete)
         self._popup.open()
 

@@ -366,10 +366,12 @@ class CustomTrackConfigScreen(Screen):
             self._track_cfg.stale = True
             self._update_track()
             self.dispatch('on_modified')
-
+        
+        def on_close(instance, answer):
+            popup.dismiss()
+            
         content = TrackBuilderView(databus=self._databus, rc_api=self._rc_api, track_manager=self._track_manager)
-        popup = Popup(title='Track Builder', content=content, size_hint=(1.0, 1.0), auto_dismiss=True)
-        popup.bind(on_dismiss=popup_dismissed)
+        popup = editor_popup("Track Builder", content, on_close, hide_ok=True, size_hint=(1.0,1.0))        
         content.bind(on_track_complete=on_track_complete)
         popup.open()
 

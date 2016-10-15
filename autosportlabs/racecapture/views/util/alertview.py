@@ -94,7 +94,7 @@ class ConfirmPopup(GridLayout):
     def on_answer(self, *args):
         pass    
 
-def editor_popup(title, content, answerCallback, size_hint=(0.8, 1.0), hide_ok=False):
+def editor_popup(title, content, answerCallback, size_hint=(0.9, 1.0), hide_ok=False):
     content = EditorPopup(content=content, hide_ok=hide_ok)
     content.bind(on_answer=answerCallback)
     popup = Popup(title=title,
