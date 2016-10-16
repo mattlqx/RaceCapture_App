@@ -37,6 +37,7 @@ from autosportlabs.racecapture.config.rcpconfig import GpsConfig
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.uix.button.betterbutton import BetterButton
 from autosportlabs.uix.toast.kivytoast import toast
+
 TRACK_BUILDER_KV = """
 <TrackBuilderView>:
     ScreenManager:
@@ -44,6 +45,13 @@ TRACK_BUILDER_KV = """
 """
 
 class TrackBuilderView(BoxLayout):
+    '''
+    This view guides the user through selecting an existing track or interactively creating a new track map.
+    
+    When using, specify a current point for the option to select an existing track. If any tracks are nearby,
+    a track selection view will be presented. If no tracks are nearby, the view steps the user through interactively
+    making a new track map.
+    '''
     Builder.load_string(TRACK_BUILDER_KV)
     def __init__(self, rc_api, databus, track_manager, current_point = None, **kwargs):
         super(TrackBuilderView, self).__init__(**kwargs)
@@ -61,6 +69,10 @@ class TrackBuilderView(BoxLayout):
         pass
 
     def cleanup(self):
+        """
+        Called when this view is no longer needed. The cleanup methods in each screen
+        should unbind/disconnect resources and shut down Clock callbacks as needed. 
+        """
         for screen in self._screens:
             screen.cleanup()
 
@@ -72,25 +84,25 @@ class TrackBuilderView(BoxLayout):
             self._switch_to_screen(self._get_existing_track_selector())
 
     def _get_existing_track_selector(self):
-        screen = ExistingTrackSelector(self._track_manager, self._current_point)
+        screen = ExistingTrackSelectorScreen(self._track_manager, self._current_point)
         screen.bind(on_track_selected = self._on_existing_track_selected)
         self._screens.append(screen)
         return screen
         
     def _get_track_map_creator(self, track_type):
-        screen = TrackMapCreator(rc_api=self._rc_api, databus=self._databus, track=self._track, track_type=track_type)
+        screen = TrackMapCreatorScreen(rc_api=self._rc_api, databus=self._databus, track=self._track, track_type=track_type)
         screen.bind(on_trackmap_complete=self._on_trackmap_complete)
         self._screens.append(screen)
         return screen
 
     def _get_track_type_selector(self):
-        screen = TrackTypeSelector()
+        screen = TrackTypeSelectorScreen()
         screen.bind(on_track_type_selected=self._on_track_type_selected)
         self._screens.append(screen)
         return screen
 
     def _get_track_customization_view(self, track):
-        screen = TrackCustomizationView(track=track)
+        screen = TrackCustomizationScreen(track=track)
         screen.bind(on_track_customized=self._on_track_customized)
         self._screens.append(screen)
         return screen
@@ -114,16 +126,18 @@ class TrackBuilderView(BoxLayout):
             self.ids.screen_manager.switch_to(screen)
 
 EXISTING_TRACK_SELECTOR_KV = """
-<ExistingTrackSelector>:
+<ExistingTrackSelectorScreen>:
     TrackSelectView:
         id: track_select
 """
-class ExistingTrackSelector(Screen):
-
+class ExistingTrackSelectorScreen(Screen):
+    """
+    Screen to select an existing track map
+    """
     Builder.load_string(EXISTING_TRACK_SELECTOR_KV)
 
     def __init__(self, track_manager, current_point, **kwargs):
-        super(ExistingTrackSelector, self).__init__(**kwargs)
+        super(ExistingTrackSelectorScreen, self).__init__(**kwargs)
         self.register_event_type('on_track_selected')
         self.ids.track_select.bind(on_track_selected=self.track_selected)
         self.ids.track_select.init_view(track_manager, current_point)
@@ -140,7 +154,7 @@ class ExistingTrackSelector(Screen):
 
 
 TRACK_TYPE_SELECTOR_KV = """
-<TrackTypeSelector>:
+<TrackTypeSelectorScreen>:
     BoxLayout:
         orientation: 'vertical'
         FieldLabel:
@@ -173,14 +187,17 @@ TRACK_TYPE_SELECTOR_KV = """
                     on_press: root.select_track_type('point2point')
 """
 
-class TrackTypeSelector(Screen):
+class TrackTypeSelectorScreen(Screen):
+    """
+    Screen to select different track types
+    """
     TRACK_TYPE_CIRCUIT = 'circuit'
     TRACK_TYPE_POINT_POINT = 'point2point'
 
     Builder.load_string(TRACK_TYPE_SELECTOR_KV)
 
     def __init__(self, **kwargs):
-        super(TrackTypeSelector, self).__init__(**kwargs)
+        super(TrackTypeSelectorScreen, self).__init__(**kwargs)
         self.register_event_type('on_track_type_selected')
 
     def on_track_type_selected(self, type):
@@ -194,7 +211,7 @@ class TrackTypeSelector(Screen):
 
 
 TRACK_MAP_CREATOR_KV = """
-<TrackMapCreator>:
+<TrackMapCreatorScreen>:
     BoxLayout:
         spacing: dp(10)
         padding: (dp(10),dp(10)) 
@@ -256,7 +273,10 @@ TRACK_MAP_CREATOR_KV = """
                 font_size: self.height * 0.4
 """
 
-class TrackMapCreator(Screen):
+class TrackMapCreatorScreen(Screen):
+    """
+    Screen to interactively draw a track map based on GPS data.
+    """
     GPS_ACTIVE_COLOR = [0.0, 1.0, 0.0, 1.0]
     GPS_INACTIVE_COLOR = [1.0, 0.0, 0.0, 1.0]
     INTERNAL_ACTIVE_COLOR = [0.0, 1.0, 1.0, 1.0]
@@ -276,7 +296,7 @@ class TrackMapCreator(Screen):
     Builder.load_string(TRACK_MAP_CREATOR_KV)
 
     def __init__(self, rc_api, databus, track, track_type, **kwargs):
-        super(TrackMapCreator, self).__init__(**kwargs)
+        super(TrackMapCreatorScreen, self).__init__(**kwargs)
         self._databus = databus
         self._rc_api = rc_api
         self._track_type = track_type
@@ -296,23 +316,24 @@ class TrackMapCreator(Screen):
 
     def cleanup(self):
         Window.unbind(on_key_down=self.key_action)
+        self._geo_provider.shutdown()
 
     def on_trackmap_complete(self, track):
         pass
 
     def _init_status_monitor(self):
-        self._status_decay = Clock.create_trigger(self._on_status_decay, TrackMapCreator.STATUS_LINGER_DURATION)
+        self._status_decay = Clock.create_trigger(self._on_status_decay, TrackMapCreatorScreen.STATUS_LINGER_DURATION)
         self._status_decay()
 
     def _on_status_decay(self, *args):
-        self.ids.internal_status.color = TrackMapCreator.INTERNAL_INACTIVE_COLOR
-        self.ids.gps_status.color = TrackMapCreator.GPS_INACTIVE_COLOR
+        self.ids.internal_status.color = TrackMapCreatorScreen.INTERNAL_INACTIVE_COLOR
+        self.ids.gps_status.color = TrackMapCreatorScreen.GPS_INACTIVE_COLOR
 
     def _update_status_indicators(self):
         self._status_decay.cancel()
         internal_active = self._geo_provider.location_source_internal
-        self.ids.internal_status.color = TrackMapCreator.INTERNAL_ACTIVE_COLOR if internal_active else TrackMapCreator.INTERNAL_INACTIVE_COLOR
-        self.ids.gps_status.color = TrackMapCreator.GPS_ACTIVE_COLOR
+        self.ids.internal_status.color = TrackMapCreatorScreen.INTERNAL_ACTIVE_COLOR if internal_active else TrackMapCreatorScreen.INTERNAL_INACTIVE_COLOR
+        self.ids.gps_status.color = TrackMapCreatorScreen.GPS_ACTIVE_COLOR
         self._status_decay()
 
     def _update_button_states(self):
@@ -330,7 +351,7 @@ class TrackMapCreator(Screen):
         # Can only add a sector if we're the minimum distance from the reference point
         can_add_sector = (start_point is not None and
                 current_point is not None and
-                current_point.dist_pythag(reference_point) >= TrackMapCreator.MINIMUM_TARGET_SEPARATION_METERS)
+                current_point.dist_pythag(reference_point) >= TrackMapCreatorScreen.MINIMUM_TARGET_SEPARATION_METERS)
 
         # we can't add a sector if the finish point is defined
         can_add_sector = False if finish_point is not None else can_add_sector
@@ -342,11 +363,11 @@ class TrackMapCreator(Screen):
         # must be minimum distance from start point to create a finish point
         can_finish = (start_point is not None and
                     current_point is not None and
-                    current_point.dist_pythag(start_point) >= TrackMapCreator.MINIMUM_TARGET_SEPARATION_METERS)
+                    current_point.dist_pythag(start_point) >= TrackMapCreatorScreen.MINIMUM_TARGET_SEPARATION_METERS)
 
         # also must be minimum distance from last sector point, if it exists
         can_finish = False if (last_sector_point is not None and
-                    current_point.dist_pythag(last_sector_point) < TrackMapCreator.MINIMUM_TARGET_SEPARATION_METERS) else can_finish
+                    current_point.dist_pythag(last_sector_point) < TrackMapCreatorScreen.MINIMUM_TARGET_SEPARATION_METERS) else can_finish
 
         self.ids.finish_button.disabled = not can_finish
 
@@ -452,9 +473,9 @@ class TrackMapCreator(Screen):
         finish_point = self.current_point
         self._add_trackmap_point(finish_point)
 
-        if self._track_type == TrackTypeSelector.TRACK_TYPE_CIRCUIT:
+        if self._track_type == TrackTypeSelectorScreen.TRACK_TYPE_CIRCUIT:
             self._on_finish_circuit()
-        elif self._track_type == TrackTypeSelector.TRACK_TYPE_POINT_POINT:
+        elif self._track_type == TrackTypeSelectorScreen.TRACK_TYPE_POINT_POINT:
             self._on_finish_point_point()
 
         # finish button turns into next button
@@ -474,7 +495,7 @@ class TrackMapCreator(Screen):
     # test key sequence to simulate walking a course - needed for testing
     # the special key is '`'
     def key_action(self, instance, keyboard, keycode, text, modifiers):
-        if text == '`':
+        if text == '`': #sekret!
             point = GeoPoint.fromPoint(SIMULATED_TRACKMAP_POINTS[self._simulated_trackmap_index][0],
                                        SIMULATED_TRACKMAP_POINTS[self._simulated_trackmap_index][1])
             self._update_current_point(point)
@@ -482,8 +503,8 @@ class TrackMapCreator(Screen):
             if self._simulated_trackmap_index >= len(SIMULATED_TRACKMAP_POINTS):
                 self._simulated_trackmap_index = 0
 
-TRACK_CUSTOMIZATION_VIEW_KV = """
-<TrackCustomizationView>:
+TRACK_CUSTOMIZATION_KV = """
+<TrackCustomizationScreen>:
 
     BoxLayout:
         orientation: 'vertical'
@@ -553,19 +574,20 @@ TRACK_CUSTOMIZATION_VIEW_KV = """
                             size_hint: (0.7, 0.5)
                             on_press: root.on_finish()
                             font_size: self.height * 0.4
-        
 """
 
-class TrackCustomizationView(Screen):
-
+class TrackCustomizationScreen(Screen):
+    """
+    Screen to customize a track map
+    """
     DEFAULT_TRACK_NAME = 'Track'
     track_name = StringProperty()
     track_configuration = StringProperty()
 
-    Builder.load_string(TRACK_CUSTOMIZATION_VIEW_KV)
+    Builder.load_string(TRACK_CUSTOMIZATION_KV)
 
     def __init__(self, track, **kwargs):
-        super(TrackCustomizationView, self).__init__(**kwargs)
+        super(TrackCustomizationScreen, self).__init__(**kwargs)
         self.register_event_type('on_track_customized')
         self._track = track
         self._init_view()
@@ -578,7 +600,7 @@ class TrackCustomizationView(Screen):
         self.ids.track_configuration.bind(text=self._on_track_configuration)
         self.ids.track_name.next = self.ids.track_configuration
         self.ids.track_configuration.next = self.ids.track_name
-        self._track.name = TrackCustomizationView.DEFAULT_TRACK_NAME
+        self._track.name = TrackCustomizationScreen.DEFAULT_TRACK_NAME
         self.track_name = self._track.name
         self.track_configuration = self._track.configuration
         self.ids.track.loadTrack(self._track)
@@ -597,7 +619,7 @@ class TrackCustomizationView(Screen):
 
     def _validate_configuration(self):
         if self._track.name == '':
-            self._track.name = TrackCustomizationView.DEFAULT_TRACK_NAME
+            self._track.name = TrackCustomizationScreen.DEFAULT_TRACK_NAME
 
     def on_finish(self, *args):
         self._validate_configuration()
@@ -605,6 +627,8 @@ class TrackCustomizationView(Screen):
 
     def cleanup(self):
         pass
+
+"""test data to enable development debugging"""
 
 SIMULATED_TRACKMAP_POINTS = [
 [

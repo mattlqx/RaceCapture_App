@@ -133,5 +133,6 @@ class GeoProvider(EventDispatcher):
 
     def _stop_internal_gps(self):
         Logger.info('GeoProvider: stopping internal GPS')
-        self._gps_conn.stop()
+        if self._gps_conn is not None:
+            self._gps_conn.stop()
         self._internal_gps_active = False
