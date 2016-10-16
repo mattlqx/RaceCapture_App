@@ -112,7 +112,6 @@ class DashboardView(Screen):
 
     def status_updated(self, status):
         status = status['status']['GPS']
-
         quality = status['qual']
         latitude = status['lat']
         longitude = status['lon']
@@ -274,6 +273,7 @@ class DashboardView(Screen):
             self._set_rc_track(track_cfg)
 
             self._popup.dismiss()
+            self._popup = None
             
             
         def on_close(instance, answer):
@@ -284,7 +284,12 @@ class DashboardView(Screen):
                 HelpInfo.help_popup('lap_setup', self)
 
             self._popup.dismiss()
+            self._popup = None
 
+        if self._popup is not None:
+            # can't open dialog multiple times
+            return
+        
         content = TrackBuilderView(self._rc_api, self._databus, self._track_manager, current_point=self._gps_sample.geopoint)
         self._popup = editor_popup("Race track setup", content, on_close, hide_ok=True)
         content.bind(on_track_complete=on_track_complete)
