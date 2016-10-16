@@ -4,7 +4,7 @@ Utils
 
 '''
 
-__all__ = ('is_mobile_platform', 'intersection', 'difference', 'curry', 'strtotuple',
+__all__ = ('is_mobile_platform', 'is_android', 'is_ios', 'intersection', 'difference', 'curry', 'strtotuple',
            'get_color_from_hex', 'get_random_color',
            'is_color_transparent', 'boundary', 'dist',
            'deprecated', 'SafeList',
@@ -22,8 +22,14 @@ from kivy.core.clipboard import Clipboard
 def strip_whitespace(value):
     return value.replace('\n', '').replace('\r', '').strip()
 
+def is_android():
+    return True if platform == 'android' else False
+
+def is_ios():
+    return True if platform == 'ios' else False
+
 def is_mobile_platform():
-    return True if platform == 'android' or platform == 'ios' else False
+    return True if is_android() or is_ios() else False
 
 def pct_h(pct):
     return Window.height * pct

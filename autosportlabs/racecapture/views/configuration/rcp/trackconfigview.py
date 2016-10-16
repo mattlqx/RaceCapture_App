@@ -596,7 +596,7 @@ class CustomTrackConfigScreen(Screen):
 
         track = self._track_manager.find_track_by_short_id(self._track_cfg.track.trackId)
         self.ids.track_info.setTrack(track)
-        self.ids.info_message.text = 'Press (+) to create a your first track map' if track is None else ''
+        self.ids.info_message.text = 'Press (+) to create your first track map' if track is None else ''
 
     def on_pre_enter(self, *args):
         self._update_track()

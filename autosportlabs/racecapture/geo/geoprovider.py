@@ -20,16 +20,17 @@
 
 import kivy
 kivy.require('1.9.1')
-from utils import is_mobile_platform
-from plyer import gps
+from kivy.logger import Logger
+from utils import is_mobile_platform, is_android
 from kivy.clock import mainthread, Clock
 from kivy.logger import Logger
 from autosportlabs.racecapture.config.rcpconfig import GpsConfig
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from kivy.event import EventDispatcher
 if is_mobile_platform():
-    from jnius import autoclass
-from kivy.logger import Logger
+    from plyer import gps
+    if is_android():
+        from jnius import autoclass
 
 
 class GeoProvider(EventDispatcher):
@@ -46,6 +47,7 @@ class GeoProvider(EventDispatcher):
     INTERNAL_GPS_UPDATE_INTERVAL = 0.5
     def __init__(self, rc_api, databus, **kwargs):
         super(GeoProvider, self).__init__(**kwargs)
+        self._internal_gps_conn = None
         self._databus = databus
         self._rc_api = rc_api
 
@@ -58,7 +60,7 @@ class GeoProvider(EventDispatcher):
         self.register_event_type('on_location')
         self.register_event_type('on_internal_gps_available')
         self.register_event_type('on_gps_source')
-        if is_mobile_platform():
+        if is_android(): #only support android for now
             self._start_internal_gps()
 
     def on_location(self, point):
@@ -116,17 +118,17 @@ class GeoProvider(EventDispatcher):
     def _start_internal_gps(self):
         started = False
         gps_conn = autoclass('com.autosportlabs.racecapture.GpsConnection')
-        self._gps_conn = gps_conn.createInstance();
-        configured = self._gps_conn.configure()
+        self._internal_gps_conn = gps_conn.createInstance();
+        configured = self._internal_gps_conn.configure()
         if configured:
-            started = self._gps_conn.start()
+            started = self._internal_gps_conn.start()
         Logger.info('GeoProvider: internal GPS started: {}'.format(started))
         self.dispatch('on_internal_gps_available', started)
         if started:
             Clock.schedule_interval(self._check_internal_gps_update, GeoProvider.INTERNAL_GPS_UPDATE_INTERVAL)
 
     def _check_internal_gps_update(self, *args):
-        location = self._gps_conn.getCurrentLocation()
+        location = self._internal_gps_conn.getCurrentLocation()
         if not location:
             return
         location_time = location.getTime()
@@ -139,6 +141,6 @@ class GeoProvider(EventDispatcher):
 
     def _stop_internal_gps(self):
         Logger.info('GeoProvider: stopping internal GPS')
-        if self._gps_conn is not None:
-            self._gps_conn.stop()
+        if self._internal_gps_conn is not None:
+            self._internal_gps_conn.stop()
         self._internal_gps_active = False
