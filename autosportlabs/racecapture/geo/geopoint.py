@@ -42,6 +42,12 @@ class GeoPoint:
 
     @classmethod
     def from_string(cls, point_string):
+        """
+        Construct a GeoPoint from a formatted latitude,longitude string
+        @param point_string - latitude,longitude
+        @type point_string string
+        @return GeoPoint
+        """
         try:
             lat_lon = point_string.split(',')
             lat = float(lat_lon[0])

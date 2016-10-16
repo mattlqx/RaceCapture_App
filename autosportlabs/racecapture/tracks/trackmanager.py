@@ -65,6 +65,9 @@ class TrackMap(object):
 
     @classmethod
     def create_new(cls):
+        """
+        Create a new, minimally initialized TrackMap with a new ID and created date
+        """
         t = TrackMap()
         t.track_id = str(uuid.uuid1().hex)
         t.created = datetime.utcnow().isoformat()
@@ -72,6 +75,9 @@ class TrackMap(object):
 
     @classmethod
     def from_track_cfg(cls, track):
+        """
+        Convert a Track object to a TrackMap object
+        """
         track_map = TrackMap()
         track_map.start_finish_point = track.startLine
         track_map.finish_point = track.finishLine
@@ -81,6 +87,9 @@ class TrackMap(object):
 
     @property
     def centerpoint(self):
+        """
+        Return the a reference point for the map
+        """
         if len(self.map_points) > 0:
             return self.map_points[0]
         return None

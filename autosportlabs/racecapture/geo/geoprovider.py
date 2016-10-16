@@ -33,7 +33,10 @@ from kivy.logger import Logger
 
 
 class GeoProvider(EventDispatcher):
-
+    """
+    Provides a unified source of GPS data- 
+    either from RaceCapture or an internal phone GPS sensor.
+    """
     GPS_SOURCE_NONE = 0
     GPS_SOURCE_RACECAPTURE = 1
     GPS_SOURCE_INTERNAL = 2
@@ -103,6 +106,9 @@ class GeoProvider(EventDispatcher):
             self._current_gps_source = gps_source
 
     def shutdown(self):
+        """
+        Shutdown / cleanup GeoProvider
+        """
         self._stop_internal_gps()
         self._databus.remove_sample_listener(self._on_sample)
         Clock.unschedule(self._check_internal_gps_update)
