@@ -257,7 +257,7 @@ class DashboardView(Screen):
         radius = last_cancelled_location.metersToDegrees(TrackManager.TRACK_DEFAULT_SEARCH_RADIUS_METERS, 
                                                          TrackManager.TRACK_DEFAULT_SEARCH_BEARING_DEGREES)
         if last_cancelled_location.withinCircle(self._gps_sample.geopoint, radius):
-            Logger.info("DashboardView: Still in the same location where the user last cancelled track configuration. Not pestering again")
+            Logger.info("DashboardView: Still near the same location where the user last cancelled track configuration. Not pestering again")
             return
         
         # if we made it this far, we're going to ask the user to help select or create a track
