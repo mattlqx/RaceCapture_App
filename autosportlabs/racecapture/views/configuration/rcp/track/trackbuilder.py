@@ -55,16 +55,22 @@ class TrackBuilderView(BoxLayout):
     Builder.load_string(TRACK_BUILDER_KV)
     def __init__(self, rc_api, databus, track_manager, current_point = None, **kwargs):
         super(TrackBuilderView, self).__init__(**kwargs)
+        self.register_event_type('on_track_complete')
+        self.register_event_type('on_title')
         self._rc_api = rc_api
         self._databus = databus
         self._track_manager = track_manager
         self._current_point = current_point
         self._screens = []
-        self._init_view()
         self._track = TrackMap.create_new()
         self._track.custom = True
-        self.register_event_type('on_track_complete')
 
+    def on_parent(self, instance, value):
+        self._init_view()
+
+    def on_title(self, title):
+        pass
+    
     def on_track_complete(self, track_map):
         pass
 
@@ -80,8 +86,10 @@ class TrackBuilderView(BoxLayout):
         # show the track builder immediately, or select an existing track, if any are in the area
         if self._current_point is None or len(self._track_manager.find_nearby_tracks(self._current_point)) == 0:
             self._switch_to_screen(self._get_track_type_selector())
+            self.dispatch('on_title', 'Create a new track')
         else:
             self._switch_to_screen(self._get_existing_track_selector())
+            self.dispatch('on_title', 'Select an existing track')
 
     def _get_existing_track_selector(self):
         screen = ExistingTrackSelectorScreen(self._track_manager, self._current_point)
@@ -109,10 +117,12 @@ class TrackBuilderView(BoxLayout):
 
     def _on_track_type_selected(self, instance, type):
         screen = self._get_track_map_creator(type)
+        self.dispatch('on_title', 'Build your track')
         self._switch_to_screen(screen)
 
     def _on_trackmap_complete(self, instance, track):
         screen = self._get_track_customization_view(track)
+        self.dispatch('on_title', 'Name your track')
         self._switch_to_screen(screen)
 
     def _on_track_customized(self, instance, track):
@@ -157,34 +167,27 @@ TRACK_TYPE_SELECTOR_KV = """
 <TrackTypeSelectorScreen>:
     BoxLayout:
         orientation: 'vertical'
-        FieldLabel:
-            size_hint_y: 0.1
-            text: 'Setup Race Track'
-            font_size: self.height * 0.7
-        BoxLayout:
-            size_hint_y: 0.9
-            orientation: 'vertical'
-            spacing: sp(10)
-            AnchorLayout:
-                anchor_x: 'right'
-                Image:
-                    allow_stretch: True
-                    keep_ratio: False
-                    source: 'resource/trackmap/circuit_racing.jpg'
-                BetterButton:
-                    text: 'Circuit'
-                    size_hint: (0.3, 0.3)
-                    on_press: root.select_track_type('circuit')
-            AnchorLayout:
-                anchor_x: 'right'
-                Image:
-                    allow_stretch: True
-                    keep_ratio: False
-                    source: 'resource/trackmap/point_point_racing.jpg'
-                BetterButton:
-                    text: 'Autocross'
-                    size_hint: (0.3, 0.3)
-                    on_press: root.select_track_type('point2point')
+        spacing: sp(10)
+        AnchorLayout:
+            anchor_x: 'right'
+            Image:
+                allow_stretch: True
+                keep_ratio: False
+                source: 'resource/trackmap/circuit_racing.jpg'
+            BetterButton:
+                text: 'Circuit'
+                size_hint: (0.3, 0.3)
+                on_press: root.select_track_type('circuit')
+        AnchorLayout:
+            anchor_x: 'right'
+            Image:
+                allow_stretch: True
+                keep_ratio: False
+                source: 'resource/trackmap/point_point_racing.jpg'
+            BetterButton:
+                text: 'Autocross'
+                size_hint: (0.3, 0.3)
+                on_press: root.select_track_type('point2point')
 """
 
 class TrackTypeSelectorScreen(Screen):
@@ -505,75 +508,67 @@ class TrackMapCreatorScreen(Screen):
 
 TRACK_CUSTOMIZATION_KV = """
 <TrackCustomizationScreen>:
-
     BoxLayout:
-        orientation: 'vertical'
-        FieldLabel:
-            size_hint_y: 0.1
-            text: 'Name your track'
-            font_size: self.height * 0.7
+        padding: (sp(20), sp(20))
+        spacing: sp(20)
+        orientation: 'horizontal'
+        RaceTrackView:
+            id: track
+            size_hint_x: 0.4
         BoxLayout:
-            size_hint_y: 0.9
-            padding: (sp(20), sp(20))
-            spacing: sp(20)
-            orientation: 'horizontal'
-            RaceTrackView:
-                id: track
-                size_hint_x: 0.4
+            canvas.before:
+                Color:
+                    rgba: ColorScheme.get_dark_background()
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            size_hint_x: 0.6
+            padding: (sp(10), sp(10))
+            spacing: sp(10)
+            orientation: 'vertical'
             BoxLayout:
-                canvas.before:
-                    Color:
-                        rgba: ColorScheme.get_dark_background()
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
-                size_hint_x: 0.6
-                padding: (sp(10), sp(10))
-                spacing: sp(10)
-                orientation: 'vertical'
+                spacing: sp(5)
+                size_hint_y: 0.15
+                orientation: 'horizontal'
+                FieldLabel:
+                    size_hint_x: 0.4
+                    text: 'Name'
+                    halign: 'right'
+                    valign: 'middle'
+                    font_size: self.height * 0.5
+                TextValueField:
+                    id: track_name
+                    size_hint_x: 0.6
+                    max_len: 60
+                    text: root.track_name
+                    hint_text: 'Give your track a name'
+            BoxLayout:
+                spacing: sp(5)
+                size_hint_y: 0.15
+                orientation: 'horizontal'
+                FieldLabel:
+                    size_hint_x: 0.4
+                    text: 'Configuration'
+                    halign: 'right'
+                    valign: 'middle'
+                    font_size: self.height * 0.5
+                TextValueField:
+                    id: track_configuration
+                    size_hint_x: 0.6
+                    max_len: 60                        
+                    text: root.track_configuration
+                    hint_text: 'Main / short-track / etc.'
+            BoxLayout:
+                size_hint_y: 0.7
                 BoxLayout:
-                    spacing: sp(5)
-                    size_hint_y: 0.15
-                    orientation: 'horizontal'
-                    FieldLabel:
-                        size_hint_x: 0.4
-                        text: 'Name'
-                        halign: 'right'
-                        valign: 'middle'
-                        font_size: self.height * 0.5
-                    TextValueField:
-                        id: track_name
-                        size_hint_x: 0.6
-                        max_len: 60
-                        text: root.track_name
-                        hint_text: 'Give your track a name'
-                BoxLayout:
-                    spacing: sp(5)
-                    size_hint_y: 0.15
-                    orientation: 'horizontal'
-                    FieldLabel:
-                        size_hint_x: 0.4
-                        text: 'Configuration'
-                        halign: 'right'
-                        valign: 'middle'
-                        font_size: self.height * 0.5
-                    TextValueField:
-                        id: track_configuration
-                        size_hint_x: 0.6
-                        max_len: 60                        
-                        text: root.track_configuration
-                        hint_text: 'Main / short-track / etc.'
-                BoxLayout:
-                    size_hint_y: 0.7
-                    BoxLayout:
-                        size_hint_x: 0.4
-                    AnchorLayout:
-                        size_hint_x: 0.7
-                        BetterButton:
-                            text: 'Finish'
-                            size_hint: (0.7, 0.5)
-                            on_press: root.on_finish()
-                            font_size: self.height * 0.4
+                    size_hint_x: 0.4
+                AnchorLayout:
+                    size_hint_x: 0.7
+                    BetterButton:
+                        text: 'Finish'
+                        size_hint: (0.7, 0.5)
+                        on_press: root.on_finish()
+                        font_size: self.height * 0.4
 """
 
 class TrackCustomizationScreen(Screen):

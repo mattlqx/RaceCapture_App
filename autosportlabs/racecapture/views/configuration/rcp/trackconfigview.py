@@ -508,7 +508,7 @@ class SingleAutoConfigScreen(Screen):
                     self._update_track()
                     self.dispatch('on_modified')
             popup.dismiss()
-
+            
         # use the current location, if available
         current_point = self._gps_sample.geopoint if self._gps_sample.is_locked else None
         content = TrackSelectView(track_manager=self._track_manager, current_location=current_point)
