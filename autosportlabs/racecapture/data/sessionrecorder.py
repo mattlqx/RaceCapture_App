@@ -18,11 +18,11 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
-from datetime import datetime
-from autosportlabs.racecapture.datastore import Session
+from kivy.clock import Clock
 from kivy.logger import Logger
 from kivy.event import EventDispatcher
 from autosportlabs.util.timeutil import format_time
+
 
 class SessionRecorder(EventDispatcher) :
     """
@@ -32,7 +32,7 @@ class SessionRecorder(EventDispatcher) :
     # Main app views that the SessionRecorder should start recording when displayed
     RECORDING_VIEWS = ['dash']
 
-    def __init__(self, datastore, databus, rcpapi, settings, track_manager=None, current_view=None):
+    def __init__(self, datastore, databus, rcpapi, settings, track_manager=None, current_view=None, stop_delay=60):
         """
         Initializer.
         :param datastore: Datastore for saving data
@@ -51,6 +51,8 @@ class SessionRecorder(EventDispatcher) :
         self._meta = None
         self._rc_connected = False
         self._current_view = current_view
+        self._stop_delay = stop_delay
+        self._stop_timer = Clock.create_trigger(self._actual_stop, self._stop_delay)
 
         self._rcapi.add_connect_listener(self._on_rc_connected)
         self._rcapi.add_disconnect_listener(self._on_rc_disconnected)
@@ -77,15 +79,30 @@ class SessionRecorder(EventDispatcher) :
         :type session_name: String
         :return: None
         """
+        if self._stop_timer.is_triggered:
+            Logger.info("SessionRecorder: cancelling stop timer")
+            self._stop_timer.cancel()
 
         if not self.recording:
             Logger.info("SessionRecorder: starting new session")
-
             self._current_session_id = self._datastore.init_session(self._create_session_name(), self._channels)
             self.dispatch('on_recording', True)
             self.recording = True
 
     def stop(self):
+        """
+        Sets a timer that will stop the current session after a period of time.  If start is called
+        before the timer fires then it will be canceled instead.
+        :return: None
+        """
+        if self.recording and not self._stop_timer.is_triggered:
+            if self._stop_delay > 0:
+                Logger.info("SessionRecorder: scheduling session stop")
+                self._stop_timer()
+            else:
+                self._actual_stop(0)
+
+    def _actual_stop(self, dt):
         """
         Stops recording the current session, does any additional post-processing necessary
         :return: None
@@ -114,9 +131,9 @@ class SessionRecorder(EventDispatcher) :
         return True
 
     def _check_should_record(self):
-        if self._should_record and not self.recording:
+        if self._should_record:
             self.start()
-        elif not self._should_record and self.recording:
+        elif not self._should_record:
             self.stop()
 
     def _create_session_name(self):
@@ -177,4 +194,4 @@ class SessionRecorder(EventDispatcher) :
         :return:
         """
         self._rc_connected = False
-        self.stop()
+        self._actual_stop(0)
