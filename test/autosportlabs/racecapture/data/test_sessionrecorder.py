@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from mock import Mock
+from mock import Mock, patch
 from autosportlabs.racecapture.data.sessionrecorder import SessionRecorder
 
 
@@ -30,6 +30,7 @@ class TestSessionRecorder(unittest.TestCase):
         self.mock_databus = Mock()
         self.mock_datastore = Mock()
         self.mock_track_manager = Mock()
+        self.mock_trigger = Mock()
 
         self.mock_databus.getMeta = Mock(return_value=None)
         self.mock_rcp_api.add_connect_listener = Mock()
@@ -73,11 +74,53 @@ class TestSessionRecorder(unittest.TestCase):
 
         self.assertEqual(len(self.mock_datastore.init_session.mock_calls), 1, "Creates a new session")
 
-    def test_stops_on_view_change(self):
+    def test_creates_stop_timer_on_view_change(self):
+        self.mock_databus.getMeta = Mock(return_value={"foo": "bar"})
+
+        with patch('autosportlabs.racecapture.data.sessionrecorder.Clock.create_trigger') as mock_create_trigger:
+            mock_create_trigger.return_value = self.mock_trigger
+            session_recorder = SessionRecorder(self.mock_datastore, self.mock_databus, self.mock_rcp_api,
+                                               self.mock_track_manager, current_view='dash')
+
+            mock_create_trigger.assert_called_with(session_recorder._actual_stop, 60)
+            self.mock_trigger.is_triggered = False
+
+            # Get subscription to connect event and call it
+            connect_listener = self.mock_rcp_api.add_connect_listener.call_args[0][0]
+            connect_listener()
+
+            self.assertTrue(session_recorder.recording, "Session recorder is recording")
+
+            session_recorder.on_view_change('analysis')
+            self.mock_trigger.assert_called_with()
+
+    def test_cancels_stop_timer_on_view_change(self):
+        self.mock_databus.getMeta = Mock(return_value={"foo": "bar"})
+
+        with patch('autosportlabs.racecapture.data.sessionrecorder.Clock.create_trigger') as mock_create_trigger:
+            mock_create_trigger.return_value = self.mock_trigger
+            session_recorder = SessionRecorder(self.mock_datastore, self.mock_databus, self.mock_rcp_api,
+                                               self.mock_track_manager, current_view='dash')
+
+            mock_create_trigger.assert_called_with(session_recorder._actual_stop, 60)
+            self.mock_trigger.is_triggered = True
+
+            # Get subscription to connect event and call it
+            connect_listener = self.mock_rcp_api.add_connect_listener.call_args[0][0]
+            connect_listener()
+
+            self.assertTrue(session_recorder.recording, "Session recorder is recording")
+
+            session_recorder.on_view_change('analysis')
+
+            session_recorder.on_view_change('dash')
+            self.mock_trigger.cancel.assert_called_with()
+
+    def test_stop_timer_on_view_change_with_zero_delay(self):
         self.mock_databus.getMeta = Mock(return_value={"foo": "bar"})
 
         session_recorder = SessionRecorder(self.mock_datastore, self.mock_databus, self.mock_rcp_api,
-                                           self.mock_track_manager, current_view='dash')
+                                           self.mock_track_manager, current_view='dash', stop_delay=0)
 
         # Get subscription to connect event and call it
         connect_listener = self.mock_rcp_api.add_connect_listener.call_args[0][0]
