@@ -634,6 +634,7 @@ class DataStore(object):
 
             # Down to business, first, we stuff each channel's sample
             # into the work list
+            Logger.debug('DataStore: work_list.len={}, channels.len={}, current_line={}'.format(work_list_len, channels_len, current_line))
             for c in range(channels_len):
                 work_list[c].append(channels[c])
 
@@ -662,19 +663,20 @@ class DataStore(object):
                     # the current list in work_list
                     work_list[c] = work_list[c][-1:]
 
-
             # Ok, we now have THINGS in our yield list, if we have
             # something in EVERY column of the yield list, create a
             # new list containing the first item in every column,
             # shift all columns down one, and yield the new list
             if not 0 in [len(x) for x in yield_list]:
-                current_line += 1
                 ds_to_yield = [x[0] for x in yield_list]
                 map(lambda x: x.pop(0), yield_list)
                 if progress_cb:
                     percent_complete = float(current_line) / line_count * 100
                     progress_cb(percent_complete)
                 yield ds_to_yield
+
+            # Increment line number
+            current_line += 1
 
         # now, finish off and extrapolate the remaining items in the
         # work list and extend the yield list with the resultant values
