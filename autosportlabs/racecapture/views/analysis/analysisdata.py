@@ -17,6 +17,7 @@
 # See the GNU General Public License for more details. You should
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
+
 from autosportlabs.racecapture.datastore import DataStore, Filter, timing
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from kivy.logger import Logger
