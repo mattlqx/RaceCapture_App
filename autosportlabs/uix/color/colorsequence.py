@@ -15,8 +15,9 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
 # See the GNU General Public License for more details. You should
-#have received a copy of the GNU General Public License along with
-#this code. If not, see <http://www.gnu.org/licenses/>.
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 from kivy.utils import get_color_from_hex as rgb
 
 DEFAULT_COLOR_SEQUENCE = ['FFFFFF', '8A00B8', '3366FF', 'F5B800', '8AB800', 'f45b5b', 'ff0066']
@@ -38,5 +39,4 @@ class ColorSequence(object):
             self.color_index = index
             self.color_map[key] = color
         return color
-        
         
