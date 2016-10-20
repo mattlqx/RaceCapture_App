@@ -23,6 +23,7 @@
 __version__ = "1.8.0"
 import sys
 import os
+from autosportlabs.racecapture.views.setup.setupview import SetupView
 
 if __name__ == '__main__' and sys.platform == 'win32':
     from multiprocessing import freeze_support
@@ -63,6 +64,7 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.views.dashboard.dashboardview import DashboardView
     from autosportlabs.racecapture.views.analysis.analysisview import AnalysisView
     from autosportlabs.racecapture.views.preferences.preferences import PreferencesView
+    from autosportlabs.racecapture.views.setup.setupview import SetupView
     from autosportlabs.racecapture.views.toolbar.toolbarview import ToolbarView
     from autosportlabs.racecapture.menu.mainmenu import MainMenu
     from autosportlabs.comms.commsfactory import comms_factory
@@ -366,13 +368,18 @@ class RaceCaptureApp(App):
         homepage_view.bind(on_select_view=lambda instance, view_name: self.switchMainView(view_name))
         return homepage_view
 
+    def build_setup_view(self):
+        setup_view = SetupView(name='setup', databus=self._databus, base_dir=self.base_dir)
+        return setup_view
+    
     def init_view_builders(self):
         self.view_builders = {'config': self.build_config_view,
                               'dash': self.build_dash_view,
                               'analysis': self.build_analysis_view,
                               'preferences': self.build_preferences_view,
                               'status': self.build_status_view,
-                              'home': self.build_homepage_view
+                              'home': self.build_homepage_view,
+                              'setup': self.build_setup_view
                               }
 
     def build(self):
@@ -427,6 +434,8 @@ class RaceCaptureApp(App):
             Clock.schedule_once(lambda dt: self.first_time_setup(), 0.5)
 
     def show_startup_view(self):
+        self.showMainView('setup')
+        return
         settings_to_view = {'Home Page':'home',
                             'Dashboard':'dash',
                             'Analysis': 'analysis',

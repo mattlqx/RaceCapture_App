@@ -1,0 +1,31 @@
+{
+	"skip": false,
+	"steps": [{
+			"key": "intro",
+			"title": "Welcome",
+			"class": "",
+			"complete": false
+		},
+
+		{
+			"key": "device",
+			"title": "Choose your device",
+			"class": "",
+			"complete": false
+		},
+
+		{
+			"key": "connection",
+			"title" : "Connection type",
+			"class": "",
+			"complete": false
+		},
+
+		{
+			"key": "finish",
+			"title": "Ready to go!",
+			"class": "",
+			"complete": false
+		}
+	]
+}
