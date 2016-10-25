@@ -9,14 +9,14 @@
 
 		{
 			"key": "device",
-			"title": "Choose your device",
+			"title": "Device",
 			"class": "",
 			"complete": false
 		},
 
 		{
 			"key": "connection",
-			"title" : "Connection type",
+			"title" : "Connection",
 			"class": "",
 			"complete": false
 		},

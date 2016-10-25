@@ -20,13 +20,39 @@
 
 import kivy
 kivy.require('1.9.1')
+from kivy.clock import Clock
 from kivy.app import Builder
+from kivy.properties import BooleanProperty, StringProperty
 from kivy.uix.screenmanager import Screen
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.checkbox import CheckBox
+from fieldlabel import FieldLabel
 import os
 import json
 
 SETUP_VIEW_KV = """
+<SetupItem>:
+    canvas.before:
+        Color:
+            rgba: ColorScheme.get_dark_background_translucent()
+        Rectangle:
+            pos: self.pos
+            size: self.size    
+    orientation: 'horizontal'
+    CheckBox:
+        id: check
+        value: root.check
+        size_hint_x: 0.25
+        disabled: True
+        background_checkbox_disabled_down: self.background_checkbox_down
+        background_checkbox_disabled_normal: self.background_checkbox_normal
+        active: True
+    FieldLabel:
+        id: title
+        size_hint_x: 0.75
+        text: root.title
+        font_size: self.height * 0.4
+    
 <SetupView>:
     BoxLayout:
         orientation: 'horizontal'
@@ -34,30 +60,49 @@ SETUP_VIEW_KV = """
             id: steps
             cols: 1
             size_hint_x: 0.25
-        ScreenManager:
-            id: screen_manager
-            size_hint_x: 0.75
+            row_default_height: self.height * 0.1
+            row_force_default: True
+            padding: (dp(5), dp(5), dp(2.5), dp(5))
+            spacing: dp(5)
+        BoxLayout:
+            padding: (dp(2.5), dp(5), dp(5), dp(5))
+            size_hint_x: 0.75            
+            ScreenManager:
+                canvas.before:
+                    Color:
+                        rgba: ColorScheme.get_dark_background_translucent()
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size    
+                id: screen_manager
 """
 
+class SetupItem(BoxLayout):
+    title = StringProperty('')
+    check = BooleanProperty(False)
+    def __init__(self, **kwargs):
+        super(SetupItem, self).__init__(**kwargs)
+        
 class SetupView(Screen):
     kv_loaded = False
+    Builder.load_string(SETUP_VIEW_KV)
     def __init__(self, databus, base_dir, **kwargs):
         super(SetupView, self).__init__(**kwargs)
         self._base_dir = base_dir
         self._databus = databus
         if not SetupView.kv_loaded:
-            Builder.load_string(SETUP_VIEW_KV)
             SetupView.kv_loaded = True
             
     def on_parent(self, instance, value):
-        self._init_view()
+        Clock.schedule_once(self._init_view)
         
-    def _init_view(self):
+    def _init_view(self, *args):
         json_data = open(os.path.join(self._base_dir, 'resource', 'setup', 'setup.json'))
         setup = json.load(json_data)
         steps = setup['steps']
         for step in steps:
-            print('{}'.format(step))
+            content = SetupItem(title=step['title'])
+            self.ids.steps.add_widget(content)
         
             
 
