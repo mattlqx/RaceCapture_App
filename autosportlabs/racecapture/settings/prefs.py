@@ -217,6 +217,9 @@ class UserPrefs(EventDispatcher):
         self.config.adddefaultsection('analysis_preferences')
         self.config.setdefault('analysis_preferences', 'selected_sessions_laps', '{"sessions":{}}')
 
+        self.config.adddefaultsection('setup')
+        self.config.setdefault('setup', 'setup_enabled', 1)
+        
     def load(self):
         Logger.info('UserPrefs: Data Dir is: {}'.format(self.data_dir))
         self.config = ConfigParser()
