@@ -23,7 +23,6 @@
 __version__ = "1.8.0"
 import sys
 import os
-from autosportlabs.racecapture.views.setup.setupview import SetupView
 
 if __name__ == '__main__' and sys.platform == 'win32':
     from multiprocessing import freeze_support
@@ -314,19 +313,22 @@ class RaceCaptureApp(App):
         self._rc_api.shutdown_api()
         self._telemetry_connection.telemetry_enabled = False
 
-    def showMainView(self, view_name):
+    def _get_main_screen(self, view_name):
         view = self.mainViews.get(view_name)
         if not view:
             view = self.view_builders[view_name]()
-            self.screenMgr.add_widget(view)
             self.mainViews[view_name] = view
-        self.screenMgr.current = view_name
+        return view
+        
+    def _show_main_view(self, view_name):
+        view = self._get_main_screen(view_name)
+        self.screenMgr.switch_to(view)
         self._session_recorder.on_view_change(view_name)
         self._data_bus_pump.on_view_change(view_name)
 
     def switchMainView(self, view_name):
             self.mainNav.anim_to_state('closed')
-            Clock.schedule_once(lambda dt: self.showMainView(view_name), 0.25)
+            Clock.schedule_once(lambda dt: self._show_main_view(view_name), 0.25)
 
     def build_config_view(self):
         config_view = ConfigView(name='config',
@@ -369,7 +371,7 @@ class RaceCaptureApp(App):
         return homepage_view
 
     def build_setup_view(self):
-        setup_view = SetupView(name='setup', databus=self._databus, base_dir=self.base_dir)
+        setup_view = SetupView(name='setup', settings=self.settings, databus=self._databus, base_dir=self.base_dir)
         return setup_view
     
     def init_view_builders(self):
@@ -425,7 +427,7 @@ class RaceCaptureApp(App):
         self._setup_toolbar()
         Clock.schedule_once(lambda dt: self.init_data())
         Clock.schedule_once(lambda dt: self.init_rc_comms())
-        Clock.schedule_once(lambda dt: self.show_startup_view())
+        Clock.schedule_once(lambda dt: self._show_startup_view())
         self.check_first_time_setup()
 
 
@@ -433,15 +435,20 @@ class RaceCaptureApp(App):
         if self.settings.userPrefs.get_pref('preferences', 'first_time_setup') == 'True':
             Clock.schedule_once(lambda dt: self.first_time_setup(), 0.5)
 
-    def show_startup_view(self):
-        self.showMainView('setup')
-        return
+    def _show_startup_view(self):
+        # should we show the stetup wizard?
+        setup_view = self._get_main_screen('setup')
+        if setup_view.should_show_setup:
+            print('should show setup!')
+            self._show_main_view('setup')
+            return
+        
         settings_to_view = {'Home Page':'home',
                             'Dashboard':'dash',
                             'Analysis': 'analysis',
                             'Configuration': 'config' }
         view_pref = self.settings.userPrefs.get_pref('preferences', 'startup_screen')
-        self.showMainView(settings_to_view[view_pref])
+        self._show_main_view(settings_to_view[view_pref])
 
     def init_rc_comms(self):
         port = self.getAppArg('port')
