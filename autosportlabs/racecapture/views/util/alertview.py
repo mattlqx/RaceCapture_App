@@ -28,7 +28,6 @@ from kivy.app import Builder
 from kivy.properties import StringProperty, ObjectProperty
 from kivy.clock import Clock
 from kivy.metrics import sp
-from kivy.metrics import dp
 from iconbutton import IconButton
 
 __all__ = ('alertPopup, confirmPopup, okPopup, editor_popup')
