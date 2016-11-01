@@ -31,6 +31,7 @@ from kivy.uix.screenmanager import Screen
 from kivy.clock import Clock
 from kivy import platform
 from kivy.logger import Logger
+from autosportlabs.help.helpmanager import HelpInfo
 
 from autosportlabs.racecapture.views.configuration.rcp.analogchannelsview import *
 from autosportlabs.racecapture.views.configuration.rcp.imuchannelsview import *
@@ -260,7 +261,10 @@ class ConfigView(Screen):
 
     def updateControls(self):
         Logger.debug("ConfigView: data is stale: " + str(self.writeStale))
-        self.ids.write.disabled = not self.writeStale
+        write_button = self.ids.write
+        write_button.disabled = not self.writeStale
+        write_button.pulsing = self.writeStale
+        Clock.schedule_once(lambda dt: HelpInfo.help_popup('rc_write_config', self, arrow_pos='left_mid'), 1.0)
 
     def update_tracks(self):
         track_manager = self.track_manager

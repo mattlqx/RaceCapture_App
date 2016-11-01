@@ -34,7 +34,7 @@ import traceback
 
 __all__ = ('check_help_popup_popup')
 
-HELP_INFO_LAYOUT='''
+HELP_INFO_LAYOUT = '''
 <HelpInfo>:
     orientation: 'vertical'
     canvas.before:
@@ -54,6 +54,7 @@ HELP_INFO_LAYOUT='''
         halign: 'center'
         text: root.help_text
         #size_hint_y: None
+        shorten: False
         text_size: self.width, None
         height: self.texture_size[1]
     AnchorLayout:
@@ -61,7 +62,6 @@ HELP_INFO_LAYOUT='''
         LabelIconButton:
             id: ok
             title: 'Got It'
-            tile_color: ColorScheme.get_secondary_text()
             icon_size: self.height * 0.5
             title_font_size: self.height * 0.7
             icon: u'\uf00c'
@@ -74,7 +74,7 @@ HELP_INFO_LAYOUT='''
 
 class HelpBubble(CenteredBubble):
     pass
-    
+
 class HelpInfo(BoxLayout):
     '''
     Displays a help popup message with a title and description
@@ -102,10 +102,10 @@ class HelpInfo(BoxLayout):
     help_info = {}
     title_text = StringProperty('')
     help_text = StringProperty('')
-    
+
     def __init__(self, key, **kwargs):
-        super(HelpInfo,self).__init__(**kwargs)
-        self._key = key 
+        super(HelpInfo, self).__init__(**kwargs)
+        self._key = key
 
     @staticmethod
     def get_helptext(key):
@@ -118,7 +118,7 @@ class HelpInfo(BoxLayout):
         if not helptext:
             Logger.error('HelpInfo: Could not load help for key {}'.format(key))
         return helptext
-        
+
     @staticmethod
     def help_popup(key, widget, arrow_pos='bottom_mid'):
         '''
@@ -136,9 +136,9 @@ class HelpInfo(BoxLayout):
                 helptext = HelpInfo.get_helptext(key)
                 if helptext:
                     content = HelpInfo(key, title_text=helptext['title'], help_text=helptext['text'])
-                    help_popup = HelpBubble(arrow_pos = arrow_pos,
+                    help_popup = HelpBubble(arrow_pos=arrow_pos,
                                             size=HelpInfo.HELP_POPUP_SIZE,
-                                            size_hint = (None,None))
+                                            size_hint=(None, None))
                     help_popup.add_widget(content)
                     help_popup.auto_dismiss_timeout(HelpInfo.HELP_POPUP_TIMEOUT)
                     widget.get_root_window().add_widget(help_popup)

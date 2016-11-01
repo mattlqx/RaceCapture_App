@@ -126,8 +126,6 @@ class SetupView(Screen):
 
     def _skip(self, continue_next_time):
         self._settings.userPrefs.set_pref('setup', 'setup_enabled', continue_next_time)
-        self.clear_widgets()
-        # self.ids.next.parent.remove_widget(self.ids.next)
 
     def on_skip(self):
         self._skip_request()
