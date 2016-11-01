@@ -33,17 +33,36 @@ INFO_VIEW_KV = """
             source: root.background_source
         AnchorLayout:
             anchor_y: 'top'
-            FieldLabel:
-                text: root.info_text
+            AnchorLayout:
+                canvas.before:
+                    Color:
+                        rgba: ColorScheme.get_dark_background_translucent()
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                size_hint_y: 0.4
+                padding: (dp(10), dp(10))
+                FieldLabel:
+                    text_size: self.size
+                    font_size: sp(30)
+                    text: root.info_text
+                    shorten: False
+                    valign: 'top'
         AnchorLayout:
             anchor_x: 'right'
             anchor_y: 'bottom'
             padding: (dp(10), dp(10))            
-            Button:
-                text: 'Next'
-                size_hint: (0.25, 0.2)
+            LabelIconButton:
+                id: next
+                title: 'Next'
+                icon_size: sp(20) #self.height * 0.5
+                title_font_size: sp(20) #self.height * 0.6
+                icon: u'\uf0a9'
+                size_hint: (0.2, 0.15)                
+                on_release: root.on_next()
+                
 """
-        
+
 class InfoView(Screen):
     background_source = StringProperty()
     info_text = StringProperty()

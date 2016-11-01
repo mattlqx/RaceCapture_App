@@ -70,21 +70,20 @@ SETUP_VIEW_KV = """
             size_hint_x: 0.75     
             AnchorLayout:       
                 ScreenManager:
-                    canvas.before:
-                        Color:
-                            rgba: ColorScheme.get_dark_background_translucent()
-                        Rectangle:
-                            pos: self.pos
-                            size: self.size    
                     id: screen_manager
                 AnchorLayout:
                     anchor_x: 'left'
                     anchor_y: 'bottom'
                     padding: (dp(10), dp(10))
-                    Button:
-                        size_hint: (0.25, 0.2)
-                        text: 'Skip'
-                        on_release: root.on_skip()
+                    LabelIconButton:
+                        id: next
+                        title: 'Skip'
+                        icon_size: sp(20) # self.height * 0.5
+                        title_font_size: sp(20) #self.height * 0.6
+                        icon: u'\uf052'
+                        size_hint: (0.2, 0.15)                
+                        on_release: self.tile_color=ColorScheme.get_dark_accent(); root.on_skip()
+                        on_press: self.tile_color=ColorScheme.get_medium_accent()
 """
 
 class SetupItem(BoxLayout):
@@ -92,7 +91,7 @@ class SetupItem(BoxLayout):
     complete = BooleanProperty(False)
     def __init__(self, **kwargs):
         super(SetupItem, self).__init__(**kwargs)
-        
+
 class SetupView(Screen):
     kv_loaded = False
     Builder.load_string(SETUP_VIEW_KV)
@@ -110,58 +109,57 @@ class SetupView(Screen):
     def on_enter(self):
         Clock.schedule_once(self.init_view)
 
-    @property        
+    @property
     def should_show_setup(self):
         """
         Returns True if this setup view should be activated
         """
         setup_enabled = self._settings.userPrefs.get_pref_bool('setup', 'setup_enabled')
         next_view = self._select_next_view()
-        print('setup enabled {} {}'.format(setup_enabled, next_view))
         return setup_enabled and next_view is not None
-        
+
     def _skip_request(self):
         def confirm_skip(instance, skip):
             self._skip(skip)
             popup.dismiss()
         popup = confirmPopup('Skip', 'Continue setup next time?', confirm_skip)
-        
+
     def _skip(self, continue_next_time):
-        print('continue next time {}'.format(continue_next_time))
         self._settings.userPrefs.set_pref('setup', 'setup_enabled', continue_next_time)
-             
+        self.clear_widgets()
+        # self.ids.next.parent.remove_widget(self.ids.next)
+
     def on_skip(self):
         self._skip_request()
-                
+
     def _init_setup_config(self):
         json_data = open(os.path.join(self._base_dir, 'resource', 'setup', 'setup.json'))
         setup_config = json.load(json_data)
         self._setup_config = setup_config
-        
+
     def init_view(self, *args):
         steps = self._setup_config['steps']
         for step in steps:
             content = SetupItem(title=step['title'], complete=step['complete'])
             self.ids.steps.add_widget(content)
-            
+
         screen = self._select_next_view()
         if screen is not None:
             self.ids.screen_manager.switch_to(screen)
         else:
             self._setup_complete()
-    
+
     def _select_next_view(self):
         setup_config = self._setup_config
         steps = setup_config['steps']
         for step in steps:
-            print('step {}'.format(step))
             if step['complete'] == False:
                 return self._select_view(step)
         return None
-    
+
     def _select_view(self, step):
         screen = setup_factory(step['key'])
         return screen
-    
+
     def _setup_complete(self):
-        print('setup complete')
+        pass
