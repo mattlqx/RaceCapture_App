@@ -121,13 +121,15 @@ class LabelIconButton(ButtonBehavior, AnchorLayout):
     def on_mouse_pos(self, *args):
         pos = args[1]
         if self.collide_point(*self.to_widget(*pos)):
-            self.tile_color = ColorScheme.get_medium_accent()
+            if not self.disabled:
+                self.tile_color = ColorScheme.get_medium_accent()
         else:
             self.tile_color = ColorScheme.get_dark_accent()
 
     def on_press(self, *args):
         super(LabelIconButton, self).on_press(*args)
-        self.tile_color = ColorScheme.get_medium_accent()
+        if not self.disabled:
+            self.tile_color = ColorScheme.get_medium_accent()
 
     def on_release(self, *args):
         super(LabelIconButton, self).on_release(*args)
