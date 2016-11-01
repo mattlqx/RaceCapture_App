@@ -78,8 +78,8 @@ SETUP_VIEW_KV = """
                     LabelIconButton:
                         id: next
                         title: 'Skip'
-                        icon_size: sp(20) # self.height * 0.5
-                        title_font_size: sp(20) #self.height * 0.6
+                        icon_size: self.height * 0.5
+                        title_font_size: self.height * 0.6
                         icon: u'\uf052'
                         size_hint: (0.2, 0.15)                
                         on_release: self.tile_color=ColorScheme.get_dark_accent(); root.on_skip()

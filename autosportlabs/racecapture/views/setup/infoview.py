@@ -44,7 +44,7 @@ INFO_VIEW_KV = """
                 padding: (dp(10), dp(10))
                 FieldLabel:
                     text_size: self.size
-                    font_size: sp(30)
+                    font_size: self.height * 0.15
                     text: root.info_text
                     shorten: False
                     valign: 'top'
@@ -55,8 +55,8 @@ INFO_VIEW_KV = """
             LabelIconButton:
                 id: next
                 title: 'Next'
-                icon_size: sp(20) #self.height * 0.5
-                title_font_size: sp(20) #self.height * 0.6
+                icon_size: self.height * 0.5
+                title_font_size: self.height * 0.6
                 icon: u'\uf0a9'
                 size_hint: (0.2, 0.15)                
                 on_release: root.on_next()
