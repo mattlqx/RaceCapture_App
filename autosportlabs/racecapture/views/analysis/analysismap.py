@@ -278,7 +278,8 @@ class AnalysisMap(AnalysisWidget):
         if not latitude or not longitude:
             return None
         point = GeoPoint.fromPoint(latitude, longitude)
-        track = self.track_manager.find_nearby_track(point)
+        tracks = self.track_manager.find_nearby_tracks(point)
+        track = tracks[0] if len(tracks) > 0 else None
         if self.track != track:
             # only update the trackmap if it's changing
             self._select_track(track)

@@ -19,17 +19,17 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 <RoundedRect>:
-	line_width: (self.height * 0.15) + 1
-	radius: self.height * 0.007
+	line_width: max(1, self.height * 0.15)
+	radius: max(1, self.height * 0.007)
     canvas:
         Color: 
-        	rgb: self.rect_color
+        	rgba: self.rect_color
         Line:
             rounded_rectangle: (self.x + (self.line_width), self.y + (self.line_width), self.right - self.x - self.line_width * 2, self.top - self.y - self.line_width *2, self.radius)      
             width: self.line_width
         Rectangle:
             pos: (self.x + self.line_width, self.y + self.line_width) 
-            size: (self.width - self. line_width*2, self.height - self.line_width * 2)
+            size: (max(1,self.width - self.line_width*2), max(1,self.height - self.line_width * 2))
 
 <TileIconButton>:
 	RoundedRect:

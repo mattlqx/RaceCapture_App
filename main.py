@@ -217,7 +217,7 @@ class RaceCaptureApp(App):
         Clock.schedule_once(lambda dt: self.notifyTracksUpdated())
 
     def loadCurrentTracksError(self, details):
-        alertPopup('Error Loading Tracks', str(details))
+        Clock.schedule_once(lambda dt: alertPopup('Error Loading Tracks', str(details)))
 
     def init_data(self):
         self.trackManager.init(None, self.loadCurrentTracksSuccess, self.loadCurrentTracksError)
@@ -351,7 +351,8 @@ class RaceCaptureApp(App):
         return status_view
 
     def build_dash_view(self):
-        dash_view = DashboardView(self.trackManager, self._rc_api, self.rc_config, name='dash', dataBus=self._databus, settings=self.settings)
+        dash_view = DashboardView(self._status_pump, self.trackManager, self._rc_api, self.rc_config, self._databus, self.settings, name='dash')
+        self.config_listeners.append(dash_view)
         self.tracks_listeners.append(dash_view)
         return dash_view
 

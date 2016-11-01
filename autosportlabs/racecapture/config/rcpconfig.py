@@ -480,6 +480,29 @@ class GpsConfig(object):
 
         return gpsJson
 
+class GpsSample(object):
+    """
+    Represents a GPS sample with accompanying quality indicator
+    """
+    def __init__(self, **kwargs):
+        self.gps_qual = 0
+        self.latitude = 0
+        self.longitude = 0
+
+    @property
+    def is_locked(self):
+        """
+        :return True if the GPS is fixed and latitude / longitude values are valid.
+        """
+        return self.gps_qual >= GpsConfig.GPS_QUALITY_NO_FIX and self.latitude != 0 and self.longitude !=0
+    
+    @property
+    def geopoint(self):
+        """
+        Convert the GPS sample to a GeoPoint
+        :return GeoPoint 
+        """
+        return GeoPoint.fromPoint(self.latitude, self.longitude)
 
 TIMER_CHANNEL_COUNT = 3
 
@@ -703,21 +726,26 @@ class Track(object):
             self.stale = False
 
     @classmethod
-    def fromTrackMap(cls, trackMap):
+    def fromTrackMap(cls, track_map):
         t = Track()
-        t.trackId = trackMap.short_id
-        t.trackType = TRACK_TYPE_STAGE if trackMap.finish_point else TRACK_TYPE_CIRCUIT
-        t.startLine = copy(trackMap.start_finish_point)
-        t.finishLine = copy(trackMap.finish_point)
-
-        maxSectorCount = CONFIG_SECTOR_COUNT_CIRCUIT if t.trackType == TRACK_TYPE_CIRCUIT else CONFIG_SECTOR_COUNT_STAGE
-        sectorCount = 0
-        for point in trackMap.sector_points:
-            sectorCount += 1
-            if sectorCount > maxSectorCount: break
-            t.sectors.append(copy(point))
+        t.import_trackmap(track_map)
         return t
 
+    def import_trackmap(self, track_map):
+        self.trackId = track_map.short_id
+        self.trackType = TRACK_TYPE_STAGE if track_map.finish_point else TRACK_TYPE_CIRCUIT
+        self.startLine = copy(track_map.start_finish_point)
+        self.finishLine = GeoPoint() if self.trackType == TRACK_TYPE_CIRCUIT else copy(track_map.finish_point)
+        max_sectors = CONFIG_SECTOR_COUNT_CIRCUIT if self.trackType == TRACK_TYPE_CIRCUIT else CONFIG_SECTOR_COUNT_STAGE
+
+        del self.sectors[:]
+        for i in range (0, max_sectors):
+            if i < len(track_map.sector_points):
+                self.sectors.append(copy(track_map.sector_points[i]))
+            else:
+                self.sectors.append(GeoPoint())
+        self.stale = True
+        
     def toJson(self):
         sectors = []
         for sector in self.sectors:

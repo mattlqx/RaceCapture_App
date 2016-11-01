@@ -22,13 +22,15 @@ import kivy
 import math
 kivy.require('1.9.1')
 from autosportlabs.uix.color import colorgradient
+from kivy.core.image import Image as CoreImage
+from kivy.core.text import Label as CoreLabel
 from kivy.uix.label import Label
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.widget import Widget
 from kivy.uix.scatter import Scatter
 from kivy.app import Builder
 from kivy.metrics import sp
-from kivy.properties import ListProperty, NumericProperty
+from kivy.properties import ListProperty, NumericProperty, ObjectProperty
 from kivy.graphics import Color, Line, Bezier, Rectangle
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.uix.color.colorgradient import HeatColorGradient, SimpleColorGradient
@@ -54,25 +56,44 @@ class TrackPath(object):
         self.path = path
 
 class TrackMapView(Widget):
+    start_image = CoreImage('resource/trackmap/startfinish_64px.png')
+    finish_image = CoreImage('resource/trackmap/startfinish_64px.png')
     # min / max for heat map range
     heat_min = NumericProperty(0.0)
     heat_max = NumericProperty(100.0)
 
+    # start and finish points
+    start_point = ObjectProperty(None, allownone=True)
+    start_point_color = ListProperty([0.0, 1.0, 0.0, 1.0])
+
+    finish_point = ObjectProperty(None, allownone=True)
+    finish_point_color = ListProperty([1.0, 0.0, 0.0, 1.0])
+
+    sector_point_color = ListProperty([1.0, 1.0, 0.0, 1.0])
+
+    # sector points
+    sector_points = ListProperty([])
+
     track_color = ListProperty([1.0, 1.0, 1.0, 0.5])
+    alt_track_color = ListProperty([1.0, 0.0, 0.0, 0.5])
     marker_scale = NumericProperty(1.0)
 
     MIN_PADDING = sp(1)
+    DEFAULT_TARGET_WIDTH_SCALE = 0.075
     DEFAULT_TRACK_WIDTH_SCALE = 0.01
     DEFAULT_MARKER_WIDTH_SCALE = 0.02
     DEFAULT_PATH_WIDTH_SCALE = 0.004
     DEFAULT_HEAT_WIDTH_SCALE = 0.01
     HEAT_MAP_WIDTH_STEP = 2
+    DEFAULT_MARKER_SCALE = 1.0
 
+    target_scale = NumericProperty(1.0)
     def __init__(self, **kwargs):
         super(TrackMapView, self).__init__(**kwargs)
         self.bind(pos=self._update_map)
         self.bind(size=self._update_map)
 
+        self.target_width_scale = self.DEFAULT_TARGET_WIDTH_SCALE
         self.track_width_scale = self.DEFAULT_TRACK_WIDTH_SCALE
         self.marker_width_scale = self.DEFAULT_MARKER_WIDTH_SCALE
         self.path_width_scale = self.DEFAULT_PATH_WIDTH_SCALE
@@ -94,6 +115,9 @@ class TrackMapView(Widget):
         self._marker_points = {}
         self._marker_locations = {}
 
+        # start / finish points
+        self._start_finish_width_scale = self.DEFAULT_MARKER_WIDTH_SCALE
+
         # The map _paths
         self._paths = {}
         self._scaled_paths = {}
@@ -102,7 +126,10 @@ class TrackMapView(Widget):
     def on_marker_scale(self, instance, value):
         self._draw_current_markers()
 
-    def on_trackColor(self, instance, value):
+    def on_track_color(self, instance, value):
+        self._draw_current_map()
+
+    def on_alt_track_color(self, instance, value):
         self._draw_current_map()
 
     def setTrackPoints(self, geoPoints):
@@ -113,6 +140,21 @@ class TrackMapView(Widget):
         '''
         self._gen_map_points(geoPoints)
         self._update_map()
+
+    def on_sector_points(self, instance, value):
+        self._draw_current_map()
+
+    def on_start_point(self, instance, value):
+        self._draw_current_map()
+
+    def on_start_point_color(self, instance, value):
+        self._draw_current_map()
+
+    def on_finish_point(self, instance, value):
+        self._draw_current_map()
+
+    def on_finish_point_color(self, instance, value):
+        self._draw_current_map()
 
     def get_path(self, key):
         '''
@@ -356,12 +398,55 @@ class TrackMapView(Widget):
                     Color(*self._paths[key].color)
                     Line(points=path_points, width=sp(self.path_width_scale * self.height), closed=True, cap='square', joint='miter')
 
-            # draw the markers
+            # draw the dynamic markers
             marker_size = (self.marker_width_scale * self.height) * self.marker_scale
             for key, marker_point in self._marker_points.iteritems():
                 scaled_point = self._scale_point(marker_point, self.height, left, bottom)
                 Color(*marker_point.color)
                 self._marker_locations[key] = Line(circle=(scaled_point.x, scaled_point.y, marker_size), width=marker_size, closed=True)
+
+            target_size = (self.target_width_scale * self.height) * self.target_scale
+            # draw start point
+            if GeoPoint.is_valid(self.start_point):
+                Color(*self.start_point_color)
+                scaled_point = self._scale_geopoint(self.start_point)
+                Rectangle(texture=TrackMapView.start_image.texture, pos=self._center_point(scaled_point, (target_size, target_size)), size=[target_size, target_size])
+
+            # draw finish point
+            if GeoPoint.is_valid(self.finish_point):
+                Color(*self.finish_point_color)
+                scaled_point = self._scale_geopoint(self.finish_point)
+                Rectangle(texture=TrackMapView.finish_image.texture, pos=self._center_point(scaled_point, (target_size, target_size)), size=[target_size, target_size])
+
+            # draw the sector points
+            sector_count = 0
+            sector_target_size = target_size / 3.0
+            for sector_point in self.sector_points:
+                sector_count += 1
+                scaled_point = self._scale_geopoint(sector_point)
+                label = CoreLabel(text='{:>2}'.format(sector_count), font_size=target_size * 0.8, font_name='resource/fonts/ASL_regular.ttf')
+                label.refresh()
+                texture = label.texture
+                centered_point = self._center_point(scaled_point, texture.size)
+                Color(*self.sector_point_color)
+                Rectangle(source='resource/trackmap/sector_64px.png', pos=self._center_point(scaled_point, texture.size), size=[target_size, target_size])
+                Color(0.0, 0.0, 0.0, 1.0)
+                # Tweak font position to improve centering. SHould be a better way to do this
+                trim_x = texture.size[0] * 0.1
+                trim_y = -texture.size[1] * 0.05
+                Rectangle(size=texture.size, pos=(centered_point[0] + trim_x, centered_point[1] + trim_y), texture=texture)
+
+
+
+    def _center_point(self, point, size):
+        return (point.x - (size[0] / 2.0), point.y - (size[1] / 2.0))
+
+    def _scale_geopoint(self, geopoint):
+        left = self.pos[0]
+        bottom = self.pos[1]
+        point = self._offset_track_point(self._project_point(geopoint))
+        scaled_point = self._scale_point(point, self.height, left, bottom)
+        return scaled_point
 
     def _offset_track_point(self, point):
         point.x = point.x - self._min_XY.x

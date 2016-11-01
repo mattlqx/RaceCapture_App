@@ -136,6 +136,7 @@ class RcpApi:
         self._enable_autodetect.clear()
 
     def recover_connection(self):
+        self.connected_version = None
         self._notify_disconnect_listeners()
 
         if self._enable_autodetect.is_set():

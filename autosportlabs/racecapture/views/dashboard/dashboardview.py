@@ -19,8 +19,9 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import kivy
 import time
+import datetime
+import kivy
 kivy.require('1.9.1')
 from kivy.uix.carousel import Carousel
 from kivy.uix.settings import SettingsWithNoMenu
@@ -34,22 +35,23 @@ from utils import kvFindClass
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.button import Button
+from autosportlabs.util.timeutil import epoch_to_time, time_to_epoch
 from autosportlabs.racecapture.views.dashboard.widgets.digitalgauge import DigitalGauge
 from autosportlabs.racecapture.views.dashboard.widgets.stopwatch import PitstopTimerView
 from autosportlabs.racecapture.settings.systemsettings import SettingsListener
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
-from autosportlabs.racecapture.views.configuration.rcp.trackselectview import TrackSelectView
+from autosportlabs.racecapture.views.configuration.rcp.track.trackbuilder import TrackBuilderView
 from autosportlabs.racecapture.views.util.alertview import editor_popup
-from autosportlabs.racecapture.config.rcpconfig import Track
-from autosportlabs.racecapture.config.rcpconfig import TrackConfig
-from autosportlabs.racecapture.config.rcpconfig import Capabilities
-
+from autosportlabs.racecapture.config.rcpconfig import Track, TrackConfig, Capabilities, GpsConfig, GpsSample
+from autosportlabs.racecapture.tracks.trackmanager import TrackMap, TrackManager
 # Dashboard screens
 from autosportlabs.racecapture.views.dashboard.gaugeview import GaugeView
 from autosportlabs.racecapture.views.dashboard.tachometerview import TachometerView
 from autosportlabs.racecapture.views.dashboard.laptimeview import LaptimeView
 from autosportlabs.racecapture.views.dashboard.rawchannelview import RawChannelView
 from autosportlabs.racecapture.views.dashboard.comboview import ComboView
+from autosportlabs.racecapture.geo.geopoint import GeoPoint
+from autosportlabs.help.helpmanager import HelpInfo
 
 from collections import OrderedDict
 DASHBOARD_VIEW_KV = """
@@ -98,7 +100,6 @@ DASHBOARD_VIEW_KV = """
                 on_press: root.on_preferences()
 """
 
-
 class DashboardView(Screen):
     """
     The main dashboard view.
@@ -106,27 +107,53 @@ class DashboardView(Screen):
     """
     _POPUP_SIZE_HINT = (0.75, 0.8)
     _POPUP_DISMISS_TIMEOUT_LONG = 60.0
+    AUTO_CONFIGURE_WAIT_PERIOD_DAYS = 1
     Builder.load_string(DASHBOARD_VIEW_KV)
 
-    def __init__(self, track_manager, rc_api, rc_config, **kwargs):
+    def __init__(self, status_pump, track_manager, rc_api, rc_config, databus, settings, **kwargs):
         self._initialized = False
         self._view_builders = OrderedDict()
         super(DashboardView, self).__init__(**kwargs)
         self.register_event_type('on_tracks_updated')
-        self._databus = kwargs.get('dataBus')
-        self._settings = kwargs.get('settings')
+        self.register_event_type('on_config_updated')
+        self.register_event_type('on_config_written')
+        self._status_pump = status_pump
+        self._databus = databus
+        self._settings = settings
         self._track_manager = track_manager
         self._rc_api = rc_api
         self._rc_config = rc_config
         self._alert_widgets = {}
         self._dismiss_popup_trigger = Clock.create_trigger(self._dismiss_popup, DashboardView._POPUP_DISMISS_TIMEOUT_LONG)
         self._popup = None
-        self._race_setup_view = None
-        self._selected_track = None
         self._track_config = None
+        self._gps_sample = GpsSample()
+        status_pump.add_listener(self.status_updated)
+
+    def status_updated(self, status):
+        status = status['status']['GPS']
+        quality = status['qual']
+        latitude = status['lat']
+        longitude = status['lon']
+        current_gps_qual = self._gps_sample.gps_qual
+        self._gps_sample.gps_qual = quality
+        self._gps_sample.latitude = latitude
+        self._gps_sample.longitude = longitude
+
+        if quality > GpsConfig.GPS_QUALITY_NO_FIX and current_gps_qual <= GpsConfig.GPS_QUALITY_NO_FIX:
+            # We have transition to having valid GPS
+            self._race_setup()
 
     def on_tracks_updated(self, trackmanager):
         pass
+
+    def on_config_updated(self, rc_config):
+        self._rc_config = rc_config
+        self._race_setup()
+
+    def on_config_written(self, rc_config):
+        self._rc_config = rc_config
+        self._race_setup()
 
     def _init_view_builders(self):
         # Factory / builder functions for views
@@ -198,76 +225,100 @@ class DashboardView(Screen):
 
     def _race_setup(self):
 
-        """
-        Beginnings of a 'race setup' screen that checks everything is working and set correctly. Currently
-        just checks that a track map is detected/set.
-        :return:
-        """
-        if self._rc_api.connected:
-            if not self._selected_track:
+        # skip if this screen is not active
+        if self.manager.current_screen != self:
+            return
 
-                def capabilities_fail(*args):
-                    Logger.error("DashboardView: _race_setup(), could not get capabilities to determine if device has "
-                                 "a tracks db")
+        # skip if we're not connected
+        if not self._rc_api.connected:
+            return
 
-                def capabilities_success(capabilities_dict):
-                    capabilities = Capabilities()
-                    capabilities.from_json_dict(capabilities_dict['capabilities'])
+        # skip if GPS data is not good
+        if self._gps_sample.gps_qual <= GpsConfig.GPS_QUALITY_NO_FIX:
+            return
 
-                    # For devices that have no device storage, attempt to set a track
-                    if capabilities.storage.tracks == 0:
+        track_cfg = self._rc_config.trackConfig
+        auto_detect = track_cfg.autoDetect
 
-                        # Now figure out if the device already has a track set, if not, set one. Enough callbacks yet?!
+        # skip if we haven't enabled auto detection
+        if not auto_detect:
+            return
 
-                        def track_fail(*args):
-                            Logger.error("DashboardView: _race_setup(), could not get track config")
+        # what track is currently configured?
+        current_track = TrackMap.from_track_cfg(track_cfg.track)
 
-                        def track_success(track_config):
-                            self._track_config = TrackConfig()
+        # is the currently configured track in the list of nearby tracks?
+        # if so, just keep this one
+        tracks = self._track_manager.find_nearby_tracks(self._gps_sample.geopoint)
 
-                            self._track_config.fromJson(track_config['trackCfg'])
-                            Logger.debug("DashboardView: _race_setup(), got track config: {}".format(self._track_config))
+        prefs = self._settings.userPrefs
+        last_track_set_time = datetime.datetime.fromtimestamp(prefs.get_last_selected_track_timestamp())
+        track_set_a_while_ago = datetime.datetime.now() > last_track_set_time + datetime.timedelta(days=DashboardView.AUTO_CONFIGURE_WAIT_PERIOD_DAYS)
+        
+        # is the currently configured track in the area?
+        current_track_is_nearby = current_track.short_id in (t.short_id for t in tracks)
 
-                            # Only clear way to know if the track in the track config is a real track or not is by
-                            # checking start/finish point. If both are 0, not a track. Can't use track id because a
-                            # track id of 0 can be a user defined track
-                            if self._track_config.track.startLine.latitude == 0 and \
-                               self._track_config.track.startLine.longitude == 0:
-                                    # Prompt for track!
-                                    # Scheduling once because this callback is not in the UI thread and if we update
-                                    # the UI now we'll crash >:\
-                                    Clock.schedule_once(lambda dt: self._load_race_setup_view())
+        # no need to re-detect a nearby track that was recently set
+        if current_track_is_nearby and not track_set_a_while_ago:
+            Logger.info('DashboardView: Nearby track was recently set, skipping auto configuration')
+            return
 
-                        self._rc_api.getTrackCfg(track_success, track_fail)
+        # we found only one track nearby, so select it and be done.
+        if len(tracks) == 1:
+            new_track = tracks[0]
+            Logger.info('DashboardView: auto selecting track {}({})'.format(new_track.name, new_track.short_id))
+            track_cfg.track.import_trackmap(new_track)
+            self._set_rc_track(track_cfg)
+            return
 
-                Clock.schedule_once(lambda dt: self._rc_api.get_capabilities(capabilities_success, capabilities_fail))
-            else:
-                self._set_rc_track(self._selected_track, self._track_config)
+        # ok. To prevent repeatedly pestering the user about asking to configure a track
+        # check if the user last cancelled near the same location
+        last_cancelled_location = GeoPoint.from_string(prefs.get_user_cancelled_location())
+        radius = last_cancelled_location.metersToDegrees(TrackManager.TRACK_DEFAULT_SEARCH_RADIUS_METERS, 
+                                                         TrackManager.TRACK_DEFAULT_SEARCH_BEARING_DEGREES)
+        if last_cancelled_location.withinCircle(self._gps_sample.geopoint, radius):
+            Logger.info("DashboardView: Still near the same location where the user last cancelled track configuration. Not pestering again")
+            return
+        
+        # if we made it this far, we're going to ask the user to help select or create a track
+        Clock.schedule_once(lambda dt: self._load_track_setup_view(track_cfg))
 
-    def _load_race_setup_view(self):
-        content = TrackSelectView(self._track_manager)
-        self._race_setup_view = content
-        self._popup = editor_popup("Select your track", content, self._on_race_setup_close)
+    def _load_track_setup_view(self, track_cfg):
+
+        def on_track_complete(instance, track_map):
+            Logger.debug("DashboardView: setting track_map: {}".format(track_map))
+            self._track_manager.add_track(track_map)
+            track_cfg.track.import_trackmap(track_map)
+            track_cfg.stale = True
+            self._set_rc_track(track_cfg)
+
+            self._popup.dismiss()
+            self._popup = None
+            
+            
+        def on_close(instance, answer):
+            if not answer:
+                # user cancelled, store current location as where they cancelled
+                # so we prevent bugging the user again
+                self._settings.userPrefs.set_last_selected_track(0, 0, str(self._gps_sample.geopoint))
+                HelpInfo.help_popup('lap_setup', self)
+
+            self._popup.dismiss()
+            self._popup = None
+
+        if self._popup is not None:
+            # can't open dialog multiple times
+            return
+        
+        content = TrackBuilderView(self._rc_api, self._databus, self._track_manager, current_point=self._gps_sample.geopoint)
+        self._popup = editor_popup("Race track setup", content, on_close, hide_ok=True)
+        content.bind(on_track_complete=on_track_complete)
         self._popup.open()
 
-    def _on_race_setup_close(self, instance, answer):
-        if answer:
-            self._selected_track = self._race_setup_view.selected_track
-            Logger.debug("DashboardView: setting track: {}".format(self._selected_track))
-            self._set_rc_track(self._selected_track, self._track_config)
-
-        self._popup.dismiss()
-
-    def _set_rc_track(self, track, track_config):
-        new_track = Track.fromTrackMap(track)
-        new_track.trackId = track.short_id
-        track_config.track = new_track
-        track_config.autoDetect = False
-        self._rc_api.setTrackCfg(track_config.toJson())
+    def _set_rc_track(self, track_cfg):
+        self._rc_api.setTrackCfg(track_cfg.toJson())
         self._rc_api.sendFlashConfig()
-
-        now = int(time.time())
-        self._settings.userPrefs.set_last_selected_track(track.track_id, now)
+        self._settings.userPrefs.set_last_selected_track(track_cfg.track.trackId, int(time.mktime(datetime.datetime.now().timetuple())))
 
     def on_enter(self):
         Window.bind(mouse_pos=self.on_mouse_pos)
