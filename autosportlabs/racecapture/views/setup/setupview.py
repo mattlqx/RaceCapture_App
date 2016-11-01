@@ -144,9 +144,9 @@ class SetupView(Screen):
             content = SetupItem(title=step['title'], complete=step['complete'])
             self.ids.steps.add_widget(content)
             
-        view = self._select_next_view()
-        if view is not None:
-            self._select_view(view)
+        screen = self._select_next_view()
+        if screen is not None:
+            self.ids.screen_manager.switch_to(screen)
         else:
             self._setup_complete()
     
@@ -161,7 +161,6 @@ class SetupView(Screen):
     
     def _select_view(self, step):
         screen = setup_factory(step['key'])
-        self.ids.screen_manager.switch_to(screen)
         return screen
     
     def _setup_complete(self):

@@ -23,15 +23,30 @@ kivy.require('1.9.1')
 from kivy.clock import Clock
 from kivy.app import Builder
 from kivy.uix.screenmanager import Screen
-from autosportlabs.racecapture.views.setup.infoview import InfoView
+from kivy.properties import StringProperty
 
-INTRO_VIEW_KV = """
-<IntroView>:
-    #background_source: ''
-    #info_text: 'the info text'
+INFO_VIEW_KV = """    
+<InfoView>:
+    AnchorLayout:
+        Image:
+            allow_stretch: True
+            source: root.background_source
+        AnchorLayout:
+            anchor_y: 'top'
+            FieldLabel:
+                text: root.info_text
+        AnchorLayout:
+            anchor_x: 'right'
+            anchor_y: 'bottom'
+            padding: (dp(10), dp(10))            
+            Button:
+                text: 'Next'
+                size_hint: (0.25, 0.2)
 """
         
-class IntroView(InfoView):
-    Builder.load_string(INTRO_VIEW_KV)
+class InfoView(Screen):
+    background_source = StringProperty()
+    info_text = StringProperty()
+    Builder.load_string(INFO_VIEW_KV)
     def __init__(self, **kwargs):
-        super(IntroView, self).__init__(**kwargs)
+        super(InfoView, self).__init__(**kwargs)
