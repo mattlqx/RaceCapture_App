@@ -254,7 +254,7 @@ class DashboardView(Screen):
         prefs = self._settings.userPrefs
         last_track_set_time = datetime.datetime.fromtimestamp(prefs.get_last_selected_track_timestamp())
         track_set_a_while_ago = datetime.datetime.now() > last_track_set_time + datetime.timedelta(days=DashboardView.AUTO_CONFIGURE_WAIT_PERIOD_DAYS)
-        
+
         # is the currently configured track in the area?
         current_track_is_nearby = current_track.short_id in (t.short_id for t in tracks)
 
@@ -274,12 +274,12 @@ class DashboardView(Screen):
         # ok. To prevent repeatedly pestering the user about asking to configure a track
         # check if the user last cancelled near the same location
         last_cancelled_location = GeoPoint.from_string(prefs.get_user_cancelled_location())
-        radius = last_cancelled_location.metersToDegrees(TrackManager.TRACK_DEFAULT_SEARCH_RADIUS_METERS, 
+        radius = last_cancelled_location.metersToDegrees(TrackManager.TRACK_DEFAULT_SEARCH_RADIUS_METERS,
                                                          TrackManager.TRACK_DEFAULT_SEARCH_BEARING_DEGREES)
         if last_cancelled_location.withinCircle(self._gps_sample.geopoint, radius):
             Logger.info("DashboardView: Still near the same location where the user last cancelled track configuration. Not pestering again")
             return
-        
+
         # if we made it this far, we're going to ask the user to help select or create a track
         Clock.schedule_once(lambda dt: self._load_track_setup_view(track_cfg))
 
@@ -294,8 +294,8 @@ class DashboardView(Screen):
 
             self._popup.dismiss()
             self._popup = None
-            
-            
+
+
         def on_close(instance, answer):
             if not answer:
                 # user cancelled, store current location as where they cancelled
@@ -309,7 +309,7 @@ class DashboardView(Screen):
         if self._popup is not None:
             # can't open dialog multiple times
             return
-        
+
         content = TrackBuilderView(self._rc_api, self._databus, self._track_manager, current_point=self._gps_sample.geopoint)
         self._popup = editor_popup("Race track setup", content, on_close, hide_ok=True)
         content.bind(on_track_complete=on_track_complete)

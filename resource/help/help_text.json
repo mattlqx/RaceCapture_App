@@ -13,6 +13,6 @@
     },
     "rc_write_config":{
         "title": "Write Configuration",
-        "text": "When done making changes, be sure to write the configuration back to RaceCapture"    
+        "text": "When done, make sure you write your changes back to RaceCapture"    
     }    
 }

@@ -22,13 +22,14 @@ import kivy
 kivy.require('1.9.1')
 from kivy.clock import Clock
 from kivy.app import Builder
-from kivy.properties import BooleanProperty, StringProperty
+from kivy.properties import BooleanProperty, StringProperty, ListProperty
 from kivy.uix.screenmanager import Screen
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.checkbox import CheckBox
 from fieldlabel import FieldLabel
 from autosportlabs.racecapture.views.setup.setupfactory import setup_factory
 from autosportlabs.racecapture.views.util.alertview import confirmPopup
+from autosportlabs.racecapture.theme.color import ColorScheme
 import os
 import json
 
@@ -52,6 +53,7 @@ SETUP_VIEW_KV = """
         id: title
         size_hint_x: 0.75
         text: root.title
+        color: root.title_color
         font_size: self.height * 0.4
     
 <SetupView>:
@@ -89,43 +91,45 @@ SETUP_VIEW_KV = """
 class SetupItem(BoxLayout):
     title = StringProperty('')
     complete = BooleanProperty(False)
+    active = BooleanProperty(False)
+    title_color = ListProperty(ColorScheme.get_secondary_text())
+
     def __init__(self, **kwargs):
         super(SetupItem, self).__init__(**kwargs)
 
+    def on_active(self, instance, value):
+        self.title_color = ColorScheme.get_light_primary_text() if value else ColorScheme.get_secondary_text()
+
 class SetupView(Screen):
+    SETUP_COMPLETE_DELAY = 1.0
     kv_loaded = False
     Builder.load_string(SETUP_VIEW_KV)
     def __init__(self, settings, databus, base_dir, **kwargs):
         super(SetupView, self).__init__(**kwargs)
+        self.register_event_type('on_setup_complete')
         self._settings = settings
         self._base_dir = base_dir
         self._databus = databus
         self._setup_config = None
         self._init_setup_config()
+        self._current_screen = None
+        self._current_step = None
+        self._steps = {}
 
         if not SetupView.kv_loaded:
             SetupView.kv_loaded = True
 
+    def on_setup_complete(self):
+        pass
+
     def on_enter(self):
         Clock.schedule_once(self.init_view)
 
-    @property
-    def should_show_setup(self):
-        """
-        Returns True if this setup view should be activated
-        """
-        setup_enabled = self._settings.userPrefs.get_pref_bool('setup', 'setup_enabled')
-        next_view = self._select_next_view()
-        return setup_enabled and next_view is not None
-
     def _skip_request(self):
         def confirm_skip(instance, skip):
-            self._skip(skip)
             popup.dismiss()
+            self._setup_complete(skip)
         popup = confirmPopup('Skip', 'Continue setup next time?', confirm_skip)
-
-    def _skip(self, continue_next_time):
-        self._settings.userPrefs.set_pref('setup', 'setup_enabled', continue_next_time)
 
     def on_skip(self):
         self._skip_request()
@@ -140,24 +144,41 @@ class SetupView(Screen):
         for step in steps:
             content = SetupItem(title=step['title'], complete=step['complete'])
             self.ids.steps.add_widget(content)
+            self._steps[step['key']] = content
 
-        screen = self._select_next_view()
-        if screen is not None:
+        self._show_next_screen()
+
+    def _show_next_screen(self):
+        screen, step = self._select_next_view()
+        if screen and step:
             self.ids.screen_manager.switch_to(screen)
+            self._current_step = step
+            self._current_screen = screen
+            screen.bind(on_next=self.on_next_screen)
+            self._steps[step['key']].active = True
         else:
-            self._setup_complete()
+            self._setup_complete(show_next_time=False)
+
+    def on_next_screen(self, instance):
+        step = self._current_step
+        step['complete'] = True
+        self._steps[step['key']].complete = True
+        self._show_next_screen()
 
     def _select_next_view(self):
         setup_config = self._setup_config
         steps = setup_config['steps']
         for step in steps:
             if step['complete'] == False:
-                return self._select_view(step)
-        return None
+                screen, step = self._select_view(step), step
+                screen.is_last = step == steps[-1]
+                return screen, step
+        return None, None
 
     def _select_view(self, step):
         screen = setup_factory(step['key'])
         return screen
 
-    def _setup_complete(self):
-        pass
+    def _setup_complete(self, show_next_time=False):
+        self._settings.userPrefs.set_pref('setup', 'setup_enabled', show_next_time)
+        Clock.schedule_once(lambda dt: self.dispatch('on_setup_complete'), SetupView.SETUP_COMPLETE_DELAY)

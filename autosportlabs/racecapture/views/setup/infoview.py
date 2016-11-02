@@ -23,7 +23,7 @@ kivy.require('1.9.1')
 from kivy.clock import Clock
 from kivy.app import Builder
 from kivy.uix.screenmanager import Screen
-from kivy.properties import StringProperty
+from kivy.properties import StringProperty, BooleanProperty
 
 INFO_VIEW_KV = """    
 <InfoView>:
@@ -54,18 +54,39 @@ INFO_VIEW_KV = """
             padding: (dp(10), dp(10))            
             LabelIconButton:
                 id: next
-                title: 'Next'
+                title: root.next_text
                 icon_size: self.height * 0.5
                 title_font_size: self.height * 0.6
-                icon: u'\uf0a9'
-                size_hint: (0.2, 0.15)                
-                on_release: root.on_next()
+                icon: root.next_icon
+                size_hint: (0.22, 0.15)                
+                on_release: root._on_next()
                 
 """
 
 class InfoView(Screen):
+    next_text = StringProperty('Next')
+    next_icon = StringProperty(u'\uf0a9')
     background_source = StringProperty()
     info_text = StringProperty()
+    is_last = BooleanProperty(False)
+
     Builder.load_string(INFO_VIEW_KV)
     def __init__(self, **kwargs):
         super(InfoView, self).__init__(**kwargs)
+        self.register_event_type('on_next')
+
+    def on_enter(self, *args):
+        self.ids.next.pulsing = True
+
+    def on_leave(self, *args):
+        self.ids.next.pulsing = False
+
+    def on_next(self):
+        pass
+
+    def on_is_last(self, instance, value):
+        self.next_text = 'Done' if value else 'Next'
+        self.next_icon = u'\uf00c' if value else u'\uf0a9'
+
+    def _on_next(self):
+        self.dispatch('on_next')

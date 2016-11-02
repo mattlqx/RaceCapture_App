@@ -17,22 +17,21 @@
 # See the GNU General Public License for more details. You should
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
-from autosportlabs.racecapture.views.setup.introview import IntroView
-from autosportlabs.racecapture.views.setup.selectdeviceview import SelectDeviceView
-from autosportlabs.racecapture.views.setup.selectconnectionview import SelectConnectionView
-from autosportlabs.racecapture.views.setup.finishsetupview import FinishSetupView
 
-__all__ = 'setup_factory'
+import kivy
+kivy.require('1.9.1')
+from kivy.clock import Clock
+from kivy.app import Builder
+from kivy.uix.screenmanager import Screen
+from autosportlabs.racecapture.views.setup.infoview import InfoView
 
+SELECT_DEVICE_VIEW_KV = """
+<SelectDeviceView>:
+    background_source: ''
+    info_text: 'Select your Device!'
+"""
 
-def setup_factory(key):
-    # Connection type can be overridden by user or for testing purposes
-    if key == 'intro':
-        return IntroView()
-    elif key == 'device':
-        return SelectDeviceView()
-    elif key == 'connection':
-        return SelectConnectionView()
-    elif key == 'finish':
-        return FinishSetupView()
-    return None
+class SelectDeviceView(InfoView):
+    Builder.load_string(SELECT_DEVICE_VIEW_KV)
+    def __init__(self, **kwargs):
+        super(SelectDeviceView, self).__init__(**kwargs)

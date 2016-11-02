@@ -109,7 +109,7 @@ class FadeableWidget(EventDispatcher):
     FADED_ALPHA = 0.1
     BRIGHT_ALPHA = 1.0
     FADE_STEP = 0.05
-    FADE_INTERVAL = 0.025
+    FADE_INTERVAL = 0.05
     FADE_DELAY = 5.0
     fade_color = ObjectProperty([0, 0, 0, 0])
     pulsing = BooleanProperty(False)

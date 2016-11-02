@@ -319,10 +319,16 @@ class RaceCaptureApp(App):
             view = self.view_builders[view_name]()
             self.mainViews[view_name] = view
         return view
-        
+
     def _show_main_view(self, view_name):
-        view = self._get_main_screen(view_name)
-        self.screenMgr.switch_to(view)
+        screen = self._get_main_screen(view_name)
+
+        screen_mgr = self.screenMgr
+        if screen_mgr.has_screen(screen.name):
+            screen_mgr.current = screen.name
+        else:
+            self.screenMgr.switch_to(screen)
+
         self._session_recorder.on_view_change(view_name)
         self._data_bus_pump.on_view_change(view_name)
 
@@ -374,7 +380,7 @@ class RaceCaptureApp(App):
     def build_setup_view(self):
         setup_view = SetupView(name='setup', settings=self.settings, databus=self._databus, base_dir=self.base_dir)
         return setup_view
-    
+
     def init_view_builders(self):
         self.view_builders = {'config': self.build_config_view,
                               'dash': self.build_dash_view,
@@ -418,7 +424,7 @@ class RaceCaptureApp(App):
         # WipeTransition
         # FallOutTransition
         # RiseInTransition
-        screenMgr.transition = NoTransition()
+        screenMgr.transition = RiseInTransition()  # FallOutTransition()  # NoTransition()
 
         self.screenMgr = screenMgr
         self.icon = ('resource/images/app_icon_128x128.ico' if sys.platform == 'win32' else 'resource/images/app_icon_128x128.png')
@@ -436,20 +442,23 @@ class RaceCaptureApp(App):
         if self.settings.userPrefs.get_pref('preferences', 'first_time_setup') == 'True':
             Clock.schedule_once(lambda dt: self.first_time_setup(), 0.5)
 
-    def _show_startup_view(self):
-        # should we show the stetup wizard?
-        setup_view = self._get_main_screen('setup')
-        if setup_view.should_show_setup:
-            print('should show setup!')
-            self._show_main_view('setup')
-            return
-        
+    def _show_preferred_view(self):
         settings_to_view = {'Home Page':'home',
                             'Dashboard':'dash',
                             'Analysis': 'analysis',
                             'Configuration': 'config' }
         view_pref = self.settings.userPrefs.get_pref('preferences', 'startup_screen')
         self._show_main_view(settings_to_view[view_pref])
+
+    def _show_startup_view(self):
+        # should we show the stetup wizard?
+        setup_enabled = self.settings.userPrefs.get_pref_bool('setup', 'setup_enabled')
+        if setup_enabled:
+            setup_view = self._get_main_screen('setup')
+            setup_view.bind(on_setup_complete=lambda x: self._show_preferred_view())
+            self._show_main_view('setup')
+        else:
+            self._show_preferred_view()
 
     def init_rc_comms(self):
         port = self.getAppArg('port')
