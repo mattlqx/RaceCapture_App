@@ -42,13 +42,12 @@ SETUP_VIEW_KV = """
             pos: self.pos
             size: self.size    
     orientation: 'horizontal'
-    CheckBox:
+    IconButton:
         id: complete
+        text: ''
         size_hint_x: 0.25
-        disabled: True
-        background_checkbox_disabled_down: self.background_checkbox_down
-        background_checkbox_disabled_normal: self.background_checkbox_normal
-        active: root.complete
+        font_size: self.height * 0.5
+        color: ColorScheme.get_accent()
     FieldLabel:
         id: title
         size_hint_x: 0.75
@@ -97,6 +96,9 @@ class SetupItem(BoxLayout):
     def __init__(self, **kwargs):
         super(SetupItem, self).__init__(**kwargs)
 
+    def on_complete(self, instance, value):
+        self.ids.complete.text = u'\uf00c' if value else ''
+        
     def on_active(self, instance, value):
         self.title_color = ColorScheme.get_light_primary_text() if value else ColorScheme.get_secondary_text()
 
