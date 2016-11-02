@@ -28,7 +28,7 @@ from autosportlabs.racecapture.views.setup.infoview import InfoView
 SELECT_CONNECTION_VIEW_KV = """
 <SelectConnectionView>:
     background_source: ''
-    info_text: 'Select your Connection!'
+    info_text: 'Connection'
 """
 
 class SelectConnectionView(InfoView):

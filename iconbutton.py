@@ -165,9 +165,13 @@ class FadeableWidget(EventDispatcher):
         self._schedule_fade()
 
     def on_pulsing(self, instance, value):
-        if value:
+        if value and not self.disabled:
             self.brighten()
-
+    
+    def on_disabled(self, instance, value):
+        if not value and self.pulsing:
+            self.brighten()
+            
 class IconButton(FadeableWidget, Button):
 
     def __init__(self, **kwargs):

@@ -34,12 +34,6 @@ INFO_VIEW_KV = """
         AnchorLayout:
             anchor_y: 'top'
             AnchorLayout:
-                canvas.before:
-                    Color:
-                        rgba: ColorScheme.get_dark_background_translucent()
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
                 size_hint_y: 0.4
                 padding: (dp(10), dp(10))
                 FieldLabel:
@@ -75,7 +69,7 @@ class InfoView(Screen):
         super(InfoView, self).__init__(**kwargs)
         self.register_event_type('on_next')
 
-    def on_enter(self, *args):
+    def on_pre_enter(self, *args):
         self.ids.next.pulsing = True
 
     def on_leave(self, *args):

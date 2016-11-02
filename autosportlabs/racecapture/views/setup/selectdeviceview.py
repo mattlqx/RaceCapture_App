@@ -24,14 +24,56 @@ from kivy.clock import Clock
 from kivy.app import Builder
 from kivy.uix.screenmanager import Screen
 from autosportlabs.racecapture.views.setup.infoview import InfoView
+from autosportlabs.uix.button.betterbutton import BetterToggleButton
 
 SELECT_DEVICE_VIEW_KV = """
 <SelectDeviceView>:
-    background_source: ''
-    info_text: 'Select your Device!'
+    background_source: 'resource/setup/background_device_screen.jpg'
+    info_text: 'Select your device'
+    BoxLayout:
+        orientation: 'vertical'
+        BoxLayout:
+            size_hint_y: 0.2
+        AnchorLayout:
+            size_hint_y: 0.3
+            Image:
+                allow_stretch: True
+                source: 'resource/setup/device_racecapture.png'     
+            AnchorLayout:
+                anchor_x: 'right'
+                padding: (dp(10), dp(10))
+                BetterToggleButton:
+                    group: 'device'
+                    size_hint: (0.35, 0.5)
+                    text: 'RaceCapture'
+                    on_release: root.select_device('racecapture')
+        AnchorLayout:
+            size_hint_y: 0.3        
+            Image:
+                allow_stretch: True
+                source: 'resource/setup/device_racecapturepro.png'             
+            AnchorLayout:
+                anchor_x: 'right'
+                padding: (dp(10), dp(10))
+                BetterToggleButton:
+                    group: 'device'
+                    size_hint: (0.35, 0.5)
+                    text: 'RaceCapture/Pro'
+                    on_release: root.select_device('racecapture')
+        BoxLayout:
+            size_hint_y: 0.2
+                
+                
+            
 """
 
 class SelectDeviceView(InfoView):
     Builder.load_string(SELECT_DEVICE_VIEW_KV)
     def __init__(self, **kwargs):
         super(SelectDeviceView, self).__init__(**kwargs)
+        self.ids.next.disabled = True
+        self.ids.next.pulsing = False
+
+    def select_device(self, device):
+        self.ids.next.disabled = False
+        
