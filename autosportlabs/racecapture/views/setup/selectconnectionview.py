@@ -139,7 +139,6 @@ class SelectConnectionView(InfoView):
 
         device_step = self.get_setup_step('device')
         device = device_step['device']
-        self.ids.device.source = self._get_image_for_device(device)
 
         supported_connections = self._get_supported_connection_list(device)
 
@@ -147,6 +146,7 @@ class SelectConnectionView(InfoView):
         connection_spinner = self.ids.connection_types
         connection_spinner.values = supported_connections
         connection_spinner.text = supported_connections[0]
+        self._update_device_image()
 
     @property
     def _device_connected(self):
@@ -170,17 +170,30 @@ class SelectConnectionView(InfoView):
         if self._screen_active:
             Clock.schedule_once(lambda dt: self._check_connection_status(), SelectConnectionView.CONNECTION_CHECK_INTERVAL)
 
+    def _update_device_image(self, device=None):
+        # update the device image; if the device is passed in,
+        # update the current configuration
+        device_step = self.get_setup_step('device')
+        if device is None:
+            device = device_step['device']
+        else:
+            device_step['device'] = device
+        self.ids.device.source = self._get_image_for_device(device)
+
     def _check_connection_status(self):
         if self.rc_api.connected:
             self.ids.progress_spinner.stop_spinning()
             self.ids.connection_status.text = u'\uf00c'
             self.ids.next.disabled = False
+            connected_version = self.rc_api.connected_version
+            device = None if connected_version is None else connected_version.name
+            self._update_device_image(device=device)
         else:
             self.ids.progress_spinner.start_spinning()
             self.ids.connection_status.text = ''
             self.ids.next.disabled = True
-        self._update_connection_note()
 
+        self._update_connection_note()
         self._start_connection_check()
 
     def on_enter(self, *args):

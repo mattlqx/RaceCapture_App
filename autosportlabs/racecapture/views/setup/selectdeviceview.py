@@ -38,7 +38,7 @@ SELECT_DEVICE_VIEW_KV = """
             size_hint_y: 0.3
             Image:
                 allow_stretch: True
-                source: 'resource/setup/device_racecapture.png'     
+                source: 'resource/setup/device_RCT.png'     
             AnchorLayout:
                 anchor_x: 'right'
                 padding: (dp(10), dp(10))
@@ -47,12 +47,12 @@ SELECT_DEVICE_VIEW_KV = """
                     group: 'device'
                     size_hint: (0.35, 0.5)
                     text: 'RaceCapture'
-                    on_release: root.select_device('racecapture')
+                    on_release: root.select_device('RCT')
         AnchorLayout:
             size_hint_y: 0.3        
             Image:
                 allow_stretch: True
-                source: 'resource/setup/device_racecapturepro.png'             
+                source: 'resource/setup/device_RCP_MK2.png'             
             AnchorLayout:
                 anchor_x: 'right'
                 padding: (dp(10), dp(10))
@@ -61,7 +61,7 @@ SELECT_DEVICE_VIEW_KV = """
                     group: 'device'
                     size_hint: (0.35, 0.5)
                     text: 'RaceCapture/Pro'
-                    on_release: root.select_device('racecapturepro')
+                    on_release: root.select_device('RCP_MK2')
         BoxLayout:
             size_hint_y: 0.2
 """
