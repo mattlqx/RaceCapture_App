@@ -75,20 +75,19 @@ class SelectDeviceView(InfoView):
 
     def select_device(self, device):
         self.ids.next.disabled = False
-        #update our setup config with the selected device
+        # update our setup config with the selected device
         step = self.get_setup_step('device')
         step['device'] = device
 
     def on_setup_config(self, instance, value):
         self._update_ui()
-        
+
     def _update_ui(self):
-        #set the button that matches what's in the current config, if set
+        # set the button that matches what's in the current config, if set
         if self.setup_config is not None:
             step = self.get_setup_step('device')
             current_device = step['device']
             current_device_button = self.ids.get(current_device)
             if current_device_button is not None:
                 current_device_button.active = True
-            
-        
+

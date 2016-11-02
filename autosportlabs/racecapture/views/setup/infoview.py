@@ -64,7 +64,7 @@ class InfoView(Screen):
     background_source = StringProperty()
     info_text = StringProperty()
     is_last = BooleanProperty(False)
-    rcp_api = ObjectProperty()
+    rc_api = ObjectProperty()
 
     Builder.load_string(INFO_VIEW_KV)
     def __init__(self, **kwargs):
@@ -86,7 +86,7 @@ class InfoView(Screen):
 
     def _on_next(self):
         self.dispatch('on_next')
-        
+
     def get_setup_step(self, key):
         if self.setup_config is not None:
             for step in self.setup_config['steps']:

@@ -24,14 +24,169 @@ from kivy.clock import Clock
 from kivy.app import Builder
 from kivy.uix.screenmanager import Screen
 from autosportlabs.racecapture.views.setup.infoview import InfoView
+from utils import  is_android, is_ios
+from autosportlabs.uix.progressspinner import ProgressSpinner
+from autosportlabs.uix.button.betterspinner import BetterSpinner
 
 SELECT_CONNECTION_VIEW_KV = """
 <SelectConnectionView>:
     background_source: ''
-    info_text: 'Connection'
+    info_text: 'Setup your connection'
+    Image:
+        id: device
+        allow_stretch: True
+        size_hint_x: 0.6
+    AnchorLayout:
+        anchor_x: 'right'
+        padding: (dp(10), dp(10))
+        BoxLayout:
+            size_hint: (0.7, 1.0)
+            spacing: dp(10)
+            orientation: 'vertical'
+            BoxLayout:
+                size_hint_y: 0.2
+            BoxLayout:
+                canvas.before:
+                    Color:
+                        rgba: ColorScheme.get_dark_background_translucent()
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                padding: (dp(10), dp(10))
+                spacing: dp(10)
+                orientation: 'vertical'
+                size_hint_y: 0.6
+                BoxLayout:
+                    size_hint_y: 0.7
+                    BetterSpinner:
+                        size_hint: (0.6, 0.7)
+                        id: connection_types
+                        font_size: self.height * 0.3
+                        on_text: root.on_connection_type()
+                FieldLabel:
+                    size_hint_y: 0.3
+                    id: connection_help
+                    shorten: False
+                    font_size: self.height * 0.4
+                    halign: 'center'
+            BoxLayout:
+                canvas.before:
+                    Color:
+                        rgba: ColorScheme.get_dark_background_translucent()
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+            
+                orientation: 'horizontal'
+                size_hint_y: 0.2
+                FieldLabel:
+                    size_hint_x: 0.8
+                    halign: 'center'
+                    id: connection_status_note
+                    font_size: self.height * 0.4
+                AnchorLayout:
+                    size_hint_x: 0.2
+                    ProgressSpinner:
+                        size_hint_y: 0.8
+                        id: progress_spinner
+                    IconButton:
+                        id: connection_status
+                        color: ColorScheme.get_happy()
+                        text: ''
+            BoxLayout:
+                size_hint_y: 0.2
 """
 
 class SelectConnectionView(InfoView):
     Builder.load_string(SELECT_CONNECTION_VIEW_KV)
+    CONNECTION_CHECK_INTERVAL = 0.5
+
+    CONNECTION_NOTES = {'USB':'Plug your RaceCapture into USB',
+                        'WiFi':'Ensure your handheld is already connected to the RaceCapture WiFi network',
+                        'Bluetooth': 'Ensure your handheld is paired with the RaceCapture Bluetooth'}
+
+
     def __init__(self, **kwargs):
         super(SelectConnectionView, self).__init__(**kwargs)
+        self._screen_active = True
+        self.ids.next.disabled = True
+        self._init_ui()
+
+    def on_rc_api(self, instance, value):
+        self._init_ui()
+        self._start_connection_check()
+
+    def on_setup_config(self, instance, value):
+        self._init_ui()
+
+    def _get_image_for_device(self, device):
+        return 'resource/setup/device_{}.png'.format(device)
+
+    def _get_supported_connection_list(self, device):
+        supported_connections = []
+        if not self.rc_api.is_wireless_connection:
+            supported_connections.append('USB')
+        else:
+            if is_android() and device == 'racecapturepro':
+                supported_connections.append('Bluetooth')
+            supported_connections.append('WiFi')
+
+        return supported_connections
+
+    def _init_ui(self):
+        if not self.setup_config or not self.rc_api:
+            return
+
+        device_step = self.get_setup_step('device')
+        device = device_step['device']
+        self.ids.device.source = self._get_image_for_device(device)
+
+        supported_connections = self._get_supported_connection_list(device)
+
+        # force the user to select their connection if there are multiple choices
+        connection_spinner = self.ids.connection_types
+        connection_spinner.values = supported_connections
+        connection_spinner.text = supported_connections[0]
+
+    @property
+    def _device_connected(self):
+        return True if self.rc_api is not None and self.rc_api.connected else False
+
+    def _update_connection_note(self):
+        connected = self._device_connected
+        type = self.ids.connection_types.text
+        help_text = SelectConnectionView.CONNECTION_NOTES.get(type)
+        if help_text is None or connected:
+            help_text = ''
+
+        self.ids.connection_help.text = help_text
+
+        self.ids.connection_status_note.text = 'Connected' if connected else 'Waiting for connection'
+
+    def on_connection_type(self):
+        self._update_connection_note()
+
+    def _start_connection_check(self):
+        if self._screen_active:
+            Clock.schedule_once(lambda dt: self._check_connection_status(), SelectConnectionView.CONNECTION_CHECK_INTERVAL)
+
+    def _check_connection_status(self):
+        if self.rc_api.connected:
+            self.ids.progress_spinner.stop_spinning()
+            self.ids.connection_status.text = u'\uf00c'
+            self.ids.next.disabled = False
+        else:
+            self.ids.progress_spinner.start_spinning()
+            self.ids.connection_status.text = ''
+            self.ids.next.disabled = True
+        self._update_connection_note()
+
+        self._start_connection_check()
+
+    def on_enter(self, *args):
+        self._screen_active = True
+
+    def on_leave(self, *args):
+        super(SelectConnectionView, self).on_leave(args)
+        self._screen_active = False
+        self.ids.progress_spinner.stop_spinning()

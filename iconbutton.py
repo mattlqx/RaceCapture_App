@@ -122,6 +122,9 @@ class FadeableWidget(EventDispatcher):
         self._schedule_step = Clock.create_trigger(self._fade_step, FadeableWidget.FADE_INTERVAL)
 
     def _fade_step(self, *args):
+        if self.disabled:
+            return
+
         if self.brighten_mode == True:
             if self._current_alpha < FadeableWidget.BRIGHT_ALPHA:
                 self._current_alpha += FadeableWidget.FADE_STEP
@@ -167,11 +170,11 @@ class FadeableWidget(EventDispatcher):
     def on_pulsing(self, instance, value):
         if value and not self.disabled:
             self.brighten()
-    
+
     def on_disabled(self, instance, value):
         if not value and self.pulsing:
             self.brighten()
-            
+
 class IconButton(FadeableWidget, Button):
 
     def __init__(self, **kwargs):
@@ -244,3 +247,7 @@ class LabelIconButton(FadeableWidget, ButtonBehavior, AnchorLayout):
     def on_pulsing(self, instance, value):
         self.tile_color = ColorScheme.get_medium_accent()
         super(LabelIconButton, self).on_pulsing(instance, value)
+
+    def on_disabled(self, instance, value):
+        super(LabelIconButton, self).on_disabled(instance, value)
+        self.tile_color = ColorScheme.get_medium_accent()

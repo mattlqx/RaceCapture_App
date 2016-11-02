@@ -787,12 +787,13 @@ class RcpApi:
         """
         return self.comms and not self.comms.is_wireless()
 
+    @property
     def is_wireless_connection(self):
         """
         Returns True if connection is wireless, or false if wired, such as USB
         """
         return self.comms and self.comms.is_wireless()
-    
+
     def start_auto_detect_worker(self):
         self._auto_detect_event.clear()
         t = Thread(target=self.auto_detect_worker)
