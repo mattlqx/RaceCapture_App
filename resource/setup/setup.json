@@ -9,7 +9,8 @@
 		{
 			"key": "device",
 			"title": "Device",
-			"complete": false
+			"complete": false,
+			"device": null
 		},
 
 		{

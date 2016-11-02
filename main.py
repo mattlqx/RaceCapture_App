@@ -378,7 +378,10 @@ class RaceCaptureApp(App):
         return homepage_view
 
     def build_setup_view(self):
-        setup_view = SetupView(name='setup', settings=self.settings, databus=self._databus, base_dir=self.base_dir)
+        setup_view = SetupView(name='setup', settings=self.settings, 
+                               databus=self._databus, 
+                               base_dir=self.base_dir, 
+                               rcp_api=self._rc_api)
         return setup_view
 
     def init_view_builders(self):

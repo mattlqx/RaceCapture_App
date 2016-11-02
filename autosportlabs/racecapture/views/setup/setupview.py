@@ -106,12 +106,13 @@ class SetupView(Screen):
     SETUP_COMPLETE_DELAY = 1.0
     kv_loaded = False
     Builder.load_string(SETUP_VIEW_KV)
-    def __init__(self, settings, databus, base_dir, **kwargs):
+    def __init__(self, settings, databus, base_dir, rcp_api, **kwargs):
         super(SetupView, self).__init__(**kwargs)
         self.register_event_type('on_setup_complete')
         self._settings = settings
         self._base_dir = base_dir
         self._databus = databus
+        self._rcp_api = rcp_api
         self._setup_config = None
         self._init_setup_config()
         self._current_screen = None
@@ -179,6 +180,8 @@ class SetupView(Screen):
 
     def _select_view(self, step):
         screen = setup_factory(step['key'])
+        screen.setup_config = self._setup_config
+        screen.rcp_api = self._rcp_api
         return screen
 
     def _setup_complete(self, show_next_time=False):

@@ -43,6 +43,7 @@ SELECT_DEVICE_VIEW_KV = """
                 anchor_x: 'right'
                 padding: (dp(10), dp(10))
                 BetterToggleButton:
+                    id: racecapture
                     group: 'device'
                     size_hint: (0.35, 0.5)
                     text: 'RaceCapture'
@@ -56,15 +57,13 @@ SELECT_DEVICE_VIEW_KV = """
                 anchor_x: 'right'
                 padding: (dp(10), dp(10))
                 BetterToggleButton:
+                    id: racecapturepro
                     group: 'device'
                     size_hint: (0.35, 0.5)
                     text: 'RaceCapture/Pro'
-                    on_release: root.select_device('racecapture')
+                    on_release: root.select_device('racecapturepro')
         BoxLayout:
             size_hint_y: 0.2
-                
-                
-            
 """
 
 class SelectDeviceView(InfoView):
@@ -76,4 +75,20 @@ class SelectDeviceView(InfoView):
 
     def select_device(self, device):
         self.ids.next.disabled = False
+        #update our setup config with the selected device
+        step = self.get_setup_step('device')
+        step['device'] = device
+
+    def on_setup_config(self, instance, value):
+        self._update_ui()
+        
+    def _update_ui(self):
+        #set the button that matches what's in the current config, if set
+        if self.setup_config is not None:
+            step = self.get_setup_step('device')
+            current_device = step['device']
+            current_device_button = self.ids.get(current_device)
+            if current_device_button is not None:
+                current_device_button.active = True
+            
         

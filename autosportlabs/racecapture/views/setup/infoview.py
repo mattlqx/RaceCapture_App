@@ -23,7 +23,7 @@ kivy.require('1.9.1')
 from kivy.clock import Clock
 from kivy.app import Builder
 from kivy.uix.screenmanager import Screen
-from kivy.properties import StringProperty, BooleanProperty
+from kivy.properties import StringProperty, BooleanProperty, ObjectProperty
 
 INFO_VIEW_KV = """    
 <InfoView>:
@@ -58,11 +58,13 @@ INFO_VIEW_KV = """
 """
 
 class InfoView(Screen):
+    setup_config = ObjectProperty()
     next_text = StringProperty('Next')
     next_icon = StringProperty(u'\uf0a9')
     background_source = StringProperty()
     info_text = StringProperty()
     is_last = BooleanProperty(False)
+    rcp_api = ObjectProperty()
 
     Builder.load_string(INFO_VIEW_KV)
     def __init__(self, **kwargs):
@@ -84,3 +86,10 @@ class InfoView(Screen):
 
     def _on_next(self):
         self.dispatch('on_next')
+        
+    def get_setup_step(self, key):
+        if self.setup_config is not None:
+            for step in self.setup_config['steps']:
+                if step['key'] == key:
+                    return step
+        return None
