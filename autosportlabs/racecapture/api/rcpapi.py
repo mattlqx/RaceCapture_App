@@ -190,8 +190,8 @@ class RcpApi:
         try:
             self.comms.close()
             self.comms.device = None
-        except Exception:
-            Logger.warn('RCPAPI: Shutdown rx worker exception: {} | {}'.format(msg, str(Exception)))
+        except Exception as e:
+            Logger.warn('RCPAPI: Shutdown rx worker exception: {}'.format(e))
             Logger.info(traceback.format_exc())
 
     def detect_win(self, version_info):
@@ -234,9 +234,9 @@ class RcpApi:
                     msgJson = json.loads(msg, strict=False)
 
                     if 's' in msgJson:
-                         Logger.trace('RCPAPI: Rx: ' + str(msg))
+                        Logger.trace('RCPAPI: Rx: ' + str(msg))
                     else:
-                         Logger.debug('RCPAPI: Rx: ' + str(msg))
+                        Logger.debug('RCPAPI: Rx: ' + str(msg))
                     Clock.schedule_once(lambda dt: self.on_rx(True))
                     error_count = 0
                     for messageName in msgJson.keys():
@@ -782,8 +782,17 @@ class RcpApi:
             self.sendCommand({'s':0})
 
     def is_firmware_update_supported(self):
+        """
+        Returns True if this connection supports firmware upgrading
+        """
         return self.comms and not self.comms.is_wireless()
 
+    def is_wireless_connection(self):
+        """
+        Returns True if connection is wireless, or false if wired, such as USB
+        """
+        return self.comms and self.comms.is_wireless()
+    
     def start_auto_detect_worker(self):
         self._auto_detect_event.clear()
         t = Thread(target=self.auto_detect_worker)
@@ -792,7 +801,6 @@ class RcpApi:
         self._auto_detect_worker = t
 
     def auto_detect_worker(self):
-
         Logger.info('RCPAPI: auto_detect_worker starting')
         class VersionResult(object):
             version_json = None
