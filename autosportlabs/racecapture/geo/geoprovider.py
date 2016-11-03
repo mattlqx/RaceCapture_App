@@ -41,8 +41,8 @@ class GeoProvider(EventDispatcher):
     GPS_SOURCE_NONE = 0
     GPS_SOURCE_RACECAPTURE = 1
     GPS_SOURCE_INTERNAL = 2
-
     INTERNAL_GPS_UPDATE_INTERVAL_SEC = 0.5
+
     def __init__(self, rc_api, databus, **kwargs):
         super(GeoProvider, self).__init__(**kwargs)
         self._internal_gps_conn = None
