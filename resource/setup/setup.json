@@ -18,7 +18,11 @@
 			"title" : "Connection",
 			"complete": false
 		},
-
+        {
+            "key": "tour",
+            "title" : "Tour",
+            "complete": false
+        },
         {
             "key": "configsetup",
             "title" : "Setup",

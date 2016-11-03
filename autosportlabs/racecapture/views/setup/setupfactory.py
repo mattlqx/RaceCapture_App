@@ -24,6 +24,7 @@ from autosportlabs.racecapture.views.setup.finishsetupview import FinishSetupVie
 from autosportlabs.racecapture.views.setup.dashboardsetupview import DashboardSetupView
 from autosportlabs.racecapture.views.setup.analysissetupview import AnalysisSetupView
 from autosportlabs.racecapture.views.setup.configsetupview import ConfigSetupView
+from autosportlabs.racecapture.views.setup.tourview import TourView
 
 __all__ = 'setup_factory'
 
@@ -36,6 +37,8 @@ def setup_factory(key):
         return SelectDeviceView()
     elif key == 'connection':
         return SelectConnectionView()
+    elif key == 'tour':
+        return TourView()
     elif key == 'configsetup':
         return ConfigSetupView()
     elif key == 'dashboard':
