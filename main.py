@@ -211,9 +211,6 @@ class RaceCaptureApp(App):
     def getAppArg(self, name):
         return self.app_args.get(name, None)
 
-    def first_time_setup(self):
-        self.settings.userPrefs.set_pref('preferences', 'first_time_setup', False)
-
     def loadCurrentTracksSuccess(self):
         Logger.info('RaceCaptureApp: Current Tracks Loaded')
         Clock.schedule_once(lambda dt: self.notifyTracksUpdated())
@@ -440,12 +437,6 @@ class RaceCaptureApp(App):
         Clock.schedule_once(lambda dt: self.init_data())
         Clock.schedule_once(lambda dt: self.init_rc_comms())
         Clock.schedule_once(lambda dt: self._show_startup_view())
-        self.check_first_time_setup()
-
-
-    def check_first_time_setup(self):
-        if self.settings.userPrefs.get_pref('preferences', 'first_time_setup') == 'True':
-            Clock.schedule_once(lambda dt: self.first_time_setup(), 0.5)
 
     def _show_preferred_view(self):
         settings_to_view = {'Home Page':'home',
