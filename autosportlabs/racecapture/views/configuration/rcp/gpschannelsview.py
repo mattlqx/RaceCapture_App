@@ -110,6 +110,7 @@ GPS_CHANNELS_VIEW_KV = """
             
 class GPSChannelsView(BaseConfigView):
     SAMPLE_RATE_WARNING_THRESHOLD = 25
+    GPS_WARNING_DELAY = 1.0
     gpsConfig = None
     lap_config = None
     Builder.load_string(GPS_CHANNELS_VIEW_KV)
@@ -174,8 +175,9 @@ class GPSChannelsView(BaseConfigView):
         warning = self.ids.warning
         if sample_rate >= GPSChannelsView.SAMPLE_RATE_WARNING_THRESHOLD:
             warning.size_hint_y = 0.1
-            warning.text = 'Warning: Optimal GPS conditions required for high sample rates'
-            Clock.schedule_once(lambda dt: HelpInfo.help_popup('gps_warning', self, arrow_pos='top_mid'), 1.0)            
+            warning.text = 'Warning: optimal GPS conditions required for high sample rates'
+            Clock.schedule_once(lambda dt: HelpInfo.help_popup('gps_warning', self, arrow_pos='top_mid'), 
+                                GPSChannelsView.GPS_WARNING_DELAY)            
         else:
             warning.size_hint_y = 0.0
             warning.text = ''
