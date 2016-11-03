@@ -304,6 +304,14 @@ TRACK_MAP_CREATOR_KV = """
                 size: self.size
         AnchorLayout:
             size_hint_x: 0.7
+            AnchorLayout:
+                anchor_y: 'bottom'
+                FieldLabel:
+                    id: help_message
+                    size_hint_y: 0.2
+                    font_size: self.height * 0.3
+                    halign: 'center'
+                    shorten: False
             FieldLabel:
                 id: info_message
                 size_hint_y: 0.1
@@ -467,8 +475,15 @@ class TrackMapCreatorScreen(Screen):
 
         if current_point is None:
             self.ids.info_message.text = 'Waiting for GPS'
+        elif track.start_finish_point is None:
+            self.ids.info_message.text = 'Go to start line and press Start!'
         else:
-            self.ids.info_message.text = 'Go to start line and press Start!' if track.start_finish_point is None else ''
+            self.ids.info_message.text = ''
+
+        if current_point is not None and current_point.dist_pythag(start_point) < TrackMapCreatorScreen.MINIMUM_TARGET_SEPARATION_METERS:
+            self.ids.help_message.text = 'Now start your track walk. You can optionally mark sector points as you go'
+        else:
+            self.ids.help_message.text = ''
 
     def _update_trackmap(self):
         self.ids.track.setTrackPoints(self._track.map_points)
