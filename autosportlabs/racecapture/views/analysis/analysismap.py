@@ -207,7 +207,7 @@ class AnalysisMap(AnalysisWidget):
     def _select_track(self, track):
         if track != None:
             self.ids.track.setTrackPoints(track.map_points)
-            self.ids.track_name.text = '{} {}'.format(track.name, '' if track.configuration is None or track.configuration == '' else '({})'.format(track.configuration))
+            self.ids.track_name.text = track.full_name
         else:
             self.ids.track_name.text = ''
             self.ids.track.setTrackPoints([])

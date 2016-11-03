@@ -312,10 +312,7 @@ class ToolbarView(BoxLayout):
                     if track is None:
                         track_status_msg = '(Unknown Track)'
                     else:
-                        track_status_msg = track.name
-                        configuration_name = track.configuration
-                        if configuration_name and len(configuration_name):
-                            track_status_msg += ' (' + configuration_name + ')'
+                        track_status_msg = track.full_name
                 else:
                     track_status_msg = 'No track detected'
             self._set_state_message(track_status_msg)

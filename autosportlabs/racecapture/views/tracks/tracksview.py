@@ -304,13 +304,13 @@ class TracksBrowser(BoxLayout):
     def refreshTrackList(self):
         region = self.ids.regions.text
         if region == 'Nearby':
-            foundIds = [t.track_id for t in self._get_nearby_tracks()]
+            found_ids = [t.track_id for t in self._get_nearby_tracks()]
         else:
-            foundIds = self.trackManager.filter_tracks_by_region(region)
+            found_ids = self.trackManager.filter_tracks_by_region(region)
         search = self.ids.namefilter.text
         if search != None and len(search) > 0:
-            foundIds = self.trackManager.filter_tracks_by_name(search, foundIds)
-        self.initTracksList(foundIds)
+            found_ids = self.trackManager.filter_tracks_by_name(search, found_ids)
+        self.initTracksList(found_ids)
 
     def initTracksList(self, track_ids=None):
         self.setViewDisabled(True)

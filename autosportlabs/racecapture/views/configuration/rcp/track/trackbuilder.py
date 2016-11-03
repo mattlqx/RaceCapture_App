@@ -377,7 +377,7 @@ class TrackMapCreatorScreen(Screen):
     DEFAULT_MINIMUM_TRAVEL_DISTANCE_METERS = 1
 
     # how long until we time out
-    STATUS_LINGER_DURATION = 2.0
+    STATUS_LINGER_DURATION_SEC = 2.0
 
     minimum_travel_distance = NumericProperty(DEFAULT_MINIMUM_TRAVEL_DISTANCE_METERS)
 
@@ -410,7 +410,7 @@ class TrackMapCreatorScreen(Screen):
         pass
 
     def _init_status_monitor(self):
-        self._status_decay = Clock.create_trigger(self._on_status_decay, TrackMapCreatorScreen.STATUS_LINGER_DURATION)
+        self._status_decay = Clock.create_trigger(self._on_status_decay, TrackMapCreatorScreen.STATUS_LINGER_DURATION_SEC)
         self._status_decay()
 
     def _on_status_decay(self, *args):
