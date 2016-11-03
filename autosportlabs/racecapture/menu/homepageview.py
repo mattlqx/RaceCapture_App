@@ -58,7 +58,7 @@ HOMPAGE_VIEW_KV = """
             FeatureButton:
                 size_hint_y: 0.5
                 icon: '\357\203\244'
-                title: 'Race'
+                title: 'Dashboard'
                 on_press: root.show_view('dash')
             BoxLayout:
                 orientation: 'horizontal'

@@ -25,13 +25,13 @@ from kivy.app import Builder
 from kivy.uix.screenmanager import Screen
 from autosportlabs.racecapture.views.setup.infoview import InfoView
 
-FINISH_SETUP_VIEW_KV = """
-<FinishSetupView>:
-    background_source: 'resource/setup/background_finish.jpg'
-    info_text: 'You\\'re ready to go. Now hit the race track!'
+CONFIG_SETUP_VIEW_KV = """
+<ConfigSetupView>:
+    background_source: 'resource/setup/background_configsetup.jpg'
+    info_text: 'You can select OBDII channels, configure sensors and design race tracks in Setup.'
 """
 
-class FinishSetupView(InfoView):
-    Builder.load_string(FINISH_SETUP_VIEW_KV)
+class ConfigSetupView(InfoView):
+    Builder.load_string(CONFIG_SETUP_VIEW_KV)
     def __init__(self, **kwargs):
-        super(FinishSetupView, self).__init__(**kwargs)
+        super(ConfigSetupView, self).__init__(**kwargs)

@@ -19,6 +19,23 @@
 			"complete": false
 		},
 
+        {
+            "key": "configsetup",
+            "title" : "Setup",
+            "complete": false
+        },
+        {
+            "key": "dashboard",
+            "title" : "Dashboard",
+            "complete": false
+        },
+
+        {
+            "key": "analysis",
+            "title" : "Analysis",
+            "complete": false
+        },
+
 		{
 			"key": "finish",
 			"title": "Ready to go!",
