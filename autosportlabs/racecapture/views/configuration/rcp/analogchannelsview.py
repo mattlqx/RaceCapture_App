@@ -230,7 +230,7 @@ class AnalogScalingMapEditor(BoxLayout):
             warn.size = (sp(200), sp(50))
             warn.size_hint = (None,None)
             self.get_root_window().add_widget(warn)
-            warn.center_on(instance)
+            warn.center_above(instance)
             original_value = self.scaling_map.getVolts(mapBin)
             self.set_volts_cell(instance, original_value)
             Clock.schedule_once(lambda dt: self._refocus(instance))
