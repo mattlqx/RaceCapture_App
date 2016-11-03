@@ -53,12 +53,13 @@ class TrackBuilderView(BoxLayout):
     making a new track map.
     '''
     Builder.load_string(TRACK_BUILDER_KV)
-    def __init__(self, rc_api, databus, track_manager, current_point = None, **kwargs):
+    def __init__(self, rc_api, databus, track_manager, current_point=None, prompt_track_creation=False, ** kwargs):
         super(TrackBuilderView, self).__init__(**kwargs)
         self.register_event_type('on_track_complete')
         self.register_event_type('on_title')
         self._rc_api = rc_api
         self._databus = databus
+        self._prompt_track_creation = prompt_track_creation
         self._track_manager = track_manager
         self._current_point = current_point
         self._screens = []
@@ -70,7 +71,7 @@ class TrackBuilderView(BoxLayout):
 
     def on_title(self, title):
         pass
-    
+
     def on_track_complete(self, track_map):
         pass
 
@@ -85,22 +86,31 @@ class TrackBuilderView(BoxLayout):
     def _init_view(self):
         # show the track builder immediately, or select an existing track, if any are in the area
         if self._current_point is None or len(self._track_manager.find_nearby_tracks(self._current_point)) == 0:
-            self._switch_to_screen(self._get_track_type_selector())
-            self.dispatch('on_title', 'Create a new track')
+            if self._prompt_track_creation:
+                self._switch_to_screen(self._get_track_creator_prompt())
+                self.dispatch('on_title', 'Create a new track?')
+            else:
+                self._switch_to_screen(self._get_track_type_selector())
+                self.dispatch('on_title', 'Select a track type')
         else:
             self._switch_to_screen(self._get_existing_track_selector())
             self.dispatch('on_title', 'Select an existing track')
 
     def _get_existing_track_selector(self):
         screen = ExistingTrackSelectorScreen(self._track_manager, self._current_point)
-        screen.bind(on_track_selected = self._on_existing_track_selected)
+        screen.bind(on_track_selected=self._on_existing_track_selected)
         self._screens.append(screen)
         return screen
-        
+
     def _get_track_map_creator(self, track_type):
         screen = TrackMapCreatorScreen(rc_api=self._rc_api, databus=self._databus, track=self._track, track_type=track_type)
         screen.bind(on_trackmap_complete=self._on_trackmap_complete)
         self._screens.append(screen)
+        return screen
+
+    def _get_track_creator_prompt(self):
+        screen = TrackCreationPromptScreen()
+        screen.bind(on_track_creation_prompt=self._on_track_creation_prompt)
         return screen
 
     def _get_track_type_selector(self):
@@ -114,6 +124,13 @@ class TrackBuilderView(BoxLayout):
         screen.bind(on_track_customized=self._on_track_customized)
         self._screens.append(screen)
         return screen
+
+    def _on_track_creation_prompt(self, instance, response):
+        if response:
+            self._switch_to_screen(self._get_track_type_selector())
+            self.dispatch('on_title', 'Select a track type')
+        else:
+            self.dispatch('on_track_complete', None)
 
     def _on_track_type_selected(self, instance, type):
         screen = self._get_track_map_creator(type)
@@ -130,16 +147,76 @@ class TrackBuilderView(BoxLayout):
 
     def _on_existing_track_selected(self, instance, track):
         self.dispatch('on_track_complete', track)
-        
+
     def _switch_to_screen(self, screen):
         if self.ids.screen_manager.current_screen != screen:
             self.ids.screen_manager.switch_to(screen)
+
+TRACK_CREATOR_PROMPT_KV = """
+<TrackCreationPromptScreen>:
+    Image:
+        source: 'resource/trackmap/track_prompt.jpg'
+        allow_stretch: True
+    BoxLayout:
+        orientation: 'vertical'
+        BoxLayout:
+            canvas.before:
+                Color:
+                    rgba: ColorScheme.get_dark_background_translucent()
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            size_hint_y: 0.2
+            FieldLabel:
+                size_hint_y: 0.5
+                text: 'We did not detect a race track nearby. Create a custom track?'
+                font_size: self.height * 0.7
+                shorten: False
+                halign: 'center'
+        BoxLayout:
+            orientation: 'horizontal'
+            padding: (dp(70), dp(10))
+            spacing: dp(50)
+            size_hint_y: 0.6
+            BetterButton:
+                on_release: root.track_prompt(False)
+                text: 'No thanks'
+                size_hint: (0.2, 0.3)
+            BetterButton:
+                on_release: root.track_prompt(True)
+                text: 'Let\\'s go'
+                size_hint: (0.2, 0.3)
+        BoxLayout:
+            size_hint_y: 0.2
+
+"""
+
+class TrackCreationPromptScreen(Screen):
+    """
+    Screen to select an existing track map
+    """
+    Builder.load_string(TRACK_CREATOR_PROMPT_KV)
+
+    def __init__(self, **kwargs):
+        super(TrackCreationPromptScreen, self).__init__(**kwargs)
+        self.register_event_type('on_track_creation_prompt')
+
+    def track_prompt(self, response):
+        self.dispatch('on_track_creation_prompt', response)
+
+    def on_track_creation_prompt(self, response):
+        pass
+
+    def cleanup(self):
+        pass
+
 
 EXISTING_TRACK_SELECTOR_KV = """
 <ExistingTrackSelectorScreen>:
     TrackSelectView:
         id: track_select
 """
+
 class ExistingTrackSelectorScreen(Screen):
     """
     Screen to select an existing track map
@@ -154,7 +231,7 @@ class ExistingTrackSelectorScreen(Screen):
 
     def track_selected(self, instance, track):
         self.dispatch('on_track_selected', track)
-        
+
     def on_track_selected(self, track):
         pass
 
@@ -498,7 +575,7 @@ class TrackMapCreatorScreen(Screen):
     # test key sequence to simulate walking a course - needed for testing
     # the special key is '`'
     def key_action(self, instance, keyboard, keycode, text, modifiers):
-        if text == '`': #sekret!
+        if text == '`':  # sekret!
             point = GeoPoint.fromPoint(SIMULATED_TRACKMAP_POINTS[self._simulated_trackmap_index][0],
                                        SIMULATED_TRACKMAP_POINTS[self._simulated_trackmap_index][1])
             self._update_current_point(point)
