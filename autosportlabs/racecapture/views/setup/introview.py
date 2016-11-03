@@ -27,7 +27,7 @@ from autosportlabs.racecapture.views.setup.infoview import InfoView
 
 INTRO_VIEW_KV = """
 <IntroView>:
-    background_source: 'resource/setup/background_intro_screen.jpg'
+    background_source: 'resource/setup/background_intro.jpg'
     info_text: 'This guide will help you set up your RaceCapture system and provide a short tour of the features.\\n\\nLet\\'s get started!'
 """
 

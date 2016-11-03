@@ -30,7 +30,7 @@ from autosportlabs.uix.button.betterspinner import BetterSpinner
 
 SELECT_CONNECTION_VIEW_KV = """
 <SelectConnectionView>:
-    background_source: ''
+    background_source: 'resource/setup/background_connection.jpg'
     info_text: 'Setup your connection'
     Image:
         id: device

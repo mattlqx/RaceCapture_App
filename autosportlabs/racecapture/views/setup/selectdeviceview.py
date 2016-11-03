@@ -28,7 +28,7 @@ from autosportlabs.uix.button.betterbutton import BetterToggleButton
 
 SELECT_DEVICE_VIEW_KV = """
 <SelectDeviceView>:
-    background_source: 'resource/setup/background_device_screen.jpg'
+    background_source: 'resource/setup/background_device.jpg'
     info_text: 'Select your device'
     BoxLayout:
         orientation: 'vertical'

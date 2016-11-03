@@ -27,7 +27,7 @@ from autosportlabs.racecapture.views.setup.infoview import InfoView
 
 FINISH_SETUP_VIEW_KV = """
 <FinishSetupView>:
-    background_source: 'resource/setup/background_finish_screen.jpg'
+    background_source: 'resource/setup/background_finish.jpg'
     info_text: 'Ready to go!'
 """
 
