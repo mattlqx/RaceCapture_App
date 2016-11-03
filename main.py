@@ -163,6 +163,8 @@ class RaceCaptureApp(App):
             self.base_dir = os.path.dirname(os.path.abspath(__file__))
 
         self.settings = SystemSettings(self.user_data_dir, base_dir=self.base_dir)
+        self.settings.userPrefs.bind(on_pref_change=self._on_preference_change)
+
         self.trackManager = TrackManager(user_dir=self.settings.get_default_data_dir(), base_dir=self.base_dir)
 
         # RaceCapture communications API
@@ -369,7 +371,7 @@ class RaceCaptureApp(App):
 
     def build_preferences_view(self):
         preferences_view = PreferencesView(name='preferences', settings=self.settings, base_dir=self.base_dir)
-        preferences_view.settings_view.bind(on_config_change=self._on_preferences_change)
+        preferences_view.bind(on_pref_change=self._on_preference_change)
         return preferences_view
 
     def build_homepage_view(self):
@@ -563,7 +565,7 @@ class RaceCaptureApp(App):
         self.showActivity(msg)
         self.status_bar.dispatch('on_tele_status', ToolbarView.TELEMETRY_ERROR)
 
-    def _on_preferences_change(self, menu, config, section, key, value):
+    def _on_preference_change(self, instance, section, key, value):
         """Called any time the app preferences are changed
         """
         token = (section, key)

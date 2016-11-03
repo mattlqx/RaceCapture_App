@@ -24,11 +24,11 @@ from kivy.clock import Clock
 from kivy.config import ConfigParser
 from ConfigParser import NoOptionError
 from kivy.logger import Logger
-from kivy import platform
 import json
 import os
 from os import path
 from os.path import dirname, expanduser, sep
+from utils import is_android, is_ios, is_mobile_platform
 
 class Range(EventDispatcher):
     '''
@@ -113,6 +113,10 @@ class UserPrefs(EventDispatcher):
         self.prefs_file = path.join(self.data_dir, self.prefs_file_name)
         self.load()
         self._schedule_save = Clock.create_trigger(self.save, save_timeout)
+        self.register_event_type("on_pref_change")
+
+    def on_pref_change(self, section, option, value):
+        pass
 
     def set_range_alert(self, key, range_alert):
         '''
@@ -164,12 +168,12 @@ class UserPrefs(EventDispatcher):
 
     def get_user_cancelled_location(self):
         return self.get_pref('track_detection', 'user_cancelled_location')
-    
+
     def set_last_selected_track(self, track_id, timestamp, user_cancelled_location='0,0'):
         self.set_pref('track_detection', 'last_selected_track_id', track_id)
         self.set_pref('track_detection', 'last_selected_track_timestamp', timestamp)
         self.set_pref('track_detection', 'user_cancelled_location', user_cancelled_location)
-        
+
     @property
     def datastore_location(self):
         return os.path.join(self.data_dir, 'datastore.sq3')
@@ -203,8 +207,14 @@ class UserPrefs(EventDispatcher):
         self.config.setdefault('preferences', 'last_dash_screen', 'gaugeView')
         self.config.setdefault('preferences', 'global_help', True)
 
-        if platform == 'android':
-            self.config.setdefault('preferences', 'conn_type', 'Bluetooth')
+        # Connection type for mobile
+        if is_mobile_platform():
+            if is_android():
+                self.config.setdefault('preferences', 'conn_type', 'Bluetooth')
+            elif is_ios():
+                self.config.setdefault('preferences', 'conn_type', 'WiFi')
+        else:
+            self.config.setdefault('preferences', 'conn_type', 'USB')
 
         # Dashboard preferences
         self.config.adddefaultsection('dashboard_preferences')
@@ -224,7 +234,7 @@ class UserPrefs(EventDispatcher):
 
         self.config.adddefaultsection('setup')
         self.config.setdefault('setup', 'setup_enabled', 1)
-        
+
     def load(self):
         Logger.info('UserPrefs: Data Dir is: {}'.format(self.data_dir))
         self.config = ConfigParser()
@@ -327,8 +337,15 @@ class UserPrefs(EventDispatcher):
         :param value the preference value to set
         :type value user specified
         '''
+        current_value = None
+        try:
+            current_value = self.config.get(section, option)
+        except NoOptionError:
+            pass
         self.config.set(section, option, value)
         self.config.write()
+        if value != current_value:
+            self.dispatch('on_pref_change', section, option, value)
 
     def to_json(self):
         '''

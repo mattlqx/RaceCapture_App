@@ -182,6 +182,7 @@ class SetupView(Screen):
         screen = setup_factory(step['key'])
         screen.setup_config = self._setup_config
         screen.rc_api = self._rc_api
+        screen.settings = self._settings
         return screen
 
     def _setup_complete(self, show_next_time=False):

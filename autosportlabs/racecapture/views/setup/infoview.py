@@ -65,6 +65,7 @@ class InfoView(Screen):
     info_text = StringProperty()
     is_last = BooleanProperty(False)
     rc_api = ObjectProperty()
+    settings = ObjectProperty()
 
     Builder.load_string(INFO_VIEW_KV)
     def __init__(self, **kwargs):

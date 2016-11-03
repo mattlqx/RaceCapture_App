@@ -62,7 +62,7 @@ SELECT_CONNECTION_VIEW_KV = """
                         size_hint: (0.6, 0.7)
                         id: connection_types
                         font_size: self.height * 0.3
-                        on_text: root.on_connection_type()
+                        on_text: root.on_connection_type(self.text)
                 FieldLabel:
                     size_hint_y: 0.3
                     id: connection_help
@@ -105,6 +105,8 @@ class SelectConnectionView(InfoView):
                         'WiFi':'Ensure your handheld is already connected to the RaceCapture WiFi network',
                         'Bluetooth': 'Ensure your handheld is paired with the RaceCapture Bluetooth'}
 
+    CHANGE_CONNECTION_DELAY = 2.0
+
 
     def __init__(self, **kwargs):
         super(SelectConnectionView, self).__init__(**kwargs)
@@ -127,7 +129,7 @@ class SelectConnectionView(InfoView):
         if not self.rc_api.is_wireless_connection:
             supported_connections.append('USB')
         else:
-            if is_android() and device == 'racecapturepro':
+            if is_android() and device == 'RCP_MK2':
                 supported_connections.append('Bluetooth')
             supported_connections.append('WiFi')
 
@@ -145,17 +147,18 @@ class SelectConnectionView(InfoView):
         # force the user to select their connection if there are multiple choices
         connection_spinner = self.ids.connection_types
         connection_spinner.values = supported_connections
-        connection_spinner.text = supported_connections[0]
+        default_connection_type = supported_connections[0]
+        connection_spinner.text = default_connection_type
+        self._update_connection_type(default_connection_type)
         self._update_device_image()
 
     @property
     def _device_connected(self):
         return True if self.rc_api is not None and self.rc_api.connected else False
 
-    def _update_connection_note(self):
+    def _update_connection_note(self, connection_type):
         connected = self._device_connected
-        type = self.ids.connection_types.text
-        help_text = SelectConnectionView.CONNECTION_NOTES.get(type)
+        help_text = SelectConnectionView.CONNECTION_NOTES.get(connection_type)
         if help_text is None or connected:
             help_text = ''
 
@@ -163,8 +166,12 @@ class SelectConnectionView(InfoView):
 
         self.ids.connection_status_note.text = 'Connected' if connected else 'Waiting for connection'
 
-    def on_connection_type(self):
-        self._update_connection_note()
+    def _update_connection_type(self, connection_type):
+        Clock.schedule_once(lambda dt: self.settings.userPrefs.set_pref('preferences', 'conn_type', connection_type), SelectConnectionView.CHANGE_CONNECTION_DELAY)
+
+    def on_connection_type(self, connection_type):
+        self._update_connection_note(connection_type)
+        self._update_connection_type(connection_type)
 
     def _start_connection_check(self):
         if self._screen_active:
@@ -193,7 +200,7 @@ class SelectConnectionView(InfoView):
             self.ids.connection_status.text = ''
             self.ids.next.disabled = True
 
-        self._update_connection_note()
+        self._update_connection_note(self.ids.connection_types.text)
         self._start_connection_check()
 
     def on_enter(self, *args):
