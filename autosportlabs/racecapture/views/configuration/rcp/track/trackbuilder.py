@@ -425,7 +425,7 @@ class TrackMapCreatorScreen(Screen):
         sector_points = track.sector_points
         # to determine if we can add another sector, we reference the start line
         # or the last sector point, if it exists
-        last_sector_point = None if len(sector_points) == 0 else track.sector_points[-1]
+        last_sector_point = None if len(sector_points) == 0 else sector_points[-1]
         reference_point = last_sector_point if last_sector_point is not None else start_point
 
         # Can only add a sector if we're the minimum distance from the reference point
@@ -446,8 +446,16 @@ class TrackMapCreatorScreen(Screen):
                     current_point.dist_pythag(start_point) >= TrackMapCreatorScreen.MINIMUM_TARGET_SEPARATION_METERS)
 
         # also must be minimum distance from last sector point, if it exists
-        can_finish = False if (last_sector_point is not None and
-                    current_point.dist_pythag(last_sector_point) < TrackMapCreatorScreen.MINIMUM_TARGET_SEPARATION_METERS) else can_finish
+        can_finish = (False if (last_sector_point is not None and
+                    current_point.dist_pythag(last_sector_point) < TrackMapCreatorScreen.MINIMUM_TARGET_SEPARATION_METERS)
+                    else can_finish)
+
+        # However, we can finish if we're making a minimal track with only the start/finish defined
+        # The user will be prompted later if they're sure about making a minimal trackmap
+        can_finish = (True if start_point is not None and
+                    len(track.sector_points) == 0 and
+                    self._track_type == TrackTypeSelectorScreen.TRACK_TYPE_CIRCUIT
+                    else can_finish)
 
         self.ids.finish_button.disabled = not can_finish
 
@@ -545,8 +553,27 @@ class TrackMapCreatorScreen(Screen):
         self._track.finish_point = finish_point
 
     def on_finish(self, *args):
+        self._process_finish()
+
+    def _validate_finish(self):
+        def confirm_minimal_track(instance, confirm):
+            if confirm:
+                self._process_finish(force=True)
+            popup.dismiss()
+
+        if (self._track_type == TrackTypeSelectorScreen.TRACK_TYPE_CIRCUIT and
+                self.current_point.dist_pythag(self._track.start_finish_point) < TrackMapCreatorScreen.MINIMUM_TARGET_SEPARATION_METERS):
+            popup = confirmPopup("Confirm", "There's no track map - create a minimal track with just start/finish defined?", confirm_minimal_track)
+            return False
+
+        return True
+
+    def _process_finish(self, force=False):
         if self._is_finished:
             self.dispatch('on_trackmap_complete', self._track)
+            return
+
+        if not force and not self._validate_finish():
             return
 
         # add one more point of the current location
