@@ -213,7 +213,7 @@ class UserPrefs(EventDispatcher):
             elif is_ios():
                 self.config.setdefault('preferences', 'conn_type', 'WiFi')
         else:
-            self.config.setdefault('preferences', 'conn_type', 'USB')
+            self.config.setdefault('preferences', 'conn_type', 'Serial')
 
         # Dashboard preferences
         self.config.adddefaultsection('dashboard_preferences')
