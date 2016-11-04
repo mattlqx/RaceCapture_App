@@ -881,6 +881,7 @@ class RcpApi:
             except Exception as e:
                 Logger.error('RCPAPI: Error running auto detect: ' + str(e))
                 Logger.error(traceback.format_exc())
+                if self.detect_fail_callback: self.detect_fail_callback()
             finally:
                 Logger.debug("RCPAPI: auto detect finished. port=" + str(comms.device))
                 self._auto_detect_busy.clear()
