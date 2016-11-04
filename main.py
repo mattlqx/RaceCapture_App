@@ -63,6 +63,7 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.views.dashboard.dashboardview import DashboardView
     from autosportlabs.racecapture.views.analysis.analysisview import AnalysisView
     from autosportlabs.racecapture.views.preferences.preferences import PreferencesView
+    from autosportlabs.racecapture.views.setup.setupview import SetupView
     from autosportlabs.racecapture.views.toolbar.toolbarview import ToolbarView
     from autosportlabs.racecapture.menu.mainmenu import MainMenu
     from autosportlabs.comms.commsfactory import comms_factory
@@ -162,6 +163,8 @@ class RaceCaptureApp(App):
             self.base_dir = os.path.dirname(os.path.abspath(__file__))
 
         self.settings = SystemSettings(self.user_data_dir, base_dir=self.base_dir)
+        self.settings.userPrefs.bind(on_pref_change=self._on_preference_change)
+
         self.trackManager = TrackManager(user_dir=self.settings.get_default_data_dir(), base_dir=self.base_dir)
 
         # RaceCapture communications API
@@ -207,9 +210,6 @@ class RaceCaptureApp(App):
 
     def getAppArg(self, name):
         return self.app_args.get(name, None)
-
-    def first_time_setup(self):
-        self.settings.userPrefs.set_pref('preferences', 'first_time_setup', False)
 
     def loadCurrentTracksSuccess(self):
         Logger.info('RaceCaptureApp: Current Tracks Loaded')
@@ -312,19 +312,28 @@ class RaceCaptureApp(App):
         self._rc_api.shutdown_api()
         self._telemetry_connection.telemetry_enabled = False
 
-    def showMainView(self, view_name):
+    def _get_main_screen(self, view_name):
         view = self.mainViews.get(view_name)
         if not view:
             view = self.view_builders[view_name]()
-            self.screenMgr.add_widget(view)
             self.mainViews[view_name] = view
-        self.screenMgr.current = view_name
+        return view
+
+    def _show_main_view(self, view_name):
+        screen = self._get_main_screen(view_name)
+
+        screen_mgr = self.screenMgr
+        if screen_mgr.has_screen(screen.name):
+            screen_mgr.current = screen.name
+        else:
+            self.screenMgr.switch_to(screen)
+
         self._session_recorder.on_view_change(view_name)
         self._data_bus_pump.on_view_change(view_name)
 
     def switchMainView(self, view_name):
             self.mainNav.anim_to_state('closed')
-            Clock.schedule_once(lambda dt: self.showMainView(view_name), 0.25)
+            Clock.schedule_once(lambda dt: self._show_main_view(view_name), 0.25)
 
     def build_config_view(self):
         config_view = ConfigView(name='config',
@@ -359,7 +368,7 @@ class RaceCaptureApp(App):
 
     def build_preferences_view(self):
         preferences_view = PreferencesView(name='preferences', settings=self.settings, base_dir=self.base_dir)
-        preferences_view.settings_view.bind(on_config_change=self._on_preferences_change)
+        preferences_view.bind(on_pref_change=self._on_preference_change)
         return preferences_view
 
     def build_homepage_view(self):
@@ -367,13 +376,21 @@ class RaceCaptureApp(App):
         homepage_view.bind(on_select_view=lambda instance, view_name: self.switchMainView(view_name))
         return homepage_view
 
+    def build_setup_view(self):
+        setup_view = SetupView(name='setup', settings=self.settings,
+                               databus=self._databus,
+                               base_dir=self.base_dir,
+                               rc_api=self._rc_api)
+        return setup_view
+
     def init_view_builders(self):
         self.view_builders = {'config': self.build_config_view,
                               'dash': self.build_dash_view,
                               'analysis': self.build_analysis_view,
                               'preferences': self.build_preferences_view,
                               'status': self.build_status_view,
-                              'home': self.build_homepage_view
+                              'home': self.build_homepage_view,
+                              'setup': self.build_setup_view
                               }
 
     def build(self):
@@ -409,7 +426,7 @@ class RaceCaptureApp(App):
         # WipeTransition
         # FallOutTransition
         # RiseInTransition
-        screenMgr.transition = NoTransition()
+        screenMgr.transition = RiseInTransition()  # FallOutTransition()  # NoTransition()
 
         self.screenMgr = screenMgr
         self.icon = ('resource/images/app_icon_128x128.ico' if sys.platform == 'win32' else 'resource/images/app_icon_128x128.png')
@@ -419,21 +436,25 @@ class RaceCaptureApp(App):
         self._setup_toolbar()
         Clock.schedule_once(lambda dt: self.init_data())
         Clock.schedule_once(lambda dt: self.init_rc_comms())
-        Clock.schedule_once(lambda dt: self.show_startup_view())
-        self.check_first_time_setup()
+        Clock.schedule_once(lambda dt: self._show_startup_view())
 
-
-    def check_first_time_setup(self):
-        if self.settings.userPrefs.get_pref('preferences', 'first_time_setup') == 'True':
-            Clock.schedule_once(lambda dt: self.first_time_setup(), 0.5)
-
-    def show_startup_view(self):
+    def _show_preferred_view(self):
         settings_to_view = {'Home Page':'home',
                             'Dashboard':'dash',
                             'Analysis': 'analysis',
                             'Configuration': 'config' }
         view_pref = self.settings.userPrefs.get_pref('preferences', 'startup_screen')
-        self.showMainView(settings_to_view[view_pref])
+        self._show_main_view(settings_to_view[view_pref])
+
+    def _show_startup_view(self):
+        # should we show the stetup wizard?
+        setup_enabled = self.settings.userPrefs.get_pref_bool('setup', 'setup_enabled')
+        if setup_enabled:
+            setup_view = self._get_main_screen('setup')
+            setup_view.bind(on_setup_complete=lambda x: self._show_preferred_view())
+            self._show_main_view('setup')
+        else:
+            self._show_preferred_view()
 
     def init_rc_comms(self):
         port = self.getAppArg('port')
@@ -535,7 +556,7 @@ class RaceCaptureApp(App):
         self.showActivity(msg)
         self.status_bar.dispatch('on_tele_status', ToolbarView.TELEMETRY_ERROR)
 
-    def _on_preferences_change(self, menu, config, section, key, value):
+    def _on_preference_change(self, instance, section, key, value):
         """Called any time the app preferences are changed
         """
         token = (section, key)

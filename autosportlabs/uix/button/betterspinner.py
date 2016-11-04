@@ -20,30 +20,25 @@
 
 import kivy
 kivy.require('1.9.1')
-from kivy.uix.button import Button
-from kivy.uix.togglebutton import ToggleButton
+from kivy.uix.spinner import Spinner
 from kivy.app import Builder
 
-BB_KV = """
-<BetterButton>:
+BETTER_SPINNER_KV = """
+#:import Factory kivy.factory.Factory
+<BetterSpinnerOption@SpinnerOption>:
     font_name: 'resource/fonts/ASL_regular.ttf'
     font_size: self.height * 0.5
 
-<BetterToggleButton>:
+<BetterSpinner>:
     font_name: 'resource/fonts/ASL_regular.ttf'
-    font_size: self.height * 0.5    
+    font_size: self.height * 0.5
+    option_cls: Factory.get('BetterSpinnerOption')
 """
 
-class BetterButton(Button):
-    """An improved button class with customizations we want.
+class BetterSpinner(Spinner):
+    """An improved Spinner with customizations we want.
     """
-    Builder.load_string(BB_KV)
+    Builder.load_string(BETTER_SPINNER_KV)
     def __init__(self, **kwargs):
-        super(BetterButton, self).__init__(**kwargs)
+        super(BetterSpinner, self).__init__(**kwargs)
 
-class BetterToggleButton(ToggleButton):
-    """An improved toggle button class with customizations we want.
-    """
-    Builder.load_string(BB_KV)
-    def __init__(self, **kwargs):
-        super(BetterToggleButton, self).__init__(**kwargs)

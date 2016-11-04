@@ -61,7 +61,7 @@ HELP_INFO_LAYOUT = '''
             size_hint_y: 0.65
             font_name: 'resource/fonts/ASL_light.ttf'
             text: root.help_text
-            #size_hint_y: None
+            halign: 'center'
             text_size: self.width, None
             height: self.texture_size[1]
         AnchorLayout:

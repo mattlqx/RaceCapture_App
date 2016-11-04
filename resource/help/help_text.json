@@ -7,13 +7,20 @@
         "title": "Ready to review data!",
         "text": "We've selected the best lap and a suggested channel to get you started.\n\nTo add more, touch the gear icon for a list of available channels."
     },
-    "beta_analysis_welcome":{
-        "title": "Beta Analysis",
-        "text": "To get started, select a recently recorded session or import a log file. Sample logfiles are available from our support forums.\n\nBeta software! Expect significant improvements. Side effects may include needing to re-import your data."    
+    "analysis_welcome":{
+        "title": "Analysis",
+        "text": "To get started, select a recently recorded session or import a log file."    
     },
     "lap_setup":{
         "title": "Setting your race track",
-        "text": "You can select or create a track map later under Setup"    
-    }
-    
+        "text": "You can select or create a track map later under Setup."    
+    },
+    "dashboard_gauge_help":{
+        "title": "Customizing your dashboard",
+        "text": "Touch a gauge to select a channel and set alerts. You can also swipe or use the arrows to switch between dashboard views.\n\nTouch the gear icon for more options!"    
+    },
+    "rc_write_config":{
+        "title": "Write Changes",
+        "text": "When done, write your changes back to RaceCapture to apply your settings."    
+    }    
 }

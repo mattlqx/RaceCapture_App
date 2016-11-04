@@ -20,30 +20,21 @@
 
 import kivy
 kivy.require('1.9.1')
-from kivy.uix.button import Button
-from kivy.uix.togglebutton import ToggleButton
+from kivy.clock import Clock
 from kivy.app import Builder
+from kivy.uix.screenmanager import Screen
+from autosportlabs.racecapture.views.setup.infoview import InfoView
 
-BB_KV = """
-<BetterButton>:
-    font_name: 'resource/fonts/ASL_regular.ttf'
-    font_size: self.height * 0.5
-
-<BetterToggleButton>:
-    font_name: 'resource/fonts/ASL_regular.ttf'
-    font_size: self.height * 0.5    
+DASHBOARD_SETUP_VIEW_KV = """
+<DashboardSetupView>:
+    background_source: 'resource/setup/background_dashboard.jpg'
+    info_text: 'When you\\'re ready to race, go to the Dashboard to customize gauges and view predictive lap times.\\n\\nYour data will be automatically recorded for later review!'
 """
 
-class BetterButton(Button):
-    """An improved button class with customizations we want.
+class DashboardSetupView(InfoView):
     """
-    Builder.load_string(BB_KV)
+    Provides information on Dashboard features, and optionally configure specific options
+    """        
+    Builder.load_string(DASHBOARD_SETUP_VIEW_KV)
     def __init__(self, **kwargs):
-        super(BetterButton, self).__init__(**kwargs)
-
-class BetterToggleButton(ToggleButton):
-    """An improved toggle button class with customizations we want.
-    """
-    Builder.load_string(BB_KV)
-    def __init__(self, **kwargs):
-        super(BetterToggleButton, self).__init__(**kwargs)
+        super(DashboardSetupView, self).__init__(**kwargs)
