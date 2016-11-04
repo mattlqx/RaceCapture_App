@@ -285,12 +285,21 @@ class DashboardView(Screen):
 
     def _load_track_setup_view(self, track_cfg):
 
+        def cancelled_track():
+            # user cancelled, store current location as where they cancelled
+            # so we prevent bugging the user again
+            self._settings.userPrefs.set_last_selected_track(0, 0, str(self._gps_sample.geopoint))
+            HelpInfo.help_popup('lap_setup', self)
+
         def on_track_complete(instance, track_map):
-            Logger.debug("DashboardView: setting track_map: {}".format(track_map))
-            self._track_manager.add_track(track_map)
-            track_cfg.track.import_trackmap(track_map)
-            track_cfg.stale = True
-            self._set_rc_track(track_cfg)
+            if track_map is None:
+                cancelled_track()
+            else:
+                Logger.debug("DashboardView: setting track_map: {}".format(track_map))
+                self._track_manager.add_track(track_map)
+                track_cfg.track.import_trackmap(track_map)
+                track_cfg.stale = True
+                self._set_rc_track(track_cfg)
 
             self._popup.dismiss()
             self._popup = None
@@ -298,10 +307,7 @@ class DashboardView(Screen):
 
         def on_close(instance, answer):
             if not answer:
-                # user cancelled, store current location as where they cancelled
-                # so we prevent bugging the user again
-                self._settings.userPrefs.set_last_selected_track(0, 0, str(self._gps_sample.geopoint))
-                HelpInfo.help_popup('lap_setup', self)
+                cancelled_track()
 
             self._popup.dismiss()
             self._popup = None
@@ -310,7 +316,7 @@ class DashboardView(Screen):
             # can't open dialog multiple times
             return
 
-        content = TrackBuilderView(self._rc_api, self._databus, self._track_manager, current_point=self._gps_sample.geopoint)
+        content = TrackBuilderView(self._rc_api, self._databus, self._track_manager, current_point=self._gps_sample.geopoint, prompt_track_creation=True)
         self._popup = editor_popup("Race track setup", content, on_close, hide_ok=True)
         content.bind(on_track_complete=on_track_complete)
         self._popup.open()

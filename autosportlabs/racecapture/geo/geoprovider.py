@@ -41,10 +41,8 @@ class GeoProvider(EventDispatcher):
     GPS_SOURCE_NONE = 0
     GPS_SOURCE_RACECAPTURE = 1
     GPS_SOURCE_INTERNAL = 2
+    INTERNAL_GPS_UPDATE_INTERVAL_SEC = 0.5
 
-    INTERNAL_GPS_MIN_DISTANCE = 0
-    INTERNAL_GPS_MIN_TIME = 1000
-    INTERNAL_GPS_UPDATE_INTERVAL = 0.5
     def __init__(self, rc_api, databus, **kwargs):
         super(GeoProvider, self).__init__(**kwargs)
         self._internal_gps_conn = None
@@ -60,7 +58,7 @@ class GeoProvider(EventDispatcher):
         self.register_event_type('on_location')
         self.register_event_type('on_internal_gps_available')
         self.register_event_type('on_gps_source')
-        if is_android(): #only support android for now
+        if is_android():  # only support android for now
             self._start_internal_gps()
 
     def on_location(self, point):
@@ -104,6 +102,8 @@ class GeoProvider(EventDispatcher):
     def _update_current_location(self, point, gps_source):
         self.dispatch('on_location', point)
         if gps_source != self._current_gps_source:
+            # If we've switched between RaceCapture and internal device GPS
+            # or vice-versa, send an event
             self.dispatch('on_gps_source', gps_source)
             self._current_gps_source = gps_source
 
@@ -125,7 +125,7 @@ class GeoProvider(EventDispatcher):
         Logger.info('GeoProvider: internal GPS started: {}'.format(started))
         self.dispatch('on_internal_gps_available', started)
         if started:
-            Clock.schedule_interval(self._check_internal_gps_update, GeoProvider.INTERNAL_GPS_UPDATE_INTERVAL)
+            Clock.schedule_interval(self._check_internal_gps_update, GeoProvider.INTERNAL_GPS_UPDATE_INTERVAL_SEC)
 
     def _check_internal_gps_update(self, *args):
         location = self._internal_gps_conn.getCurrentLocation()

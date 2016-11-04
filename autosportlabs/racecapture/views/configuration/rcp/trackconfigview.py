@@ -528,7 +528,7 @@ class SingleAutoConfigScreen(Screen):
                     self._update_track()
                     self.dispatch('on_modified')
             popup.dismiss()
-            
+
         # use the current location, if available
         current_point = self._gps_sample.geopoint if self._gps_sample.is_locked else None
         content = TrackSelectView(track_manager=self._track_manager, current_location=current_point)
@@ -601,12 +601,12 @@ class CustomTrackConfigScreen(Screen):
             self._track_cfg.stale = True
             self._update_track()
             self.dispatch('on_modified')
-        
+
         def on_close(instance, answer):
             popup.dismiss()
-            
+
         content = TrackBuilderView(databus=self._databus, rc_api=self._rc_api, track_manager=self._track_manager)
-        popup = editor_popup("Track Builder", content, on_close, hide_ok=True, size_hint=(1.0,1.0))        
+        popup = editor_popup("Track Builder", content, on_close, hide_ok=True, size_hint=(1.0, 1.0))
         content.bind(on_track_complete=on_track_complete)
         popup.open()
 
@@ -627,41 +627,53 @@ class CustomTrackConfigScreen(Screen):
 
 MANUAL_TRACK_CONFIG_SCREEN_KV = """
 <ManualTrackConfigScreen>:
-    BoxLayout:
-        orientation: 'vertical'
-        SettingsView:
-            size_hint_y: 0.2
-            id: sep_startfinish
-            label_text: 'Separate start and finish lines'
-            help_text: 'Enable for Stage, Hill Climb or AutoX type courses'
+    AnchorLayout:
         BoxLayout:
             orientation: 'vertical'
-            size_hint_y: 0.8
-
-            SectorPointView:
-                id: start_line
-                size_hint_y: 0.15
-            SectorPointView:
-                id: finish_line
-                size_hint_y: 0.15
-
-            ScrollContainer:
-                id: scroller
-                size_hint_y: 0.6
-                do_scroll_x: False
-                GridLayout:
-                    canvas.before:
-                        Color:
-                            rgba: 0.1, 0.1, 0.1, 1.0
-                        Rectangle:
-                            pos: self.pos
-                            size: self.size
-                    id: sectors_grid
-                    row_default_height: root.height * 0.12
-                    row_force_default: True
-                    size_hint_y: None
-                    height: max(self.minimum_height, scroller.height)
-                    cols: 1
+            SettingsView:
+                size_hint_y: 0.2
+                id: sep_startfinish
+                label_text: 'Separate start and finish lines'
+                help_text: 'Enable for Stage, Hill Climb or AutoX type courses'
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint_y: 0.8
+    
+                SectorPointView:
+                    id: start_line
+                    size_hint_y: 0.15
+                SectorPointView:
+                    id: finish_line
+                    size_hint_y: 0.15
+    
+                ScrollContainer:
+                    id: scroller
+                    size_hint_y: 0.6
+                    do_scroll_x: False
+                    GridLayout:
+                        canvas.before:
+                            Color:
+                                rgba: 0.1, 0.1, 0.1, 1.0
+                            Rectangle:
+                                pos: self.pos
+                                size: self.size
+                        id: sectors_grid
+                        row_default_height: root.height * 0.12
+                        row_force_default: True
+                        size_hint_y: None
+                        height: max(self.minimum_height, scroller.height)
+                        cols: 1
+        AnchorLayout:
+            anchor_x: 'left'
+            anchor_y: 'bottom'
+            padding: (sp(10), sp(10))
+            IconButton:
+                color: ColorScheme.get_accent()
+                size_hint: (None, None)
+                height: root.height * .15
+                text: u'\uf0a8'
+                on_release: root.custom_editor()
+                    
 """
 class ManualTrackConfigScreen(Screen):
     Builder.load_string(MANUAL_TRACK_CONFIG_SCREEN_KV)
@@ -683,9 +695,16 @@ class ManualTrackConfigScreen(Screen):
         sectors_container.size_hint = (1.0, None)
 
         self.register_event_type('on_modified')
+        self.register_event_type('on_custom_editor')
 
     def on_modified(self, *args):
         pass
+
+    def on_custom_editor(self, *args):
+        pass
+
+    def custom_editor(self):
+        self.dispatch('on_custom_editor')
 
     def on_separate_start_finish(self, instance, value):
         if self._track_cfg:
@@ -821,6 +840,7 @@ class TrackConfigView(BaseConfigView):
         if self._advanced_config_screen is None:
             self._advanced_config_screen = ManualTrackConfigScreen(gps_sample=self._gps_sample, rc_api=self._rc_api)
             self._advanced_config_screen.bind(on_modified=self.on_editor_modified)
+            self._advanced_config_screen.bind(on_custom_editor=self._on_custom_editor)
             if self._track_cfg is not None:
                 self._advanced_config_screen.on_config_updated(self._track_cfg)
         return self._advanced_config_screen
@@ -890,3 +910,6 @@ class TrackConfigView(BaseConfigView):
 
     def _on_advanced_editor(self, *args):
         self._switch_to_screen(self._get_advanced_editor_screen())
+
+    def _on_custom_editor(self, *args):
+        self._switch_to_screen(self._get_custom_track_screen())

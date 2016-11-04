@@ -86,6 +86,13 @@ class TrackMap(object):
         return track_map
 
     @property
+    def full_name(self):
+        """
+        Provides the full name of the track including track configuration, if present
+        """
+        return '{} {}'.format(self.name, '' if self.configuration is None or self.configuration.strip() == '' else '({})'.format(self.configuration))
+
+    @property
     def centerpoint(self):
         """
         Return the a reference point for the map
@@ -244,7 +251,7 @@ class TrackManager(object):
             searchRadius = TrackManager.TRACK_DEFAULT_SEARCH_RADIUS_METERS
         if searchBearing is None:
             searchBearing = TrackManager.TRACK_DEFAULT_SEARCH_BEARING_DEGREES
-            
+
         tracks = []
         radius = point.metersToDegrees(searchRadius, searchBearing)
         for trackId in self.tracks.keys():

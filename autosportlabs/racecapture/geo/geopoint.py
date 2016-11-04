@@ -49,7 +49,11 @@ class GeoPoint:
 
     @classmethod
     def is_valid(cls, point):
-        return point is not None and point.latitude is not None and point.longitude is not None and point.latitude != 0 and point.longitude != 0
+        return (point is not None and
+                 point.latitude is not None and
+                 point.longitude is not None and
+                 point.latitude != 0 and
+                 point.longitude != 0)
 
     @classmethod
     def fromPointJson(cls, geoPointJson):
@@ -81,7 +85,7 @@ class GeoPoint:
 
     def __str__(self):
         return '{},{}'.format(self.latitude, self.longitude)
-            
+
     def fromJson(self, geoPointJson):
         try:
             self.latitude = geoPointJson[0]
