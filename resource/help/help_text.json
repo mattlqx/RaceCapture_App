@@ -14,6 +14,10 @@
     "lap_setup":{
         "title": "Setting your race track",
         "text": "You can select or create a track map later under Setup"    
+    },
+    "wifi_warning":{
+        "title": "Changing WiFi settings",
+        "text": "Your connection may be broken if you're making changes while connected over WiFi - you might need to update your handheld's WiFi settings to restore connection, or use USB to fix connection issues."    
     }
     
 }
