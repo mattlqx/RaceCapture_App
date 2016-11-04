@@ -23,7 +23,6 @@ import socket
 import json
 import errno
 
-PORT = 7223
 READ_TIMEOUT = 2
 SCAN_TIMEOUT = 3
 
@@ -34,7 +33,9 @@ class InvalidAddressException(Exception):
 
 
 class SocketConnection(object):
-
+    MSG_RECEIVE_BUFFER_SIZE = 32
+    BEACON_RECEIVE_BUFFER_SIZE = 4096
+    PORT = 7223
     def __init__(self):
         self.socket = None
         self._data = ''
@@ -50,11 +51,11 @@ class SocketConnection(object):
         sock.settimeout(SCAN_TIMEOUT)
 
         # Bind the socket to the port
-        server_address = ('', PORT)
+        server_address = ('', SocketConnection.PORT)
         sock.bind(server_address)
 
         try:
-            data, address = sock.recvfrom(4096)
+            data, address = sock.recvfrom(SocketConnection.BEACON_RECEIVE_BUFFER_SIZE)
 
             if data:
                 Logger.info("SocketConnection: got UDP data {}".format(data))
@@ -88,7 +89,7 @@ class SocketConnection(object):
             raise InvalidAddressException("{} is not a valid IP address".format(address))
 
         # Connect to ip address here
-        rc_address = (address, 7223)
+        rc_address = (address, SocketConnection.PORT)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.settimeout(READ_TIMEOUT)
         self.socket.connect(rc_address)
@@ -117,7 +118,7 @@ class SocketConnection(object):
 
         while keep_reading.is_set():
             try:
-                data = self.socket.recv(4096)
+                data = self.socket.recv(SocketConnection.MSG_RECEIVE_BUFFER_SIZE)
 
                 if data == '':
                     return None
