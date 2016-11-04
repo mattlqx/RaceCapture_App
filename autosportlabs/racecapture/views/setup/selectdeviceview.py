@@ -67,6 +67,9 @@ SELECT_DEVICE_VIEW_KV = """
 """
 
 class SelectDeviceView(InfoView):
+    """
+    A setup screen that lets users select what device they have.
+    """        
     Builder.load_string(SELECT_DEVICE_VIEW_KV)
     def __init__(self, **kwargs):
         super(SelectDeviceView, self).__init__(**kwargs)

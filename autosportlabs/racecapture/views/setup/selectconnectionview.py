@@ -98,6 +98,9 @@ SELECT_CONNECTION_VIEW_KV = """
 """
 
 class SelectConnectionView(InfoView):
+    """
+    A setup screen that lets users select the connection they want to use for RaceCapture
+    """        
     Builder.load_string(SELECT_CONNECTION_VIEW_KV)
     CONNECTION_CHECK_INTERVAL = 0.5
 

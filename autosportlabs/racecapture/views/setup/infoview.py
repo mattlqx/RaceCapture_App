@@ -58,6 +58,9 @@ INFO_VIEW_KV = """
 """
 
 class InfoView(Screen):
+    """
+    A base class for setup screens. 
+    """        
     setup_config = ObjectProperty()
     next_text = StringProperty('Next')
     next_icon = StringProperty(u'\uf0a9')

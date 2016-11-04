@@ -32,6 +32,9 @@ ANALYSIS_SETUP_VIEW_KV = """
 """
 
 class AnalysisSetupView(InfoView):
+    """
+    Provides information on Analysis features, and optionally configure options
+    """
     Builder.load_string(ANALYSIS_SETUP_VIEW_KV)
     def __init__(self, **kwargs):
         super(AnalysisSetupView, self).__init__(**kwargs)

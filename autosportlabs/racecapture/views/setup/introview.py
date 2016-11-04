@@ -32,6 +32,9 @@ INTRO_VIEW_KV = """
 """
 
 class IntroView(InfoView):
+    """
+    Introductory / Welcome screen. 
+    """        
     Builder.load_string(INTRO_VIEW_KV)
     def __init__(self, **kwargs):
         super(IntroView, self).__init__(**kwargs)

@@ -32,6 +32,9 @@ FINISH_SETUP_VIEW_KV = """
 """
 
 class FinishSetupView(InfoView):
+    """
+    Final setup view, concluding the setup process
+    """        
     Builder.load_string(FINISH_SETUP_VIEW_KV)
     def __init__(self, **kwargs):
         super(FinishSetupView, self).__init__(**kwargs)

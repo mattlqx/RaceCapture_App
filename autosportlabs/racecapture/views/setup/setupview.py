@@ -83,11 +83,13 @@ SETUP_VIEW_KV = """
                         title_font_size: self.height * 0.6
                         icon: u'\uf052'
                         size_hint: (0.2, 0.15)                
-                        on_release: self.tile_color=ColorScheme.get_dark_accent(); root.on_skip()
-                        on_press: self.tile_color=ColorScheme.get_medium_accent()
+                        on_release: root.on_skip()
 """
 
 class SetupItem(BoxLayout):
+    """
+    An individual setup item view that shows the state of the current step
+    """
     title = StringProperty('')
     complete = BooleanProperty(False)
     active = BooleanProperty(False)
@@ -103,8 +105,10 @@ class SetupItem(BoxLayout):
         self.title_color = ColorScheme.get_light_primary_text() if value else ColorScheme.get_secondary_text()
 
 class SetupView(Screen):
-    SETUP_COMPLETE_DELAY = 1.0
-    kv_loaded = False
+    """
+    The view for setting up RaceCapture features
+    """        
+    SETUP_COMPLETE_DELAY_SEC = 1.0
     Builder.load_string(SETUP_VIEW_KV)
     def __init__(self, settings, databus, base_dir, rc_api, **kwargs):
         super(SetupView, self).__init__(**kwargs)
@@ -114,13 +118,10 @@ class SetupView(Screen):
         self._databus = databus
         self._rc_api = rc_api
         self._setup_config = None
-        self._init_setup_config()
         self._current_screen = None
         self._current_step = None
         self._steps = {}
-
-        if not SetupView.kv_loaded:
-            SetupView.kv_loaded = True
+        self._init_setup_config()
 
     def on_setup_complete(self):
         pass
@@ -157,12 +158,12 @@ class SetupView(Screen):
             self.ids.screen_manager.switch_to(screen)
             self._current_step = step
             self._current_screen = screen
-            screen.bind(on_next=self.on_next_screen)
+            screen.bind(on_next=self._on_next_screen)
             self._steps[step['key']].active = True
         else:
             self._setup_complete(show_next_time=False)
 
-    def on_next_screen(self, instance):
+    def _on_next_screen(self, instance):
         step = self._current_step
         step['complete'] = True
         self._steps[step['key']].complete = True
@@ -187,4 +188,4 @@ class SetupView(Screen):
 
     def _setup_complete(self, show_next_time=False):
         self._settings.userPrefs.set_pref('setup', 'setup_enabled', show_next_time)
-        Clock.schedule_once(lambda dt: self.dispatch('on_setup_complete'), SetupView.SETUP_COMPLETE_DELAY)
+        Clock.schedule_once(lambda dt: self.dispatch('on_setup_complete'), SetupView.SETUP_COMPLETE_DELAY_SEC)
