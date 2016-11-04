@@ -23,6 +23,14 @@ import calendar
 from datetime import datetime
 from kivy import platform
 
+# DO NOT REMOVE
+# dummy call to ensure strptime is loaded
+# before any threads attempt to call it
+# see python issue http://bugs.python.org/issue7980
+datetime.strptime('2010-01-01', '%Y-%m-%d')
+# DO NOT REMOVE
+
+
 def time_to_epoch(timestamp):
     """
     convert a timestamp to a Unix epoch. Timestamp formats supported
