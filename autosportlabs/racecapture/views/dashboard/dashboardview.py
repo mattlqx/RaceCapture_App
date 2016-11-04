@@ -220,6 +220,9 @@ class DashboardView(Screen):
         self._rc_api.add_connect_listener(self._on_rc_connect)
         self._initialized = True
 
+
+        Clock.schedule_once(lambda dt: HelpInfo.help_popup('dashboard_gauge_help', self, arrow_pos='right_mid'), 2.0)
+
     def _on_rc_connect(self, *args):
         Clock.schedule_once(lambda dt: self._race_setup())
 
