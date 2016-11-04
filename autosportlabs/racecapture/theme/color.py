@@ -93,6 +93,10 @@ class ColorScheme(object):
     @staticmethod
     def get_background():
         return get_color_from_hex("000000")
+    
+    @staticmethod
+    def get_shadow():
+        return [1.0, 1.0, 1.0, 0.2]
 
 
 
