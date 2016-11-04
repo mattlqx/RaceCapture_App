@@ -69,7 +69,6 @@ HELP_INFO_LAYOUT = '''
             LabelIconButton:
                 id: ok
                 title: 'Got It'
-                tile_color: ColorScheme.get_secondary_text()
                 icon_size: self.height * 0.5
                 title_font_size: self.height * 0.7
                 icon: u'\uf00c'
