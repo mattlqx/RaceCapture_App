@@ -25,6 +25,7 @@ from autosportlabs.racecapture.views.setup.dashboardsetupview import DashboardSe
 from autosportlabs.racecapture.views.setup.analysissetupview import AnalysisSetupView
 from autosportlabs.racecapture.views.setup.configsetupview import ConfigSetupView
 from autosportlabs.racecapture.views.setup.tourview import TourView
+from autosportlabs.racecapture.views.setup.podiumview import PodiumSetupView
 
 __all__ = 'setup_factory'
 
@@ -47,4 +48,6 @@ def setup_factory(key):
         return AnalysisSetupView()
     elif key == 'finish':
         return FinishSetupView()
+    elif key == 'podium':
+        return PodiumSetupView()
     return None

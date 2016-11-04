@@ -62,7 +62,7 @@ SETUP_VIEW_KV = """
             id: steps
             cols: 1
             size_hint_x: 0.25
-            row_default_height: self.height * 0.1
+            row_default_height: self.height * 0.095
             row_force_default: True
             padding: (dp(5), dp(5), dp(2.5), dp(5))
             spacing: dp(5)
@@ -107,7 +107,7 @@ class SetupItem(BoxLayout):
 class SetupView(Screen):
     """
     The view for setting up RaceCapture features
-    """        
+    """
     SETUP_COMPLETE_DELAY_SEC = 1.0
     Builder.load_string(SETUP_VIEW_KV)
     def __init__(self, settings, databus, base_dir, rc_api, **kwargs):

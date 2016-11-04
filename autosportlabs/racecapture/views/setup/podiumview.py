@@ -24,17 +24,24 @@ from kivy.clock import Clock
 from kivy.app import Builder
 from kivy.uix.screenmanager import Screen
 from autosportlabs.racecapture.views.setup.infoview import InfoView
+import webbrowser
+from utils import is_mobile_platform
 
-ANALYSIS_SETUP_VIEW_KV = """
-<AnalysisSetupView>:
-    background_source: 'resource/setup/background_analysis.jpg'
-    info_text: 'After you come off track, go to Analysis and your just-completed session will be waiting for you, ready to compare laps and runs.'
+PODIUM_SETUP_VIEW_KV = """
+<PodiumSetupView>:
+    background_source: 'resource/setup/background_podium.jpg'
+    info_text: 'You can live-stream telemetry to Podium for realtime data to the pits, friends or race coaches around the world.\\nGo to [color=00BCD4][ref=podium]podium.live[/ref][/color] to get started!'
 """
 
-class AnalysisSetupView(InfoView):
+class PodiumSetupView(InfoView):
     """
-    Provides information on Analysis features, and optionally configure options
+    Provides information on Dashboard features, and optionally configure specific options
     """
-    Builder.load_string(ANALYSIS_SETUP_VIEW_KV)
+    Builder.load_string(PODIUM_SETUP_VIEW_KV)
     def __init__(self, **kwargs):
-        super(AnalysisSetupView, self).__init__(**kwargs)
+        super(PodiumSetupView, self).__init__(**kwargs)
+
+    def on_info_ref(self, instance, value):
+        print ('ref')
+        if value == 'podium' and is_mobile_platform():
+            webbrowser.open('http://podium.live')

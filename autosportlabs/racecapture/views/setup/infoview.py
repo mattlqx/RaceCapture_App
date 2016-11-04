@@ -37,6 +37,8 @@ INFO_VIEW_KV = """
                 size_hint_y: 0.4
                 padding: (dp(10), dp(10))
                 FieldLabel:
+                    on_ref_press: root.on_info_ref(*args)
+                    markup: True
                     text_size: self.size
                     font_size: self.height * 0.15
                     text: root.info_text
@@ -60,7 +62,7 @@ INFO_VIEW_KV = """
 class InfoView(Screen):
     """
     A base class for setup screens. 
-    """        
+    """
     setup_config = ObjectProperty()
     next_text = StringProperty('Next')
     next_icon = StringProperty(u'\uf0a9')
@@ -74,6 +76,9 @@ class InfoView(Screen):
     def __init__(self, **kwargs):
         super(InfoView, self).__init__(**kwargs)
         self.register_event_type('on_next')
+
+    def on_info_ref(self, instance, value):
+        pass
 
     def on_pre_enter(self, *args):
         self.ids.next.pulsing = True

@@ -40,6 +40,12 @@
             "complete": false
         },
 
+        {
+            "key": "podium",
+            "title" : "Podium",
+            "complete": false
+        },
+        
 		{
 			"key": "finish",
 			"title": "Ready to go!",
