@@ -207,7 +207,7 @@ class AnalysisMap(AnalysisWidget):
     def _select_track(self, track):
         if track != None:
             self.ids.track.setTrackPoints(track.map_points)
-            self.ids.track_name.text = '{} {}'.format(track.name, '' if track.configuration is None or track.configuration == '' else '({})'.format(track.configuration))
+            self.ids.track_name.text = track.full_name
         else:
             self.ids.track_name.text = ''
             self.ids.track.setTrackPoints([])
@@ -278,7 +278,8 @@ class AnalysisMap(AnalysisWidget):
         if not latitude or not longitude:
             return None
         point = GeoPoint.fromPoint(latitude, longitude)
-        track = self.track_manager.find_nearby_track(point)
+        tracks = self.track_manager.find_nearby_tracks(point)
+        track = tracks[0] if len(tracks) > 0 else None
         if self.track != track:
             # only update the trackmap if it's changing
             self._select_track(track)

@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import math
-RADIUS_EARTH_KM = 6371;
+RADIUS_EARTH_KM = 6371
 
 class GeoPoint:
     """
@@ -40,12 +40,20 @@ class GeoPoint:
         :returns the new instance
         :type GeoPoint
         """
-        if not latitude or not longitude:
+        if latitude is None or longitude is None:
             raise ValueError("Latitude and Longitude must be provided")
         g = GeoPoint()
         g.latitude = latitude
         g.longitude = longitude
         return g
+
+    @classmethod
+    def is_valid(cls, point):
+        return (point is not None and
+                 point.latitude is not None and
+                 point.longitude is not None and
+                 point.latitude != 0 and
+                 point.longitude != 0)
 
     @classmethod
     def fromPointJson(cls, geoPointJson):
@@ -55,6 +63,28 @@ class GeoPoint:
             g.latitude = geoPointJson[0]
             g.longitude = geoPointJson[1]
         return g
+
+    @classmethod
+    def from_string(cls, point_string):
+        """
+        Construct a GeoPoint from a formatted latitude,longitude string
+        @param point_string - latitude,longitude
+        @type point_string string
+        @return GeoPoint
+        """
+        try:
+            lat_lon = point_string.split(',')
+            lat = float(lat_lon[0])
+            lon = float(lat_lon[1])
+            g = GeoPoint()
+            g.latitude = lat
+            g.longitude = lon
+            return g
+        except (ValueError, IndexError) as e:
+            raise Exception('GeoPoint: Invalid point string specified {} {}'.format(point_string, e))
+
+    def __str__(self):
+        return '{},{}'.format(self.latitude, self.longitude)
 
     def fromJson(self, geoPointJson):
         try:
@@ -88,6 +118,22 @@ class GeoPoint:
 
         distanceDegrees = math.fabs(math.sqrt(math.pow((lat1 - lat2), 2) + math.pow((lon1 - lon2), 2)))
         return distanceDegrees
+
+    def dist_pythag(self, other_geopoint):
+        """
+         Finds the distance between the two geopoints using the
+         basic Pythagoras' Theorem.  This is only useful for small distances as
+         the inaccuracies will increase as the distance does.  However this is
+         also one of the fastest methods of calculating this distance.
+         :param other_geopoint - the other point to calculate distance from
+         :return The distance between the two points in Meters
+         """
+        d_lat_rad = math.radians(other_geopoint.latitude - self.latitude)
+        d_lon_rad = math.radians(other_geopoint.longitude - self.longitude)
+        lat_a_rad = math.radians(self.latitude)
+        lat_b_rad = math.radians(other_geopoint.latitude)
+        tmp = d_lon_rad * math.cos((lat_a_rad + lat_b_rad) / 2)
+        return math.sqrt(tmp * tmp + d_lat_rad * d_lat_rad) * (RADIUS_EARTH_KM * 1000.0)
 
 class Region:
     name = None

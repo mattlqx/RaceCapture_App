@@ -51,6 +51,7 @@ from autosportlabs.racecapture.views.util.alertview import alertPopup, confirmPo
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.racecapture.theme.color import ColorScheme
 
+
 RCP_CONFIG_FILE_EXTENSION = '.rcp'
 
 CONFIG_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/configview.kv'
@@ -82,6 +83,7 @@ class ConfigView(Screen):
     def __init__(self, **kwargs):
         super(ConfigView, self).__init__(**kwargs)
 
+        self._status_pump = kwargs.get('status_pump')
         self._databus = kwargs.get('databus')
         self.rc_config = kwargs.get('rcpConfig', None)
         self.rc_api = kwargs.get('rc_api', None)
@@ -186,12 +188,11 @@ class ConfigView(Screen):
 
         runtime_channels = self._settings.runtimeChannels
 
-        if self.rc_config.capabilities.storage.tracks == 0:
-            default_node = attach_node('Race Tracks', None, lambda: SimpleTrackConfigView(self.rc_api, self._databus,
-                                                                                        self._settings,
-                                                                                        self.track_manager))
-        else:
-            default_node = attach_node('Race Tracks', None, lambda: TrackConfigView(databus=self._databus))
+        default_node = attach_node('Race Tracks', None, lambda: TrackConfigView(status_pump=self._status_pump,
+                                                                                    databus=self._databus,
+                                                                                    rc_api=self.rc_api,
+                                                                                    settings=self._settings,
+                                                                                    track_manager=self.track_manager))
 
         attach_node('GPS', None, lambda: GPSChannelsView())
         attach_node('Race Timing', None, lambda: LapStatsView())
