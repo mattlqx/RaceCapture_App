@@ -32,7 +32,10 @@ from autosportlabs.util.threadutil import safe_thread_exit
 class StatusPump(object):
 
     # how often we query for status
-    STATUS_QUERY_INTERVAL = 1.0
+    STATUS_QUERY_INTERVAL_SEC = 1.0
+
+    # How long we wait for an status message
+    READY_WAIT_TIMEOUT_SEC = 5.0
 
     # Connection to the RC API
     _rc_api = None
@@ -46,6 +49,9 @@ class StatusPump(object):
     # signals if thread should continue running
     _running = Event()
 
+    # signals if the thread is ready to send another status request
+    _ready = Event()
+
     def add_listener(self, listener):
         self._listeners.append(listener)
 
@@ -58,11 +64,13 @@ class StatusPump(object):
         self._rc_api = rc_api
         t = Thread(target=self.status_worker)
         self._running.set()
+        self._ready.clear()
         t.start()
         self._status_thread = t
 
     def stop(self):
         self._running.clear()
+        self._ready.set()
         try:
             if self._status_thread:
                 self._status_thread.join()
@@ -74,7 +82,10 @@ class StatusPump(object):
         self._rc_api.addListener('status', self._on_status_updated)
         while self._running.is_set():
             self._rc_api.get_status()
-            sleep(self.STATUS_QUERY_INTERVAL)
+            sleep(StatusPump.STATUS_QUERY_INTERVAL_SEC)
+            if not self._ready.wait(StatusPump.READY_WAIT_TIMEOUT_SEC):
+                Logger.warn('StatusPump: timed out waiting for status response')
+
         Logger.info('StatusPump: status_worker exited')
         safe_thread_exit()
 
@@ -83,4 +94,5 @@ class StatusPump(object):
             listener(status)
 
     def _on_status_updated(self, status):
+        self._ready.set()
         Clock.schedule_once(lambda dt: self._update_all_listeners(status))
