@@ -33,8 +33,6 @@ def comms_factory(device, conn_type):
             return socket_comm(device)
         if conn_type == 'serial':
             return serial_comm(device)
-        if conn_type == 'usb':
-            return serial_comm(device)
     else:
         if platform == 'android':
             return android_comm(device)

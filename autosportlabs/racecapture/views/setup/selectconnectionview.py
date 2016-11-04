@@ -105,6 +105,10 @@ class SelectConnectionView(InfoView):
                         'WiFi':'Ensure your handheld is already connected to the RaceCapture WiFi network',
                         'Bluetooth': 'Ensure your handheld is paired with the RaceCapture Bluetooth'}
 
+    CONNECTION_TYPES = {'USB':'Serial',
+                        'WiFi':'WiFi',
+                        'Bluetooth':'Bluetooth'}
+
     CHANGE_CONNECTION_DELAY = 2.0
 
 
@@ -144,6 +148,7 @@ class SelectConnectionView(InfoView):
 
         supported_connections = self._get_supported_connection_list(device)
 
+
         # force the user to select their connection if there are multiple choices
         connection_spinner = self.ids.connection_types
         connection_spinner.values = supported_connections
@@ -167,7 +172,9 @@ class SelectConnectionView(InfoView):
         self.ids.connection_status_note.text = 'Connected' if connected else 'Waiting for connection'
 
     def _update_connection_type(self, connection_type):
-        Clock.schedule_once(lambda dt: self.settings.userPrefs.set_pref('preferences', 'conn_type', connection_type), SelectConnectionView.CHANGE_CONNECTION_DELAY)
+        #convert display connection type to internal connection type code
+        connection_type_code = SelectConnectionView.CONNECTION_TYPES[connection_type] 
+        Clock.schedule_once(lambda dt: self.settings.userPrefs.set_pref('preferences', 'conn_type', connection_type_code), SelectConnectionView.CHANGE_CONNECTION_DELAY)
 
     def on_connection_type(self, connection_type):
         self._update_connection_note(connection_type)
