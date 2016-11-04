@@ -884,16 +884,22 @@ class TrackConfigView(BaseConfigView):
     def _select_screen(self):
         auto_detect_enabled = self.ids.auto_detect.control.active
 
-        next_screen = None
+        # For a given mode and capability
+        # a variety of screens are valid.
+        valid_screens = []
         if auto_detect_enabled:
             if self._track_db_capable:
-                next_screen = self._get_track_db_view()
+                valid_screens.append(self._get_track_db_view())
             else:
-                next_screen = self._get_single_track_view()
+                valid_screens.append(self._get_single_track_view())
         else:
-            next_screen = self._get_custom_track_screen()
+            valid_screens.append(self._get_custom_track_screen())
+            valid_screens.append(self._get_advanced_editor_screen())
 
-        self._switch_to_screen(next_screen)
+        # If the current screen is not in the list of valid screens,
+        # then switch to the first valid screen
+        if not self.ids.screen_manager.current_screen in valid_screens:
+            self.ids.screen_manager.switch_to(valid_screens[0])
 
     def _switch_to_screen(self, screen):
         if self.ids.screen_manager.current_screen != screen:
