@@ -1,5 +1,9 @@
 {
-    "suggested_lap": {
+	"gps_warning": {
+        "title": "Optimal GPS conditions required",
+        "text": "High GPS sample rates require optimal GPS conditions, with clear horizon to horizon view of the sky and no terrain or obstructions.\n\nIf you experience erratic speed readings or inaccurate lap times, reduce GPS sample rate to 10Hz or less."
+    },
+	"suggested_lap": {
         "title": "Ready to review data!",
         "text": "We've selected the best lap and a suggested channel to get you started.\n\nTo add more, touch the gear icon for a list of available channels."
     },

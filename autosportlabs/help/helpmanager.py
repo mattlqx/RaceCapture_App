@@ -26,7 +26,7 @@ from __builtin__ import staticmethod
 from kivy.properties import StringProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.logger import Logger
-from kivy.metrics import sp
+from kivy.metrics import dp
 from kivy.app import Builder
 import json
 import os
@@ -36,37 +36,45 @@ __all__ = ('check_help_popup_popup')
 
 HELP_INFO_LAYOUT='''
 <HelpInfo>:
-    orientation: 'vertical'
     canvas.before:
         Color:
-            rgba: ColorScheme.get_dark_background()
+            rgba: ColorScheme.get_shadow()
         Rectangle:
             pos: self.pos
             size: self.size
-    padding: (sp(10), sp(10))
-    Label:
-        text: root.title_text
-        font_name: 'resource/fonts/ASL_light.ttf'
-        font_size: self.height * 0.8
-        size_hint_y: 0.15
-    Label:
-        size_hint_y: 0.65
-        font_name: 'resource/fonts/ASL_light.ttf'
-        text: root.help_text
-        #size_hint_y: None
-        text_size: self.width, None
-        height: self.texture_size[1]
-    AnchorLayout:
-        size_hint_y: 0.2
-        LabelIconButton:
-            id: ok
-            title: 'Got It'
-            tile_color: ColorScheme.get_secondary_text()
-            icon_size: self.height * 0.5
-            title_font_size: self.height * 0.7
-            icon: u'\uf00c'
-            size_hint_x: 0.25
-            on_press: root.on_ok()
+    padding: (dp(0.5), dp(0.5), dp(3), dp(3))
+    BoxLayout:
+        orientation: 'vertical'
+        canvas.before:
+            Color:
+                rgba: ColorScheme.get_dark_background()
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        padding: (dp(10), dp(10))
+        Label:
+            text: root.title_text
+            font_name: 'resource/fonts/ASL_light.ttf'
+            font_size: self.height * 0.8
+            size_hint_y: 0.15
+        Label:
+            size_hint_y: 0.65
+            font_name: 'resource/fonts/ASL_light.ttf'
+            text: root.help_text
+            #size_hint_y: None
+            text_size: self.width, None
+            height: self.texture_size[1]
+        AnchorLayout:
+            size_hint_y: 0.2
+            LabelIconButton:
+                id: ok
+                title: 'Got It'
+                tile_color: ColorScheme.get_secondary_text()
+                icon_size: self.height * 0.5
+                title_font_size: self.height * 0.7
+                icon: u'\uf00c'
+                size_hint_x: 0.25
+                on_press: root.on_ok()
 
 <HelpBubble>:
     arrow_image: 'autosportlabs/help/help_arrow.png'
@@ -96,7 +104,7 @@ class HelpInfo(BoxLayout):
     '''
     Builder.load_string(HELP_INFO_LAYOUT)
     HELP_POPUP_TIMEOUT = 30.01
-    HELP_POPUP_SIZE = (sp(500), sp(200))
+    HELP_POPUP_SIZE = (dp(500), dp(200))
     settings = None
     loaded = False
     help_info = {}
