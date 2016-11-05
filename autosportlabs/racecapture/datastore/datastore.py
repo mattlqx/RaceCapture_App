@@ -359,11 +359,6 @@ class DataStore(object):
         notes TEXT NULL,
         date INTEGER NOT NULL)""")
 
-#        self._conn.execute("""CREATE TABLE datalog_info
-#        (id INTEGER PRIMARY KEY AUTOINCREMENT,
-#        max_sample_rate INTEGER NOT NULL, time_offset INTEGER NOT NULL,
-#        name TEXT NOT NULL, notes TEXT NULL)""")
-
         self._conn.execute("""CREATE TABLE IF NOT EXISTS datapoint
         (id INTEGER PRIMARY KEY AUTOINCREMENT,
         sample_id INTEGER NOT NULL)""")
@@ -382,14 +377,7 @@ class DataStore(object):
         sample_rate INT NOT NULL,
         smoothing INTEGER NOT NULL)""")
 
-#        self._conn.execute("""CREATE TABLE datalog_channel_map
-#        (datalog_id INTEGER NOT NULL, channel_id INTEGER NOT NULL)""")
-
-#        self._conn.execute("""CREATE TABLE datalog_event_map
-#        (datalog_id INTEGER NOT NULL, event_id INTEGER NOT NULL)""")
-
         self._conn.commit()
-
 
     def _add_extra_indexes(self, channels):
         extra_indexes = []
