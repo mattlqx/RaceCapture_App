@@ -353,40 +353,46 @@ class DataStore(object):
 
     def _create_tables(self):
 
-        self._conn.execute("""CREATE TABLE session
+        self._conn.execute("""CREATE TABLE if IF NOT EXISTS session
         (id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         notes TEXT NULL,
         date INTEGER NOT NULL)""")
 
-        self._conn.execute("""CREATE TABLE datalog_info
-        (id INTEGER PRIMARY KEY AUTOINCREMENT,
-        max_sample_rate INTEGER NOT NULL, time_offset INTEGER NOT NULL,
-        name TEXT NOT NULL, notes TEXT NULL)""")
+#        self._conn.execute("""CREATE TABLE datalog_info
+#        (id INTEGER PRIMARY KEY AUTOINCREMENT,
+#        max_sample_rate INTEGER NOT NULL, time_offset INTEGER NOT NULL,
+#        name TEXT NOT NULL, notes TEXT NULL)""")
 
-        self._conn.execute("""CREATE TABLE datapoint
+        self._conn.execute("""CREATE TABLE IF NOT EXISTS datapoint
         (id INTEGER PRIMARY KEY AUTOINCREMENT,
         sample_id INTEGER NOT NULL)""")
 
-        self._conn.execute("""CREATE INDEX datapoint_sample_id_index_id on datapoint(sample_id)""")
+        self._conn.execute("""CREATE INDEX IF NOT EXISTS datapoint_sample_id_index_id on datapoint(sample_id)""")
 
-        self._conn.execute("""CREATE TABLE sample
+        self._conn.execute("""CREATE TABLE IF NOT EXISTS sample
         (id INTEGER PRIMARY KEY AUTOINCREMENT,
         session_id INTEGER NOT NULL)""")
-        self._conn.execute("""CREATE INDEX sample_id_index_id on sample(id)""")
-        self._conn.execute("""CREATE INDEX sample_session_id_index_id on sample(session_id)""")
+        self._conn.execute("""CREATE INDEX IF NOT EXISTS sample_id_index_id on sample(id)""")
+        self._conn.execute("""CREATE INDEX IF NOT EXISTS sample_session_id_index_id on sample(session_id)""")
 
-        self._conn.execute("""CREATE TABLE channel
-        (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
+        self._conn.execute("""CREATE TABLE IF NOT EXISTS channel
+        (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id INT, name TEXT NOT NULL,
         units TEXT NOT NULL, min_value REAL NOT NULL, max_value REAL NOT NULL,
+        sample_rate INT NOT NULL,
          smoothing INTEGER NOT NULL)""")
 
-        self._conn.execute("""CREATE TABLE datalog_channel_map
-        (datalog_id INTEGER NOT NULL, channel_id INTEGER NOT NULL)""")
+#        self._conn.execute("""CREATE TABLE datalog_channel_map
+#        (datalog_id INTEGER NOT NULL, channel_id INTEGER NOT NULL)""")
 
-        self._conn.execute("""CREATE TABLE datalog_event_map
-        (datalog_id INTEGER NOT NULL, event_id INTEGER NOT NULL)""")
+#        self._conn.execute("""CREATE TABLE datalog_event_map
+#        (datalog_id INTEGER NOT NULL, event_id INTEGER NOT NULL)""")
 
+        self._conn.execute("""CREATE TABLE IF NOT EXISTS session_channel
+            (session_id INTEGER NOT NULL, channel_name TEXT NOT NULL, sample_rate)
+            
+        
+        """)
         self._conn.commit()
 
 
@@ -1081,3 +1087,15 @@ class DataStore(object):
             cursor.execute(sql)
         self._conn.commit()
         self._populate_channel_list()
+
+    def export_session(self, session_id, file):
+        # channel_list
+        channels = self.channel_list
+
+        for channel in channels:
+            header = '"{}"|"{}"|{}|{}|{}'.format(channel.name,
+                                                 channel.units,
+                                                 channel.min,
+                                                 channel.max,
+                                                 channel.sample_rate)
+            print(header)
