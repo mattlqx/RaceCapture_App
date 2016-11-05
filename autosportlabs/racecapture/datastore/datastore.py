@@ -320,9 +320,9 @@ class DataStore(object):
     def _populate_channel_list(self):
         c = self._conn.cursor()
 
-        self._channels = []
-        c.execute("""SELECT name, units, min_value, max_value, smoothing
-        from channel""")
+        del self._channels[:]
+        c.execute("""SELECT DISTINCT name, units, min_value, max_value, smoothing
+        from channel ORDER BY min_value ASC, max_value DESC""")
 
         for ch in c.fetchall():
             self._channels.append(DatalogChannel(channel_name=ch[0],
@@ -353,7 +353,7 @@ class DataStore(object):
 
     def _create_tables(self):
 
-        self._conn.execute("""CREATE TABLE if IF NOT EXISTS session
+        self._conn.execute("""CREATE TABLE IF NOT EXISTS session
         (id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         notes TEXT NULL,
@@ -380,7 +380,7 @@ class DataStore(object):
         (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id INT, name TEXT NOT NULL,
         units TEXT NOT NULL, min_value REAL NOT NULL, max_value REAL NOT NULL,
         sample_rate INT NOT NULL,
-         smoothing INTEGER NOT NULL)""")
+        smoothing INTEGER NOT NULL)""")
 
 #        self._conn.execute("""CREATE TABLE datalog_channel_map
 #        (datalog_id INTEGER NOT NULL, channel_id INTEGER NOT NULL)""")
@@ -388,11 +388,6 @@ class DataStore(object):
 #        self._conn.execute("""CREATE TABLE datalog_event_map
 #        (datalog_id INTEGER NOT NULL, event_id INTEGER NOT NULL)""")
 
-        self._conn.execute("""CREATE TABLE IF NOT EXISTS session_channel
-            (session_id INTEGER NOT NULL, channel_name TEXT NOT NULL, sample_rate)
-            
-        
-        """)
         self._conn.commit()
 
 
@@ -413,10 +408,6 @@ class DataStore(object):
             self._conn.execute("""ALTER TABLE datapoint
             ADD {} REAL""".format(_scrub_sql_value(channel.name)))
 
-            # Add the channel to the 'channel' table
-            self._conn.execute("""INSERT INTO channel (name, units, min_value, max_value, smoothing)
-            VALUES (?,?,?,?,?)""", (channel.name, channel.units, channel.min, channel.max, 1))
-
         self._add_extra_indexes(channels)
         self._conn.commit()
 
@@ -432,7 +423,6 @@ class DataStore(object):
                 channels.append(channel)
                 if not name in [x.name for x in self._channels]:
                     new_channels.append(channel)
-                    self._channels.append(channel)
             self._extend_datalog_channels(new_channels)
         except:
             import sys, traceback
@@ -443,6 +433,12 @@ class DataStore(object):
             raise DatastoreException("Unable to import datalog, bad metadata")
 
         return channels
+
+    def _add_session_channels(self, session_id, channels):
+            # Add the channel to the 'channel' table
+            for channel in channels:
+                self._conn.execute("""INSERT INTO channel (session_id, name, units, min_value, max_value, sample_rate, smoothing)
+                VALUES (?,?,?,?,?,?,?)""", (session_id, channel.name, channel.units, channel.min, channel.max, channel.sample_rate, 1))
 
     def _get_last_table_id(self, table_name):
         """
@@ -900,14 +896,14 @@ class DataStore(object):
             raise DatastoreException("Unable to open file")
 
         header = dl.readline()
-        headers = self._parse_datalog_headers(header)
+        channels = self._parse_datalog_headers(header)
 
         # Create an event to be tagged to these records
         session_id = self.create_session(name, notes)
-        self._handle_data(dl, headers, session_id, warnings, progress_cb)
+        self._add_session_channels(session_id, channels)
+        self._handle_data(dl, channels, session_id, warnings, progress_cb)
 
-        # update the channel metadata, including re-setting min/max values
-        self.update_channel_metadata()
+        self._populate_channel_list()
         return session_id
 
     def query(self, sessions=[], channels=[], data_filter=None, distinct_records=False):
@@ -1054,39 +1050,6 @@ class DataStore(object):
     def update_session(self, session):
         self._conn.execute("""UPDATE session SET name=?, notes=?, date=? WHERE id=?;""", (session.name, session.notes, unix_time(datetime.datetime.now()), session.session_id ,))
         self._conn.commit()
-
-    def update_channel_metadata(self, channels=None, only_extend_minmax=True):
-        '''
-        Adjust the channel min/max values as necessary based on the min/max values present in the datapoints
-        :param channels list of channels to update. If None, all channels are updated
-        :type channels list
-        :param only_extend_minmax True if min/max values should only be extended. If false, min/max are adjusted to actual min/max values in datapoint
-        :type only_extend_minmax bool 
-        '''
-        cursor = self._conn.cursor()
-        channels_to_update = [x for x in self._channels if channels is None or x.name in channels]
-        for channel in channels_to_update:
-            name = _scrub_sql_value(channel.name)
-            min_max = cursor.execute('SELECT COALESCE(MIN({}), 0), COALESCE(MAX({}), 0) FROM datapoint;'.format(name, name))
-            record = min_max.fetchone()
-            datapoint_min_value = record[0]
-            datapoint_max_value = record[1]
-            min_value = channel.min if only_extend_minmax == True else datapoint_min_value
-            max_value = channel.max if only_extend_minmax == True else datapoint_max_value
-            if only_extend_minmax == True:
-                selected_min_value = min(min_value, datapoint_min_value)
-                selected_max_value = max(max_value, datapoint_max_value)
-            else:
-                selected_min_value = datapoint_min_value
-                selected_max_value = datapoint_max_value
-
-            Logger.info('Datastore: updating min/max for {}'.format(name))
-            sql = 'UPDATE channel SET min_value={}, max_value={} WHERE name="{}";'.format(selected_min_value,
-                                                                                          selected_max_value,
-                                                                                          name)
-            cursor.execute(sql)
-        self._conn.commit()
-        self._populate_channel_list()
 
     def export_session(self, session_id, file):
         # channel_list
