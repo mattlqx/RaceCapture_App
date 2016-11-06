@@ -25,7 +25,7 @@ from autosportlabs.racecapture.datastore.datastore import DataStore, Filter, \
 
 fqp = os.path.dirname(os.path.realpath(__file__))
 db_path = os.path.join(fqp, 'rctest.sql3')
-log_path = os.path.join(fqp, 'rc_adj.log')
+log_path = os.path.join(fqp, 'sonoma.log')
 
 # NOTE! that
 class DataStoreTest(unittest.TestCase):

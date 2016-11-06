@@ -25,6 +25,7 @@ import time
 import datetime
 from kivy.logger import Logger
 from collections import OrderedDict
+from Tkconstants import CURRENT
 
 class DatastoreException(Exception):
     pass
@@ -278,9 +279,17 @@ class DatalogChannel(object):
         return self.name
 
 class DataStore(object):
+    # Maximum supported sample rate
+    MAX_SAMPLE_RATE = 1000
+
+    # System channels that should show up in the first columns of a log file.
+    # Ordering is important, as it indicates which order it should show up in the log
+    SYSTEM_CHANNELS = ['Interval', 'Utc']
+
     # Channels to index on, WARNING: only [A-z] channel names with no spaces will work currently
     EXTRA_INDEX_CHANNELS = ["CurrentLap"]
     val_filters = ['lt', 'gt', 'eq', 'lt_eq', 'gt_eq']
+
     def __init__(self, databus=None):
         self._channels = []
         self._isopen = False
@@ -318,18 +327,30 @@ class DataStore(object):
         self._create_tables()
 
     def _populate_channel_list(self):
+
+        def move_to_front(channels, channel):
+            current_index = [index for index, value in enumerate(channels) if value.name == channel]
+            if len(current_index):
+                channels.insert(0, channels.pop(current_index[0]))
+
         c = self._conn.cursor()
 
-        del self._channels[:]
-        c.execute("""SELECT DISTINCT name, units, min_value, max_value, smoothing
-        from channel ORDER BY min_value ASC, max_value DESC""")
+        channels = self._channels
+        del channels[:]
+        c.execute("""SELECT DISTINCT name, units, min_value, max_value, sample_rate, smoothing
+        from channel ORDER BY name ASC, min_value ASC, max_value DESC, sample_rate DESC""")
 
         for ch in c.fetchall():
-            self._channels.append(DatalogChannel(channel_name=ch[0],
+            channels.append(DatalogChannel(channel_name=ch[0],
                                                  units=ch[1],
                                                  min=ch[2],
                                                  max=ch[3],
-                                                 smoothing=ch[4]))
+                                                 sample_rate=ch[4],
+                                                 smoothing=ch[5]))
+
+        # special columns are Interval and UTC; place these at the beginning, if present
+        for channel in DataStore.SYSTEM_CHANNELS[::-1]:
+            move_to_front(channels, channel)
 
     @property
     def is_open(self):
@@ -1040,13 +1061,67 @@ class DataStore(object):
         self._conn.commit()
 
     def export_session(self, session_id, file):
+
         # channel_list
         channels = self.channel_list
 
+        header = ''
         for channel in channels:
-            header = '"{}"|"{}"|{}|{}|{}'.format(channel.name,
+            header += '"{}"|"{}"|{}|{}|{},'.format(channel.name,
                                                  channel.units,
                                                  channel.min,
                                                  channel.max,
                                                  channel.sample_rate)
-            print(header)
+        print(header)
+
+        channel_names = []
+        channel_intervals = []
+        system_channel_indexes = []
+
+        for c in channels:
+            name = c.name
+            channel_names.append(name)
+            channel_intervals.append(DataStore.MAX_SAMPLE_RATE / c.sample_rate)
+            system_channel_indexes.append(True if name in DataStore.SYSTEM_CHANNELS else False)
+
+        dataset = self.query(sessions=[session_id], channels=channel_names)
+        records = dataset.fetch_records()
+
+        tick = DataStore.MAX_SAMPLE_RATE / DataStore.MAX_SAMPLE_RATE
+        row_index = 0
+        row_interval = 0
+        for record in records:
+            move_to_next_record = False
+            while not move_to_next_record:
+                output_row = False
+                for index in range(len(channels)):
+                    channel_interval = channel_intervals[index]
+                    if not system_channel_indexes[index]:
+                        if row_interval % channel_interval == 0:
+                            output_row = True
+                            if channel_interval == fastest_interval:
+                                move_to_next_record = True
+
+                if output_row:
+                    row = ''
+                    for index in range(len(channels)):
+                        # first column is session id, so skip it
+                        if system_channel_indexes[index] == True:
+                            !!!need to offset the current row's datalog interval 
+                            !!!with how far in between intervals we are
+                            value = long(record[1 + index])
+                        else:
+                            channel_interval = channel_intervals[index]
+                            if row_interval % channel_interval == 0:
+                                value = record[1 + index]
+                            else:
+                                value = ''
+                        row += str(value) + ','
+                    print(row)
+                row_interval += tick
+            row_index += 1
+
+            if row_index > 100:
+                return
+
+
