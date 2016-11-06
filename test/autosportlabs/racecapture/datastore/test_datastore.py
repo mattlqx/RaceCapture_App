@@ -18,14 +18,20 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
+import itertools
+import tempfile
+import csv
 import unittest
 import os, os.path
+from collections import namedtuple
 from autosportlabs.racecapture.datastore.datastore import DataStore, Filter, \
     DataSet, _interp_dpoints, _smooth_dataset
+from wheel.signatures import assertTrue
 
 fqp = os.path.dirname(os.path.realpath(__file__))
 db_path = os.path.join(fqp, 'rctest.sql3')
-log_path = os.path.join(fqp, 'sonoma.log')
+log_path = os.path.join(fqp, 'rc_adj.log')
+import_export_path = os.path.join(fqp, 'import_export.log')
 
 # NOTE! that
 class DataStoreTest(unittest.TestCase):
@@ -339,5 +345,80 @@ class DataStoreTest(unittest.TestCase):
         self.assertEqual('notes_updated', session.notes)
 
     def test_export_datastore(self):
-        self.ds.export_session(1, 'export.csv')
+        Meta = namedtuple('Meta', ['name', 'units', 'min', 'max', 'sr', 'index'])
+        def parse_header_meta(headers):
+            channel_metas = {}
+            name_indexes = []
+            index = 0
+            for header in headers:
+                header = header.split('|')
+                meta = Meta(name=header[0],
+                            units=header[1],
+                            min=float(header[2]),
+                            max=float(header[3]),
+                            sr=int(header[4]),
+                            index=index)
+                index += 1
+                channel_metas[meta.name] = meta
+                name_indexes.append(meta.name)
+
+            return channel_metas, name_indexes
+
+        import_export_id = self.ds.import_datalog(import_export_path, 'import_export', 'the notes')
+
+        with tempfile.TemporaryFile() as export_file:
+            rows = self.ds.export_session(import_export_id, export_file)
+
+            export_file.seek(0)
+
+            line_count = 0
+            log_reader = csv.reader(export_file, delimiter=',', quotechar=' ')
+
+            with open(import_export_path, 'rb') as original_log:
+                original_reader = csv.reader(original_log, delimiter=',', quotechar=' ')
+
+                original_metas = None
+                original_indexes = None
+                export_metas = None
+                export_indexes = None
+
+                for export, original in itertools.izip(log_reader, original_reader):
+                    if not original_metas and not export_metas:
+                        original_metas, original_indexes = parse_header_meta(original)
+                        export_metas, export_indexes = parse_header_meta(export)
+                    else:
+                        for om in original_metas.values():
+                            # export log can be in random order, so need to re-align
+                            original_index = original_indexes.index(om.name)
+                            export_index = export_indexes.index(om.name)
+                            export_value = export[export_index]
+                            original_value = original[original_index]
+
+                            if len(export_value) > 0 and len(original_value) > 0:
+                                export_value = float(export_value)
+                                original_value = float(original_value)
+
+                            self.assertEqual(export_value, original_value, 'Line {} : Name {} : {} != {}\noriginal: {}\nexport: {}'.format(line_count, om.name, original_value, export_value, original, export))
+
+                        line_count += 1
+
+                self.assertEqual(len(original_metas.values()), len(export_metas.values()))
+
+                # Test headers
+                for o_meta, e_meta in zip(sorted(original_metas.values()), sorted(export_metas.values())):
+                    self.assertEqual(o_meta.name, e_meta.name)
+                    self.assertEqual(o_meta.units, e_meta.units)
+                    self.assertEqual(o_meta.min, e_meta.min)
+                    self.assertEqual(o_meta.max, e_meta.max)
+                    self.assertEqual(o_meta.sr, e_meta.sr)
+
+            self.ds.delete_session(import_export_id)
+
+
+
+
+
+
+
+
 

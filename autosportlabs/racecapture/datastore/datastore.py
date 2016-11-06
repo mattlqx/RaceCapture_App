@@ -26,6 +26,7 @@ import datetime
 from kivy.logger import Logger
 from collections import OrderedDict
 from Tkconstants import CURRENT
+from OpenGL.GL.ARB import sync
 
 class DatastoreException(Exception):
     pass
@@ -327,7 +328,18 @@ class DataStore(object):
         self._create_tables()
 
     def _populate_channel_list(self):
+        del self._channels[:]
+        self._channels += self.get_channel_list()
 
+    @property
+    def is_open(self):
+        return self._isopen
+
+    @property
+    def channel_list(self):
+        return self._channels[:]
+
+    def get_channel_list(self, session_id=None):
         def move_to_front(channels, channel):
             current_index = [index for index, value in enumerate(channels) if value.name == channel]
             if len(current_index):
@@ -335,10 +347,10 @@ class DataStore(object):
 
         c = self._conn.cursor()
 
-        channels = self._channels
-        del channels[:]
+        channels = []
+        where = '' if session_id is None else 'WHERE session_id = {}'.format(session_id)
         c.execute("""SELECT DISTINCT name, units, min_value, max_value, sample_rate, smoothing
-        from channel ORDER BY name ASC, min_value ASC, max_value DESC, sample_rate DESC""")
+        from channel {} ORDER BY name ASC, min_value ASC, max_value DESC, sample_rate DESC""".format(where))
 
         for ch in c.fetchall():
             channels.append(DatalogChannel(channel_name=ch[0],
@@ -352,13 +364,7 @@ class DataStore(object):
         for channel in DataStore.SYSTEM_CHANNELS[::-1]:
             move_to_front(channels, channel)
 
-    @property
-    def is_open(self):
-        return self._isopen
-
-    @property
-    def channel_list(self):
-        return self._channels[:]
+        return channels
 
     def get_channel(self, name):
         '''
@@ -1063,73 +1069,90 @@ class DataStore(object):
     @timing
     def _query(self, session_id, channels):
         return self.query(sessions=[session_id], channels=channels)
-        
+
     @timing
     def export_session(self, session_id, export_file):
         """
         Exports the specified session to a CSV file
         :param session_id the session to export
         :type session_id int
-        :param export_file the file name to export
-        :type export_file string
+        :param export_file_name the file name to export
+        :type export_file_name string
         :return the number of rows exported
         """
-        with open(export_file, 'w') as export:
-            # channel_list
-            channels = self.channel_list
-    
-            header = ''
-            for channel in channels:
-                header += '"{}"|"{}"|{}|{}|{},'.format(channel.name,
-                                                     channel.units,
-                                                     channel.min,
-                                                     channel.max,
-                                                     channel.sample_rate)
-            export.write(header[:-1] + '\n')
-    
-            channel_names = []
-            channel_intervals = []
-            system_channel_indexes = []
-    
-            for c in channels:
-                name = c.name
-                channel_names.append(name)
-                channel_intervals.append(DataStore.MAX_SAMPLE_RATE / c.sample_rate)
-                system_channel_indexes.append(True if name in DataStore.SYSTEM_CHANNELS else False)
-    
-            dataset = self._query(session_id, channel_names)
-            #dataset = self.query(sessions=[session_id], channels=channel_names)
-            records = dataset.fetch_records()
-    
-            tick = 1
-            row_index = 0
-            row_interval = 0
-            channel_count = len(channels)
-            for record in records:
-                output_row = False
-                while not output_row:
-                    for index in xrange(channel_count):
-                        channel_interval = channel_intervals[index]
-                        #don't consider system channels, they are always present
-                        if not system_channel_indexes[index]:
-                            if row_interval % channel_interval == 0:
-                                output_row = True
-                                break
+        # channel_list
+        channels = self.get_channel_list(session_id)
 
-                    if output_row:
-                        row = ''
-                        for index in range(len(channels)):
-                            # first column is session id, so skip it
-                            if system_channel_indexes[index] == True:
-                                value = long(record[1 + index])
-                            else:
-                                channel_interval = channel_intervals[index]
-                                if row_interval % channel_interval == 0:
-                                    value = record[1 + index]
-                                else:
-                                    value = ''
-                            row += str(value) + ','
-                        export.write(row[:-1] + '\n')
-                    row_interval += tick
-                row_index += 1
-            return row_index
+        header = ''
+        for channel in channels:
+            header += '"{}"|"{}"|{}|{}|{},'.format(channel.name,
+                                                 channel.units,
+                                                 channel.min,
+                                                 channel.max,
+                                                 channel.sample_rate)
+        export_file.write(header[:-1] + '\n')
+
+        channel_names = []
+        channel_intervals = []
+        system_channel_indexes = []
+
+        for c in channels:
+            name = c.name
+            channel_names.append(name)
+            interval = DataStore.MAX_SAMPLE_RATE / c.sample_rate
+            channel_intervals.append(interval)
+            system_channel_indexes.append(True if name in DataStore.SYSTEM_CHANNELS else False)
+
+        dataset = self._query(session_id, channel_names)
+        # dataset = self.query(sessions=[session_id], channels=channel_names)
+        records = dataset.fetch_records()
+        sync_point = None
+
+        try:
+            datalog_interval_index = channel_names.index('Interval')
+        except ValueError:
+            raise DatastoreException('DataStore: Cannot export: Interval channel missing from data')
+
+        # check if there are no samples to output!
+        if set(channel_names).issubset(DataStore.SYSTEM_CHANNELS):
+            raise DatastoreException('DataStore: Cannot export: No channels to output')
+
+        row_index = 0
+        channel_count = len(channels)
+
+        for record in records:
+            # Note 1 + offset; record contains session_id as first column,
+            # the rest are individual channels
+            sampled = False
+            while not sampled:
+                if sync_point is None:
+                    # the first interval is our synchronization point
+                    # for determining when to output samples
+                    # The first sample outputs all values by default
+                    sync_point = long(record[1 + datalog_interval_index])
+
+                row = ''
+                current_interval = long(record[1 + datalog_interval_index])
+
+                for index in range(channel_count):
+                    # first column is session id, so skip it
+                    if system_channel_indexes[index] == True:
+                        # our system channels are in long integer format
+                        value = long(record[1 + index])
+                    else:
+                        channel_interval = channel_intervals[index]
+                        if (current_interval - sync_point) % channel_interval == 0:
+                            value = record[1 + index]
+                            sampled = True
+                        else:
+                            value = ''
+                    row += str(value) + ','
+                if sampled:
+                    export_file.write(row[:-1] + '\n')
+                if not sampled:
+                    # The data log may have inconsistent data; if so
+                    # the interval will change. If we detect this then we need to re-synchronize
+                    Logger.warning('DataStore: Export: Inconsistent interval detected at interval {}; re-syncing'.format(current_interval))
+                    sync_point = None
+            row_index += 1
+        return row_index
