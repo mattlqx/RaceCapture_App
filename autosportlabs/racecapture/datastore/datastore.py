@@ -1060,68 +1060,76 @@ class DataStore(object):
         self._conn.execute("""UPDATE session SET name=?, notes=?, date=? WHERE id=?;""", (session.name, session.notes, unix_time(datetime.datetime.now()), session.session_id ,))
         self._conn.commit()
 
-    def export_session(self, session_id, file):
-
-        # channel_list
-        channels = self.channel_list
-
-        header = ''
-        for channel in channels:
-            header += '"{}"|"{}"|{}|{}|{},'.format(channel.name,
-                                                 channel.units,
-                                                 channel.min,
-                                                 channel.max,
-                                                 channel.sample_rate)
-        print(header)
-
-        channel_names = []
-        channel_intervals = []
-        system_channel_indexes = []
-
-        for c in channels:
-            name = c.name
-            channel_names.append(name)
-            channel_intervals.append(DataStore.MAX_SAMPLE_RATE / c.sample_rate)
-            system_channel_indexes.append(True if name in DataStore.SYSTEM_CHANNELS else False)
-
-        dataset = self.query(sessions=[session_id], channels=channel_names)
-        records = dataset.fetch_records()
-
-        tick = DataStore.MAX_SAMPLE_RATE / DataStore.MAX_SAMPLE_RATE
-        row_index = 0
-        row_interval = 0
-        for record in records:
-            move_to_next_record = False
-            while not move_to_next_record:
+    @timing
+    def _query(self, session_id, channels):
+        return self.query(sessions=[session_id], channels=channels)
+        
+    @timing
+    def export_session(self, session_id, export_file):
+        """
+        Exports the specified session to a CSV file
+        :param session_id the session to export
+        :type session_id int
+        :param export_file the file name to export
+        :type export_file string
+        :return the number of rows exported
+        """
+        with open(export_file, 'w') as export:
+            # channel_list
+            channels = self.channel_list
+    
+            header = ''
+            for channel in channels:
+                header += '"{}"|"{}"|{}|{}|{},'.format(channel.name,
+                                                     channel.units,
+                                                     channel.min,
+                                                     channel.max,
+                                                     channel.sample_rate)
+            export.write(header[:-1] + '\n')
+    
+            channel_names = []
+            channel_intervals = []
+            system_channel_indexes = []
+    
+            for c in channels:
+                name = c.name
+                channel_names.append(name)
+                channel_intervals.append(DataStore.MAX_SAMPLE_RATE / c.sample_rate)
+                system_channel_indexes.append(True if name in DataStore.SYSTEM_CHANNELS else False)
+    
+            dataset = self._query(session_id, channel_names)
+            #dataset = self.query(sessions=[session_id], channels=channel_names)
+            records = dataset.fetch_records()
+    
+            tick = 1
+            row_index = 0
+            row_interval = 0
+            channel_count = len(channels)
+            for record in records:
                 output_row = False
-                for index in range(len(channels)):
-                    channel_interval = channel_intervals[index]
-                    if not system_channel_indexes[index]:
-                        if row_interval % channel_interval == 0:
-                            output_row = True
-                            if channel_interval == fastest_interval:
-                                move_to_next_record = True
-
-                if output_row:
-                    row = ''
-                    for index in range(len(channels)):
-                        # first column is session id, so skip it
-                        if system_channel_indexes[index] == True:
-                            !!!need to offset the current row's datalog interval 
-                            !!!with how far in between intervals we are
-                            value = long(record[1 + index])
-                        else:
-                            channel_interval = channel_intervals[index]
+                while not output_row:
+                    for index in xrange(channel_count):
+                        channel_interval = channel_intervals[index]
+                        #don't consider system channels, they are always present
+                        if not system_channel_indexes[index]:
                             if row_interval % channel_interval == 0:
-                                value = record[1 + index]
+                                output_row = True
+                                break
+
+                    if output_row:
+                        row = ''
+                        for index in range(len(channels)):
+                            # first column is session id, so skip it
+                            if system_channel_indexes[index] == True:
+                                value = long(record[1 + index])
                             else:
-                                value = ''
-                        row += str(value) + ','
-                    print(row)
-                row_interval += tick
-            row_index += 1
-
-            if row_index > 100:
-                return
-
-
+                                channel_interval = channel_intervals[index]
+                                if row_interval % channel_interval == 0:
+                                    value = record[1 + index]
+                                else:
+                                    value = ''
+                            row += str(value) + ','
+                        export.write(row[:-1] + '\n')
+                    row_interval += tick
+                row_index += 1
+            return row_index
