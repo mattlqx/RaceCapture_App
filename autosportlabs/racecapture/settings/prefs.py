@@ -199,6 +199,7 @@ class UserPrefs(EventDispatcher):
         self.config.setdefault('preferences', 'startup_screen', 'Home Page')
         default_user_files_dir = self.user_files_dir
         self.config.setdefault('preferences', 'config_file_dir', default_user_files_dir)
+        self.config.setdefault('preferences', 'export_file_dir', default_user_files_dir)
         self.config.setdefault('preferences', 'firmware_dir', default_user_files_dir)
         self.config.setdefault('preferences', 'import_datalog_dir', default_user_files_dir)
         self.config.setdefault('preferences', 'send_telemetry', '0')

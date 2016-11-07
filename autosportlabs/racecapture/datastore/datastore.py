@@ -1067,10 +1067,6 @@ class DataStore(object):
         self._conn.commit()
 
     @timing
-    def _query(self, session_id, channels):
-        return self.query(sessions=[session_id], channels=channels)
-
-    @timing
     def export_session(self, session_id, export_file):
         """
         Exports the specified session to a CSV file
@@ -1103,7 +1099,7 @@ class DataStore(object):
             channel_intervals.append(interval)
             system_channel_indexes.append(True if name in DataStore.SYSTEM_CHANNELS else False)
 
-        dataset = self._query(session_id, channel_names)
+        dataset = self.query([session_id], channel_names)
         # dataset = self.query(sessions=[session_id], channels=channel_names)
         records = dataset.fetch_records()
         sync_point = None

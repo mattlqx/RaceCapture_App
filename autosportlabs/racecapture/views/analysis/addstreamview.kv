@@ -97,11 +97,13 @@
         id: name
         size: self.texture_size
         font_size: self.height * 0.6
+        size_hint_x: 0.38
     FieldLabel:
         text: ''
         id: date
         size: self.texture_size
         font_size: self.height * 0.6
+        size_hint_x: 0.2
     LabelIconButton:
         title: 'Load'
         on_press: root.add_session()
@@ -109,7 +111,15 @@
         icon_size: self.height * .5
         title_font_size: self.height * 0.5
         height: root.height
-        size_hint_x: 0.60
+        size_hint_x: 0.12
+    LabelIconButton:
+        title: 'Export'
+        on_press: root.export_session()
+        icon: u'\uf045'
+        icon_size: self.height * .5
+        title_font_size: self.height * 0.5
+        height: root.height
+        size_hint_x: 0.15
     LabelIconButton:
         title: 'Delete'
         on_press: root.delete_session()
@@ -117,7 +127,7 @@
         icon_size: self.height * .5
         title_font_size: self.height * 0.5
         height: root.height
-        size_hint_x: 0.70
+        size_hint_x: 0.15
 
 <FileConnectView>:
     BoxLayout:

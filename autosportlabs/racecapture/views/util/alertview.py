@@ -61,7 +61,7 @@ Builder.load_string('''
         spacing: '5sp'
         IconButton:
             text: u'\uf00c'
-            on_press: root.dispatch('on_answer', True)
+            on_press: root.dispatch('on_ok', True)
             
             
 <EditorPopup>:
@@ -84,81 +84,81 @@ Builder.load_string('''
             on_release: root.dispatch('on_answer', False)
             
 ''')
- 
+
 def alertPopup(title, msg):
-    popup = Popup(title = title,
-                      content=Label(text = msg),
+    popup = Popup(title=title,
+                      content=Label(text=msg),
                       size_hint=(None, None), size=(dp(600), dp(200)))
-    popup.open()    
- 
+    popup.open()
+
 def confirmPopup(title, msg, answerCallback):
     content = ConfirmPopup(text=msg)
     content.bind(on_answer=answerCallback)
     popup = Popup(title=title,
                     content=content,
                     size_hint=(None, None),
-                    size=(dp(600),dp(200)),
-                    auto_dismiss= False)
+                    size=(dp(600), dp(200)),
+                    auto_dismiss=False)
     popup.open()
     return popup
-    
+
 class ConfirmPopup(GridLayout):
     text = StringProperty()
-    
-    def __init__(self,**kwargs):
+
+    def __init__(self, **kwargs):
         self.register_event_type('on_answer')
-        super(ConfirmPopup,self).__init__(**kwargs)
-        
+        super(ConfirmPopup, self).__init__(**kwargs)
+
     def on_answer(self, *args):
-        pass    
+        pass
 
 def editor_popup(title, content, answerCallback, size_hint=(0.9, 1.0), hide_ok=False):
     def on_title(instance, title):
         popup.title = title
-        
+
     content.bind(on_title=on_title)
     content = EditorPopup(content=content, hide_ok=hide_ok)
     content.bind(on_answer=answerCallback)
     popup = Popup(title=title,
                     content=content,
                     size_hint=size_hint,
-                    auto_dismiss= False,
+                    auto_dismiss=False,
                   title_size=sp(18))
     popup.open()
     return popup
-    
+
 class EditorPopup(GridLayout):
     content = ObjectProperty(None)
-    
-    def __init__(self, hide_ok = False, **kwargs):
+
+    def __init__(self, hide_ok=False, **kwargs):
         self.register_event_type('on_answer')
-        super(EditorPopup,self).__init__(**kwargs)
+        super(EditorPopup, self).__init__(**kwargs)
         if hide_ok:
             self.ids.buttons.remove_widget(self.ids.ok)
-    
+
     def on_content(self, instance, value):
         Clock.schedule_once(lambda dt: self.ids.content.add_widget(value))
-        
-    def on_answer(self, *args):
-        pass    
 
-def okPopup(title, msg, answerCallback):
+    def on_answer(self, *args):
+        pass
+
+def okPopup(title, msg, answer_callback):
     content = OkPopup(text=msg)
-    content.bind(on_ok=answerCallback)
+    content.bind(on_ok=answer_callback)
     popup = Popup(title=title,
                     content=content,
                     size_hint=(None, None),
-                    size=(dp(600),dp(200)),
-                    auto_dismiss= False)
+                    size=(dp(600), dp(200)),
+                    auto_dismiss=False)
     popup.open()
     return popup
-    
+
 class OkPopup(GridLayout):
     text = StringProperty()
-    
-    def __init__(self,**kwargs):
+
+    def __init__(self, **kwargs):
         self.register_event_type('on_ok')
-        super(OkPopup,self).__init__(**kwargs)
-        
+        super(OkPopup, self).__init__(**kwargs)
+
     def on_ok(self, *args):
-        pass    
+        pass
