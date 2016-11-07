@@ -19,6 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import sqlite3
+from sqlalchemy import create_engine
 import logging
 import os, os.path
 import time
@@ -306,8 +307,13 @@ class DataStore(object):
     def open_db(self, db_path):
         if self._isopen:
             self.close()
-
-        self._conn = sqlite3.connect(db_path, check_same_thread=False)
+            
+        conn_string = 'sqlite:///{}'.format(db_path)
+        print('conn string ' + conn_string)
+        self._engine = create_engine(conn_string, connect_args={'check_same_thread':False})
+        sqlite_conn = self._engine.connect()
+        sqlite_conn.detach()
+        self._conn = sqlite_conn.connection
 
         if not self._new_db:
             self._populate_channel_list()
