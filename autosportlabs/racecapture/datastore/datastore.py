@@ -912,7 +912,6 @@ class DataStore(object):
         if res == None:
             raise DatastoreException("Unable to retrieve smoothing for channel: {}".format(channel))
         else:
-            print('res ' + str(res))
             return res[0]
 
     @timing
