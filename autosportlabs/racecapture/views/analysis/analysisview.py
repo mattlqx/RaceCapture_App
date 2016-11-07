@@ -20,6 +20,7 @@
 
 import os.path
 import kivy
+import traceback
 kivy.require('1.9.1')
 from threading import Thread
 from kivy.logger import Logger
@@ -114,7 +115,7 @@ class AnalysisView(Screen):
 
     def __init__(self, datastore, databus, settings, track_manager, **kwargs):
         super(AnalysisView, self).__init__(**kwargs)
-        self._datastore = CachingAnalysisDatastore(datastore)
+        self._datastore = datastore
         self.register_event_type('on_tracks_updated')
         self._databus = databus
         self._settings = settings
@@ -290,7 +291,6 @@ class AnalysisView(Screen):
 
                 def _export_session_worker(filename, session_id, progress_cb):
                     try:
-                        if not filename.endswith(RC_LOG_FILE_EXTENSION): filename += RC_LOG_FILE_EXTENSION
                         export_file = open(filename, 'w')
                         with export_file:
                             records = self._datastore.export_session(session_id, export_file, progress_cb)
@@ -298,6 +298,7 @@ class AnalysisView(Screen):
                             Clock.schedule_once(lambda dt: self._settings.userPrefs.set_pref('preferences', 'export_file_dir', os.path.dirname(filename)))
                     except Exception as e:
                         Logger.error('AnalysisView: Error exporting: {}'.format(e))
+                        Logger.error(traceback.format_exc())
                         Clock.schedule_once(lambda dt: _export_complete('Error Exporting',
                             "There was an error exporting the session. Please check the destination and file name\n\n{}".format(e)))
 
@@ -309,6 +310,7 @@ class AnalysisView(Screen):
                 t.start()
 
             filename = os.path.join(instance.path, instance.filename)
+            if not filename.endswith(RC_LOG_FILE_EXTENSION): filename += RC_LOG_FILE_EXTENSION
             if os.path.isfile(filename):
                 def _on_overwrite_answer(instance, answer):
                     if answer:

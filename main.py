@@ -75,7 +75,7 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.config.rcpconfig import Capabilities
     from autosportlabs.telemetry.telemetryconnection import TelemetryManager
     from autosportlabs.help.helpmanager import HelpInfo
-    from autosportlabs.racecapture.datastore import DataStore
+    from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
     from autosportlabs.racecapture.data.sessionrecorder import SessionRecorder
     from autosportlabs.uix.toast.kivytoast import toast
     if not is_mobile_platform():
@@ -172,7 +172,7 @@ class RaceCaptureApp(App):
 
         self._databus = DataBusFactory().create_standard_databus(self.settings.systemChannels)
         self.settings.runtimeChannels.data_bus = self._databus
-        self._datastore = DataStore(databus=self._databus)
+        self._datastore = CachingAnalysisDatastore(databus= self._databus)
         self._session_recorder = SessionRecorder(self._datastore, self._databus, self._rc_api, self.settings, self.trackManager)
         self._session_recorder.bind(on_recording=self._on_session_recording)
 

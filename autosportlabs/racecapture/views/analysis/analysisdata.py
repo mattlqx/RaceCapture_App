@@ -46,9 +46,8 @@ class ChannelData(object):
 
 class CachingAnalysisDatastore(DataStore):
 
-    def __init__(self, datastore, **kwargs):
+    def __init__(self, **kwargs):
         super(CachingAnalysisDatastore, self).__init__(**kwargs)
-        self.init_from_datastore(datastore)
         self._channel_data_cache = {}
         self._session_location_cache = {}
         self._session_info_cache = {}

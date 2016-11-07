@@ -25,9 +25,6 @@ import time
 import datetime
 from kivy.logger import Logger
 from collections import OrderedDict
-from Tkconstants import CURRENT
-from OpenGL.GL.ARB import sync
-from duplicity.globals import progress
 
 class DatastoreException(Exception):
     pass
@@ -302,7 +299,6 @@ class DataStore(object):
         self._conn = None
         self._databus = databus
 
-
     def close(self):
         self._conn.close()
         self._isopen = False
@@ -321,16 +317,6 @@ class DataStore(object):
     @property
     def connection(self):
         return self._conn
-
-    def init_from_datastore(self, datastore):
-        """
-        Initialize the datastore with an existing connection.
-        """
-        if self._isopen:
-            self.close()
-
-        self._conn = datastore.connection
-        self._populate_channel_list()
 
     def new(self, db_path=':memory:'):
         self._new_db = True
@@ -926,6 +912,7 @@ class DataStore(object):
         if res == None:
             raise DatastoreException("Unable to retrieve smoothing for channel: {}".format(channel))
         else:
+            print('res ' + str(res))
             return res[0]
 
     @timing
@@ -1177,6 +1164,8 @@ class DataStore(object):
                         channel_interval = channel_intervals[index]
                         if (current_interval - sync_point) % channel_interval == 0:
                             value = record[1 + index]
+                            if value is None:
+                                value = ''
                             sampled = True
                         else:
                             value = ''
