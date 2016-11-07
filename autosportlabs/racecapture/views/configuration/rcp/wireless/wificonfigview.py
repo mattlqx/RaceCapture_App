@@ -27,6 +27,9 @@ import os, json
 from settingsview import SettingsView, SettingsSwitch, SettingsButton, SettingsMappedSpinner
 from autosportlabs.uix.bettertextinput import BetterTextInput
 from autosportlabs.uix.baselabel import BaseLabel
+from autosportlabs.help.helpmanager import HelpInfo
+from kivy.clock import Clock
+from utils import is_mobile_platform
 
 Builder.load_string('''
 
@@ -128,68 +131,73 @@ class WifiConfigView(GridLayout):
 
         self.register_event_type('on_modified')
 
+    def _wifi_modified(self):
+        if is_mobile_platform():
+            Clock.schedule_once(lambda dt: HelpInfo.help_popup('wifi_warning', self.parent.parent), 1.0)
+        self.dispatch('on_modified')
+
     def on_ap_channel(self, instance, value):
         Logger.debug("WirelessConfigView: got new AP channel: {}".format(value))
         if self.wifi_config:
             self.wifi_config.ap_channel = int(value)
             self.wifi_config.stale = True
-            self.dispatch('on_modified')
+            self._wifi_modified()
 
     def on_ap_encryption(self, instance, value):
         Logger.debug("WirelessConfigView: got new AP encryption: {}".format(value))
         if self.wifi_config:
             self.wifi_config.ap_encryption = value
             self.wifi_config.stale = True
-            self.dispatch('on_modified')
+            self._wifi_modified()
 
     def on_client_ssid(self, instance, value):
         if self.wifi_config and value != self.wifi_config.client_ssid:
             Logger.debug("WirelessConfigView: got new client ssid: {}".format(value))
             self.wifi_config.client_ssid = value
             self.wifi_config.stale = True
-            self.dispatch('on_modified')
+            self._wifi_modified()
 
     def on_ap_password(self, instance, value):
         if self.wifi_config and value != self.wifi_config.ap_password:
             Logger.debug("WirelessConfigView: got new ap password: {}".format(value))
             self.wifi_config.ap_password = value
             self.wifi_config.stale = True
-            self.dispatch('on_modified')
+            self._wifi_modified()
 
     def on_ap_ssid(self, instance, value):
         if self.wifi_config and value != self.wifi_config.ap_ssid:
             Logger.debug("WirelessConfigView: got new ap ssid: {}".format(value))
             self.wifi_config.ap_ssid = value
             self.wifi_config.stale = True
-            self.dispatch('on_modified')
+            self._wifi_modified()
 
     def on_client_password(self, instance, value):
         if self.wifi_config and value != self.wifi_config.client_password:
             Logger.debug("WirelessConfigView: got new client pass: {}".format(value))
             self.wifi_config.client_password = value
             self.wifi_config.stale = True
-            self.dispatch('on_modified')
+            self._wifi_modified()
 
     def on_ap_mode_enable_change(self, instance, value):
         Logger.debug("WirelessConfigView: ap mode change: {}".format(value))
         if self.wifi_config:
             self.wifi_config.ap_mode_active = value
             self.wifi_config.stale = True
-            self.dispatch('on_modified')
+            self._wifi_modified()
 
     def on_client_mode_enable_change(self, instance, value):
         Logger.debug("WirelessConfigView: client mode change: {}".format(value))
         if self.wifi_config:
             self.wifi_config.client_mode_active = value
             self.wifi_config.stale = True
-            self.dispatch('on_modified')
+            self._wifi_modified()
 
     def on_wifi_enable_change(self, instance, value):
         Logger.debug("WifiConfigView: got wifi enabled change")
         if self.wifi_config:
             self.wifi_config.active = value
             self.wifi_config.stale = True
-            self.dispatch('on_modified')
+            self._wifi_modified()
 
     def build_ap_channel_spinner(self, spinner, default=1):
         channel_map = {}
