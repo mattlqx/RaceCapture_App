@@ -22,15 +22,17 @@ import kivy
 kivy.require('1.9.1')
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
+from kivy.uix.progressbar import ProgressBar
 from kivy.uix.gridlayout import GridLayout
 from kivy.metrics import dp
 from kivy.app import Builder
-from kivy.properties import StringProperty, ObjectProperty
+from kivy.properties import StringProperty, ObjectProperty, NumericProperty
 from kivy.clock import Clock
 from kivy.metrics import sp
 from iconbutton import IconButton
+from autosportlabs.racecapture.theme.color import ColorScheme
 
-__all__ = ('alertPopup, confirmPopup, okPopup, editor_popup')
+__all__ = ('alertPopup, confirmPopup, okPopup, editor_popup, progress_popup')
 
 Builder.load_string('''
 <ConfirmPopup>:
@@ -83,6 +85,23 @@ Builder.load_string('''
             color: ColorScheme.get_primary()            
             on_release: root.dispatch('on_answer', False)
             
+<ProgressPopup>:
+    cols:1
+    ProgressBar:
+        value: root.progress
+        size_hint_y: .05
+    Label:
+        text: root.text
+    GridLayout:
+        cols: 2
+        size_hint_y: None
+        height: '44sp'
+        spacing: '5sp'
+        IconButton:
+            id: ok_cancel
+            text: u'\uf00d'
+            on_press: root.dispatch('on_ok_cancel', True)
+            color: ColorScheme.get_primary()            
 ''')
 
 def alertPopup(title, msg):
@@ -162,3 +181,33 @@ class OkPopup(GridLayout):
 
     def on_ok(self, *args):
         pass
+
+def progress_popup(title, msg, answer_callback):
+    content = ProgressPopup(text=msg)
+    content.bind(on_ok_cancel=answer_callback)
+    popup = Popup(title=title,
+                    content=content,
+                    size_hint=(None, None),
+                    size=(dp(600), dp(200)),
+                    auto_dismiss=False)
+    popup.open()
+    return popup
+
+class ProgressPopup(GridLayout):
+    text = StringProperty()
+    progress = NumericProperty()
+
+    def __init__(self, **kwargs):
+        self.register_event_type('on_ok_cancel')
+        super(ProgressPopup, self).__init__(**kwargs)
+
+    def on_ok_cancel(self, *args):
+        pass
+
+    def update_progress(self, value):
+        self.progress = value
+
+    def on_progress(self, instance, value):
+        if value == 100:
+            self.ids.ok_cancel.color = ColorScheme.get_light_primary_text()
+            self.ids.ok_cancel.text = u'\uf00c'

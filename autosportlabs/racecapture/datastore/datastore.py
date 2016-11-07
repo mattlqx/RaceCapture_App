@@ -27,6 +27,7 @@ from kivy.logger import Logger
 from collections import OrderedDict
 from Tkconstants import CURRENT
 from OpenGL.GL.ARB import sync
+from duplicity.globals import progress
 
 class DatastoreException(Exception):
     pass
@@ -329,7 +330,21 @@ class DataStore(object):
 
     def _populate_channel_list(self):
         del self._channels[:]
-        self._channels += self.get_channel_list()
+        channels = self.get_channel_list()
+        done = False
+        # remove duplicates and rail the min, max and sample rates to the extents
+
+        # filter the channels into a unique list
+        filtered_channels = list(set(channels))
+
+        for c in filtered_channels:
+            c_dup = [cd for cd in channels if c.name in cd.name]
+            for d in c_dup:
+                c.min = d.min if d.min < c.min else c.min
+                c.max = d.max if d.max > c.max else c.max
+                c.sample_rate = d.sample_rate if d.sample_rate > c.sample_rate else c.sample_rate
+
+        self._channels += filtered_channels
 
     @property
     def is_open(self):
@@ -719,19 +734,23 @@ class DataStore(object):
         self._conn.commit()
 
     def init_session(self, name, channel_metas=None, notes=''):
-        session = self.create_session(name, notes)
+        session_id = self.create_session(name, notes)
         Logger.info("Datastore: init_session. channels: {}".format(channel_metas))
 
         if channel_metas:
+            session_channels = []
             new_channels = []
             for name, meta in channel_metas.iteritems():
                 channel = DatalogChannel(name, meta.units, meta.min, meta.max, meta.sampleRate, 0)
                 if channel.name not in [x.name for x in self._channels]:
                     new_channels.append(channel)
-                    self._channels.append(channel)
+                session_channels.append(channel)
             self._extend_datalog_channels(new_channels)
 
-        return session
+            self._add_session_channels(session_id, session_channels)
+            self._populate_channel_list()
+
+        return session_id
 
     def create_session(self, name, notes=''):
         """
@@ -939,7 +958,7 @@ class DataStore(object):
         # If there are no channels, or if a '*' is passed, select all
         # of the channels
         if len(channels) == 0 or '*' in channels:
-            channels = [_scrub_sql_value(x.chan_name) for x in self._channels]
+            channels = [_scrub_sql_value(x.name) for x in self._channels]
 
         for ch in channels:
             chanst = str(_scrub_sql_value(ch))
@@ -1066,14 +1085,22 @@ class DataStore(object):
         self._conn.execute("""UPDATE session SET name=?, notes=?, date=? WHERE id=?;""", (session.name, session.notes, unix_time(datetime.datetime.now()), session.session_id ,))
         self._conn.commit()
 
+    def _get_session_record_count(self, session_id):
+        c = self._conn.cursor()
+        c.execute('SELECT count(session_id) from sample where session_id =?', (session_id,))
+        res = c.fetchone()
+        return None if res is None else res[0]
+
     @timing
-    def export_session(self, session_id, export_file):
+    def export_session(self, session_id, export_file, progress_callback=None):
         """
         Exports the specified session to a CSV file
         :param session_id the session to export
         :type session_id int
         :param export_file_name the file name to export
         :type export_file_name string
+        :param progress_callback callback function for progress. Return true from this function to cancel export
+        :type progress_callback function
         :return the number of rows exported
         """
         # channel_list
@@ -1098,6 +1125,8 @@ class DataStore(object):
             interval = DataStore.MAX_SAMPLE_RATE / c.sample_rate
             channel_intervals.append(interval)
             system_channel_indexes.append(True if name in DataStore.SYSTEM_CHANNELS else False)
+
+        export_count = self._get_session_record_count(session_id)
 
         dataset = self.query([session_id], channel_names)
         # dataset = self.query(sessions=[session_id], channels=channel_names)
@@ -1151,4 +1180,10 @@ class DataStore(object):
                     Logger.warning('DataStore: Export: Inconsistent interval detected at interval {}; re-syncing'.format(current_interval))
                     sync_point = None
             row_index += 1
+            if progress_callback is not None:
+                progress = row_index * 100 / export_count
+                if progress % 5 == 0:
+                    cancel = progress_callback(progress)
+                    if cancel == True:
+                        break
         return row_index

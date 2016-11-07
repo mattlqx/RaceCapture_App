@@ -21,6 +21,7 @@
 import os.path
 import kivy
 kivy.require('1.9.1')
+from threading import Thread
 from kivy.logger import Logger
 from kivy.app import Builder
 from kivy.clock import Clock
@@ -42,12 +43,13 @@ from autosportlabs.racecapture.views.analysis.markerevent import MarkerEvent, So
 from autosportlabs.racecapture.views.analysis.linechart import LineChart
 from autosportlabs.racecapture.views.file.loaddialogview import LoadDialog
 from autosportlabs.racecapture.views.file.savedialogview import SaveDialog
-from autosportlabs.racecapture.views.util.alertview import alertPopup, okPopup, confirmPopup
+from autosportlabs.racecapture.views.util.alertview import alertPopup, okPopup, confirmPopup, progress_popup
 from autosportlabs.uix.color.colorsequence import ColorSequence
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.help.helpmanager import HelpInfo
 from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
 from kivy.core.window import Window
+
 
 RC_LOG_FILE_EXTENSION = '.log'
 
@@ -264,38 +266,66 @@ class AnalysisView(Screen):
 
     def on_export_session(self, instance, session):
 
-        def _do_export_session(filename):
-            try:
-                if not filename.endswith(RC_LOG_FILE_EXTENSION): filename += RC_LOG_FILE_EXTENSION
-                export_file = open(filename, 'w')
-                with export_file:
-                    records = self._datastore.export_session(session.session_id, export_file)
-                    ok = okPopup('Export complete', '{} records exported'.format(records), lambda *args: ok.dismiss())
-                    self._settings.userPrefs.set_pref('preferences', 'export_file_dir', os.path.dirname(filename))
-            except Exception as e:
-               alertPopup("Error exporting",
-               "There was an error exporting the session. Please check the destination and file name\n\n{}".format(e))
-            finally:
-                popup.dismiss()
-
         def _export_session(instance):
+
+            def _do_export_session(filename):
+
+                _do_export_session.cancelled = False
+
+                def _progress_cb(pct):
+                    if _do_export_session.cancelled == True:
+                        return True
+                    Clock.schedule_once(lambda dt: prog_popup.content.update_progress(pct))
+                    return False
+
+                def _progress_ok_cancel(instance, answer):
+                    _do_export_session.cancelled = True
+                    Clock.schedule_once(lambda dt: prog_popup.dismiss(), 2.0 if instance.progress < 100 else 0.0)
+
+                def _export_complete(title, text):
+                    progress = prog_popup.content
+                    progress.title = title
+                    progress.text = text
+                    progress.progress = 100
+
+                def _export_session_worker(filename, session_id, progress_cb):
+                    try:
+                        if not filename.endswith(RC_LOG_FILE_EXTENSION): filename += RC_LOG_FILE_EXTENSION
+                        export_file = open(filename, 'w')
+                        with export_file:
+                            records = self._datastore.export_session(session_id, export_file, progress_cb)
+                            Clock.schedule_once(lambda dt: _export_complete('Export complete', '{} samples exported'.format(records)))
+                            Clock.schedule_once(lambda dt: self._settings.userPrefs.set_pref('preferences', 'export_file_dir', os.path.dirname(filename)))
+                    except Exception as e:
+                        Logger.error('AnalysisView: Error exporting: {}'.format(e))
+                        Clock.schedule_once(lambda dt: _export_complete('Error Exporting',
+                            "There was an error exporting the session. Please check the destination and file name\n\n{}".format(e)))
+
+                export_popup.dismiss()
+
+                prog_popup = progress_popup('Exporting session', 'Exporting Session', _progress_ok_cancel)
+                t = Thread(target=_export_session_worker, args=(filename, session.session_id, _progress_cb))
+                t.daemon = True
+                t.start()
+
             filename = os.path.join(instance.path, instance.filename)
             if os.path.isfile(filename):
                 def _on_overwrite_answer(instance, answer):
                     if answer:
                         _do_export_session(filename)
-                    popup.dismiss()
-                popup = confirmPopup('Confirm', 'File Exists - overwrite?', _on_overwrite_answer)
+                    ow_popup.dismiss()
+                ow_popup = confirmPopup('Confirm', 'File Exists - overwrite?', _on_overwrite_answer)
             else:
                 _do_export_session(filename)
 
         export_dir = self._settings.userPrefs.get_pref('preferences', 'export_file_dir')
         content = SaveDialog(ok=_export_session,
-                             cancel=lambda *args: popup.dismiss(),
+                             cancel=lambda *args: export_popup.dismiss(),
                              filters=['*' + RC_LOG_FILE_EXTENSION],
                              user_path=export_dir)
-        popup = Popup(title="Export Session", content=content, size_hint=(0.9, 0.9))
-        popup.open()
+
+        export_popup = Popup(title="Export Session", content=content, size_hint=(0.9, 0.9))
+        export_popup.open()
 
     def init_view(self):
         self._init_datastore()
