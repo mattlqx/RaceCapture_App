@@ -281,25 +281,6 @@ class LogImportWidget(BoxLayout):
     def on_import_complete(self, session_id):
         pass
 
-    def close_dstore_select(self, *args):
-        self.datastore_select.dismiss()
-        self.datastore_select = None
-
-    def set_dstore_path(self, instance):
-        filename = os.path.join(instance.path, instance.filename)
-        if not filename.endswith('.sq3'):
-            filename = filename + '.sq3'
-        self.ids.dstore_path.text = filename
-        self.datastore_select.dismiss()
-
-    def select_dstore(self):
-        ok_cb = self.close_dstore_select
-        content = SaveDialog(ok=self.set_dstore_path,
-                             cancel=self.close_dstore_select,
-                             filters=['*' + '.sq3'])
-        self.datastore_select = Popup(title="Select Datastore", content=content, size_hint=(0.9, 0.9))
-        self.datastore_select.open()
-
     def close_log_select(self, *args):
         self._log_select.dismiss()
         self._log_select = None
