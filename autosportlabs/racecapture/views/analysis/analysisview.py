@@ -112,13 +112,13 @@ class AnalysisView(Screen):
     sessions = ObjectProperty(None)
     Builder.load_string(ANALYSIS_VIEW_KV)
 
-    def __init__(self, **kwargs):
+    def __init__(self, datastore, databus, settings, track_manager, **kwargs):
         super(AnalysisView, self).__init__(**kwargs)
-        self._datastore = CachingAnalysisDatastore()
+        self._datastore = CachingAnalysisDatastore(datastore)
         self.register_event_type('on_tracks_updated')
-        self._databus = kwargs.get('dataBus')
-        self._settings = kwargs.get('settings')
-        self._track_manager = kwargs.get('track_manager')
+        self._databus = databus
+        self._settings = settings
+        self._track_manager = track_manager
         self.ids.sessions_view.bind(on_lap_selection=self.lap_selection)
         self.ids.sessions_view.bind(on_session_updated=self.session_updated)
         self.ids.sessions_view.bind(on_sessions_loaded=self.sessions_loaded)
@@ -328,7 +328,6 @@ class AnalysisView(Screen):
         export_popup.open()
 
     def init_view(self):
-        self._init_datastore()
         mainchart = self.ids.mainchart
         mainchart.settings = self._settings
         mainchart.datastore = self._datastore
@@ -347,14 +346,6 @@ class AnalysisView(Screen):
         if not self._layout_complete:
             Clock.schedule_once(lambda dt: self.init_view(), 0.5)
         self._layout_complete = True
-
-    def _init_datastore(self):
-        dstore_path = self._settings.userPrefs.datastore_location
-        if os.path.isfile(dstore_path):
-            self._datastore.open_db(dstore_path)
-        else:
-            Logger.info('AnalysisView: creating datastore...')
-            self._datastore.new(dstore_path)
 
     def popup_dismissed(self, *args):
         if self.stream_connecting:

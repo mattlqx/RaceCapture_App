@@ -336,21 +336,10 @@ class LogImportWidget(BoxLayout):
         session_name = self.ids.session_name.text.strip()
         session_notes = self.ids.session_notes.text.strip()
 
-        dstore_path = self.settings.userPrefs.datastore_location
-
         if not os.path.isfile(logpath):
             alertPopup("Invalid log specified",
                       "Unable to find specified log file: {}. \nAre you sure it exists?".format(logpath))
             return
-
-        if self.datastore.db_path != dstore_path:
-            if self.datastore.is_open:
-                self.datastore.close()
-
-            if os.path.isfile(dstore_path):
-                self.datastore.open_db(dstore_path)
-            else:
-                self.datastore.new(dstore_path)
 
         Logger.info("LogImportWidget: loading log: {}".format(self.ids.log_path.text))
 

@@ -299,7 +299,7 @@ class DataStore(object):
         self.datalogchanneltypes = {}
         self._new_db = False
         self._ending_datalog_id = 0
-
+        self._conn = None
         self._databus = databus
 
 
@@ -307,21 +307,30 @@ class DataStore(object):
         self._conn.close()
         self._isopen = False
 
-    @property
-    def db_path(self):
-        return self._db_path[:]
-
     def open_db(self, db_path):
         if self._isopen:
             self.close()
 
-        self._db_path = db_path
         self._conn = sqlite3.connect(db_path, check_same_thread=False)
 
         if not self._new_db:
             self._populate_channel_list()
 
         self._isopen = True
+
+    @property
+    def connection(self):
+        return self._conn
+
+    def init_from_datastore(self, datastore):
+        """
+        Initialize the datastore with an existing connection.
+        """
+        if self._isopen:
+            self.close()
+
+        self._conn = datastore.connection
+        self._populate_channel_list()
 
     def new(self, db_path=':memory:'):
         self._new_db = True
