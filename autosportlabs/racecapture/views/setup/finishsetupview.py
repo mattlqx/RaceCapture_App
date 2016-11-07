@@ -20,30 +20,21 @@
 
 import kivy
 kivy.require('1.9.1')
-from kivy.uix.button import Button
-from kivy.uix.togglebutton import ToggleButton
+from kivy.clock import Clock
 from kivy.app import Builder
+from kivy.uix.screenmanager import Screen
+from autosportlabs.racecapture.views.setup.infoview import InfoView
 
-BB_KV = """
-<BetterButton>:
-    font_name: 'resource/fonts/ASL_regular.ttf'
-    font_size: self.height * 0.5
-
-<BetterToggleButton>:
-    font_name: 'resource/fonts/ASL_regular.ttf'
-    font_size: self.height * 0.5    
+FINISH_SETUP_VIEW_KV = """
+<FinishSetupView>:
+    background_source: 'resource/setup/background_finish.jpg'
+    info_text: 'You\\'re ready to go. Now hit the race track!'
 """
 
-class BetterButton(Button):
-    """An improved button class with customizations we want.
+class FinishSetupView(InfoView):
     """
-    Builder.load_string(BB_KV)
+    Final setup view, concluding the setup process
+    """        
+    Builder.load_string(FINISH_SETUP_VIEW_KV)
     def __init__(self, **kwargs):
-        super(BetterButton, self).__init__(**kwargs)
-
-class BetterToggleButton(ToggleButton):
-    """An improved toggle button class with customizations we want.
-    """
-    Builder.load_string(BB_KV)
-    def __init__(self, **kwargs):
-        super(BetterToggleButton, self).__init__(**kwargs)
+        super(FinishSetupView, self).__init__(**kwargs)

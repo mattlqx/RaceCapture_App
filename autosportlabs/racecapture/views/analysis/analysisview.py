@@ -272,7 +272,7 @@ class AnalysisView(Screen):
         self.ids.sessions_view.datastore = self._datastore
         self.ids.sessions_view.settings = self._settings
         self.ids.sessions_view.init_view()
-        Clock.schedule_once(lambda dt: HelpInfo.help_popup('beta_analysis_welcome', self, arrow_pos='right_mid'), 0.5)
+        Clock.schedule_once(lambda dt: HelpInfo.help_popup('analysis_welcome', self, arrow_pos='right_mid'), 0.5)
 
     def do_layout(self, *largs):
         super(AnalysisView, self).do_layout(largs)

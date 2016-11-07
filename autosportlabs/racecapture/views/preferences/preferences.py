@@ -44,8 +44,10 @@ class PreferencesView(Screen):
         super(PreferencesView, self).__init__(**kwargs)
         self.settings = settings
         self.base_dir = kwargs.get('base_dir')
+        self.register_event_type('on_pref_change')
 
         self.settings_view = SettingsWithNoMenu()
+        self.settings_view.bind(on_config_change=self._on_preferences_change)
 
         # So, Kivy's Settings object doesn't allow you to add multiple json panels at a time, only 1. If you add
         # multiple, the last one added 'wins'. So what we do is load the settings JSON ourselves and then merge it
@@ -60,3 +62,10 @@ class PreferencesView(Screen):
 
         self.content = kvFind(self, 'rcid', 'preferences')
         self.content.add_widget(self.settings_view)
+
+    def on_pref_change(self, section, option, value):
+        pass
+
+    def _on_preferences_change(self, menu, config, section, key, value):
+        self.dispatch('on_pref_change', section, key, value)
+

@@ -20,30 +20,21 @@
 
 import kivy
 kivy.require('1.9.1')
-from kivy.uix.button import Button
-from kivy.uix.togglebutton import ToggleButton
+from kivy.clock import Clock
 from kivy.app import Builder
+from kivy.uix.screenmanager import Screen
+from autosportlabs.racecapture.views.setup.infoview import InfoView
 
-BB_KV = """
-<BetterButton>:
-    font_name: 'resource/fonts/ASL_regular.ttf'
-    font_size: self.height * 0.5
-
-<BetterToggleButton>:
-    font_name: 'resource/fonts/ASL_regular.ttf'
-    font_size: self.height * 0.5    
+ANALYSIS_SETUP_VIEW_KV = """
+<AnalysisSetupView>:
+    background_source: 'resource/setup/background_analysis.jpg'
+    info_text: 'After you come off track, go to Analysis and your just-completed session will be waiting for you, ready to compare laps and runs.'
 """
 
-class BetterButton(Button):
-    """An improved button class with customizations we want.
+class AnalysisSetupView(InfoView):
     """
-    Builder.load_string(BB_KV)
-    def __init__(self, **kwargs):
-        super(BetterButton, self).__init__(**kwargs)
-
-class BetterToggleButton(ToggleButton):
-    """An improved toggle button class with customizations we want.
+    Provides information on Analysis features, and optionally configure options
     """
-    Builder.load_string(BB_KV)
+    Builder.load_string(ANALYSIS_SETUP_VIEW_KV)
     def __init__(self, **kwargs):
-        super(BetterToggleButton, self).__init__(**kwargs)
+        super(AnalysisSetupView, self).__init__(**kwargs)
