@@ -362,7 +362,7 @@ class RaceCaptureApp(App):
         return dash_view
 
     def build_analysis_view(self):
-        analysis_view = AnalysisView(name='analysis', datastore=self._datastore, databus=self._databus, settings=self.settings, track_manager=self.trackManager)
+        analysis_view = AnalysisView(name='analysis', datastore=self._datastore, databus=self._databus, settings=self.settings, track_manager=self.trackManager, session_recorder=self._session_recorder)
         self.tracks_listeners.append(analysis_view)
         return analysis_view
 

@@ -89,17 +89,20 @@ class SessionRecorder(EventDispatcher) :
             self.dispatch('on_recording', True)
             self.recording = True
 
-    def stop(self):
+    def stop(self, stop_now=False):
         """
         Sets a timer that will stop the current session after a period of time.  If start is called
         before the timer fires then it will be canceled instead.
+        :param stop_now True if you want it to stop immediately
+        :type stop_now bool 
         :return: None
         """
-        if self.recording and not self._stop_timer.is_triggered:
-            if self._stop_delay > 0:
+        if (self.recording and not self._stop_timer.is_triggered) or stop_now:
+            if self._stop_delay > 0 and not stop_now:
                 Logger.info("SessionRecorder: scheduling session stop")
                 self._stop_timer()
             else:
+                self._stop_timer.cancel()
                 self._actual_stop(0)
 
     def _actual_stop(self, dt):

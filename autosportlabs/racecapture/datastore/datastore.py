@@ -1098,6 +1098,12 @@ class DataStore(object):
         :type progress_callback function
         :return the number of rows exported
         """
+        
+        def _do_progress_cb(progress):
+            if progress_callback is not None:
+                return progress_callback(progress)
+            return False
+        
         # channel_list
         channels = self.get_channel_list(session_id)
 
@@ -1177,10 +1183,10 @@ class DataStore(object):
                     Logger.warning('DataStore: Export: Inconsistent interval detected at interval {}; re-syncing'.format(current_interval))
                     sync_point = None
             row_index += 1
-            if progress_callback is not None:
-                progress = row_index * 100 / export_count
-                if progress % 5 == 0:
-                    cancel = progress_callback(progress)
-                    if cancel == True:
-                        break
+            progress = row_index * 100 / export_count
+            if progress % 5 == 0:
+                cancel = _do_progress_cb(progress)
+                if cancel == True:
+                    break
+        _do_progress_cb(100)
         return row_index

@@ -113,13 +113,14 @@ class AnalysisView(Screen):
     sessions = ObjectProperty(None)
     Builder.load_string(ANALYSIS_VIEW_KV)
 
-    def __init__(self, datastore, databus, settings, track_manager, **kwargs):
+    def __init__(self, datastore, databus, settings, track_manager, session_recorder, **kwargs):
         super(AnalysisView, self).__init__(**kwargs)
         self._datastore = datastore
         self.register_event_type('on_tracks_updated')
         self._databus = databus
         self._settings = settings
         self._track_manager = track_manager
+        self._session_recorder = session_recorder
         self.ids.sessions_view.bind(on_lap_selection=self.lap_selection)
         self.ids.sessions_view.bind(on_session_updated=self.session_updated)
         self.ids.sessions_view.bind(on_sessions_loaded=self.sessions_loaded)
@@ -148,6 +149,10 @@ class AnalysisView(Screen):
             flyin.schedule_hide()
         return False
 
+    def on_pre_enter(self, *args):
+        # immediately stop any session recording if we're entering analysis view
+        self._session_recorder.stop(stop_now=True)
+        
     def on_sessions(self, instance, value):
         self.ids.channelvalues.sessions = value
 
@@ -265,6 +270,7 @@ class AnalysisView(Screen):
     def on_delete_session(self, instance, session):
         self.ids.sessions_view.session_deleted(session)
 
+    
     def on_export_session(self, instance, session):
 
         def _export_session(instance):
