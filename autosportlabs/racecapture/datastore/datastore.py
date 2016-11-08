@@ -296,7 +296,6 @@ class DataStore(object):
         self._isopen = False
         self.datalog_channels = {}
         self.datalogchanneltypes = {}
-        self._new_db = False
         self._ending_datalog_id = 0
         self._conn = None
         self._databus = databus
@@ -310,29 +309,24 @@ class DataStore(object):
             self.close()
 
         db_uri = 'sqlite:///{}'.format(db_path)
+
         # Perform any pending database migrations
         # Will create the database if necessary
         self._perform_migration(db_uri, 'resource/datastore/migrations')
 
         self._engine = create_engine(db_uri, connect_args={'check_same_thread':False})
         sqlite_conn = self._engine.connect()
-        sqlite_conn.detach()
         self._conn = sqlite_conn.connection
-        sqlite_conn.close()
+        sqlite_conn.detach()
+#        sqlite_conn.close()
 
-        if not self._new_db:
-            self._populate_channel_list()
+        self._populate_channel_list()
 
         self._isopen = True
 
     @property
     def connection(self):
         return self._conn
-
-    def new(self, db_path=':memory:'):
-        self._new_db = True
-        self.open_db(db_path)
-        self._create_tables()
 
     def _populate_channel_list(self):
         del self._channels[:]
@@ -415,10 +409,10 @@ class DataStore(object):
     def _perform_migration(self, db_uri, migration_dir):
         tool = MigrationTool(db_uri, migration_dir=migration_dir)
         tool.install()  # create a database table to track schema changes
-        Logger.info('DataStore: Applying db migrations ' + tool.find_migrations())
+        Logger.info('DataStore: Applying db migrations: {}'.format(tool.find_migrations()))
         tool.run_migrations()
         Logger.info('DataStore: db migrations complete')
-        tool.engine.close()
+        tool.engine.dispose()
 
     def _create_tables(self):
 

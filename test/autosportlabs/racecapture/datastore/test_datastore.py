@@ -42,7 +42,7 @@ class DataStoreTest(unittest.TestCase):
         if os.path.exists(db_path):
             os.remove(db_path)
 
-        self.ds.new(db_path)
+        self.ds.open_db(db_path)
         self._import_initial_data()
 
     @classmethod

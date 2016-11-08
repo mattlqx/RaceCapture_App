@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS session
         
 CREATE TABLE IF NOT EXISTS datapoint
         (id INTEGER PRIMARY KEY AUTOINCREMENT,
-        sample_id INTEGER NOT NULL)
+        sample_id INTEGER NOT NULL);
         
 CREATE INDEX IF NOT EXISTS datapoint_sample_id_index_id on datapoint(sample_id);
 
@@ -17,8 +17,9 @@ CREATE TABLE IF NOT EXISTS sample
 CREATE INDEX IF NOT EXISTS sample_id_index_id on sample(id);
 CREATE INDEX IF NOT EXISTS sample_session_id_index_id on sample(session_id);
 
-CREATE TABLE IF NOT EXISTS channel
-        (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id INT, name TEXT NOT NULL,
+
+CREATE TABLE channel
+        (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
         units TEXT NOT NULL, min_value REAL NOT NULL, max_value REAL NOT NULL,
-        sample_rate INT NOT NULL,
-        smoothing INTEGER NOT NULL)
+         smoothing INTEGER NOT NULL)
+         

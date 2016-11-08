@@ -172,7 +172,7 @@ class RaceCaptureApp(App):
 
         self._databus = DataBusFactory().create_standard_databus(self.settings.systemChannels)
         self.settings.runtimeChannels.data_bus = self._databus
-        self._datastore = CachingAnalysisDatastore(databus= self._databus)
+        self._datastore = CachingAnalysisDatastore(databus=self._databus)
         self._session_recorder = SessionRecorder(self._datastore, self._databus, self._rc_api, self.settings, self.trackManager)
         self._session_recorder.bind(on_recording=self._on_session_recording)
 
@@ -224,11 +224,8 @@ class RaceCaptureApp(App):
 
     def _init_datastore(self):
         def _init_datastore(dstore_path):
-            if os.path.isfile(dstore_path):
-                self._datastore.open_db(dstore_path)
-            else:
-                Logger.info('Main: creating datastore...')
-                self._datastore.new(dstore_path)
+            Logger.info('Main: initializing datastore...')
+            self._datastore.open_db(dstore_path)
 
         dstore_path = self.settings.userPrefs.datastore_location
         Logger.info("Main: Datastore Path:" + str(dstore_path))
