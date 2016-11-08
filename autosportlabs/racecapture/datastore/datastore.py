@@ -20,6 +20,7 @@
 
 import sqlite3
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, Text
+from sqlturk.migration import MigrationTool
 import logging
 import os, os.path
 import time
@@ -308,12 +309,16 @@ class DataStore(object):
         if self._isopen:
             self.close()
 
-        conn_string = 'sqlite:///{}'.format(db_path)
-        self._engine = create_engine(conn_string, connect_args={'check_same_thread':False})
+        db_uri = 'sqlite:///{}'.format(db_path)
+        # Perform any pending database migrations
+        # Will create the database if necessary
+        self._perform_migration(db_uri, 'resource/datastore/migrations')
+
+        self._engine = create_engine(db_uri, connect_args={'check_same_thread':False})
         sqlite_conn = self._engine.connect()
-        self._create_schema()
         sqlite_conn.detach()
         self._conn = sqlite_conn.connection
+        sqlite_conn.close()
 
         if not self._new_db:
             self._populate_channel_list()
@@ -406,6 +411,14 @@ class DataStore(object):
 
         print('create all')
         metadata.create_all(self._engine, checkfirst=True)
+
+    def _perform_migration(self, db_uri, migration_dir):
+        tool = MigrationTool(db_uri, migration_dir=migration_dir)
+        tool.install()  # create a database table to track schema changes
+        Logger.info('DataStore: Applying db migrations ' + tool.find_migrations())
+        tool.run_migrations()
+        Logger.info('DataStore: db migrations complete')
+        tool.engine.close()
 
     def _create_tables(self):
 
