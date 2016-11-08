@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import sqlite3
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, Text
 import logging
 import os, os.path
 import time
@@ -307,11 +307,11 @@ class DataStore(object):
     def open_db(self, db_path):
         if self._isopen:
             self.close()
-            
+
         conn_string = 'sqlite:///{}'.format(db_path)
-        print('conn string ' + conn_string)
         self._engine = create_engine(conn_string, connect_args={'check_same_thread':False})
         sqlite_conn = self._engine.connect()
+        self._create_schema()
         sqlite_conn.detach()
         self._conn = sqlite_conn.connection
 
@@ -393,6 +393,19 @@ class DataStore(object):
         if not len(channel):
             raise DatastoreException("Unknown channel: {}".format(name))
         return channel[0]
+
+    def _create_schema(self):
+        metadata = MetaData()
+
+        session = Table('session2', metadata,
+                        Column('id', Integer, primary_key=True, autoincrement=True),
+                        Column('name', Text, nullable=False),
+                        Column('notes', Text, nullable=True),
+                        Column('date', Integer, nullable=False),
+                        Column('date2', Integer, nullable=False))
+
+        print('create all')
+        metadata.create_all(self._engine, checkfirst=True)
 
     def _create_tables(self):
 
@@ -1104,12 +1117,12 @@ class DataStore(object):
         :type progress_callback function
         :return the number of rows exported
         """
-        
+
         def _do_progress_cb(progress):
             if progress_callback is not None:
                 return progress_callback(progress)
             return False
-        
+
         # channel_list
         channels = self.get_channel_list(session_id)
 
