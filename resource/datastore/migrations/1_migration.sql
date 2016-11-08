@@ -18,7 +18,7 @@ CREATE INDEX IF NOT EXISTS sample_id_index_id on sample(id);
 CREATE INDEX IF NOT EXISTS sample_session_id_index_id on sample(session_id);
 
 
-CREATE TABLE channel
+CREATE TABLE IF NOT EXISTS channel
         (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
         units TEXT NOT NULL, min_value REAL NOT NULL, max_value REAL NOT NULL,
          smoothing INTEGER NOT NULL)
