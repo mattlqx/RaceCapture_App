@@ -318,7 +318,6 @@ class DataStore(object):
         sqlite_conn = self._engine.connect()
         self._conn = sqlite_conn.connection
         sqlite_conn.detach()
-#        sqlite_conn.close()
 
         self._populate_channel_list()
 
@@ -331,19 +330,20 @@ class DataStore(object):
     def _populate_channel_list(self):
         del self._channels[:]
         channels = self.get_channel_list()
-        done = False
         # remove duplicates and rail the min, max and sample rates to the extents
 
-        # filter the channels into a unique list
-        filtered_channels = list(set(channels))
-
+        filtered_channels = [DatalogChannel(channel_name=c) for c in set([c.name for c in channels])]            
         for c in filtered_channels:
             c_dup = [cd for cd in channels if c.name in cd.name]
             for d in c_dup:
-                c.min = d.min if d.min < c.min else c.min
-                c.max = d.max if d.max > c.max else c.max
-                c.sample_rate = d.sample_rate if d.sample_rate > c.sample_rate else c.sample_rate
-
+                # The channel variation that has the largest 
+                # swing in min/max values "wins"
+                if d.max - d.min > c.max - c.min:
+                    c.min = d.min
+                    c.max = d.max
+                    c.sample_rate = d.sample_rate
+                    c.units = d.units
+                
         self._channels += filtered_channels
 
     @property
