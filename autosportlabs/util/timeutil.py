@@ -18,7 +18,7 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ('time_to_epoch', 'format_time', 'epoch_to_time')
+__all__ = ('time_to_epoch', 'format_time', 'format_date', 'epoch_to_time')
 import calendar
 from datetime import datetime
 from kivy import platform
@@ -56,11 +56,21 @@ def format_time(dt=datetime.now()):
     format the supplied datetime to the current locale
     :param the time to format. If not speified, defaults to now
     :type datetime
-    :return returns the formatted string
+    :return returns the formatted date and time string
     """
     format = '%x %X' if platform == 'win' else '%Ex %EX'
     return dt.strftime(format)
 
+def format_date(dt=datetime.now()):
+    """
+    format the supplied datetime to the current locale
+    :param the time to format. If not speified, defaults to now
+    :type datetime
+    :return returns the formatted date and time string
+    """
+    format = '%x' if platform == 'win' else '%Ex'
+    return dt.strftime(format)
+    
 def epoch_to_time(epoch):
     """
     convert an epoch time to formatting time string

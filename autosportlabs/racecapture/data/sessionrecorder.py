@@ -21,8 +21,9 @@
 from kivy.clock import Clock
 from kivy.logger import Logger
 from kivy.event import EventDispatcher
-from autosportlabs.util.timeutil import format_time
-
+from autosportlabs.util.timeutil import format_date
+from autosportlabs.racecapture.config.rcpconfig import GpsSample
+from autosportlabs.racecapture.geo.geopoint import GeoPoint
 
 class SessionRecorder(EventDispatcher) :
     """
@@ -32,7 +33,7 @@ class SessionRecorder(EventDispatcher) :
     # Main app views that the SessionRecorder should start recording when displayed
     RECORDING_VIEWS = ['dash']
 
-    def __init__(self, datastore, databus, rcpapi, settings, track_manager=None, current_view=None, stop_delay=60):
+    def __init__(self, datastore, databus, rcpapi, settings, track_manager=None, status_pump=None, stop_delay=60):
         """
         Initializer.
         :param datastore: Datastore for saving data
@@ -50,7 +51,8 @@ class SessionRecorder(EventDispatcher) :
         self._track_manager = track_manager
         self._meta = None
         self._rc_connected = False
-        self._current_view = current_view
+        self._current_view = None
+        status_pump.add_listener(self.status_updated)
         self._stop_delay = stop_delay
         self._stop_timer = Clock.create_trigger(self._actual_stop, self._stop_delay)
 
@@ -59,15 +61,23 @@ class SessionRecorder(EventDispatcher) :
         self._databus.addMetaListener(self._on_meta)
         self._databus.addSampleListener(self._on_sample)
         self._sample_data = {}
-
+        self._gps_sample = GpsSample()
         metas = self._databus.getMeta()
-
         if metas:
             self._on_meta(metas)
 
         self._check_should_record()
 
         self.register_event_type('on_recording')
+        
+    def status_updated(self, status):
+        status = status['status']['GPS']
+        quality = status['qual']
+        latitude = status['lat']
+        longitude = status['lon']
+        self._gps_sample.gps_qual = quality
+        self._gps_sample.latitude = latitude
+        self._gps_sample.longitude = longitude
 
     def on_recording(self, recording):
         pass
@@ -138,11 +148,25 @@ class SessionRecorder(EventDispatcher) :
 
     def _create_session_name(self):
         """
-        Creates a session name
+        Creates a session name attempting to use the nearby venue name first, 
+        then falling to a date stamp
         :return: String name
         """
-        date_string = format_time()
-        return date_string
+        nearby_venues = self._track_manager.find_nearby_tracks(GeoPoint.fromPoint(self._gps_sample.latitude, self._gps_sample.longitude))
+        session_names = [c.name for c in self._datastore.get_sessions()]
+        
+        # use the venue name if found nearby, otherwise use a date
+        prefix = None if len(nearby_venues) == 0 else nearby_venues[0].name
+        if prefix is None:
+            prefix = format_date()
+        
+        # now find a unique name
+        index = 1
+        while True:
+            session_name = '{} - {}'.format(prefix, index)
+            if session_name not in session_names:
+                return session_name
+            index += 1
 
     def on_view_change(self, view_name):
         """
