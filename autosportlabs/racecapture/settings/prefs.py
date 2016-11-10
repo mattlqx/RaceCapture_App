@@ -375,8 +375,10 @@ class UserPrefs(EventDispatcher):
         :param value the preference value to set
         :type value list (list of strings)
         """
-        self.set_pref(section, option, ','.join(value))
-        
+        try:
+            self.set_pref(section, option, ','.join(value))
+        except TypeError:
+            Logger.error('UserPrefs: failed to set preference list for {}:{} - {}'.format(section, option, value))
         
     def to_json(self):
         '''
