@@ -47,6 +47,7 @@ from autosportlabs.racecapture.views.file.savedialogview import SaveDialog
 from autosportlabs.racecapture.views.util.alertview import alertPopup, okPopup, confirmPopup, progress_popup
 from autosportlabs.uix.color.colorsequence import ColorSequence
 from autosportlabs.racecapture.theme.color import ColorScheme
+from autosportlabs.racecapture.settings.prefs import UserPrefs
 from autosportlabs.help.helpmanager import HelpInfo
 from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
 from kivy.core.window import Window
@@ -184,7 +185,8 @@ class AnalysisView(Screen):
         self.ids.analysismap.track_manager = track_manager
 
     def on_channel_selected(self, instance, value):
-        self.ids.channelvalues.merge_selected_channels(value)
+        channels = self.ids.channelvalues.merge_selected_channels(value)
+        self._set_suggested_channels(channels)
 
     def on_marker(self, instance, marker):
         source = marker.sourceref
@@ -223,6 +225,15 @@ class AnalysisView(Screen):
         self.ids.sessions_view.append_session(session)
         self.check_load_suggested_lap(new_session_id)
 
+    def _get_suggested_channels(self):
+        suggested_channels = self._settings.userPrefs.get_pref_list('analysis_preferences', 'selected_analysis_channels')
+        if len(suggested_channels) == 0:
+            suggested_channels = UserPrefs.DEFAULT_ANALYSIS_CHANNELS
+        return suggested_channels
+        
+    def _set_suggested_channels(self, channels):
+        self._settings.userPrefs.set_pref_list('analysis_preferences', 'selected_analysis_channels', channels)
+        
     # The following selects a best lap if there are no other laps currently selected
     def check_load_suggested_lap(self, new_session_id):
         sessions_view = self.ids.sessions_view
@@ -232,8 +243,9 @@ class AnalysisView(Screen):
             if best_lap_id:
                 Logger.info('AnalysisView: Convenience selected a suggested session {} / lap {}'.format(new_session_id, best_lap_id))
                 main_chart = self.ids.mainchart
-                main_chart.select_channels(AnalysisView.SUGGESTED_CHART_CHANNELS)
-                self.ids.channelvalues.select_channels(AnalysisView.SUGGESTED_CHART_CHANNELS)
+                suggested_channels = self._get_suggested_channels()
+                main_chart.select_channels(suggested_channels)
+                self.ids.channelvalues.select_channels(suggested_channels)
                 sessions_view.select_lap(new_session_id, best_lap_id, True)
                 HelpInfo.help_popup('suggested_lap', main_chart, arrow_pos='left_mid')
             else:
@@ -339,6 +351,7 @@ class AnalysisView(Screen):
         mainchart = self.ids.mainchart
         mainchart.settings = self._settings
         mainchart.datastore = self._datastore
+        mainchart.settings = self._settings
         channelvalues = self.ids.channelvalues
         channelvalues.datastore = self._datastore
         channelvalues.settings = self._settings

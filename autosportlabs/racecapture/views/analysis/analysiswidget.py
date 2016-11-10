@@ -28,6 +28,7 @@ from iconbutton import IconButton
 from autosportlabs.racecapture.views.channels.channelselectview import ChannelSelectView
 from autosportlabs.racecapture.views.analysis.customizechannelsview import CustomizeChannelsView
 from autosportlabs.racecapture.views.analysis.markerevent import SourceRef
+from autosportlabs.racecapture.settings.prefs import UserPrefs
 from kivy.uix.popup import Popup
 from kivy.uix.stacklayout import StackLayout
 from kivy.properties import BooleanProperty, ObjectProperty
@@ -51,11 +52,10 @@ class AnalysisWidget(AnchorLayout):
 
     def __init__(self, **kwargs):
         super(AnalysisWidget, self).__init__(**kwargs)
-        self.settings = None
-        self.datastore = None
         self.selected_laps = {}
-        self.settings = kwargs.get('settings')
-        self.datastore = kwargs.get('datastore')
+        self.settings = None
+        self.settings = kwargs.get('settings', None)
+        self.datastore = kwargs.get('datastore', None)
         Clock.schedule_once(lambda dt: self.add_option_buttons())
 
     def add_option_buttons(self):
@@ -104,6 +104,15 @@ class AnalysisWidget(AnchorLayout):
         self.selected_laps.pop(str(source_ref), None)
         self.laps_selected = bool(self.selected_laps)
 
+    def _get_suggested_channels(self):
+        suggested_channels = self.settings.userPrefs.get_pref_list('analysis_preferences', 'selected_analysis_channels')
+        if len(suggested_channels) == 0:
+            suggested_channels = UserPrefs.DEFAULT_ANALYSIS_CHANNELS
+        return suggested_channels
+        
+    def _set_suggested_channels(self, channels):
+        self.settings.userPrefs.set_pref_list('analysis_preferences', 'selected_analysis_channels', channels)
+
 class ChannelAnalysisWidget(AnalysisWidget):
     """
     A base widget that can select one or more channels to display.
@@ -111,7 +120,6 @@ class ChannelAnalysisWidget(AnalysisWidget):
     Extend this class if you want to make a general purpose widget that shows one or more channels.
     """
     sessions = ObjectProperty(None)
-    DEFAULT_CHANNELS = ["Speed"]
     channels_selected = BooleanProperty(False)
 
     def __init__(self, **kwargs):
@@ -125,7 +133,8 @@ class ChannelAnalysisWidget(AnalysisWidget):
 
     def on_lap_added(self, source_ref):
         if len(self.selected_channels) == 0:
-            self.merge_selected_channels(self.DEFAULT_CHANNELS)
+            suggested_channels = self._get_suggested_channels()
+            self.merge_selected_channels(suggested_channels)
         else:
             self._add_unselected_channels(self.selected_channels, source_ref)
 
@@ -177,9 +186,11 @@ class ChannelAnalysisWidget(AnalysisWidget):
             current.append(c)
         self._add_channels_all_laps(added)
         self.channels_selected = bool(self.selected_channels)
+        return current
 
     def select_channels(self, selected_channels):
-        self.merge_selected_channels(selected_channels)
+        channels = self.merge_selected_channels(selected_channels)
+        self._set_suggested_channels(channels)
 
     def _channels_customized(self, instance, updated_channels):
         self._dismiss_popup()

@@ -98,6 +98,7 @@ class UserPrefs(EventDispatcher):
     '''
     A class to manage user preferences for the RaceCapture app
     '''
+    DEFAULT_ANALYSIS_CHANNELS = ['Speed']
     _schedule_save = None
     _prefs_dict = {'range_alerts': {}, 'gauge_settings':{}}
     store = None
@@ -231,6 +232,7 @@ class UserPrefs(EventDispatcher):
 
         self.config.adddefaultsection('analysis_preferences')
         self.config.setdefault('analysis_preferences', 'selected_sessions_laps', '{"sessions":{}}')
+        self.config.setdefault('analysis_preferences', 'selected_analysis_channels', ','.join(UserPrefs.DEFAULT_ANALYSIS_CHANNELS))
 
         self.config.adddefaultsection('setup')
         self.config.setdefault('setup', 'setup_enabled', 1)
@@ -327,6 +329,23 @@ class UserPrefs(EventDispatcher):
         except (NoOptionError, ValueError):
             return default
 
+    def get_pref_list(self, section, option, default=[]):
+        """
+        Retrieve a preferences value as a list. 
+        return default value if preference does not exist
+        :param section the configuration section for the preference
+        :type section string
+        :param option the option for the section
+        :type option string
+        :param default
+        :type default user specified
+        :return list of string values
+        """
+        try:
+            return self.config.get(section, option).split(',')
+        except (NoOptionError, ValueError):
+            return default
+        
     def set_pref(self, section, option, value):
         '''
         Set a preference value
@@ -347,6 +366,21 @@ class UserPrefs(EventDispatcher):
         if value != current_value:
             self.dispatch('on_pref_change', section, option, value)
 
+    def set_pref_list(self, section, option, value):
+        """
+        Set a preference value by list
+        :param section the configuration section for the preference
+        :type string
+        :param option the option for the section
+        :type string
+        :param value the preference value to set
+        :type value list (list of strings)
+        """
+        try:
+            self.set_pref(section, option, ','.join(value))
+        except TypeError:
+            Logger.error('UserPrefs: failed to set preference list for {}:{} - {}'.format(section, option, value))
+        
     def to_json(self):
         '''
         Serialize preferences to json
