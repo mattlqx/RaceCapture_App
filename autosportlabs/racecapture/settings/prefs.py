@@ -330,7 +330,7 @@ class UserPrefs(EventDispatcher):
 
     def get_pref_list(self, section, option, default=[]):
         """
-        Retrieve a preferences value as a string. 
+        Retrieve a preferences value as a list. 
         return default value if preference does not exist
         :param section the configuration section for the preference
         :type section string
