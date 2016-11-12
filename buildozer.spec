@@ -13,7 +13,7 @@ package.domain = com.autosportlabs
 source.dir = .
 
 # (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas,ttf,json,svg,cfg,obj,mtl,glsl,zip
+source.include_exts = py,png,jpg,kv,atlas,ttf,json,svg,cfg,obj,mtl,glsl,zip,sql
 
 # (list) Source files to exclude (let empty to not exclude anything)
 #source.exclude_exts = spec
@@ -33,7 +33,7 @@ version.filename = %(source.dir)s/main.py
 
 # (list) Application requirements
 # comma seperated e.g. requirements = sqlite3, kivy, pygments
-requirements = kivy==1.9.1, sqlite3, openssl, pygments, raven, plyer
+requirements = kivy==1.9.1, sqlite3, openssl, pygments, raven, plyer, sqlalchemy
 
 # (list) Garden requirements
 #garden_requirements =
