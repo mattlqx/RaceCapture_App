@@ -332,18 +332,18 @@ class DataStore(object):
         channels = self.get_channel_list()
         # remove duplicates and rail the min, max and sample rates to the extents
 
-        filtered_channels = [DatalogChannel(channel_name=c) for c in set([c.name for c in channels])]            
+        filtered_channels = [DatalogChannel(channel_name=c) for c in set([c.name for c in channels])]
         for c in filtered_channels:
             c_dup = [cd for cd in channels if c.name in cd.name]
             for d in c_dup:
-                # The channel variation that has the largest 
+                # The channel variation that has the largest
                 # swing in min/max values "wins"
                 if d.max - d.min > c.max - c.min:
                     c.min = d.min
                     c.max = d.max
                     c.sample_rate = d.sample_rate
                     c.units = d.units
-                
+
         self._channels += filtered_channels
 
     @property
@@ -363,9 +363,14 @@ class DataStore(object):
         c = self._conn.cursor()
 
         channels = []
-        where = '' if session_id is None else 'WHERE session_id = {}'.format(session_id)
-        c.execute("""SELECT DISTINCT name, units, min_value, max_value, sample_rate, smoothing
-        from channel {} ORDER BY name ASC, min_value ASC, max_value DESC, sample_rate DESC""".format(where))
+        where = '' if session_id is None else ' WHERE session_id = ? '
+        sql = """SELECT DISTINCT name, units, min_value, max_value, sample_rate, smoothing
+        from channel {} ORDER BY name ASC, min_value ASC, max_value DESC, sample_rate DESC""".format(where)
+
+        if session_id is None:
+            c.execute(sql)
+        else:
+            c.execute(sql, [session_id])
 
         for ch in c.fetchall():
             channels.append(DatalogChannel(channel_name=ch[0],
