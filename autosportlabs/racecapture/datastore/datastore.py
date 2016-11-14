@@ -19,6 +19,8 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import sqlite3
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, Text
+from sqlturk.migration import MigrationTool
 import logging
 import os, os.path
 import time
@@ -278,58 +280,71 @@ class DatalogChannel(object):
         return self.name
 
 class DataStore(object):
+    # Maximum supported sample rate
+    MAX_SAMPLE_RATE = 1000
+
+    # System channels that should show up in the first columns of a log file.
+    # Ordering is important, as it indicates which order it should show up in the log
+    SYSTEM_CHANNELS = ['Interval', 'Utc']
+
     # Channels to index on, WARNING: only [A-z] channel names with no spaces will work currently
     EXTRA_INDEX_CHANNELS = ["CurrentLap"]
     val_filters = ['lt', 'gt', 'eq', 'lt_eq', 'gt_eq']
+
     def __init__(self, databus=None):
         self._channels = []
         self._isopen = False
         self.datalog_channels = {}
         self.datalogchanneltypes = {}
-        self._new_db = False
         self._ending_datalog_id = 0
-
+        self._conn = None
         self._databus = databus
-
 
     def close(self):
         self._conn.close()
         self._isopen = False
 
-    @property
-    def db_path(self):
-        return self._db_path[:]
-
     def open_db(self, db_path):
         if self._isopen:
             self.close()
 
-        self._db_path = db_path
-        self._conn = sqlite3.connect(db_path, check_same_thread=False)
+        db_uri = 'sqlite:///{}'.format(db_path)
 
-        if not self._new_db:
-            self._populate_channel_list()
+        # Perform any pending database migrations
+        # Will create the database if necessary
+        self._perform_migration(db_uri, 'resource/datastore/migrations')
+
+        self._engine = create_engine(db_uri, connect_args={'check_same_thread':False})
+        sqlite_conn = self._engine.connect()
+        self._conn = sqlite_conn.connection
+        sqlite_conn.detach()
+
+        self._populate_channel_list()
 
         self._isopen = True
 
-    def new(self, db_path=':memory:'):
-        self._new_db = True
-        self.open_db(db_path)
-        self._create_tables()
+    @property
+    def connection(self):
+        return self._conn
 
     def _populate_channel_list(self):
-        c = self._conn.cursor()
+        del self._channels[:]
+        channels = self.get_channel_list()
+        # remove duplicates and rail the min, max and sample rates to the extents
 
-        self._channels = []
-        c.execute("""SELECT name, units, min_value, max_value, smoothing
-        from channel""")
+        filtered_channels = [DatalogChannel(channel_name=c) for c in set([c.name for c in channels])]
+        for c in filtered_channels:
+            c_dup = [cd for cd in channels if c.name in cd.name]
+            for d in c_dup:
+                # The channel variation that has the largest
+                # swing in min/max values "wins"
+                if d.max - d.min > c.max - c.min:
+                    c.min = d.min
+                    c.max = d.max
+                    c.sample_rate = d.sample_rate
+                    c.units = d.units
 
-        for ch in c.fetchall():
-            self._channels.append(DatalogChannel(channel_name=ch[0],
-                                                 units=ch[1],
-                                                 min=ch[2],
-                                                 max=ch[3],
-                                                 smoothing=ch[4]))
+        self._channels += filtered_channels
 
     @property
     def is_open(self):
@@ -338,6 +353,38 @@ class DataStore(object):
     @property
     def channel_list(self):
         return self._channels[:]
+
+    def get_channel_list(self, session_id=None):
+        def move_to_front(channels, channel):
+            current_index = [index for index, value in enumerate(channels) if value.name == channel]
+            if len(current_index):
+                channels.insert(0, channels.pop(current_index[0]))
+
+        c = self._conn.cursor()
+
+        channels = []
+        where = '' if session_id is None else ' WHERE session_id = ? '
+        sql = """SELECT DISTINCT name, units, min_value, max_value, sample_rate, smoothing
+        from channel {} ORDER BY name ASC, min_value ASC, max_value DESC, sample_rate DESC""".format(where)
+
+        if session_id is None:
+            c.execute(sql)
+        else:
+            c.execute(sql, [session_id])
+
+        for ch in c.fetchall():
+            channels.append(DatalogChannel(channel_name=ch[0],
+                                                 units=ch[1],
+                                                 min=ch[2],
+                                                 max=ch[3],
+                                                 sample_rate=ch[4],
+                                                 smoothing=ch[5]))
+
+        # special columns are Interval and UTC; place these at the beginning, if present
+        for channel in DataStore.SYSTEM_CHANNELS[::-1]:
+            move_to_front(channels, channel)
+
+        return channels
 
     def get_channel(self, name):
         '''
@@ -351,44 +398,13 @@ class DataStore(object):
             raise DatastoreException("Unknown channel: {}".format(name))
         return channel[0]
 
-    def _create_tables(self):
-
-        self._conn.execute("""CREATE TABLE session
-        (id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        notes TEXT NULL,
-        date INTEGER NOT NULL)""")
-
-        self._conn.execute("""CREATE TABLE datalog_info
-        (id INTEGER PRIMARY KEY AUTOINCREMENT,
-        max_sample_rate INTEGER NOT NULL, time_offset INTEGER NOT NULL,
-        name TEXT NOT NULL, notes TEXT NULL)""")
-
-        self._conn.execute("""CREATE TABLE datapoint
-        (id INTEGER PRIMARY KEY AUTOINCREMENT,
-        sample_id INTEGER NOT NULL)""")
-
-        self._conn.execute("""CREATE INDEX datapoint_sample_id_index_id on datapoint(sample_id)""")
-
-        self._conn.execute("""CREATE TABLE sample
-        (id INTEGER PRIMARY KEY AUTOINCREMENT,
-        session_id INTEGER NOT NULL)""")
-        self._conn.execute("""CREATE INDEX sample_id_index_id on sample(id)""")
-        self._conn.execute("""CREATE INDEX sample_session_id_index_id on sample(session_id)""")
-
-        self._conn.execute("""CREATE TABLE channel
-        (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
-        units TEXT NOT NULL, min_value REAL NOT NULL, max_value REAL NOT NULL,
-         smoothing INTEGER NOT NULL)""")
-
-        self._conn.execute("""CREATE TABLE datalog_channel_map
-        (datalog_id INTEGER NOT NULL, channel_id INTEGER NOT NULL)""")
-
-        self._conn.execute("""CREATE TABLE datalog_event_map
-        (datalog_id INTEGER NOT NULL, event_id INTEGER NOT NULL)""")
-
-        self._conn.commit()
-
+    def _perform_migration(self, db_uri, migration_dir):
+        tool = MigrationTool(db_uri, migration_dir=migration_dir)
+        tool.install()  # create a database table to track schema changes
+        Logger.info('DataStore: Applying db migrations: {}'.format(tool.find_migrations()))
+        tool.run_migrations()
+        Logger.info('DataStore: db migrations complete')
+        tool.engine.dispose()
 
     def _add_extra_indexes(self, channels):
         extra_indexes = []
@@ -407,10 +423,6 @@ class DataStore(object):
             self._conn.execute("""ALTER TABLE datapoint
             ADD {} REAL""".format(_scrub_sql_value(channel.name)))
 
-            # Add the channel to the 'channel' table
-            self._conn.execute("""INSERT INTO channel (name, units, min_value, max_value, smoothing)
-            VALUES (?,?,?,?,?)""", (channel.name, channel.units, channel.min, channel.max, 1))
-
         self._add_extra_indexes(channels)
         self._conn.commit()
 
@@ -426,7 +438,6 @@ class DataStore(object):
                 channels.append(channel)
                 if not name in [x.name for x in self._channels]:
                     new_channels.append(channel)
-                    self._channels.append(channel)
             self._extend_datalog_channels(new_channels)
         except:
             import sys, traceback
@@ -437,6 +448,12 @@ class DataStore(object):
             raise DatastoreException("Unable to import datalog, bad metadata")
 
         return channels
+
+    def _add_session_channels(self, session_id, channels):
+            # Add the channel to the 'channel' table
+            for channel in channels:
+                self._conn.execute("""INSERT INTO channel (session_id, name, units, min_value, max_value, sample_rate, smoothing)
+                VALUES (?,?,?,?,?,?,?)""", (session_id, channel.name, channel.units, channel.min, channel.max, channel.sample_rate, 1))
 
     def _get_last_table_id(self, table_name):
         """
@@ -699,22 +716,27 @@ class DataStore(object):
         self._conn.execute("""DELETE FROM datapoint WHERE sample_id in (select id from sample where session_id = ?)""", (session_id,))
         self._conn.execute("""DELETE FROM sample WHERE session_id=?""", (session_id,))
         self._conn.execute("""DELETE FROM session where id=?""", (session_id,))
+        self._conn.execute("""DELETE FROM channel where session_id=?""", (session_id,))
         self._conn.commit()
 
     def init_session(self, name, channel_metas=None, notes=''):
-        session = self.create_session(name, notes)
+        session_id = self.create_session(name, notes)
         Logger.info("Datastore: init_session. channels: {}".format(channel_metas))
 
         if channel_metas:
+            session_channels = []
             new_channels = []
             for name, meta in channel_metas.iteritems():
                 channel = DatalogChannel(name, meta.units, meta.min, meta.max, meta.sampleRate, 0)
                 if channel.name not in [x.name for x in self._channels]:
                     new_channels.append(channel)
-                    self._channels.append(channel)
+                session_channels.append(channel)
             self._extend_datalog_channels(new_channels)
 
-        return session
+            self._add_session_channels(session_id, session_channels)
+            self._populate_channel_list()
+
+        return session_id
 
     def create_session(self, name, notes=''):
         """
@@ -894,14 +916,14 @@ class DataStore(object):
             raise DatastoreException("Unable to open file")
 
         header = dl.readline()
-        headers = self._parse_datalog_headers(header)
+        channels = self._parse_datalog_headers(header)
 
         # Create an event to be tagged to these records
         session_id = self.create_session(name, notes)
-        self._handle_data(dl, headers, session_id, warnings, progress_cb)
+        self._add_session_channels(session_id, channels)
+        self._handle_data(dl, channels, session_id, warnings, progress_cb)
 
-        # update the channel metadata, including re-setting min/max values
-        self.update_channel_metadata()
+        self._populate_channel_list()
         return session_id
 
     def query(self, sessions=[], channels=[], data_filter=None, distinct_records=False):
@@ -922,7 +944,7 @@ class DataStore(object):
         # If there are no channels, or if a '*' is passed, select all
         # of the channels
         if len(channels) == 0 or '*' in channels:
-            channels = [_scrub_sql_value(x.chan_name) for x in self._channels]
+            channels = [_scrub_sql_value(x.name) for x in self._channels]
 
         for ch in channels:
             chanst = str(_scrub_sql_value(ch))
@@ -1049,35 +1071,113 @@ class DataStore(object):
         self._conn.execute("""UPDATE session SET name=?, notes=?, date=? WHERE id=?;""", (session.name, session.notes, unix_time(datetime.datetime.now()), session.session_id ,))
         self._conn.commit()
 
-    def update_channel_metadata(self, channels=None, only_extend_minmax=True):
-        '''
-        Adjust the channel min/max values as necessary based on the min/max values present in the datapoints
-        :param channels list of channels to update. If None, all channels are updated
-        :type channels list
-        :param only_extend_minmax True if min/max values should only be extended. If false, min/max are adjusted to actual min/max values in datapoint
-        :type only_extend_minmax bool 
-        '''
-        cursor = self._conn.cursor()
-        channels_to_update = [x for x in self._channels if channels is None or x.name in channels]
-        for channel in channels_to_update:
-            name = _scrub_sql_value(channel.name)
-            min_max = cursor.execute('SELECT COALESCE(MIN({}), 0), COALESCE(MAX({}), 0) FROM datapoint;'.format(name, name))
-            record = min_max.fetchone()
-            datapoint_min_value = record[0]
-            datapoint_max_value = record[1]
-            min_value = channel.min if only_extend_minmax == True else datapoint_min_value
-            max_value = channel.max if only_extend_minmax == True else datapoint_max_value
-            if only_extend_minmax == True:
-                selected_min_value = min(min_value, datapoint_min_value)
-                selected_max_value = max(max_value, datapoint_max_value)
-            else:
-                selected_min_value = datapoint_min_value
-                selected_max_value = datapoint_max_value
+    def _get_session_record_count(self, session_id):
+        c = self._conn.cursor()
+        c.execute('SELECT count(session_id) from sample where session_id =?', (session_id,))
+        res = c.fetchone()
+        return None if res is None else res[0]
 
-            Logger.info('Datastore: updating min/max for {}'.format(name))
-            sql = 'UPDATE channel SET min_value={}, max_value={} WHERE name="{}";'.format(selected_min_value,
-                                                                                          selected_max_value,
-                                                                                          name)
-            cursor.execute(sql)
-        self._conn.commit()
-        self._populate_channel_list()
+    @timing
+    def export_session(self, session_id, export_file, progress_callback=None):
+        """
+        Exports the specified session to a CSV file
+        :param session_id the session to export
+        :type session_id int
+        :param export_file_name the file name to export
+        :type export_file_name string
+        :param progress_callback callback function for progress. Return true from this function to cancel export
+        :type progress_callback function
+        :return the number of rows exported
+        """
+
+        def _do_progress_cb(progress):
+            if progress_callback is not None:
+                return progress_callback(progress)
+            return False
+
+        # channel_list
+        channels = self.get_channel_list(session_id)
+
+        header = ''
+        for channel in channels:
+            header += '"{}"|"{}"|{}|{}|{},'.format(channel.name,
+                                                 channel.units,
+                                                 channel.min,
+                                                 channel.max,
+                                                 channel.sample_rate)
+        export_file.write(header[:-1] + '\n')
+
+        channel_names = []
+        channel_intervals = []
+        system_channel_indexes = []
+
+        for c in channels:
+            name = c.name
+            channel_names.append(name)
+            interval = DataStore.MAX_SAMPLE_RATE / c.sample_rate
+            channel_intervals.append(interval)
+            system_channel_indexes.append(True if name in DataStore.SYSTEM_CHANNELS else False)
+
+        export_count = self._get_session_record_count(session_id)
+
+        dataset = self.query([session_id], channel_names)
+        # dataset = self.query(sessions=[session_id], channels=channel_names)
+        records = dataset.fetch_records()
+        sync_point = None
+
+        try:
+            datalog_interval_index = channel_names.index('Interval')
+        except ValueError:
+            raise DatastoreException('DataStore: Cannot export: Interval channel missing from data')
+
+        # check if there are no samples to output!
+        if set(channel_names).issubset(DataStore.SYSTEM_CHANNELS):
+            raise DatastoreException('DataStore: Cannot export: No channels to output')
+
+        row_index = 0
+        channel_count = len(channels)
+
+        for record in records:
+            # Note 1 + offset; record contains session_id as first column,
+            # the rest are individual channels
+            sampled = False
+            while not sampled:
+                if sync_point is None:
+                    # the first interval is our synchronization point
+                    # for determining when to output samples
+                    # The first sample outputs all values by default
+                    sync_point = long(record[1 + datalog_interval_index])
+
+                row = ''
+                current_interval = long(record[1 + datalog_interval_index])
+
+                for index in range(channel_count):
+                    # first column is session id, so skip it
+                    if system_channel_indexes[index] == True:
+                        # our system channels are in long integer format
+                        value = long(record[1 + index])
+                    else:
+                        channel_interval = channel_intervals[index]
+                        if (current_interval - sync_point) % channel_interval == 0:
+                            value = record[1 + index]
+                            if value is None:
+                                value = ''
+                            sampled = True
+                        else:
+                            value = ''
+                    row += str(value) + ','
+                if sampled:
+                    export_file.write(row[:-1] + '\n')
+                if not sampled:
+                    # The data log may have inconsistent data; if so
+                    # the interval will change. If we detect this then we need to re-synchronize
+                    Logger.warning('DataStore: Export: Inconsistent interval detected at interval {}; re-syncing'.format(current_interval))
+                    sync_point = None
+            row_index += 1
+            progress = row_index * 100 / export_count
+            if progress % 5 == 0:
+                cancel = _do_progress_cb(progress)
+                if cancel == True:
+                    break
+        _do_progress_cb(100)
+        return row_index

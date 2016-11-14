@@ -74,9 +74,11 @@ class AddStreamView(BoxLayout):
         session_import_view.bind(on_add=self.add_session)
         session_import_view.bind(on_delete=self.delete_session)
         session_import_view.bind(on_close=self.close)
+        session_import_view.bind(on_export=self.export_session)
 
         self.register_event_type('on_connect_stream_start')
         self.register_event_type('on_connect_stream_complete')
+        self.register_event_type('on_export_session')
         self.register_event_type('on_add_session')
         self.register_event_type('on_delete_session')
         self.register_event_type('on_close')
@@ -87,7 +89,13 @@ class AddStreamView(BoxLayout):
     def delete_session(self, instance, session):
         self.dispatch('on_delete_session', session)
 
+    def export_session(self, instance, session):
+        self.dispatch('on_export_session', session)
+
     def on_delete_session(self, *args):
+        pass
+
+    def on_export_session(self, *args):
         pass
 
     def on_add_session(self, *args):
@@ -170,6 +178,7 @@ class SessionImportView(BaseStreamConnectView):
         self.register_event_type('on_add')
         self.register_event_type('on_delete')
         self.register_event_type('on_close')
+        self.register_event_type('on_export')
 
     def on_enter(self, *args):
         # Find sessions, append to session list
@@ -184,6 +193,7 @@ class SessionImportView(BaseStreamConnectView):
             session_view.ids.date.text = format_time(datetime.fromtimestamp(session.date))
             session_view.bind(on_delete=self.delete_session)
             session_view.bind(on_add=self.add_session)
+            session_view.bind(on_export=self.export_session)
 
             self.ids.session_list.add_widget(session_view)
 
@@ -196,6 +206,9 @@ class SessionImportView(BaseStreamConnectView):
         self.dispatch('on_delete', list_item.session)
         toast("Session deleted", center_on=self)
 
+    def export_session(self, list_item):
+        self.dispatch('on_export', list_item.session)
+
     def add_session(self, list_item):
         self.dispatch('on_add', list_item.session)
         toast("Session loaded", center_on=self)
@@ -204,7 +217,10 @@ class SessionImportView(BaseStreamConnectView):
         self.dispatch('on_close')
 
     def on_add(self, *args):
-        Logger.debug("SessionImportView: on_add: {}".format(args))
+        pass
+
+    def on_export(self, *args):
+        pass
 
     def on_delete(self, *args):
         pass
@@ -220,6 +236,7 @@ class SessionListItem(BoxLayout):
         self.session = session
         self.register_event_type('on_delete')
         self.register_event_type('on_add')
+        self.register_event_type('on_export')
 
     def delete_session(self, *args):
         popup = None
@@ -232,6 +249,9 @@ class SessionListItem(BoxLayout):
         popup = confirmPopup("Delete", "Are you sure you sure you want to delete session '{}'?".format(self.session.name),
                              confirm_delete)
 
+    def export_session(self, *args):
+        self.dispatch('on_export')
+
     def add_session(self, *args):
         self.dispatch('on_add')
 
@@ -239,6 +259,9 @@ class SessionListItem(BoxLayout):
         pass
 
     def on_add(self, *args):
+        pass
+
+    def on_export(self, *args):
         pass
 
 
@@ -257,25 +280,6 @@ class LogImportWidget(BoxLayout):
 
     def on_import_complete(self, session_id):
         pass
-
-    def close_dstore_select(self, *args):
-        self.datastore_select.dismiss()
-        self.datastore_select = None
-
-    def set_dstore_path(self, instance):
-        filename = os.path.join(instance.path, instance.filename)
-        if not filename.endswith('.sq3'):
-            filename = filename + '.sq3'
-        self.ids.dstore_path.text = filename
-        self.datastore_select.dismiss()
-
-    def select_dstore(self):
-        ok_cb = self.close_dstore_select
-        content = SaveDialog(ok=self.set_dstore_path,
-                             cancel=self.close_dstore_select,
-                             filters=['*' + '.sq3'])
-        self.datastore_select = Popup(title="Select Datastore", content=content, size_hint=(0.9, 0.9))
-        self.datastore_select.open()
 
     def close_log_select(self, *args):
         self._log_select.dismiss()
@@ -332,21 +336,10 @@ class LogImportWidget(BoxLayout):
         session_name = self.ids.session_name.text.strip()
         session_notes = self.ids.session_notes.text.strip()
 
-        dstore_path = self.settings.userPrefs.datastore_location
-
         if not os.path.isfile(logpath):
             alertPopup("Invalid log specified",
                       "Unable to find specified log file: {}. \nAre you sure it exists?".format(logpath))
             return
-
-        if self.datastore.db_path != dstore_path:
-            if self.datastore.is_open:
-                self.datastore.close()
-
-            if os.path.isfile(dstore_path):
-                self.datastore.open_db(dstore_path)
-            else:
-                self.datastore.new(dstore_path)
 
         Logger.info("LogImportWidget: loading log: {}".format(self.ids.log_path.text))
 

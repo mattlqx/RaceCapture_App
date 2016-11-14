@@ -75,7 +75,7 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.config.rcpconfig import Capabilities
     from autosportlabs.telemetry.telemetryconnection import TelemetryManager
     from autosportlabs.help.helpmanager import HelpInfo
-    from autosportlabs.racecapture.datastore import DataStore
+    from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
     from autosportlabs.racecapture.data.sessionrecorder import SessionRecorder
     from autosportlabs.uix.toast.kivytoast import toast
     if not is_mobile_platform():
@@ -172,7 +172,7 @@ class RaceCaptureApp(App):
 
         self._databus = DataBusFactory().create_standard_databus(self.settings.systemChannels)
         self.settings.runtimeChannels.data_bus = self._databus
-        self._datastore = DataStore(databus=self._databus)
+        self._datastore = CachingAnalysisDatastore(databus=self._databus)
         self._session_recorder = SessionRecorder(self._datastore, self._databus, self._rc_api, self.settings, self.trackManager, self._status_pump)
         self._session_recorder.bind(on_recording=self._on_session_recording)
 
@@ -224,11 +224,8 @@ class RaceCaptureApp(App):
 
     def _init_datastore(self):
         def _init_datastore(dstore_path):
-            if os.path.isfile(dstore_path):
-                self._datastore.open_db(dstore_path)
-            else:
-                Logger.info('Main: creating datastore...')
-                self._datastore.new(dstore_path)
+            Logger.info('Main: initializing datastore...')
+            self._datastore.open_db(dstore_path)
 
         dstore_path = self.settings.userPrefs.datastore_location
         Logger.info("Main: Datastore Path:" + str(dstore_path))
@@ -362,7 +359,7 @@ class RaceCaptureApp(App):
         return dash_view
 
     def build_analysis_view(self):
-        analysis_view = AnalysisView(name='analysis', data_bus=self._databus, settings=self.settings, track_manager=self.trackManager)
+        analysis_view = AnalysisView(name='analysis', datastore=self._datastore, databus=self._databus, settings=self.settings, track_manager=self.trackManager, session_recorder=self._session_recorder)
         self.tracks_listeners.append(analysis_view)
         return analysis_view
 
