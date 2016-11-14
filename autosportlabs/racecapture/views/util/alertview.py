@@ -87,11 +87,13 @@ Builder.load_string('''
             
 <ProgressPopup>:
     cols:1
-    ProgressBar:
-        value: root.progress
-        size_hint_y: .05
+    padding: (dp(10), dp(10))
     Label:
         text: root.text
+        size_hint_y: 0.4
+    ProgressBar:
+        value: root.progress
+        size_hint_y: 0.6
     GridLayout:
         cols: 2
         size_hint_y: None
