@@ -69,7 +69,7 @@ class SessionRecorder(EventDispatcher) :
         self._check_should_record()
 
         self.register_event_type('on_recording')
-        
+
     def status_updated(self, status):
         status = status['status']['GPS']
         quality = status['qual']
@@ -157,12 +157,12 @@ class SessionRecorder(EventDispatcher) :
         """
         nearby_venues = self._track_manager.find_nearby_tracks(GeoPoint.fromPoint(self._gps_sample.latitude, self._gps_sample.longitude))
         session_names = [c.name for c in self._datastore.get_sessions()]
-        
+
         # use the venue name if found nearby, otherwise use a date
         prefix = None if len(nearby_venues) == 0 else nearby_venues[0].name
         if prefix is None:
             prefix = format_date()
-        
+
         # now find a unique name
         index = 1
         while True:

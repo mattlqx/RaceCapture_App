@@ -80,7 +80,7 @@ class SettingsMappedSpinner(MappedSpinner):
         pass
 
     def setValue(self, value):
-        self.setFromValue(str(value))
+        self.setFromValue(value)
     
     def on_text(self, instance, value):
         if not value == self.lastValue: #eh.. prevent double firing of event. is there a better way?
