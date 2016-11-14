@@ -398,19 +398,6 @@ class DataStore(object):
             raise DatastoreException("Unknown channel: {}".format(name))
         return channel[0]
 
-    def _create_schema(self):
-        metadata = MetaData()
-
-        session = Table('session2', metadata,
-                        Column('id', Integer, primary_key=True, autoincrement=True),
-                        Column('name', Text, nullable=False),
-                        Column('notes', Text, nullable=True),
-                        Column('date', Integer, nullable=False),
-                        Column('date2', Integer, nullable=False))
-
-        print('create all')
-        metadata.create_all(self._engine, checkfirst=True)
-
     def _perform_migration(self, db_uri, migration_dir):
         tool = MigrationTool(db_uri, migration_dir=migration_dir)
         tool.install()  # create a database table to track schema changes
