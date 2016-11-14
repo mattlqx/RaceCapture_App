@@ -1,12 +1,12 @@
 # -*- encoding: utf-8 -*-
 #
 # Copyright 2009 Max Ischenko
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the “License”); you may not use this
 # file except in compliance with the License. You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software distributed under
 # the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 # KIND, either express or implied. See the License for the specific language governing
@@ -58,8 +58,8 @@ log = logging.getLogger(__name__)
 
 metadata = MetaData()
 
-def execute_batch(engine, sql,
-        regex=r"(?mx) ([^';]* (?:'[^']*'[^';]*)*)", 
+def execute_batch(conn, sql,
+        regex=r"(?mx) ([^';]* (?:'[^']*'[^';]*)*)",
         comment_regex=r"(?mx) (?:^\s*$)|(?:--.*$)"):
     """
     Takes a SQL file and executes it as many separate statements.
@@ -74,7 +74,7 @@ def execute_batch(engine, sql,
     sql = "\n".join([x.strip().replace("%", "%%") for x in re.split(comment_regex, sql) if x.strip()])
     # Now execute each statement
     for st in re.split(regex, sql)[1:][::2]:
-        engine.execute(st)
+        conn.execute(st)
 
 class MigrationFile(object):
 
@@ -139,7 +139,7 @@ class MigrationTool(object):
         """Lists migrations that have not been applied yet.
         """
         applied_migrations = self.find_applied_migrations()
-        pattern = os.path.join(self.migration_dir, "*.sql" )
+        pattern = os.path.join(self.migration_dir, "*.sql")
         names = []
         for name in glob.glob(pattern):
             fname = os.path.abspath(name)
@@ -150,7 +150,7 @@ class MigrationTool(object):
                 continue
             if str(migration) not in applied_migrations:
                 names.append(migration)
-        names.sort() # MigrationFile defines its own ordering
+        names.sort()  # MigrationFile defines its own ordering
         return names
 
     def find_applied_migrations(self):
@@ -161,10 +161,16 @@ class MigrationTool(object):
 
     def run_migrations(self):
         migrations = self.find_migrations()
-        for mfile in migrations:
-            sql = mfile.get_content()
-            execute_batch(self.engine, sql)
-            ins = self.table.insert().values(migration=str(mfile))
-            self.engine.execute(ins)
-        return len(migrations)
+        conn = self.engine.connect()
+        trans = conn.begin()
+        try:
+            for mfile in migrations:
+                sql = mfile.get_content()
+                execute_batch(conn, sql)
+                ins = self.table.insert().values(migration=str(mfile))
+                self.engine.execute(ins)
+            trans.commit()
+            return len(migrations)
+        except:
+            trans.rollback()
 
