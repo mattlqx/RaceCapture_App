@@ -31,7 +31,10 @@ class TestSessionRecorder(unittest.TestCase):
         self.mock_datastore = Mock()
         self.mock_track_manager = Mock()
         self.mock_trigger = Mock()
+        self.mock_status_pump = Mock()
+        self.mock_settings = Mock()
 
+        self.mock_track_manager.find_nearby_tracks = Mock(return_value=[])
         self.mock_databus.getMeta = Mock(return_value=None)
         self.mock_rcp_api.add_connect_listener = Mock()
         self.mock_rcp_api.add_disconnect_listener = Mock()
@@ -39,11 +42,13 @@ class TestSessionRecorder(unittest.TestCase):
         self.mock_databus.addSampleListener = Mock()
         self.mock_datastore.create_session = Mock(return_value=1)
         self.mock_datastore.init_session = Mock(return_value=1)
+        self.mock_datastore.get_sessions = Mock(return_value=[])
+        self.mock_status_pump.add_listener = Mock()
 
     def test_starts(self):
 
         session_recorder = SessionRecorder(self.mock_datastore, self.mock_databus, self.mock_rcp_api,
-                                           self.mock_track_manager)
+                                           self.mock_settings, self.mock_track_manager, self.mock_status_pump)
 
         # Should not be recording yet, not connected to RCP and not on dash screen
         self.assertFalse(session_recorder.recording, "Does not record if not connected to RCP, view is not 'dash'\
@@ -66,8 +71,9 @@ class TestSessionRecorder(unittest.TestCase):
         self.mock_databus.getMeta = Mock(return_value={"foo": "bar"})
 
         session_recorder = SessionRecorder(self.mock_datastore, self.mock_databus, self.mock_rcp_api,
-                                           self.mock_track_manager, current_view='dash')
+                                           self.mock_settings, self.mock_track_manager, self.mock_status_pump)
 
+        session_recorder.on_view_change('dash')
         # Get subscription to connect event and call it
         connect_listener = self.mock_rcp_api.add_connect_listener.call_args[0][0]
         connect_listener()
@@ -80,8 +86,9 @@ class TestSessionRecorder(unittest.TestCase):
         with patch('autosportlabs.racecapture.data.sessionrecorder.Clock.create_trigger') as mock_create_trigger:
             mock_create_trigger.return_value = self.mock_trigger
             session_recorder = SessionRecorder(self.mock_datastore, self.mock_databus, self.mock_rcp_api,
-                                               self.mock_track_manager, current_view='dash')
+                                               self.mock_settings, self.mock_track_manager, self.mock_status_pump)
 
+            session_recorder.on_view_change('dash')
             mock_create_trigger.assert_called_with(session_recorder._actual_stop, 60)
             self.mock_trigger.is_triggered = False
 
@@ -100,8 +107,9 @@ class TestSessionRecorder(unittest.TestCase):
         with patch('autosportlabs.racecapture.data.sessionrecorder.Clock.create_trigger') as mock_create_trigger:
             mock_create_trigger.return_value = self.mock_trigger
             session_recorder = SessionRecorder(self.mock_datastore, self.mock_databus, self.mock_rcp_api,
-                                               self.mock_track_manager, current_view='dash')
+                                               self.mock_settings, self.mock_track_manager, self.mock_status_pump)
 
+            session_recorder.on_view_change('dash')
             mock_create_trigger.assert_called_with(session_recorder._actual_stop, 60)
             self.mock_trigger.is_triggered = True
 
@@ -120,8 +128,9 @@ class TestSessionRecorder(unittest.TestCase):
         self.mock_databus.getMeta = Mock(return_value={"foo": "bar"})
 
         session_recorder = SessionRecorder(self.mock_datastore, self.mock_databus, self.mock_rcp_api,
-                                           self.mock_track_manager, current_view='dash', stop_delay=0)
+                                           self.mock_settings, self.mock_track_manager, self.mock_status_pump, stop_delay=0)
 
+        session_recorder.on_view_change('dash')
         # Get subscription to connect event and call it
         connect_listener = self.mock_rcp_api.add_connect_listener.call_args[0][0]
         connect_listener()
@@ -136,8 +145,9 @@ class TestSessionRecorder(unittest.TestCase):
         self.mock_databus.getMeta = Mock(return_value={"foo": "bar"})
 
         session_recorder = SessionRecorder(self.mock_datastore, self.mock_databus, self.mock_rcp_api,
-                                           self.mock_track_manager, current_view='dash')
+                                           self.mock_settings, self.mock_track_manager, self.mock_status_pump)
 
+        session_recorder.on_view_change('dash')
         # Get subscription to connect event and call it
         connect_listener = self.mock_rcp_api.add_connect_listener.call_args[0][0]
         connect_listener()
