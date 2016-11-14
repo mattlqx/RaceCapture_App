@@ -716,6 +716,7 @@ class DataStore(object):
         self._conn.execute("""DELETE FROM datapoint WHERE sample_id in (select id from sample where session_id = ?)""", (session_id,))
         self._conn.execute("""DELETE FROM sample WHERE session_id=?""", (session_id,))
         self._conn.execute("""DELETE FROM session where id=?""", (session_id,))
+        self._conn.execute("""DELETE FROM channel where session_id=?""", (session_id,))
         self._conn.commit()
 
     def init_session(self, name, channel_metas=None, notes=''):
