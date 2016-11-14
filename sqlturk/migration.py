@@ -173,4 +173,5 @@ class MigrationTool(object):
             return len(migrations)
         except:
             trans.rollback()
+            raise
 
