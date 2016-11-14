@@ -1,6 +1,22 @@
 ==1.8.0==
-
-==1.7.7==
+* First time startup wizard
+* Interactive track map designer
+* Smarter, interactive track map detection and selection
+* Add ability to export session data to a file
+* Make session naming smarter (use track name if possible)
+* Analysis remembers selected channels
+* Track maps include sector points and start/finish
+* Various help dialogs for first time use
+* Fix periodic time-delay lag over WiFi connection
+* Ensure auto-detection resumes if malformed data is received
+* Fix sporadic app startup crashes
+* Delay session recording stop by 1 minute to prevent session 
+  stop upon exit/re-enter of dashboard
+* Fix two finger gesture zooming of line chart in analaysis view
+* Fix periodic error deleting a session from Analysis view
+* Add preference to disable automatic session recording
+* Add helpful message about using GPS > 25Hz
+* Fix CAN bus baud rate selector
 
 ==1.7.6==
 * Add exit menu item
