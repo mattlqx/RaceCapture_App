@@ -897,7 +897,7 @@ class CANChannels(object):
         self.stale = False
         self.enabled = False
 
-    def fromJson(self, json_dict):
+    def from_json_dict(self, json_dict):
         config = json_dict.get('canChanCfg')
         if config:         
             self.enabled = config.get('en', self.enabled) 
@@ -906,17 +906,17 @@ class CANChannels(object):
                 del self.channels[:]
                 for channel_json in channels_json:
                     c = CANChannel()
-                    c.fromJson(channel_json)
+                    c.from_json_dict(channel_json)
                     self.channels.append(c)
         return self
 
-    def toJson(self):
+    def to_json_dict(self):
         channels_json = []
         channel_count = len(self.channels)
         channel_count = channel_count if channel_count <= CAN_CHANNELS_MAX else CAN_CHANNELS_MAX
         
         for i in range(channel_count):
-            channels_json.append(self.channels[i].toJson())
+            channels_json.append(self.channels[i].to_json_dict())
 
         return {'canChanCfg':{'en': 1 if self.enabled else 0, 'chans':channels_json }}
 
