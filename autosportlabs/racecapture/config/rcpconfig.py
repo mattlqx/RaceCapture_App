@@ -923,17 +923,20 @@ class CANChannels(object):
 class PidConfig(BaseChannel):
     def __init__(self, **kwargs):
         super(PidConfig, self).__init__(**kwargs)
-        self.pidId = 0
+        self.pid = 0
+        self.mode = 0
 
     def fromJson(self, json_dict):
         if json_dict:
             super(PidConfig, self).fromJson(json_dict)
-            self.pidId = json_dict.get("pid", self.pidId)
+            self.pid = json_dict.get("pid", self.pid)
+            self.mode = json_dict.get('mode', self.mode)
 
     def toJson(self):
         json_dict = {}
         super(PidConfig, self).appendJson(json_dict)
-        json_dict['pid'] = self.pidId
+        json_dict['pid'] = self.pid
+        json_dict['mode'] = self.mode
         return json_dict
         
 OBD2_CONFIG_MAX_PIDS = 20

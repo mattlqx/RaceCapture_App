@@ -52,7 +52,7 @@ class OBD2Channel(BoxLayout):
         if self.channel:
             self.channel.stale = True
             pid = self.obd2_settings.getPidForChannelName(self.channel.name)
-            self.channel.pidId = pid
+            self.channel.pid = pid
             self.dispatch('on_modified')
 
     def on_modified(self):
@@ -63,7 +63,7 @@ class OBD2Channel(BoxLayout):
             self.channel.sampleRate = instance.getValueFromKey(value)
             self.dispatch('on_modified')
 
-    def on_delete_pid(self, pidId):
+    def on_delete_pid(self, pid):
         pass
 
     def on_delete(self):
