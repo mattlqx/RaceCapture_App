@@ -816,6 +816,8 @@ class CANMapping(object):
     TYPE_UNSIGNED = 0
     TYPE_SIGNED = 1
     TYPE_FLOAT = 2
+    ID_MASK_DISABLED = 0
+    CONVERSION_FILTER_DISABLED = 0
     
     def __init__(self, **kwargs):
         super(CANMapping, self).__init__(**kwargs)
@@ -823,14 +825,14 @@ class CANMapping(object):
         self.type = CANMapping.TYPE_UNSIGNED        
         self.can_channel = 0
         self.can_id = 0
-        self.can_mask = 0xFFFF
+        self.can_mask = CANMapping.ID_MASK_DISABLED
         self.endian = 0
         self.bit_offset = 0
         self.bit_length = 0
         self.multiplier = 1.0
         self.divider = 1.0
         self.adder = 0.0
-        self.conversion_filter_id = 0
+        self.conversion_filter_id = CANMapping.CONVERSION_FILTER_DISABLED
 
     def from_json_dict(self, json_dict):
         if json_dict:
@@ -838,6 +840,7 @@ class CANMapping(object):
             self.type = json_dict.get('type', self.type)
             self.can_channel = json_dict.get('chan', self.can_channel)
             self.can_id = json_dict.get('id', self.can_id)
+            self.can_mask = json_dict.get('id_mask', self.can_mask)
             self.bit_offset = json_dict.get('offset', self.bit_offset)
             self.bit_length = json_dict.get('len', self.bit_length)
             self.multiplier = json_dict.get('mult', self.multiplier)
@@ -853,6 +856,7 @@ class CANMapping(object):
         json_dict['type'] = self.type
         json_dict['chan'] = self.can_channel
         json_dict['id'] = self.can_id
+        json_dict['id_mask'] = self.can_mask
         json_dict['offset'] = self.bit_offset
         json_dict['len'] = self.bit_length
         json_dict['mult'] = self.multiplier
