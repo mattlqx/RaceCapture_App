@@ -1,6 +1,6 @@
 {
     "can_channel_filters": {
-        "0": "None",
+        "0": "No Conversion",
         "1": "KPH to MPH",
         "2": "MPH to KPH",
         "3": "Celcius to Fahrenheit",

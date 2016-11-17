@@ -836,41 +836,52 @@ class CanConfig(object):
         return {'canCfg':canCfgJson}        
 
 class CANChannel(BaseChannel):
+    TYPE_UNSIGNED = 0
+    TYPE_SIGNED = 1
+    TYPE_FLOAT = 2
+    
     def __init__(self, **kwargs):
         super(CANChannel, self).__init__(**kwargs)
-        self.bit_mode = False        
+        self.bit_mode = False
+        self.type = CANChannel.TYPE_UNSIGNED        
         self.can_channel = 0
         self.can_id = 0
+        self.can_mask = 0xFFFF
+        self.endian = 0
         self.bit_offset = 0
         self.bit_length = 0
         self.multiplier = 1.0
+        self.divider = 1.0
         self.adder = 0.0
-        self.endian = 0
         self.conversion_filter_id = 0
 
-    def fromJson(self, json_dict):
+    def from_json_dict(self, json_dict):
         if json_dict:
             super(CANChannel, self).fromJson(json_dict)
-            self.bit_mode = True if json_dict.get('bm', self.bit_mode) == 1 else False 
+            self.bit_mode = True if json_dict.get('bm', self.bit_mode) == 1 else False
+            self.type = json_dict.get('type', self.type)
             self.can_channel = json_dict.get('chan', self.can_channel)
             self.can_id = json_dict.get('id', self.can_id)
             self.bit_offset = json_dict.get('offset', self.bit_offset)
             self.bit_length = json_dict.get('len', self.bit_length)
             self.multiplier = json_dict.get('mult', self.multiplier)
+            self.divider = json_dict.get('div', self.divider)
             self.adder = json_dict.get('add', self.adder)
             self.endian = json_dict.get('endian', self.endian)
             self.conversion_filter_id = json_dict.get('filt_id', self.conversion_filter_id)
         return self
 
-    def toJson(self):
+    def to_json_dict(self):
         json_dict = {}
         super(CANChannel, self).appendJson(json_dict)
         json_dict['bm'] = 1 if self.bit_mode == True else 0
+        json_dict['type'] = self.type
         json_dict['chan'] = self.can_channel
         json_dict['id'] = self.can_id
         json_dict['offset'] = self.bit_offset
         json_dict['len'] = self.bit_length
         json_dict['mult'] = self.multiplier
+        json_dict['div'] = self.divider
         json_dict['add'] = self.adder
         json_dict['endian'] = self.endian
         json_dict['filt_id'] = self.conversion_filter_id
@@ -1165,6 +1176,7 @@ class ChannelCapabilities(object):
         self.timer = 3
         self.pwm = 3
         self.can = 2
+        self.can_map = 0
 
     def from_json_dict(self, json_dict):
         if json_dict:
@@ -1174,6 +1186,7 @@ class ChannelCapabilities(object):
             self.pwm = int(json_dict.get('pwm', 0))
             self.can = int(json_dict.get('can', 0))
             self.timer = int(json_dict.get('timer', 0))
+            self.can_map = int(json_dict.get('can_map', 0))
 
     def to_json_dict(self):
         return {
@@ -1182,9 +1195,9 @@ class ChannelCapabilities(object):
             "gpio": self.gpio,
             "pwm": self.pwm,
             "can": self.can,
-            "timer": self.timer
+            "timer": self.timer,
+            "can_map" : self.can_map
         }
-
 
 class SampleRateCapabilities(object):
 

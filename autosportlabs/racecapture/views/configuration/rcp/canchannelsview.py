@@ -255,7 +255,7 @@ class CANChannelView(BoxLayout):
         self.ids.can_formula.text = u'\u00D7 {} {} {}'.format(self.can_channel_cfg.multiplier, sign, abs(self.can_channel_cfg.adder))
         
 class CANPresetResourceCache(ResourceCache):
-    preset_url="http://race-capture.com/api/v1/can_presets"
+    preset_url="http://podium.live/api/v1/can_presets"
     preset_name = 'can_presets'
     
     def __init__(self, settings, base_dir, **kwargs):
@@ -270,9 +270,9 @@ class CANChannelsView(BaseConfigView):
     can_channels_settings = None
     can_filters = None
     _popup = None
+    Builder.load_file(CAN_CHANNELS_VIEW_KV)
     
     def __init__(self, **kwargs):
-        Builder.load_file(CAN_CHANNELS_VIEW_KV)
         super(CANChannelsView, self).__init__(**kwargs)
         self.register_event_type('on_config_updated')
         self.can_grid = self.ids.can_grid
