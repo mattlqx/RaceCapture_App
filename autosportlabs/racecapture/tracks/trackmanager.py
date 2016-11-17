@@ -187,7 +187,7 @@ class TrackManager(object):
         self.tracks_user_dir = '.'
         self.track_user_subdir = '/venues'
         self.set_tracks_user_dir(kwargs.get('user_dir', self.tracks_user_dir) + self.track_user_subdir)
-        self._update_lock = Lock()
+        self.update_lock = Lock()
         self.regions = []
 
         # Tracks are stored as key/object pairs to aid in finding a particular track quickly
@@ -220,7 +220,7 @@ class TrackManager(object):
                     region = Region()
                     region.fromJson(region_node)
                     self.regions.append(region)
-        except Exception:
+        except Exception as detail:
             Logger.warning('TrackManager: Error loading regions data ' + traceback.format_exc())
 
     @property
@@ -406,7 +406,7 @@ class TrackManager(object):
         """Method for loading local tracks files in a separate thread
         """
         try:
-            self._update_lock.acquire()
+            self.update_lock.acquire()
             self.load_tracks(progress_cb)
             success_cb()
         except Exception as detail:
@@ -469,14 +469,14 @@ class TrackManager(object):
         """Method for updating all tracks in a separate thread
         """
         try:
-            self._update_lock.acquire()
+            self.update_lock.acquire()
             self.refresh(progress_cb)
             success_cb()
         except Exception as detail:
             Logger.exception('')
             fail_cb(detail)
         finally:
-            self._update_lock.release()
+            self.update_lock.release()
 
     def refresh(self, progress_cb=None, success_cb=None, fail_cb=None):
         """Refreshes all tracks. If success and fail callbacks are provided, sets up a new thread.
