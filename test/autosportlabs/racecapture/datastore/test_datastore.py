@@ -26,7 +26,7 @@ import os, os.path
 from collections import namedtuple
 from autosportlabs.racecapture.datastore.datastore import DataStore, Filter, \
     DataSet, _interp_dpoints, _smooth_dataset
-from wheel.signatures import assertTrue
+
 
 fqp = os.path.dirname(os.path.realpath(__file__))
 db_path = os.path.join(fqp, 'rctest.sql3')
