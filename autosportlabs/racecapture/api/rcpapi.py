@@ -475,6 +475,9 @@ class RcpApi:
                            RcpCmd('trackDb', self.getTrackDb)
                            ]
 
+            if capabilities.has_can_channel:
+                cmdSequence.append(RcpCmd('canChanCfg', self.get_can_channels_config))
+                
             if capabilities.has_script:
                 cmdSequence.append(RcpCmd('scriptCfg', self.getScript))
 
@@ -555,6 +558,10 @@ class RcpApi:
         if obd2Cfg.stale:
             cmdSequence.append(RcpCmd('setObd2Cfg', self.setObd2Cfg, obd2Cfg.toJson()))
 
+        can_channels = cfg.can_channels
+        if can_channels.stale:
+            self.sequence_write_can_channels(can_channels.to_json_dict(), cmdSequence)
+        
         trackCfg = cfg.trackConfig
         if trackCfg.stale:
             cmdSequence.append(RcpCmd('setTrackCfg', self.setTrackCfg, trackCfg.toJson()))
@@ -649,6 +656,27 @@ class RcpApi:
     def setObd2Cfg(self, obd2Cfg):
         self.sendSet('setObd2Cfg', obd2Cfg)
 
+    def sequence_write_can_channels(self, can_channels_json_dict, cmd_sequence):
+        """
+        queue writing of all can channels
+        """
+        channels = can_channels_json_dict.get('chans')
+        if channels:
+            index = 0
+            for c in channels:
+                cmd_sequence.append(RcpCmd('setCanChanCfg', self.set_can_channel_config, c, index))
+                index += 1
+
+    def set_can_channel_config(self, can_channel, index):
+        return self.sendCommand({'setCanChanCfg':
+                                 {'index':index,
+                                  'chan': can_channel
+                                  }
+                                 })
+        
+    def get_can_channels_config(self):
+        self.sendGet('getCanChanCfg', None)
+        
     def getConnectivityCfg(self):
         self.sendGet('getConnCfg', None)
 

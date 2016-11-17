@@ -918,10 +918,9 @@ class CANChannels(object):
         self.enabled = False
 
     def from_json_dict(self, json_dict):
-        config = json_dict.get('canChanCfg')
-        if config:         
-            self.enabled = config.get('en', self.enabled) 
-            channels_json = config.get("chans", None)
+        if json_dict:
+            self.enabled = json_dict.get('en', self.enabled) 
+            channels_json = json_dict.get("chans", None)
             if channels_json:
                 del self.channels[:]
                 for channel_json in channels_json:
@@ -1202,7 +1201,7 @@ class ChannelCapabilities(object):
         self.timer = 3
         self.pwm = 3
         self.can = 2
-        self.can_map = 0
+        self.can_channel = 0
 
     def from_json_dict(self, json_dict):
         if json_dict:
@@ -1212,7 +1211,7 @@ class ChannelCapabilities(object):
             self.pwm = int(json_dict.get('pwm', 0))
             self.can = int(json_dict.get('can', 0))
             self.timer = int(json_dict.get('timer', 0))
-            self.can_map = int(json_dict.get('can_map', 0))
+            self.can_channel = int(json_dict.get('can_chan', 0))
 
     def to_json_dict(self):
         return {
@@ -1222,7 +1221,7 @@ class ChannelCapabilities(object):
             "pwm": self.pwm,
             "can": self.can,
             "timer": self.timer,
-            "can_map" : self.can_map
+            "can_chan" : self.can_channel
         }
 
 class SampleRateCapabilities(object):
@@ -1311,10 +1310,6 @@ class Capabilities(object):
         return self.channels.timer > 0
 
     @property
-    def has_pwm(self):
-        return self.channels.pwm > 0
-
-    @property
     def has_cellular(self):
         return self.links.cellular
 
@@ -1326,6 +1321,10 @@ class Capabilities(object):
     def has_bluetooth(self):
         return self.links.bluetooth
 
+    @property
+    def has_can_channel(self):
+        return self.channels.can_channel > 0
+    
     @property
     def has_streaming(self):
         return 'telemstream' in self.flags
@@ -1483,8 +1482,10 @@ class RcpConfig(object):
                 canCfgJson = rcpJson.get('canCfg', None)
                 if canCfgJson:
                     self.canConfig.fromJson(canCfgJson)
-                    
-                self.can_channels.fromJson(rcpJson)
+                
+                can_chan_json = rcpJson.get('canChanCfg', None)
+                if can_chan_json:
+                    self.can_channels.from_json_dict(can_chan_json)
 
                 obd2CfgJson = rcpJson.get('obd2Cfg', None)
                 if obd2CfgJson:
@@ -1520,7 +1521,7 @@ class RcpConfig(object):
                              'gpioCfg':self.gpioConfig.toJson().get('gpioCfg'),
                              'pwmCfg':self.pwmConfig.toJson().get('pwmCfg'),
                              'canCfg':self.canConfig.toJson().get('canCfg'),
-                             'canChanCfg':self.can_channels.toJson().get('canChanCfg'),
+                             'canChanCfg':self.can_channels.to_json_dict().get('canChanCfg'),
                              'obd2Cfg':self.obd2Config.toJson().get('obd2Cfg'),
                              'connCfg':self.connectivityConfig.toJson().get('connCfg'),
                              'wifiCfg': self.wifi_config.to_json(),
