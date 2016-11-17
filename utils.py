@@ -24,7 +24,7 @@ Utils
 
 '''
 
-__all__ = ('scpt', 'is_mobile_platform', 'is_android', 'is_ios', 'intersection', 'difference', 'curry', 'strtotuple',
+__all__ = ('spct', 'is_mobile_platform', 'is_android', 'is_ios', 'intersection', 'difference', 'curry', 'strtotuple',
            'get_color_from_hex', 'get_random_color',
            'is_color_transparent', 'boundary', 'dist',
            'deprecated', 'SafeList',

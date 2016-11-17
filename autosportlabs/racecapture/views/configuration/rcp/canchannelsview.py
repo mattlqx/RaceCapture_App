@@ -118,9 +118,9 @@ class CANChannelConfigView(BoxLayout):
         sample_rate_spinner.set_max_rate(self.max_sample_rate)
         sample_rate_spinner.setFromValue(self.can_channel_cfg.sampleRate)
         
-        self.ids.can_bus_channel.setValueMap({0: '1', 1: '2'}, 0)
+        self.ids.can_bus_channel.setValueMap({0: '1', 1: '2'}, '1')
         
-        self.ids.endian.setValueMap({0: 'Big (MSB)', 1: 'Little (LSB)'}, 0)
+        self.ids.endian.setValueMap({0: 'Big (MSB)', 1: 'Little (LSB)'}, 'Big (MSB)')
         
         self.ids.filters.setValueMap(self.can_filters.filters, self.can_filters.default_value)
         
@@ -173,8 +173,8 @@ class CANChannelConfigView(BoxLayout):
         
     def set_mapping_choices(self, bit_mode):
         choices = 63 if bit_mode else 7
-        self.ids.offset.setValueMap(self.create_bit_choices(choices), 0)
-        self.ids.length.setValueMap(self.create_bit_choices(1 + choices), 0)
+        self.ids.offset.setValueMap(self.create_bit_choices(choices), '0')
+        self.ids.length.setValueMap(self.create_bit_choices(1 + choices), '0')
 
     def create_bit_choices(self, max_choices):
         bit_choices = {}
@@ -325,7 +325,7 @@ class CANChannelsView(BaseConfigView):
             can_channel_cfg = can_channels_cfg.channels[i]
             self.append_can_channel(i, can_channel_cfg, max_sample_rate)
         self.update_view_enabled()
-        self.ids.list_msg.text = 'No Channels defined. Press (+) to map a CAN channel' if channel_count == 0 else ''
+        self.ids.list_msg.text = 'No channels defined. Press (+) to map a CAN channel' if channel_count == 0 else ''
 
     def append_can_channel(self, index, can_channel_cfg, max_sample_rate):
         channel_view = CANChannelView(index, can_channel_cfg, max_sample_rate, self.channels)
