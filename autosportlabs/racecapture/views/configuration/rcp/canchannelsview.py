@@ -70,7 +70,7 @@ class CANChannelConfigView(BoxLayout):
         
     def on_bit_mode(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.bit_mode = self.ids.bitmode.active
+            self.can_channel_cfg.can_mapping.bit_mode = self.ids.bitmode.active
             self.update_mapping_spinners()
     
     def on_sample_rate(self, instance, value):
@@ -79,35 +79,35 @@ class CANChannelConfigView(BoxLayout):
         
     def on_can_bus_channel(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.can_channel = instance.getValueFromKey(value)
+            self.can_channel_cfg.can_mapping.can_channel = instance.getValueFromKey(value)
         
     def on_can_id(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.can_id = int(value)
+            self.can_channel_cfg.can_mapping.can_id = int(value)
         
     def on_bit_offset(self, instance, value):
         if self._loaded:        
-            self.can_channel_cfg.bit_offset = instance.getValueFromKey(value)
+            self.can_channel_cfg.can_mapping.bit_offset = instance.getValueFromKey(value)
 
     def on_bit_length(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.bit_length = instance.getValueFromKey(value)
+            self.can_channel_cfg.can_mapping.bit_length = instance.getValueFromKey(value)
         
     def on_endian(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.endian = instance.getValueFromKey(value)
+            self.can_channel_cfg.can_mapping.endian = instance.getValueFromKey(value)
         
     def on_multiplier(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.multiplier = float(value)
+            self.can_channel_cfg.can_mapping.multiplier = float(value)
         
     def on_adder(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.adder = float(value)
+            self.can_channel_cfg.can_mapping.adder = float(value)
         
     def on_filter(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.conversion_filter_id = instance.getValueFromKey(value)
+            self.can_channel_cfg.can_mapping.conversion_filter_id = instance.getValueFromKey(value)
         
     def init_view(self):
         channel_editor = self.ids.chan_id
@@ -141,34 +141,34 @@ class CANChannelConfigView(BoxLayout):
         sample_rate_spinner.setFromValue(self.can_channel_cfg.sampleRate)
         
         #CAN Channel
-        self.ids.can_bus_channel.setFromValue(self.can_channel_cfg.can_channel)
+        self.ids.can_bus_channel.setFromValue(self.can_channel_cfg.can_mapping.can_channel)
         
         #CAN ID
-        self.ids.can_id.text = str(self.can_channel_cfg.can_id)
+        self.ids.can_id.text = str(self.can_channel_cfg.can_mapping.can_id)
         
         #CAN offset
-        self.ids.offset.text = str(self.can_channel_cfg.bit_offset)
+        self.ids.offset.text = str(self.can_channel_cfg.can_mapping.bit_offset)
         
         #CAN length
-        self.ids.length.text = str(self.can_channel_cfg.bit_length)
+        self.ids.length.text = str(self.can_channel_cfg.can_mapping.bit_length)
         
         #Bit Mode
-        self.ids.bitmode.active = self.can_channel_cfg.bit_mode
+        self.ids.bitmode.active = self.can_channel_cfg.can_mapping.bit_mode
         
         #Endian
-        self.ids.endian.setFromValue(self.can_channel_cfg.endian)
+        self.ids.endian.setFromValue(self.can_channel_cfg.can_mapping.endian)
         
         #Multiplier
-        self.ids.multiplier.text = str(self.can_channel_cfg.multiplier)
+        self.ids.multiplier.text = str(self.can_channel_cfg.can_mapping.multiplier)
         
         #Adder
-        self.ids.adder.text = str(self.can_channel_cfg.adder)
+        self.ids.adder.text = str(self.can_channel_cfg.can_mapping.adder)
         
         #Conversion Filter ID
-        self.ids.filters.setFromValue(self.can_channel_cfg.conversion_filter_id)
+        self.ids.filters.setFromValue(self.can_channel_cfg.can_mapping.conversion_filter_id)
         
     def update_mapping_spinners(self):
-        bit_mode = self.can_channel_cfg.bit_mode
+        bit_mode = self.can_channel_cfg.can_mapping.bit_mode
         self.set_mapping_choices(bit_mode)
         
     def set_mapping_choices(self, bit_mode):
@@ -246,13 +246,14 @@ class CANChannelView(BoxLayout):
         sample_rate_spinner.setFromValue(self.can_channel_cfg.sampleRate)
         
         self.ids.channel_name.text = '{}'.format(self.can_channel_cfg.name)
-        self.ids.can_id.text = '{}'.format(self.can_channel_cfg.can_id)
-        self.ids.can_offset_len.text = u'{} ( {} )'.format(self.can_channel_cfg.bit_offset, self.can_channel_cfg.bit_length)
-        sign = '-' if self.can_channel_cfg.adder < 0 else '+'
-        self.ids.can_formula.text = u'\u00D7 {} {} {}'.format(self.can_channel_cfg.multiplier, sign, abs(self.can_channel_cfg.adder))
-        self.ids.can_offset_len.text = u'{}({})'.format(self.can_channel_cfg.bit_offset, self.can_channel_cfg.bit_length)
-        sign = '-' if self.can_channel_cfg.adder < 0 else '+'
-        self.ids.can_formula.text = u'\u00D7 {} {} {}'.format(self.can_channel_cfg.multiplier, sign, abs(self.can_channel_cfg.adder))
+        can_mapping = self.can_channel_cfg.can_mapping
+        self.ids.can_id.text = '{}'.format(can_mapping.can_id)
+        self.ids.can_offset_len.text = u'{} ( {} )'.format(can_mapping.bit_offset, can_mapping.bit_length)
+        sign = '-' if can_mapping.adder < 0 else '+'
+        self.ids.can_formula.text = u'\u00D7 {} {} {}'.format(can_mapping.multiplier, sign, abs(can_mapping.adder))
+        self.ids.can_offset_len.text = u'{}({})'.format(can_mapping.bit_offset, can_mapping.bit_length)
+        sign = '-' if can_mapping.adder < 0 else '+'
+        self.ids.can_formula.text = u'\u00D7 {} {} {}'.format(can_mapping.multiplier, sign, abs(can_mapping.adder))
         
 class CANPresetResourceCache(ResourceCache):
     preset_url="http://podium.live/api/v1/can_presets"
@@ -409,7 +410,7 @@ class CANChannelsView(BaseConfigView):
         if preset:
             for channel_json in preset['channels']:
                 new_channel = CANChannel()
-                new_channel.fromJson(channel_json)
+                new_channel.from_json_dict(channel_json)
                 self.add_can_channel(new_channel)
         
     def load_preset_view(self):
