@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 from functools import partial
 from kivy.uix.scrollview import ScrollView
 from kivy.clock import Clock
@@ -15,14 +35,14 @@ class ScrollContainer(ScrollView):
 		#The starting vertical scroll position
 		self._start_y = None
 		super(ScrollContainer, self).__init__(**kwargs)
-		
+
 	def on_scroll_start(self, touch, check_children=True):
 		'''
 		Override the on_scroll_start so that we can capture the original start position
 		'''
 		self._start_y = touch.y
 		return super(ScrollContainer, self).on_scroll_start(touch, check_children)
-				
+
 	def on_scroll_stop(self, touch, check_children=True):
 		'''
 		Override the on_scroll_stop so that we can fire a full 

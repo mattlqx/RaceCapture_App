@@ -1,11 +1,33 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 import time
 import kivy
 kivy.require('1.9.1')
 
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.accordion import Accordion, AccordionItem
+from kivy.logger import Logger
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
-from kivy.metrics import dp
+from kivy.metrics import dp, sp
 from utils import *
 
 class BaseChannelView(BoxLayout):
@@ -35,7 +57,7 @@ class BaseChannelView(BoxLayout):
             self.dispatch('on_modified', self.channelConfig)
 
         
-class BaseConfigView(BoxLayout):
+class BaseConfigView(GridLayout):
     channels = None
     rc_api = None
     def __init__(self, **kwargs):    
@@ -46,6 +68,8 @@ class BaseConfigView(BoxLayout):
         self.register_event_type('on_tracks_updated')
         self.register_event_type('on_modified')
         self.register_event_type('on_config_modified')
+        self.orientation = 'vertical'
+        self.cols = 1
         
     def on_modified(self, *args):
         self.dispatch('on_config_modified', *args)
@@ -86,7 +110,7 @@ class BaseMultiChannelConfigView(BaseConfigView):
     def __init__(self, **kwargs):    
         super(BaseMultiChannelConfigView, self).__init__(**kwargs)
         self.register_event_type('on_config_updated')        
-        accordion = Accordion(orientation='vertical', size_hint=(1.0, None))        
+        accordion = Accordion(orientation='vertical', size_hint=(1.0, None))
         sv = ScrollContainer(size_hint=(1.0,1.0), do_scroll_x=False)
         sv.add_widget(accordion)
         self._accordion = accordion
@@ -96,7 +120,7 @@ class BaseMultiChannelConfigView(BaseConfigView):
         accordion = self._accordion
         if self._channel_count != channel_count:
             self._channel_editors = []
-            accordion.height = self.accordion_item_height * channel_count
+            accordion.height = (accordion.min_space * channel_count) + self.accordion_item_height
             title = self.channel_title
             for i in range(channel_count):
                 channel = LazyloadAccordionItem(title=title + str(i + 1), builder=self.channel_builder, channel_index=i, max_sample_rate=max_sample_rate)
@@ -126,10 +150,10 @@ class BaseMultiChannelConfigView(BaseConfigView):
         super(BaseMultiChannelConfigView, self).on_modified(self, instance, channel_config)
 
     def setAccordionItemTitle(self, accordion, channel_configs, config):
-            i = channel_configs.index(config)
-            accordion_children = accordion.children
-            accordion_item = accordion_children[len(accordion_children) - i - 1]
-            accordion_item.title = self.createTitleForChannel(config)
+        i = channel_configs.index(config)
+        accordion_children = accordion.children
+        accordion_item = accordion_children[len(accordion_children) - i - 1]
+        accordion_item.title = self.createTitleForChannel(config)
         
     def createTitleForChannel(self, channel_config):
         try:

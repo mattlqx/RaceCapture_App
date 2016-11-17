@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 import unittest
 from mock import patch
 import mock
@@ -46,6 +66,7 @@ class TelemetryManagerTest(unittest.TestCase):
         })
 
         telemetry_manager.telemetry_enabled = True
+        telemetry_manager.data_connected = True
 
         args, kwargs = mock_telemetry_connection.call_args
         host_arg, port_arg, device_id_arg, meta_arg, bus_arg, status_arg = args
@@ -67,6 +88,7 @@ class TelemetryManagerTest(unittest.TestCase):
 
         telemetry_manager = TelemetryManager(data_bus, device_id=device_id, host=host, port=port,
                                              telemetry_enabled=True)
+        telemetry_manager.data_connected = True
         telemetry_manager._on_meta({
             'Foo': 'bar',
             'Bar': 'baz',

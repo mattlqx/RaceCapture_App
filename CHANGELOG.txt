@@ -1,3 +1,104 @@
+==1.8.0==
+* First time startup wizard
+* Interactive track map designer
+* Smarter, interactive track map detection and selection
+* Add ability to export session data to a file
+* Make session naming smarter (use track name if possible)
+* Analysis remembers selected channels
+* Track maps include sector points and start/finish
+* Various help dialogs for first time use
+* Fix periodic time-delay lag over WiFi connection
+* Ensure auto-detection resumes if malformed data is received
+* Fix sporadic app startup crashes
+* Delay session recording stop by 1 minute to prevent session 
+  stop upon exit/re-enter of dashboard
+* Fix two finger gesture zooming of line chart in analaysis view
+* Fix periodic error deleting a session from Analysis view
+* Add preference to disable automatic session recording
+* Add helpful message about using GPS > 25Hz
+* Fix CAN bus baud rate selector
+
+==1.7.6==
+* Add exit menu item
+* Improved reconnection logic for WiFi connections
+
+==1.7.5==
+* Touching right side of analysis chart now updates values displayed
+* Analog channels view displays correctly when 1 analog channel is present
+* Incrementally load sessions and laps in analysis view, allowing slower devices to show progress
+* Improve responsiveness when switching between Bluetooth and WiFi connection type
+* Ensure only valid laps are shown in Analysis (-1 lap issue)
+* Smarter selection of time vs Distance analysis charts
+* Present user with add session screen if no sessions are selected
+* Added preferences switch for in-app recording
+* Show lap times for selected laps
+* Numerous fixes around selection/display of analysis data
+* Improved reconnection logic for WiFi mode
+
+==1.7.4==
+* Ensure realtime values update in line chart, even if there is no location detected
+* Order saved sessions by most recent first
+* Change OBDII Speed channel to WheelSpeed to prevent conflict with GPS speed channel
+* Expand available space in realtime chart values for small formfactor devices (phones)
+* Improve UI response when enabling telemetry
+* Add Spain and UK APNs
+* Improvements to re-connection logic 
+* Adjust telemetry based on app mode - reduce telemetry rate when not logging to improve app responsiveness
+* Ensure analysis view loads correctly under all conditions
+* Improve behavior on session list dropdown, prevent pre-mature dismissing
+* Add GPS status indicator in toolbar
+* Make RX/TX indicator a single RX indicator with improved responsiveness
+
+==1.7.3==
+* Restore telemetry back to 50Hz (fix bad 1.7.2 google play release)
+
+==1.7.2==
+* Remove popups when a read error occurs with RaceCapture; put message in status bar instead
+* Show full Wireless config if no device is connected
+* Ensure telemetry disconnects when WiFi connection drops; Ensure telemetry re-connects when WiFi connection is restored. 
+
+==1.7.1==
+* Show git_info instead of version number if available in status bar and status screen
+* Use threadsafe callback mechanism in rcp api code to prevent crashes
+* Correct lost PID ID when restoring an OBD-II config from file
+* Re-read accelerometer configuration after calibration
+* Ensure Podium telemetry re-connects after a wifi disconnect
+* Prevent incorrect acclerometer readings upon repetitive reads
+
+==1.7.0==
+* Support for new PnP RaceCapture from Kickstarter
+* Initial support for in-app track detection (user prompting)
+* Automatically record session in-app, with session archiving support
+* Added WiFi support for RaceCapture / RaceCapture/Pro connectivity
+* Make default region all when searching for tracks
+* Enabled swipe to switch between dashboard screens
+* Improve performance of dashboard screen loading
+* Changed LapDelta filter to not add channels to samples if its meta is not added to channel meta
+
+==1.6.0==
+* Add dashboard view navigation with 'left'/'right' keyboard keys
+* Allow switching analysis by time or distance
+* Change analysis view to query LapTime and CurrentLap channels
+* Remove top level RaceTracks screen and menu item to avoid confusion during configuration
+* Addressed possible UI lockup issue with telemetry rates above 10Hz
+* Update tachometer to improve performance, responsiveness and screen layout
+* Advanced bluetooth configuration allows for setting name and passkey
+
+==1.5.4==
+* Allow switching analysis by time or distance
+* Change analysis view to query LapTime and CurrentLap channels
+* Remove top level RaceTracks screen and menu item to avoid confusion during configuration
+
+==1.5.3==
+* Make pit stop timer configurable
+* Make pit stop timer time correctly on slower tablets
+* Make lap selection for analysis live in a drop-down shade that auto-dismisses, 
+  to maximize screen real-estate for small form factors.
+* Fix raw channels view font size being too big when few channels are configured (#98)
+* Wrap text in status screen instead of clip (#905)
+* Add network status to status page
+* Make dashboard nav arrows bigger
+
 ==1.5.2==
 * Prevent app hang while transmitting telemetry if bluetooth disconnects
 * Update references from RaceCapture/Live to Podium

@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 import kivy
 kivy.require('1.9.1')
 from kivy.uix.anchorlayout import AnchorLayout
@@ -27,7 +47,10 @@ class StatusTitle(StatusLabel):
     pass
 
 class StatusValue(StatusLabel):
-    pass
+
+    def __init__(self, **kwargs):
+        super(StatusLabel, self).__init__(**kwargs)
+        self.shorten = False
 
 # Simple extension of Kivy's TreeViewLabel so we can add on our own properties
 # to it for easier view tracking
@@ -38,22 +61,22 @@ class LinkedTreeViewLabel(TreeViewLabel):
 class StatusView(Screen):
 
     _bg_current = RAW_STATUS_BGCOLOR_1
-    
-    #Dict object that contains the status of RCP
+
+    # Dict object that contains the status of RCP
     status = ObjectProperty(None)
 
-    #Currently selected menu item
+    # Currently selected menu item
     _selected_item = None
 
     _menu_built = False
 
-    #Track manager for getting track name
+    # Track manager for getting track name
     track_manager = None
 
-    #Connection to status pump
+    # Connection to status pump
     _status_pump = None
 
-    #Used for building the left side menu
+    # Used for building the left side menu
     _menu_keys = {
         "app": "Application",
         "system": "RaceCapture",
@@ -62,10 +85,12 @@ class StatusView(Screen):
         "bt": "Bluetooth",
         "logging": "Logger",
         "track": "Track",
-        "telemetry": "Telemetry"
+        "telemetry": "Telemetry",
+        "wifi": "WiFi",
+        "imu": "Accel/Gyro",
     }
 
-    #Dict for getting English text for status enums
+    # Dict for getting English text for status enums
     _enum_keys = {
         'GPS': {
             'init': [
@@ -105,7 +130,8 @@ class StatusView(Screen):
             'status': [
                 'Searching',
                 'Fixed start/finish',
-                'Detected'
+                'Detected',
+                'Manually Set'
             ]
         },
         'telemetry': {
@@ -134,14 +160,14 @@ class StatusView(Screen):
         self._menu_node.bind(selected_node=self._on_menu_select)
         status_pump.add_listener(self.status_updated)
         self._build_core_menu()
-        
+
     def _build_core_menu(self):
-        #build application status node
+        # build application status node
         self._append_menu_node('Application', 'app')
 
-        #select the first node in the tree.
+        # select the first node in the tree.
         self._menu_node.select_node(self._menu_node.root.nodes[0])
-        
+
     def _build_menu(self):
         if self._menu_built:
             return
@@ -164,10 +190,10 @@ class StatusView(Screen):
 
     def status_updated(self, status):
         self.status = status['status']
-        
+
     def update(self):
         _bg_current = RAW_STATUS_BGCOLOR_1
-        
+
         if self._selected_item in self._menu_keys:
             text = self._menu_keys[self._selected_item]
         else:
@@ -178,8 +204,8 @@ class StatusView(Screen):
 
         function_name = ('render_' + self._selected_item).lower()
 
-        #Generic way of not having to create a long switch or if/else block
-        #to call each render function
+        # Generic way of not having to create a long switch or if/else block
+        # to call each render function
         if function_name in dir(self):
             getattr(self, function_name)()
         else:
@@ -196,20 +222,23 @@ class StatusView(Screen):
         self.ids.status_grid.add_widget(label_widget)
         self.ids.status_grid.add_widget(ApplicationLogView())
         self._add_item('Application Version', RaceCaptureApp.get_app_version())
-        
+
     def render_system(self):
-        version = '.'.join(
-            [
-                str(self.status['system']['ver_major']),
-                str(self.status['system']['ver_minor']),
-                str(self.status['system']['ver_bugfix'])
-            ]
-        )
+        if 'git_info' in self.status['system']:
+            version = self.status['system']['git_info']
+        else:
+            version = '.'.join(
+                [
+                    str(self.status['system']['ver_major']),
+                    str(self.status['system']['ver_minor']),
+                    str(self.status['system']['ver_bugfix'])
+                ]
+            )
 
         self._add_item('Version', version)
         self._add_item('Serial Number', self.status['system']['serial'])
 
-        uptime = timedelta(seconds=(self.status['system']['uptime']/1000))
+        uptime = timedelta(seconds=(self.status['system']['uptime'] / 1000))
         self._add_item('Uptime', uptime)
 
     def render_gps(self):
@@ -239,6 +268,7 @@ class StatusView(Screen):
         self._add_item('IMEI', imei)
         self._add_item('Signal strength', signal_strength)
         self._add_item('Phone Number', number)
+        self._add_item('Network Status', status['state'].capitalize())
 
     def render_bt(self):
         status = self.status['bt']
@@ -246,11 +276,26 @@ class StatusView(Screen):
         init_status = self._get_enum_definition('bt', 'init', status['init'])
         self._add_item('Status', init_status)
 
+    def render_wifi(self):
+        status = self.status['wifi']
+        ap_enabled = status['ap']['active']
+        self._add_item('Access Point', 'Enabled' if ap_enabled else 'Disabled')
+        client_enabled = status['client']['active']
+        client_connected = status['client']['connected']
+        connected_msg = '' if not client_enabled else '({})'.format(
+                                                'Connected' if client_connected else 'Disconnected')
+        client_status_msg = '{} {}'.format('Enabled' if client_enabled else 'Disabled', connected_msg)
+        self._add_item('Client', client_status_msg)
+
+    def render_imu(self):
+        status = self.status['imu']
+        self._add_item('Status', 'Initialized' if status['init'] else 'Not initialized')
+
     def render_logging(self):
         status = self.status['logging']
 
         init_status = self._get_enum_definition('logging', 'status', status['status'])
-        duration = timedelta(seconds=(status['dur']/1000))
+        duration = timedelta(seconds=(status['dur'] / 1000))
 
         self._add_item('Status', init_status)
         self._add_item('Logging for', duration)
@@ -259,7 +304,7 @@ class StatusView(Screen):
         status = self.status['telemetry']
 
         init_status = self._get_enum_definition('telemetry', 'status', status['status'])
-        duration = timedelta(seconds=(status['dur']/1000))
+        duration = timedelta(seconds=(status['dur'] / 1000))
 
         self._add_item('Status', init_status)
         self._add_item('Logging for', duration)
@@ -306,11 +351,11 @@ class StatusView(Screen):
             bg_color = RAW_STATUS_BGCOLOR_2
         else:
             bg_color = RAW_STATUS_BGCOLOR_1
-            
-        label_widget.backgroundColor = bg_color
-        data_widget.backgroundColor = bg_color        
 
-    
+        label_widget.backgroundColor = bg_color
+        data_widget.backgroundColor = bg_color
+
+
     def on_status(self, instance, value):
         self._build_menu()
         self.update()
@@ -330,7 +375,7 @@ class StatusView(Screen):
         pass
 
 class ApplicationLogView(BoxLayout):
-    
+
     def copy_app_log(self):
         try:
             recent_log = ''

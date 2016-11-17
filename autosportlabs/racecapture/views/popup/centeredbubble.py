@@ -1,7 +1,29 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 from kivy.uix.bubble import Bubble, BubbleButton
 from kivy.clock import Clock
 from kivy.uix.label import Label
 from kivy.app import Builder
+from kivy.logger import Logger
+from kivy.metrics import sp
 
 Builder.load_string('''
 <WarnLabel>
@@ -35,15 +57,31 @@ class CenteredBubble(Bubble):
 
         pos = widget.center
         x = pos[0]
-        y = pos[1]
+        y = widget.top
         half_width = bubble_width / 2
         x = x - half_width
-        y = y - bubble_height - widget.height / 2
 
         window = widget.get_root_window()
         if x < 0: x = 0
         if x > window.width: x = window.width - bubble_width
         if y - bubble_height < 0: y = bubble_height
+        if y > window.height: y = window.height - bubble_height
+        self.x = x
+        self.y = y
+
+    def center_above(self, widget):
+        bubble_width = self.size[0]
+        bubble_height = self.size[1]
+        
+        pos = widget.center
+        pos = widget.to_window(*pos)
+        x = pos[0]
+        y = pos[1]
+        x = x - (bubble_width / 2)
+
+        window = widget.get_root_window()
+        if x < 0: x = 0
+        if x > window.width: x = window.width - bubble_width
         if y > window.height: y = window.height - bubble_height
         self.x = x
         self.y = y
@@ -64,7 +102,6 @@ class CenteredBubble(Bubble):
         window = widget.get_root_window()
         if x < 0: x = 0
         if x > window.width: x = window.width - bubble_width
-        if y - bubble_height < 0: y = bubble_height
         if y > window.height: y = window.height - bubble_height
         self.x = x
         self.y = y
@@ -100,4 +137,3 @@ class CenteredBubble(Bubble):
         
     def auto_dismiss_timeout(self, timeout):
         Clock.schedule_once(lambda dt: self.dismiss(), timeout)
-                 

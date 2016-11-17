@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 import kivy
 from autosportlabs.racecapture.theme.color import ColorScheme
 from kivy.uix.behaviors import ToggleButtonBehavior
@@ -23,6 +43,7 @@ from utils import *
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from iconbutton import LabelIconButton
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
+from autosportlabs.racecapture.tracks.trackmanager import TrackManager, TrackMap
 
 Builder.load_file('autosportlabs/racecapture/views/tracks/tracksview.kv')
 
@@ -65,15 +86,11 @@ class TracksUpdateStatusView(BoxLayout):
 
 
 class BaseTrackItemView(BoxLayout):
-    track = None
-    trackInfoView = None
     def __init__(self, **kwargs):
         super(BaseTrackItemView, self).__init__(**kwargs)
         track = kwargs.get('track', None)
-        trackInfoView = self.ids.trackinfo
-        trackInfoView.setTrack(track)
+        self.ids.trackinfo.setTrack(track)
         self.track = track
-        self.trackInfoView = trackInfoView
         self.register_event_type('on_track_selected')
 
     def on_track_selected(self, selected, trackId):
@@ -100,29 +117,30 @@ class TrackInfoView(BoxLayout):
         super(TrackInfoView, self).__init__(**kwargs)
 
     def setTrack(self, track):
-        if track:
-            raceTrackView = self.ids.track
-            raceTrackView.loadTrack(track)
+        if track is None:  # create a default, empty track if none provided
+            track = TrackMap()
 
-            trackLabel = self.ids.name
-            trackLabel.text = track.name
+        raceTrackView = self.ids.track
+        raceTrackView.loadTrack(track)
 
-            trackConfigLabel = self.ids.configuration
-            trackConfigLabel.text = 'Main Configuration' if not track.configuration else track.configuration
+        name = track.name
+        configuration = '' if len(track.configuration) == 0 else ' ({})'.format(track.configuration)
+        self.ids.name.text = name + configuration
 
-            lengthLabel = self.ids.length
-            lengthLabel.text = str(track.length) + ' mi.'
+        self.ids.length.text = '' if track.length == 0 else '{} mi.'.format(track.length)
 
-            flagImage = self.ids.flag
-            cc = track.country_code
-            if cc:
-                cc = cc.lower()
-                try:
-                    flagImagePath = 'resource/flags/' + str(track.country_code.lower()) + '.png'
-                    flagImage.source = flagImagePath
-                except Exception as detail:
-                    print('Error loading flag for country code: ' + str(detail))
-            self.track = track
+        flag_image = self.ids.flag
+        cc = track.country_code
+        if cc:
+            cc = cc.lower()
+            try:
+                flagImagePath = 'resource/flags/' + str(track.country_code.lower()) + '.png'
+                flag_image.source = flagImagePath
+            except Exception as detail:
+                Logger.warn('Error loading flag for country code: {}'.format(detail))
+        else:
+            flag_image.source = 'resource/flags/blank.png'
+        self.track = track
 
 class TracksView(Screen):
     loaded = False
@@ -152,24 +170,26 @@ class TracksView(Screen):
         self.ids.browser.on_update_check()
 
 class TracksBrowser(BoxLayout):
-    multi_select = BooleanProperty(True)
-    trackmap = None
-    trackHeight = NumericProperty(dp(200))
-    trackManager = None
-    tracksUpdatePopup = None
-    initialized = False
-    tracksGrid = None
-    selectedTrackIds = None
-    tracks_loading = False
-    last_scroll_y = 1.0
     INITIAL_DISPLAY_LIMIT = 10
     LAZY_DISPLAY_CHUNK_COUNT = 1
     LOOK_AHEAD_TRACKS = 10
     TRACK_HEIGHT_PADDING = dp(10)
 
+    multi_select = BooleanProperty(True)
+    trackHeight = NumericProperty(dp(200))
+    current_location = ObjectProperty(allownone=True)
+
     def __init__(self, **kwargs):
         super(TracksBrowser, self).__init__(**kwargs)
         self.register_event_type('on_track_selected')
+        self.current_location = kwargs.get('current_location')
+        self.trackmap = None
+        self.trackManager = None
+        self.tracksUpdatePopup = None
+        self.initialized = False
+        self.tracksGrid = None
+        self.tracks_loading = False
+        self.last_scroll_y = 1.0
         self.selectedTrackIds = set()
 
     def on_track_selected(self, value):
@@ -244,14 +264,20 @@ class TracksBrowser(BoxLayout):
         self.tracksUpdatePopup = popup
 
     def on_update_check_success(self):
-        self.tracksUpdatePopup.content.on_message('Processing...')
-        Clock.schedule_once(lambda dt: self.refreshTrackList())
+        def success():
+            # do this in the UI thread
+            self.tracksUpdatePopup.content.on_message('Processing...')
+            Clock.schedule_once(lambda dt: self.refreshTrackList())
+        Clock.schedule_once(lambda dt: success())
+        
 
     def on_update_check_error(self, details):
-        self.dismissPopups()
-        Clock.schedule_once(lambda dt: self.refreshTrackList())
-        print('Error updating: ' + str(details))
-        alertPopup('Error Updating', 'There was an error updating the track list.\n\nPlease check your network connection and try again')
+        def error(details):
+            self.dismissPopups(details)
+            Clock.schedule_once(lambda dt: self.refreshTrackList())
+            Logger.error('TracksBrowser: Error updating: {}'.format(details))
+            alertPopup('Error Updating', 'There was an error updating the track list.\n\nPlease check your network connection and try again')
+        Clock.schedule_once(lambda dt: error(details))
 
     def on_update_check(self):
         self.setViewDisabled(True)
@@ -277,11 +303,14 @@ class TracksBrowser(BoxLayout):
 
     def refreshTrackList(self):
         region = self.ids.regions.text
-        foundIds = self.trackManager.filter_tracks_by_region(region)
+        if region == 'Nearby':
+            found_ids = [t.track_id for t in self._get_nearby_tracks()]
+        else:
+            found_ids = self.trackManager.filter_tracks_by_region(region)
         search = self.ids.namefilter.text
         if search != None and len(search) > 0:
-            foundIds = self.trackManager.filter_tracks_by_name(search, foundIds)
-        self.initTracksList(foundIds)
+            found_ids = self.trackManager.filter_tracks_by_name(search, found_ids)
+        self.initTracksList(found_ids)
 
     def initTracksList(self, track_ids=None):
         self.setViewDisabled(True)
@@ -309,16 +338,29 @@ class TracksBrowser(BoxLayout):
             self.addNextTrack(0, track_ids)
             self.tracks_loading = True
 
+    def _get_nearby_tracks(self):
+        if self.current_location is not None:
+            return self.trackManager.find_nearby_tracks(self.current_location)
+        else:
+            return []
+        
     def initRegionsList(self):
         regions = self.trackManager.regions
-        regionsSpinner = self.ids.regions
+        regions_spinner = self.ids.regions
         values = []
+        # if we're specifying our current location, then the first option is to
+        # show nearby tracks
+        if len(self._get_nearby_tracks()) > 0:
+            values.append('Nearby')
+
         for region in regions:
             name = region.name
-            if regionsSpinner.text == '':
-                regionsSpinner.text = name
+            if regions_spinner.text == '':
+                regions_spinner.text = name
             values.append(name)
-        regionsSpinner.values = values
+
+        regions_spinner.values = values
+        regions_spinner.text = values[0]
 
     def track_selected(self, instance, selected, trackId):
         if selected:

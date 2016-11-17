@@ -15,8 +15,8 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
 # See the GNU General Public License for more details. You should
-#have received a copy of the GNU General Public License along with
-#this code. If not, see <http://www.gnu.org/licenses/>.
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
 <ChannelValueView>:
     canvas.before:
         Color:
@@ -27,16 +27,17 @@
 
     orientation: 'horizontal'
     FieldLabel:
-        size_hint_x: 0.3
-        id: session
-    FieldLabel:
-        size_hint_x: 0.1
-        id: lap
-    FieldLabel:
-        size_hint_x: 0.3
+        size_hint_x: 0.4
         id: channel
+        text: root.channel
+        halign: 'right'
+    FieldLabel:
+        size_hint_x: 0.4
+        id: lap
+        halign: 'right'
+        text: ' {} :: {}  '.format(root.session, root.lap)
     BarGraphGauge:
-        size_hint_x: 0.3
+        size_hint_x: 0.20
         id: value
 
 <ChannelValuesView>:

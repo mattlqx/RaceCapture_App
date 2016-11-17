@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 import kivy
 kivy.require('1.9.1')
 
@@ -16,16 +36,18 @@ from autosportlabs.racecapture.views.configuration.baseconfigview import BaseMul
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.racecapture.views.util.alertview import alertPopup
 from autosportlabs.racecapture.views.popup.centeredbubble import CenteredBubble, WarnLabel
-from kivy.metrics import dp
+from kivy.metrics import sp
 
 ANALOG_CHANNELS_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/analogchannelsview.kv'
-        
+
+
 class AnalogChannelsView(BaseMultiChannelConfigView):
+    Builder.load_file(ANALOG_CHANNELS_VIEW_KV)
+
     def __init__(self, **kwargs):
-        Builder.load_file(ANALOG_CHANNELS_VIEW_KV)
         super(AnalogChannelsView, self).__init__(**kwargs)
         self.channel_title = 'Analog '
-        self.accordion_item_height = dp(80)
+        self.accordion_item_height = sp(300)
         
             
     def channel_builder(self, index, max_sample_rate):
@@ -205,10 +227,10 @@ class AnalogScalingMapEditor(BoxLayout):
             warn.add_widget(WarnLabel(text=str(e)))
             warn.auto_dismiss_timeout(WARN_DISMISS_TIMEOUT)
             warn.background_color = (1, 0, 0, 1.0)
-            warn.size = (dp(200), dp(50))
+            warn.size = (sp(200), sp(50))
             warn.size_hint = (None,None)
             self.get_root_window().add_widget(warn)
-            warn.center_on(instance)
+            warn.center_above(instance)
             original_value = self.scaling_map.getVolts(mapBin)
             self.set_volts_cell(instance, original_value)
             Clock.schedule_once(lambda dt: self._refocus(instance))

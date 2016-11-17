@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 #:kivy 1.9.1
 
 <LinkedTreeViewLabel>:
@@ -22,7 +42,7 @@
                     indent_level: dp(0)
                     indent_start: dp(5)
             BoxLayout:
-                padding: (dp(5), dp(5))           
+                padding: (dp(5), dp(0))           
                 size_hint_y: 0.25
                 BoxLayout:
                     orientation: 'vertical'
@@ -35,7 +55,7 @@
                             id: open
                             title: 'Open'
                             icon_size: self.height * 0.5
-                            title_font_size: self.height * 0.4
+                            title_font_size: self.height * 0.35
                             icon: '\357\204\225'
                             on_press: root.openConfig()
                                 
@@ -43,7 +63,7 @@
                             id: save
                             title: 'Save'
                             icon_size: self.height * 0.5
-                            title_font_size: self.height * 0.4
+                            title_font_size: self.height * 0.35
                             icon: '\357\203\207'
                             on_press: root.saveConfig()
                     BoxLayout:
@@ -56,7 +76,7 @@
                             id: read
                             title: 'Read'
                             icon_size: self.height * 0.5
-                            title_font_size: self.height * 0.4                 
+                            title_font_size: self.height * 0.35                 
                             icon: '\357\202\223'
                             on_press: root.readConfig()
         
@@ -64,7 +84,7 @@
                             id: write
                             title: 'Write'
                             icon_size: self.height * 0.5
-                            title_font_size: self.height * 0.4
+                            title_font_size: self.height * 0.35
                             icon: '\357\200\231'
                             on_press: root.writeConfig()
                             disabled: True
@@ -72,7 +92,6 @@
         BoxLayout:
             size_hint_x: 0.8
             padding: [sp(10), sp(10), 0, 0]
-            
             id: content
 			FieldLabel:
 				font_size: dp(50)

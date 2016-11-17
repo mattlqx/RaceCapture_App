@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 import traceback
 import kivy
 kivy.require('1.9.1')
@@ -15,9 +35,9 @@ LAPSTATS_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/lapstatsvi
 class LapStatsView(BaseConfigView):
     lap_config = None
     gps_config = None
-    
+    Builder.load_file(LAPSTATS_VIEW_KV)
+
     def __init__(self, **kwargs):
-        Builder.load_file(LAPSTATS_VIEW_KV)            
         super(LapStatsView, self).__init__(**kwargs)
         self.register_event_type('on_config_updated')
         self.ids.lapstats.setControl(SettingsSwitch())
@@ -63,4 +83,3 @@ class LapStatsView(BaseConfigView):
         self.gps_config = rcp_cfg.gpsConfig
         self.lap_config = lap_config
                  
-        

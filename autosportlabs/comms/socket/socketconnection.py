@@ -21,16 +21,24 @@
 from kivy.logger import Logger
 import socket
 import json
+import errno
 
-PORT = 7223
-READ_TIMEOUT = 1
+READ_TIMEOUT = 2
 SCAN_TIMEOUT = 3
+
+class InvalidAddressException(Exception):
+
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
 
 
 class SocketConnection(object):
-
+    MSG_RECEIVE_BUFFER_SIZE = 32
+    BEACON_RECEIVE_BUFFER_SIZE = 4096
+    PORT = 7223
     def __init__(self):
         self.socket = None
+        self._data = ''
 
     def get_available_devices(self):
         """
@@ -43,11 +51,11 @@ class SocketConnection(object):
         sock.settimeout(SCAN_TIMEOUT)
 
         # Bind the socket to the port
-        server_address = ('0.0.0.0', PORT)
+        server_address = ('', SocketConnection.PORT)
         sock.bind(server_address)
 
         try:
-            data, address = sock.recvfrom(4096)
+            data, address = sock.recvfrom(SocketConnection.BEACON_RECEIVE_BUFFER_SIZE)
 
             if data:
                 Logger.info("SocketConnection: got UDP data {}".format(data))
@@ -73,21 +81,30 @@ class SocketConnection(object):
         :param address: IP address to connect to
         :return: None
         """
+        # Check if we've been given a valid IP
+
+        try:
+            socket.inet_aton(address)
+        except socket.error:
+            raise InvalidAddressException("{} is not a valid IP address".format(address))
+
         # Connect to ip address here
-        rc_address = (address, 7223)
+        rc_address = (address, SocketConnection.PORT)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect(rc_address)
         self.socket.settimeout(READ_TIMEOUT)
+        self.socket.connect(rc_address)
 
     def close(self):
         """
         Closes the socket connection
         :return: None
         """
-        self.socket.close()
+        if self.socket is not None:
+            self.socket.close()
         self.socket = None
+        self._data = ''
 
-    def read(self, keep_reading):
+    def read_line(self, keep_reading):
         """
         Reads data from the socket. Will continue to read until either "\r\n" is found in the data read from the
         socket or keep_reading.is_set() returns false
@@ -95,25 +112,43 @@ class SocketConnection(object):
         :type keep_reading: threading.Event
         :return: String or None
         """
-        msg = ''
-        Logger.info("SocketConnection: reading...")
+
+        timeout_count = 0
+        max_timeouts = 3
 
         while keep_reading.is_set():
             try:
-                data = self.socket.recv(4096)
+                data = self.socket.recv(SocketConnection.MSG_RECEIVE_BUFFER_SIZE)
+
                 if data == '':
                     return None
 
-                msg += data
+                self._data += data
 
-                if msg[-2:] == '\r\n':
-                    if msg != '':
-                        Logger.info("SocketConnection: returning data {}".format(msg))
-                        return msg
-                    else:
-                        return None
+                if '\r\n' in self._data:
+                    lines = self._data.split('\r\n', 1)
+                    msg = lines[0]
+                    self._data = lines[1]
+
+                    Logger.debug("SocketConnection: returning data {}".format(msg))
+                    return msg
+
             except socket.timeout:
-                pass
+                Logger.error("SocketConnection: timeout")
+                timeout_count += 1
+
+                if timeout_count > max_timeouts:
+                    Logger.error("SocketConnection: max timeouts when reading, closing")
+                    self.close()
+                    raise
+                else:
+                    pass
+            except socket.error, e:
+                if e.errno == errno.ECONNRESET:
+                    Logger.error("SocketConnection: connection reset: {}".format(e))
+                    self.close()
+                    raise
+                Logger.error("SocketConnection: error: {}".format(e))
 
     def write(self, data):
         """
@@ -126,6 +161,6 @@ class SocketConnection(object):
 
     def flushInput(self):
         pass
-    
+
     def flushOutput(self):
         pass

@@ -1,8 +1,29 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 from kivy.logger import Logger
 from kivy.properties import ObjectProperty, BooleanProperty, StringProperty
 from kivy.event import EventDispatcher
 from kivy.clock import Clock
 from time import sleep
+from copy import copy
 import threading
 import asynchat, asyncore
 import json
@@ -27,6 +48,7 @@ class TelemetryManager(EventDispatcher):
     device_id = StringProperty(None)
     cell_enabled = BooleanProperty(False)
     telemetry_enabled = BooleanProperty(False)
+    data_connected = BooleanProperty(False)
 
     def __init__(self, data_bus, device_id=None, host=None, port=None, **kwargs):
         self.host = 'telemetry.podium.live'
@@ -71,14 +93,15 @@ class TelemetryManager(EventDispatcher):
     # Event handler for when meta (channel list) changes
     def _on_meta(self, channel_metas):
         Logger.debug("TelemetryManager: Got meta")
-        self.channels = channel_metas
+        # Isolate the data from the calling thread by making a copy
+        channel_metas_copy = copy(channel_metas)
+        self.channels = channel_metas_copy
 
     # Event handler for when self.channels changes, don't restart connection b/c
     # the TelemetryConnection object will handle new channels
     def on_channels(self, instance, value):
-        Logger.debug("TelemetryManager: Got channels")
-
-        if self.telemetry_enabled:
+        if self.telemetry_enabled and value is not None:
+            Logger.info("TelemetryManager: Got channels")
             self.start()
 
     # Event handler for when self.device_id changes, need to restart connection
@@ -98,7 +121,7 @@ class TelemetryManager(EventDispatcher):
             self.start()
 
     def on_cell_enabled(self, instance, value):
-        Logger.debug("TelemetryManager: on_cell_enabled: " + str(value))
+        Logger.info("TelemetryManager: on_cell_enabled: " + str(value))
         if value:
             self._user_stopped()
         else:
@@ -106,7 +129,14 @@ class TelemetryManager(EventDispatcher):
             self.start()
 
     def on_telemetry_enabled(self, instance, value):
-        Logger.debug("TelemetryManager: on_telemetry_enabled: " + str(value))
+        Logger.info("TelemetryManager: on_telemetry_enabled: " + str(value))
+        if value:
+            self.start()
+        else:
+            self._user_stopped()
+
+    def on_data_connected(self, instance, value):
+        Logger.info('TelemetryManager: on_data_connected: {}'.format(value))
         if value:
             self.start()
         else:
@@ -122,12 +152,24 @@ class TelemetryManager(EventDispatcher):
         self.cell_enabled = config.connectivityConfig.cellConfig.cellEnabled
         self.device_id = config.connectivityConfig.telemetryConfig.deviceId
 
+    @property
+    def _should_connect(self):
+        '''
+        checks if the conditions are correct for initiating a telemetry connection
+        :return True if a connection should be made
+        '''
+        return self.data_connected and\
+            self.telemetry_enabled and\
+            not self.cell_enabled and\
+            self.device_id != "" and\
+            self.channels is not None
+
     # Starts connection, checks to see if requirements are met
     def start(self):
         Logger.info("TelemetryManager: start() telemetry_enabled: " + str(self.telemetry_enabled) + " cell_enabled: " + str(self.cell_enabled))
         self._auth_failed = False
 
-        if self.telemetry_enabled and not self.cell_enabled and self.device_id != "" and self.channels is not None:
+        if self._should_connect:
             if self._connection_process and not self._connection_process.is_alive():
                 Logger.info("TelemetryManager: connection process is dead")
                 self._connect()
@@ -138,6 +180,8 @@ class TelemetryManager(EventDispatcher):
                 else:
                     Logger.warning('TelemetryManager: Device id, channels missing or RCP cell enabled '
                                    'when attempting to start. Aborting.')
+        else:
+            Logger.warning('TelemetryManager: self._should_connect is false, not connecting')
 
     # Creates new TelemetryConnection in separate thread
     def _connect(self):
@@ -165,7 +209,6 @@ class TelemetryManager(EventDispatcher):
 
     def _user_stopped(self):
         self.dispatch('on_disconnected', '')
-        self.channels = None
         self.stop()
 
     # Status function that receives events from TelemetryConnection thread
@@ -187,7 +230,7 @@ class TelemetryManager(EventDispatcher):
             if not self._auth_failed:
                 self.dispatch('on_disconnected', msg)
 
-            if self.telemetry_enabled and not self.cell_enabled and not self._auth_failed:
+            if self._should_connect and not self._auth_failed:
                 wait = self.RETRY_WAIT_START if self._retry_count == 0 else \
                     min(self.RETRY_WAIT_MAX_TIME, (math.pow(self.RETRY_MULTIPLIER, self._retry_count) *
                                                    self.RETRY_WAIT_START))
@@ -251,7 +294,7 @@ class TelemetryConnection(asynchat.async_chat):
         self._connected = False
         self._connecting = False
         self.authorized = False
-        self.meta_sent = False
+        self._should_send_meta = False
 
         self._channel_metas = channel_metas
         self._sample_data = None
@@ -268,15 +311,19 @@ class TelemetryConnection(asynchat.async_chat):
 
     # Event handler for when RCP sends data to app
     def _on_sample(self, sample):
-        self._sample_data = sample
+        # isolate the data from the calling thread by making a copy
+        sample_copy = copy(sample)
+        # variable assignment in python is atomic, and therefore thread safe
+        self._sample_data = sample_copy
 
     # Event handler for when RCP's channel list changes
     def _on_meta(self, meta):
         Logger.info("TelemetryConnection: got new meta")
         if self.authorized:
             try:
-                self._channel_metas = meta
-                self._send_meta()
+                meta_copy = copy(meta)
+                self._channel_metas = meta_copy
+                self._should_send_meta = True
             except Exception as e:
                 Logger.warn("TelemetryConnection: Failed to send meta: {}".format(e))
 
@@ -289,8 +336,12 @@ class TelemetryConnection(asynchat.async_chat):
 
     def _sample_worker(self):
         Logger.info('TelemetryConnection: sample worker starting')
+        self._should_send_meta = True
         while self._running.is_set():
             try:
+                if self._should_send_meta == True:
+                    self._send_meta()
+                    self._should_send_meta = False
                 self._send_sample()
                 sleep(self.SAMPLE_INTERVAL)
             except Exception as e:
@@ -444,16 +495,22 @@ class TelemetryConnection(asynchat.async_chat):
         msg = {"s":{"meta":[]}}
         meta = []
 
-        with self._channel_metas as cm:
-            for channel_config in cm.itervalues():
-                channel = {
-                    "nm": channel_config.name,
-                    "ut": channel_config.units,
-                    "sr": channel_config.sampleRate,
-                    "min": channel_config.min,
-                    "max": channel_config.max
-                }
-                meta.append(channel)
+        # assign local variable to make thread safe
+        # class member variable may be changed
+        # by other thread.
+        # DO NOT REMOVE
+        cm = self._channel_metas
+        # DO NOT REMOVE
+
+        for channel_config in cm.itervalues():
+            channel = {
+                "nm": channel_config.name,
+                "ut": channel_config.units,
+                "sr": channel_config.sampleRate,
+                "min": channel_config.min,
+                "max": channel_config.max
+            }
+            meta.append(channel)
 
         msg["s"]["meta"] = meta
         msg_json = json.dumps(msg)
@@ -467,22 +524,30 @@ class TelemetryConnection(asynchat.async_chat):
             channel_bit_position = 0
             bitmask_index = 0
             data = []
-            with self._sample_data as sd, self._channel_metas as cm:
-                bitmasks_needed = int(max(0, math.floor((len(cm) - 1) / 32)) + 1)
-                for x in range(0, bitmasks_needed):
-                    bitmasks.append(0)
 
-                for channel_name, value in cm.iteritems():
-                    if channel_bit_position > 31:
-                        bitmask_index += 1
-                        channel_bit_position = 0
+            # assign local variables to make thread safe
+            # class member variables may be changed
+            # by other thread.
+            # DO NOT REMOVE
+            sd = self._sample_data
+            cm = self._channel_metas
+            # DO NOT REMOVE
 
-                    value = sd.get(channel_name)
-                    if value is not None:
-                        bitmasks[bitmask_index] = bitmasks[bitmask_index] | (1 << channel_bit_position)
-                        data.append(value)
+            bitmasks_needed = int(max(0, math.floor((len(cm) - 1) / 32)) + 1)
+            for x in range(0, bitmasks_needed):
+                bitmasks.append(0)
 
-                    channel_bit_position += 1
+            for channel_name, value in cm.iteritems():
+                if channel_bit_position > 31:
+                    bitmask_index += 1
+                    channel_bit_position = 0
+
+                value = sd.get(channel_name)
+                if value is not None:
+                    bitmasks[bitmask_index] = bitmasks[bitmask_index] | (1 << channel_bit_position)
+                    data.append(value)
+
+                channel_bit_position += 1
 
             for bitmask in bitmasks:
                 data.append(bitmask)

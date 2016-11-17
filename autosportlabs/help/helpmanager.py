@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 import kivy
 kivy.require('1.9.1')
 from autosportlabs.racecapture.views.popup.centeredbubble import CenteredBubble
@@ -6,7 +26,7 @@ from __builtin__ import staticmethod
 from kivy.properties import StringProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.logger import Logger
-from kivy.metrics import sp
+from kivy.metrics import dp
 from kivy.app import Builder
 import json
 import os
@@ -14,39 +34,46 @@ import traceback
 
 __all__ = ('check_help_popup_popup')
 
-HELP_INFO_LAYOUT='''
+HELP_INFO_LAYOUT = '''
 <HelpInfo>:
-    orientation: 'vertical'
     canvas.before:
         Color:
-            rgba: ColorScheme.get_dark_background()
+            rgba: ColorScheme.get_shadow()
         Rectangle:
             pos: self.pos
             size: self.size
-    padding: (sp(10), sp(10))
-    Label:
-        text: root.title_text
-        font_name: 'resource/fonts/ASL_light.ttf'
-        font_size: self.height * 0.8
-        size_hint_y: 0.15
-    Label:
-        size_hint_y: 0.65
-        font_name: 'resource/fonts/ASL_light.ttf'
-        text: root.help_text
-        #size_hint_y: None
-        text_size: self.width, None
-        height: self.texture_size[1]
-    AnchorLayout:
-        size_hint_y: 0.2
-        LabelIconButton:
-            id: ok
-            title: 'Got It'
-            tile_color: ColorScheme.get_secondary_text()
-            icon_size: self.height * 0.5
-            title_font_size: self.height * 0.7
-            icon: u'\uf00c'
-            size_hint_x: 0.25
-            on_press: root.on_ok()
+    padding: (dp(0.5), dp(0.5), dp(3), dp(3))
+    BoxLayout:
+        orientation: 'vertical'
+        canvas.before:
+            Color:
+                rgba: ColorScheme.get_dark_background()
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        padding: (dp(10), dp(10))
+        Label:
+            text: root.title_text
+            font_name: 'resource/fonts/ASL_light.ttf'
+            font_size: self.height * 0.8
+            size_hint_y: 0.15
+        Label:
+            size_hint_y: 0.65
+            font_name: 'resource/fonts/ASL_light.ttf'
+            text: root.help_text
+            halign: 'center'
+            text_size: self.width, None
+            height: self.texture_size[1]
+        AnchorLayout:
+            size_hint_y: 0.2
+            LabelIconButton:
+                id: ok
+                title: 'Got It'
+                icon_size: self.height * 0.5
+                title_font_size: self.height * 0.7
+                icon: u'\uf00c'
+                size_hint_x: 0.25
+                on_press: root.on_ok()
 
 <HelpBubble>:
     arrow_image: 'autosportlabs/help/help_arrow.png'
@@ -54,7 +81,7 @@ HELP_INFO_LAYOUT='''
 
 class HelpBubble(CenteredBubble):
     pass
-    
+
 class HelpInfo(BoxLayout):
     '''
     Displays a help popup message with a title and description
@@ -76,16 +103,16 @@ class HelpInfo(BoxLayout):
     '''
     Builder.load_string(HELP_INFO_LAYOUT)
     HELP_POPUP_TIMEOUT = 30.01
-    HELP_POPUP_SIZE = (sp(500), sp(200))
+    HELP_POPUP_SIZE = (dp(500), dp(200))
     settings = None
     loaded = False
     help_info = {}
     title_text = StringProperty('')
     help_text = StringProperty('')
-    
+
     def __init__(self, key, **kwargs):
-        super(HelpInfo,self).__init__(**kwargs)
-        self._key = key 
+        super(HelpInfo, self).__init__(**kwargs)
+        self._key = key
 
     @staticmethod
     def get_helptext(key):
@@ -98,7 +125,7 @@ class HelpInfo(BoxLayout):
         if not helptext:
             Logger.error('HelpInfo: Could not load help for key {}'.format(key))
         return helptext
-        
+
     @staticmethod
     def help_popup(key, widget, arrow_pos='bottom_mid'):
         '''
@@ -116,9 +143,9 @@ class HelpInfo(BoxLayout):
                 helptext = HelpInfo.get_helptext(key)
                 if helptext:
                     content = HelpInfo(key, title_text=helptext['title'], help_text=helptext['text'])
-                    help_popup = HelpBubble(arrow_pos = arrow_pos,
+                    help_popup = HelpBubble(arrow_pos=arrow_pos,
                                             size=HelpInfo.HELP_POPUP_SIZE,
-                                            size_hint = (None,None))
+                                            size_hint=(None, None))
                     help_popup.add_widget(content)
                     help_popup.auto_dismiss_timeout(HelpInfo.HELP_POPUP_TIMEOUT)
                     widget.get_root_window().add_widget(help_popup)

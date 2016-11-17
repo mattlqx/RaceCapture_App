@@ -13,7 +13,7 @@ package.domain = com.autosportlabs
 source.dir = .
 
 # (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas,ttf,json,svg,cfg,obj,mtl,glsl,zip
+source.include_exts = py,png,jpg,kv,atlas,ttf,json,svg,cfg,obj,mtl,glsl,zip,sql
 
 # (list) Source files to exclude (let empty to not exclude anything)
 #source.exclude_exts = spec
@@ -33,7 +33,7 @@ version.filename = %(source.dir)s/main.py
 
 # (list) Application requirements
 # comma seperated e.g. requirements = sqlite3, kivy, pygments
-requirements = kivy==1.9.1, sqlite3, openssl, pygments, raven
+requirements = kivy==1.9.1, sqlite3, openssl, pygments, raven, plyer, sqlalchemy
 
 # (list) Garden requirements
 #garden_requirements =
@@ -56,7 +56,7 @@ fullscreen = 1
 #
 
 # (list) Permissions
-android.permissions = INTERNET, BLUETOOTH, BLUETOOTH_ADMIN , WRITE_EXTERNAL_STORAGE, WAKE_LOCK
+android.permissions = INTERNET, BLUETOOTH, BLUETOOTH_ADMIN , WRITE_EXTERNAL_STORAGE, WAKE_LOCK, ACCESS_FINE_LOCATION, CHANGE_WIFI_STATE, CHANGE_NETWORK_STATE, ACCESS_WIFI_STATE, ACCESS_NETWORK_STATE
 
 # (int) Android API to use
 #android.api = 14

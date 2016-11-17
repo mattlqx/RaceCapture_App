@@ -15,8 +15,9 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
 # See the GNU General Public License for more details. You should
-#have received a copy of the GNU General Public License along with
-#this code. If not, see <http://www.gnu.org/licenses/>.
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 import kivy
 kivy.require('1.9.1')
 from kivy.logger import Logger
@@ -24,7 +25,7 @@ from kivy.graphics import Color
 from kivy.app import Builder
 from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
-from kivy.properties import ObjectProperty
+from kivy.properties import ObjectProperty, StringProperty
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.racecapture.datastore import DataStore, Filter
 from autosportlabs.racecapture.views.analysis.markerevent import SourceRef
@@ -32,39 +33,16 @@ from autosportlabs.racecapture.views.analysis.analysiswidget import ChannelAnaly
 from autosportlabs.uix.gauge.bargraphgauge import BarGraphGauge
 
 Builder.load_file('autosportlabs/racecapture/views/analysis/channelvaluesview.kv')
-    
+
 class ChannelValueView(BoxLayout):
 
+    session = StringProperty('')
+    lap = StringProperty('')
+    channel = StringProperty('')
     def __init__(self, **kwargs):
         super(ChannelValueView, self).__init__(**kwargs)
-        self.session_view = self.ids.session
-        self.lap_view = self.ids.lap
         self.channel_view = self.ids.channel
         self.value_view = self.ids.value
-
-    @property
-    def session(self):
-        return self.session_view.text
-
-    @session.setter
-    def session(self, value):
-        self.session_view.text = str(value)
-
-    @property
-    def lap(self):
-        return self.lap_view.text
-
-    @lap.setter
-    def lap(self, value):
-        self.lap_view.text = str(int(value))
-
-    @property
-    def channel(self):
-        return self.channel_view.text
-
-    @channel.setter
-    def channel(self, value):
-        self.channel_view.text = value
 
     @property
     def value(self):
@@ -72,7 +50,11 @@ class ChannelValueView(BoxLayout):
 
     @value.setter
     def value(self, value):
-        self.value_view.value = float(value)
+        try:
+            value = float(value)
+            self.value_view.value = value
+        except TypeError:
+            self.value_view.value = None
 
     @property
     def color(self):
@@ -122,7 +104,7 @@ class ChannelValuesView(ChannelAnalysisWidget):
                 except IndexError:
                     value = values[len(values) - 1]
                 widget.value = value
-                
+
 
     def _refresh_channels(self):
         channels_grid = self.ids.channel_values
@@ -133,19 +115,19 @@ class ChannelValuesView(ChannelAnalysisWidget):
                 view = ChannelValueView()
                 view.channel = channel
                 view.color = self.color_sequence.get_color(key)
-                view.lap = channel_data.source.lap
+                view.lap = str(channel_data.source.lap)
                 session_id = channel_data.source.session
                 session = self.datastore.get_session_by_id(session_id, self.sessions)
                 view.session = session.name
                 view.minval = channel_data.min
                 view.maxval = channel_data.max
                 self._channel_stat_widgets[key] = view
-                
+
         channels_grid.clear_widgets()
         for key in iter(sorted(self._channel_stat_widgets.iterkeys())):
             channels_grid.add_widget(self._channel_stat_widgets[key])
 
-    def _add_channels_results(self, channels, channel_data):
+    def _add_channels_results_distance(self, channels, channel_data):
         for channel in channels:
             self._add_channel_results(channel, channel_data)
 
@@ -158,24 +140,30 @@ class ChannelValuesView(ChannelAnalysisWidget):
         source_key = str(channel_data_values.source)
         channels = self.channel_stats.get(source_key)
         if not channels:
-            channels = {} #looks like we're adding it for the first time for this source
+            channels = {}  # looks like we're adding it for the first time for this source
             self.channel_stats[source_key] = channels
         channels[channel_data_values.channel] = channel_data_values
         self._refresh_channels()
 
-    def add_channels(self, channels, source_ref):
+    def _add_unselected_channels(self, channels, source_ref):
         def get_results(results):
-            Clock.schedule_once(lambda dt: self._add_channels_results(channels, results))
+            Clock.schedule_once(lambda dt: self._add_channels_results_distance(channels, results))
 
         self.datastore.get_channel_data(source_ref, channels, get_results)
-    
+
     def refresh_view(self):
+        """
+        Refresh the current view
+        """
         self._refresh_channels()
-        
+
     def remove_channel(self, channel, source_ref):
         source_key = str(source_ref)
         channels = self.channel_stats.get(source_key)
         channels.pop(channel, None)
 
-                
-                
+
+    def on_touch_down(self, touch):
+        super(ChannelValuesView, self).on_touch_down(touch)
+        return False
+

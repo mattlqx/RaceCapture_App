@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 import io
 import json
 import traceback
@@ -6,6 +26,8 @@ from time import sleep
 from threading import Thread, RLock, Event
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.comms.commscommon import PortNotOpenException, CommsErrorException
+from autosportlabs.util.threadutil import safe_thread_exit, ThreadSafeDict
+from autosportlabs.racecapture.config.rcpconfig import Capabilities
 from functools import partial
 from kivy.clock import Clock
 from kivy.logger import Logger
@@ -66,15 +88,44 @@ class RcpApi:
     _auto_detect_busy = Event()
 
     COMMAND_SEQUENCE_TIMEOUT = 1.0
+    COMMAND_DELIMETER = "\r\n"
 
-    def __init__(self, settings, on_disconnect, **kwargs):
+    def __init__(self, settings, on_disconnect=None, on_connect=None, **kwargs):
         self.comms = kwargs.get('comms', self.comms)
         self._running = Event()
         self._running.clear()
         self._enable_autodetect = Event()
         self._enable_autodetect.set()
         self._settings = settings
-        self._disconnect_callback = on_disconnect
+        self._disconnect_listeners = []
+        self._connect_listeners = []
+        self.connected_version = None
+
+        if on_disconnect:
+            self.add_disconnect_listener(on_disconnect)
+
+        if on_connect:
+            self.add_connect_listener(on_connect)
+
+    @property
+    def connected(self):
+        '''
+        Returns True if we are currently connected to a device
+        :returns True if connected
+        '''
+        return self.connected_version is not None
+
+    def add_disconnect_listener(self, func):
+        self._disconnect_listeners.append(func)
+
+    def remove_disconnect_listener(self, func):
+        self._disconnect_listeners.remove(func)
+
+    def add_connect_listener(self, func):
+        self._connect_listeners.append(func)
+
+    def remove_connect_listener(self, func):
+        self._connect_listeners.remove(func)
 
     def enable_autorecover(self):
         Logger.debug("RCPAPI: Enabling auto recover")
@@ -85,21 +136,30 @@ class RcpApi:
         self._enable_autodetect.clear()
 
     def recover_connection(self):
-        if self._disconnect_callback:
-            self._disconnect_callback()
+        self.connected_version = None
+        self._notify_disconnect_listeners()
 
         if self._enable_autodetect.is_set():
             Logger.debug("RCPAPI: attempting to recover connection")
             self.run_auto_detect()
 
+    def _notify_disconnect_listeners(self):
+        for listener in self._disconnect_listeners:
+            listener()
+
+    def _notify_connect_listeners(self):
+        for listener in self._connect_listeners:
+            listener()
+
     def _start_message_rx_worker(self):
         self._running.set()
         t = Thread(target=self.msg_rx_worker)
+        t.daemon = True
         t.start()
         self._msg_rx_thread = t
 
     def _shutdown_workers(self):
-        Logger.info('RCPAPI: Stopping msg rx worker')
+        Logger.debug('RCPAPI: Stopping msg rx worker')
         self._running.clear()
         # this allows the auto detect worker to fall through if needed
         self._auto_detect_event.set()
@@ -110,9 +170,9 @@ class RcpApi:
 
     def _start_cmd_sequence_worker(self):
         t = Thread(target=self.cmd_sequence_worker)
+        t.daemon = True
         t.start()
         self._cmd_sequence_thread = t
-
 
     def init_api(self, comms):
         self.comms = comms
@@ -126,18 +186,20 @@ class RcpApi:
         self.shutdown_comms()
 
     def shutdown_comms(self):
-        Logger.info('RCPAPI: shutting down comms')
+        Logger.debug('RCPAPI: shutting down comms')
         try:
             self.comms.close()
             self.comms.device = None
-        except Exception:
-            Logger.warn('RCPAPI: Message rx worker exception: {} | {}'.format(msg, str(Exception)))
+        except Exception as e:
+            Logger.warn('RCPAPI: Shutdown rx worker exception: {}'.format(e))
             Logger.info(traceback.format_exc())
 
     def detect_win(self, version_info):
         self.level_2_retries = DEFAULT_LEVEL2_RETRIES
         self.msg_rx_timeout = DEFAULT_MSG_RX_TIMEOUT
         if self.detect_win_callback: self.detect_win_callback(version_info)
+        self.connected_version = version_info
+        self._notify_connect_listeners()
 
     def run_auto_detect(self):
         self.level_2_retries = AUTODETECT_LEVEL2_RETRIES
@@ -169,8 +231,12 @@ class RcpApi:
                 if msg:
                     # clean incoming string, and drop illegal characters
                     msg = unicode(msg, errors='ignore')
-                    Logger.debug('RCPAPI: Rx: ' + str(msg))
                     msgJson = json.loads(msg, strict=False)
+
+                    if 's' in msgJson:
+                        Logger.trace('RCPAPI: Rx: ' + str(msg))
+                    else:
+                        Logger.debug('RCPAPI: Rx: ' + str(msg))
                     Clock.schedule_once(lambda dt: self.on_rx(True))
                     error_count = 0
                     for messageName in msgJson.keys():
@@ -192,18 +258,20 @@ class RcpApi:
                 Logger.debug("RCPAPI: Port not open...")
                 msg = ''
                 sleep(1.0)
-            except Exception:
-                Logger.warn('RCPAPI: Message rx worker exception: {} | {}'.format(msg, str(Exception)))
+            except Exception as e:
+                Logger.warn('RCPAPI: Message rx worker exception: {} | {}'.format(repr(msg), str(e)))
                 Logger.debug(traceback.format_exc())
                 msg = ''
                 error_count += 1
                 if error_count > 5 and not self._auto_detect_event.is_set():
                     Logger.warn("RCPAPI: Too many Rx exceptions; re-opening connection")
                     self.recover_connection()
+                    self.connected_version = None
                     sleep(5)
                 else:
                     sleep(0.25)
 
+        safe_thread_exit()
         Logger.info("RCPAPI: msg_rx_worker exiting")
 
     def rcpCmdComplete(self, msgReply):
@@ -304,16 +372,21 @@ class RcpApi:
                         self.notifyProgress(cmdCount, cmdLength)
 
                     if rootName:
-                        winCallback({rootName: responseResults})
+                        callback = self.callback_factory(winCallback, {rootName: responseResults})
                     else:
-                        winCallback(responseResults)
+                        callback = self.callback_factory(winCallback, responseResults)
+
+                    Clock.schedule_once(callback)
 
                 except CommsErrorException:
                     self.recover_connection()
+                    self.connected_version = None
                 except Exception as detail:
                     Logger.error('RCPAPI: Command sequence exception: ' + str(detail))
-                    Logger.debug(traceback.format_exc())
-                    failCallback(detail)
+                    Logger.error(traceback.format_exc())
+                    callback = self.callback_factory(failCallback, detail)
+                    Clock.schedule_once(callback)
+                    self.connected_version = None
                     self.recover_connection()
 
                 Logger.debug('RCPAPI: Execute Sequence complete')
@@ -325,6 +398,22 @@ class RcpApi:
                 Logger.error('RCPAPI: Execute command exception ' + str(e))
 
         Logger.info('RCPAPI: cmd_sequence_worker exiting')
+        safe_thread_exit()
+
+    def callback_factory(self, callback, *args):
+        """
+        This function returns a function that when called, will call the argument callback with the remaining arguments
+        passed to this function. Weird, huh? We use it to handle the problem of lambda scoping in cmd_sequence_worker.
+        Basically, in cmd_sequence_worker we need to schedule the callbacks to happen in the UI thread, but
+        cmd_sequence_worker is running in a separate thread. So we use Clock.schedule_once to have it fire in the UI
+        thread. But if we're running a bunch of commands in a row, the variables that the callback function has scope to
+        will change out from underneath it. So we need to wrap our callback data in another function so we keep the
+        same scope .
+        :param callback:
+        :param args:
+        :return: Function
+        """
+        return lambda dt: callback(*args)
 
     def sendCommand(self, cmd):
         try:
@@ -333,11 +422,14 @@ class RcpApi:
 
             comms = self.comms
 
-            cmdStr = json.dumps(cmd, separators=(',', ':')) + '\r'
+            cmdStr = json.dumps(cmd, separators=(',', ':')) + \
+                                                 self.COMMAND_DELIMETER
 
             Logger.debug('RCPAPI: Tx: ' + cmdStr)
             comms.write_message(cmdStr)
-        except Exception:
+        except Exception as e:
+            Logger.error('RCPAPI: sendCommand exception ' + str(e))
+            Logger.error(traceback.format_exc())
             self.recover_connection()
         finally:
             self.sendCommandLock.release()
@@ -363,24 +455,52 @@ class RcpApi:
         winCallback(cfg)
 
     def getRcpCfg(self, cfg, winCallback, failCallback):
-        cmdSequence = [       RcpCmd('ver', self.sendGetVersion),
-                              RcpCmd('capabilities', self.getCapabilities),
-                              RcpCmd('analogCfg', self.getAnalogCfg),
-                              RcpCmd('imuCfg', self.getImuCfg),
-                              RcpCmd('gpsCfg', self.getGpsCfg),
-                              RcpCmd('lapCfg', self.getLapCfg),
-                              RcpCmd('timerCfg', self.getTimerCfg),
-                              RcpCmd('gpioCfg', self.getGpioCfg),
-                              RcpCmd('pwmCfg', self.getPwmCfg),
-                              RcpCmd('trackCfg', self.getTrackCfg),
-                              RcpCmd('canCfg', self.getCanCfg),
-                              RcpCmd('obd2Cfg', self.getObd2Cfg),
-                              RcpCmd('scriptCfg', self.getScript),
-                              RcpCmd('connCfg', self.getConnectivityCfg),
-                              RcpCmd('trackDb', self.getTrackDb)
+
+        def query_available_configs(capabilities_dict):
+
+            capabilities_dict = capabilities_dict.get('capabilities')
+
+            capabilities = Capabilities()
+            capabilities.from_json_dict(capabilities_dict, self.connected_version)
+
+            cmdSequence = [RcpCmd('ver', self.sendGetVersion),
+                           RcpCmd('capabilities', self.getCapabilities),
+                           RcpCmd('imuCfg', self.getImuCfg),
+                           RcpCmd('gpsCfg', self.getGpsCfg),
+                           RcpCmd('lapCfg', self.getLapCfg),
+                           RcpCmd('trackCfg', self.getTrackCfg),
+                           RcpCmd('canCfg', self.getCanCfg),
+                           RcpCmd('obd2Cfg', self.getObd2Cfg),
+                           RcpCmd('connCfg', self.getConnectivityCfg),
+                           RcpCmd('trackDb', self.getTrackDb)
                            ]
 
-        self._queue_multiple(cmdSequence, 'rcpCfg', lambda rcpJson: self.getRcpCfgCallback(cfg, rcpJson, winCallback), failCallback)
+            if capabilities.has_script:
+                cmdSequence.append(RcpCmd('scriptCfg', self.getScript))
+
+            if capabilities.has_analog:
+                cmdSequence.append(RcpCmd('analogCfg', self.getAnalogCfg))
+
+            if capabilities.has_timer:
+                cmdSequence.append(RcpCmd('timerCfg', self.getTimerCfg))
+
+            if capabilities.has_gpio:
+                cmdSequence.append(RcpCmd('gpioCfg', self.getGpioCfg))
+
+            if capabilities.has_pwm:
+                cmdSequence.append(RcpCmd('pwmCfg', self.getPwmCfg))
+
+            if capabilities.has_wifi:
+                cmdSequence.append(RcpCmd('wifiCfg', self.get_wifi_config))
+
+            self._queue_multiple(cmdSequence, 'rcpCfg', lambda rcpJson: self.getRcpCfgCallback(cfg, rcpJson, winCallback), failCallback)
+
+        # First we need to get capabilities, then figure out what to query
+        self.executeSingle(RcpCmd('capabilities', self.getCapabilities), query_available_configs, failCallback)
+
+    def get_capabilities(self, success_cb, fail_cb):
+        # Capabilities object also needs version info
+        self.executeSingle(RcpCmd('capabilities', self.getCapabilities), success_cb, fail_cb)
 
     def writeRcpCfg(self, cfg, winCallback=None, failCallback=None):
         cmdSequence = []
@@ -404,7 +524,7 @@ class RcpApi:
                 cmdSequence.append(RcpCmd('setImuCfg', self.setImuCfg, imuChannel.toJson(), i))
 
         analogCfg = cfg.analogConfig
-        for i in range(ANALOG_CHANNEL_COUNT):
+        for i in range(cfg.analogConfig.channelCount):
             analogChannel = analogCfg.channels[i]
             if analogChannel.stale:
                 cmdSequence.append(RcpCmd('setAnalogCfg', self.setAnalogCfg, analogChannel.toJson(), i))
@@ -447,6 +567,10 @@ class RcpApi:
         if trackDb.stale:
             self.sequenceWriteTrackDb(trackDb.toJson(), cmdSequence)
 
+        wifi_config = cfg.wifi_config
+        if wifi_config.stale:
+            cmdSequence.append(RcpCmd('setWifiCfg', self.set_wifi_config, wifi_config.to_json()))
+
         cmdSequence.append(RcpCmd('flashCfg', self.sendFlashConfig))
 
         self._queue_multiple(cmdSequence, 'setRcpCfg', winCallback, failCallback)
@@ -465,8 +589,11 @@ class RcpApi:
     def setAnalogCfg(self, analogCfg, channelId):
         self.sendSet('setAnalogCfg', analogCfg, channelId)
 
-    def getImuCfg(self, channelId=None):
-        self.sendGet('getImuCfg', channelId)
+    def getImuCfg(self, channelId=None, success_cb=None, fail_cb=None):
+        if success_cb:
+            self.executeSingle(RcpCmd('imuCfg', self.getImuCfg), success_cb, fail_cb)
+        else:
+            self.sendGet('getImuCfg', channelId)
 
     def setImuCfg(self, imuCfg, channelId):
         self.sendSet('setImuCfg', imuCfg, channelId)
@@ -501,8 +628,11 @@ class RcpApi:
     def setPwmCfg(self, pwmCfg, channelId):
         self.sendSet('setPwmCfg', pwmCfg, channelId)
 
-    def getTrackCfg(self):
-        self.sendGet('getTrackCfg', None)
+    def getTrackCfg(self, success_cb=None, fail_cb=None):
+        if success_cb is None:
+            self.sendGet('getTrackCfg', None)
+        else:
+            self.executeSingle(RcpCmd('trackCfg', self.getTrackCfg), success_cb, fail_cb)
 
     def setTrackCfg(self, trackCfg):
         self.sendSet('setTrackCfg', trackCfg)
@@ -525,14 +655,29 @@ class RcpApi:
     def setConnectivityCfg(self, connCfg):
         self.sendSet('setConnCfg', connCfg)
 
+    def get_wifi_config(self):
+        self.sendGet('getWifiCfg', None)
+
+    def set_wifi_config(self, wifi_config):
+        self.sendSet('setWifiCfg', wifi_config)
+
+    def start_telemetry(self, rate):
+        self.sendSet('setTelemetry', {'rate': rate})
+
+    def stop_telemetry(self):
+        self.sendSet('setTelemetry', {'rate': 0})
+
     def getScript(self):
         self.sendGet('getScriptCfg', None)
 
     def setScriptPage(self, scriptPage, page, mode):
         self.sendCommand({'setScriptCfg': {'data':scriptPage, 'page':page, 'mode':mode}})
 
-    def get_status(self):
-        self.sendGet('getStatus', None)
+    def get_status(self, success_cb=None, fail_cb=None):
+        if success_cb is not None:
+            self.executeSingle(RcpCmd('status', self.getStatus), success_cb, fail_cb)
+        else:
+            self.sendGet('getStatus', None)
 
     def sequenceWriteScript(self, scriptCfg, cmdSequence):
         page = 0
@@ -609,6 +754,9 @@ class RcpApi:
     def getCapabilities(self):
         self.sendGet('getCapabilities')
 
+    def getStatus(self):
+        self.sendGet('getStatus')
+
     def sendCalibrateImu(self):
         self.sendCommand({"calImu":1})
 
@@ -622,20 +770,38 @@ class RcpApi:
         Logger.debug("RCPAPI: sending meta")
         self.sendCommand({'getMeta':None})
 
+    def set_active_track(self, track):
+        Logger.debug("RCPAPI: setting active track: {}".format(track))
+        track_json = track.toJson()
+        self.sendCommand({'setActiveTrack': {'track': track_json}})
+
     def sample(self, include_meta=False):
         if include_meta:
             self.sendCommand({'s':{'meta':1}})
         else:
             self.sendCommand({'s':0})
 
+    def is_firmware_update_supported(self):
+        """
+        Returns True if this connection supports firmware upgrading
+        """
+        return self.comms and not self.comms.is_wireless()
+
+    @property
+    def is_wireless_connection(self):
+        """
+        Returns True if connection is wireless, or false if wired, such as USB
+        """
+        return self.comms and self.comms.is_wireless()
+
     def start_auto_detect_worker(self):
         self._auto_detect_event.clear()
         t = Thread(target=self.auto_detect_worker)
+        t.daemon = True
         t.start()
         self._auto_detect_worker = t
 
     def auto_detect_worker(self):
-
         Logger.info('RCPAPI: auto_detect_worker starting')
         class VersionResult(object):
             version_json = None
@@ -690,7 +856,7 @@ class RcpApi:
                         comms.device = device
                         comms.open()
                         self.sendGetVersion()
-                        version_result_event.wait(1)
+                        version_result_event.wait(2)
                         version_result_event.clear()
                         if version_result.version_json != None:
                             testVer.fromJson(version_result.version_json.get('ver', None))
@@ -698,7 +864,7 @@ class RcpApi:
                                 break  # we found something!
                         else:
                             try:
-                                Logger.info('RCPAPI: Giving up on ' + str(device))
+                                Logger.debug('RCPAPI: Giving up on ' + str(device))
                                 comms.close()
                             finally:
                                 pass
@@ -712,23 +878,26 @@ class RcpApi:
                             pass
 
                 if version_result.version_json != None:
-                    Logger.info("RCPAPI: Found device version " + str(testVer) + " on port: " + str(comms.device))
+                    Logger.debug("RCPAPI: Found device version " + str(testVer) + " on port: " + str(comms.device))
                     self.detect_win(testVer)
                     self._auto_detect_event.clear()
                     self._settings.userPrefs.set_pref('preferences', 'last_known_device', comms.device)
                 else:
                     Logger.debug('RCPAPI: Did not find device')
                     comms.close()
-                    comms.port = None
+                    comms.device = None
                     if self.detect_fail_callback: self.detect_fail_callback()
             except Exception as e:
                 Logger.error('RCPAPI: Error running auto detect: ' + str(e))
-                Logger.debug(traceback.format_exc())
+                Logger.error(traceback.format_exc())
+                if self.detect_fail_callback: self.detect_fail_callback()
             finally:
                 Logger.debug("RCPAPI: auto detect finished. port=" + str(comms.device))
                 self._auto_detect_busy.clear()
                 self.removeListener("ver", on_ver_win)
                 self.sendCommandLock.release()
+                comms.device = None
                 sleep(AUTODETECT_COOLOFF_TIME)
 
-        Logger.info('RCPAPI: auto_detect_worker exiting')
+        safe_thread_exit()
+        Logger.debug('RCPAPI: auto_detect_worker exiting')

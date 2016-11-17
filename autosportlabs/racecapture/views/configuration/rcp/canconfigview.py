@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 import kivy
 kivy.require('1.9.1')
 
@@ -17,21 +37,21 @@ class CANBaudRateSettings(SettingsView):
 class CANBaudRateSpinner(SettingsMappedSpinner):
     def __init__(self, **kwargs):    
         super(CANBaudRateSpinner, self).__init__(**kwargs)
-        self.setValueMap({50000: '50K Baud', 100000: '100K Baud', 125000: '125K Baud', 250000:'250K Baud', 500000:'500K Baud', 1000000:'1M Baud'}, 500000)
+        self.setValueMap({50000: '50K Baud', 100000: '100K Baud', 125000: '125K Baud', 250000:'250K Baud', 500000:'500K Baud', 1000000:'1M Baud'}, '500000')
     
 class CANConfigView(BaseConfigView):
     can_config = None
     can_settings = []
-    
+    Builder.load_file(CAN_CONFIG_VIEW_KV)
+
     def __init__(self, **kwargs):    
-        Builder.load_file(CAN_CONFIG_VIEW_KV)
         super(CANConfigView, self).__init__(**kwargs)
         
         self.register_event_type('on_config_updated')    
         btEnable = self.ids.can_enabled 
         btEnable.bind(on_setting=self.on_can_enabled)
         btEnable.setControl(SettingsSwitch())
-                
+
     def on_can_enabled(self, instance, value):
         if self.can_config:
             self.can_config.enabled = value

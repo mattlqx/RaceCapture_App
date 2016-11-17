@@ -1,10 +1,30 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 '''
 Utils
 =====
 
 '''
 
-__all__ = ('spct', 'is_mobile_platform', 'intersection', 'difference', 'curry', 'strtotuple',
+__all__ = ('scpt', 'is_mobile_platform', 'is_android', 'is_ios', 'intersection', 'difference', 'curry', 'strtotuple',
            'get_color_from_hex', 'get_random_color',
            'is_color_transparent', 'boundary', 'dist',
            'deprecated', 'SafeList',
@@ -28,8 +48,14 @@ def spct(pct):
 def strip_whitespace(value):
     return value.replace('\n', '').replace('\r', '').strip()
 
+def is_android():
+    return True if platform == 'android' else False
+
+def is_ios():
+    return True if platform == 'ios' else False
+
 def is_mobile_platform():
-    return True if platform == 'android' or platform == 'ios' else False
+    return True if is_android() or is_ios() else False
 
 def pct_h(pct):
     return Window.height * pct

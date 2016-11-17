@@ -1,0 +1,55 @@
+{
+	"skip": false,
+	"steps": [{
+			"key": "intro",
+			"title": "Welcome",
+			"complete": false
+		},
+
+		{
+			"key": "device",
+			"title": "Device",
+			"complete": false,
+			"device": null
+		},
+
+		{
+			"key": "connection",
+			"title" : "Connection",
+			"complete": false
+		},
+        {
+            "key": "tour",
+            "title" : "Tour",
+            "complete": false
+        },
+        {
+            "key": "configsetup",
+            "title" : "Setup",
+            "complete": false
+        },
+        {
+            "key": "dashboard",
+            "title" : "Dashboard",
+            "complete": false
+        },
+
+        {
+            "key": "analysis",
+            "title" : "Analysis",
+            "complete": false
+        },
+
+        {
+            "key": "podium",
+            "title" : "Podium",
+            "complete": false
+        },
+        
+		{
+			"key": "finish",
+			"title": "Ready to go!",
+			"complete": false
+		}
+	]
+}

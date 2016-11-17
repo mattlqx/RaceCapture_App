@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 #:kivy 1.9.1
 #:import ColorScheme autosportlabs.racecapture.theme.color.ColorScheme
 
@@ -17,70 +37,41 @@
         Rectangle:
             pos: self.pos
             size: self.size
-    Label:
+    FieldLabel:
+        halign: 'center'
         font_size: dp(20)
-        bold: True
         size_hint_y: 0.1
         text: ''
         id: name
     BoxLayout:
         orientation: 'horizontal'
         BoxLayout:
-            size_hint_x: 0.90
+            size_hint_x: 0.8
             padding: (dp(10), dp(10))
             spacing: dp(30)
             orientation: 'horizontal'
             RaceTrackView:
                 id: track
                 size_hint_x: 0.7
+        BoxLayout:
+            size_hint_x: 0.2
+            orientation: 'vertical'
             BoxLayout:
-                spacing: dp(10)
-                orientation: 'vertical'
-                size_hint_x: 0.3
-                padding: (dp(10), dp(10))
-                canvas.before:
-                    Color:
-                        rgba: 0.15, 0.15, 0.15, 1
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
-                        
-                AnchorLayout:
-                    size_hint_y: 0.4
-                    anchor_x: 'center'
-                    canvas.before:
-                        Color:
-                            rgba: 0.2, 0.2, 0.2, 1
-                        Rectangle:
-                            pos: self.pos
-                            size: self.size
-                    size_hint_x: 1.0
-                    Image:
-                        id: flag
-                        size_hint_x: None                   
-                        
-
-                BoxLayout:
-                    size_hint_y: 0.4
-                    orientation: 'horizontal'
-                    spacing: dp(10)                 
-                    FieldLabel:
-                        halign: 'center'
-                        size_hint_x: 0.4
-                        id: configuration
-                        text: ''
-
-                BoxLayout:
-                    size_hint_y: 0.1
-
-                BoxLayout:
-                    size_hint_y: 0.1
-                    orientation: 'horizontal'
-                    spacing: dp(10)                 
-                    FieldLabel:
-                        halign: 'center'
-                        size_hint_x: 0.4
-                        id: length
+                size_hint_y: 0.2
+            AnchorLayout:
+                anchor_x: 'center'
+                size_hint_y: 0.4
+                Image:
+                    id: flag
+                    allow_stretch: True
+                    size_hint_x: None                   
+            FieldLabel:
+                id: length
+                valign: 'top'
+                halign: 'center'
+                size_hint_y: 0.1                
+            BoxLayout:
+                size_hint_y: 0.3
         
 <SingleTrackItemView>:
     group: 'track'

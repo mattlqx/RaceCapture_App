@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 #:kivy 1.8
 <AddStreamView>:
 	orientation: 'vertical'
@@ -15,7 +35,10 @@
 		FileConnectView:
 		    id: fileConnectScreen
 		    name: 'file'
-        
+	    SessionImportView:
+	    	id: session_import_screen
+	    	name: 'session'
+
 <AddStreamSelectView>:
     BoxLayout:
         orientation: 'vertical'
@@ -25,25 +48,87 @@
     		spacing: self.height * 0.1
     		rows: 1
     		cols: 3
-#    		DisabledFeatureButton:
- #   			icon: u'\uf0ed'
-  #  			title: 'Cloud'
-   # 			on_press: root.select_stream('cloud')
-    #		DisabledFeatureButton:
-    #			icon: u'\uf1eb'
-    #			title: 'Wireless'
-    #			on_press: root.select_stream('wireless')
     		FeatureButton:
-    			icon: u'\uf07c'
-    			title: 'Import'
+    			icon: u'\uf15b'
+    			title: 'Import Log File'
                 on_press: root.select_stream('file')
+            FeatureButton:
+    			icon: u'\uf187'
+    			title: 'Saved Session'
+    			on_press: root.select_stream('session')
     	FieldLabel:
     		size_hint_y: 0.2
     		font_size: root.height * 0.1
     		font_name: 'resource/fonts/ASL_regular.ttf'
     		halign: 'center'
-    		text: 'choose a stream to connect'
-		
+    		text: 'Select a session location'
+
+<SessionImportView>:
+    BoxLayout:
+        id: content
+        orientation: 'vertical'
+        size_hint_y: 1
+        BoxLayout:
+            ScrollContainer:
+                on_scroll_move: root.on_scroll(*args)
+                id: session_scroller
+                do_scroll_x: False
+                do_scroll_y: True
+                size_hint_y: 1
+                size_hint_x: 1
+                GridLayout:
+                    id: session_list
+                    padding: [0, dp(20)]
+                    spacing: [0, dp(10)]
+                    row_default_height: dp(30)
+                    size_hint_y: None
+                    height: self.minimum_height
+                    cols: 1
+    	IconButton:
+    		size_hint_y: 0.2
+			text: "\357\200\214"
+    		on_press: root.close()
+
+<SessionListItem>:
+    rows: 1
+    spacing: dp(10)
+    FieldLabel:
+        text: ''
+        id: name
+        size: self.texture_size
+        font_size: self.height * 0.6
+        size_hint_x: 0.38
+    FieldLabel:
+        text: ''
+        id: date
+        size: self.texture_size
+        font_size: self.height * 0.6
+        size_hint_x: 0.2
+    LabelIconButton:
+        title: 'Load'
+        on_press: root.add_session()
+        icon: u'\uf067'
+        icon_size: self.height * .5
+        title_font_size: self.height * 0.5
+        height: root.height
+        size_hint_x: 0.12
+    LabelIconButton:
+        title: 'Export'
+        on_press: root.export_session()
+        icon: u'\uf045'
+        icon_size: self.height * .5
+        title_font_size: self.height * 0.5
+        height: root.height
+        size_hint_x: 0.15
+    LabelIconButton:
+        title: 'Delete'
+        on_press: root.delete_session()
+        icon: u'\uf014'
+        icon_size: self.height * .5
+        title_font_size: self.height * 0.5
+        height: root.height
+        size_hint_x: 0.15
+
 <FileConnectView>:
     BoxLayout:
         orientation: 'vertical'
@@ -134,4 +219,3 @@
         ProgressBar:
             id: log_load_progress
             size_hint_y: .05
-		

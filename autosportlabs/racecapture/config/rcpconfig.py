@@ -1,8 +1,28 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 import json
 from copy import copy
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from kivy.logger import Logger
-from __builtin__ import False
+from distutils.version import StrictVersion
 
 RCP_COMPATIBLE_MAJOR_VERSION = 2
 RCP_MINIMUM_MINOR_VERSION = 8
@@ -150,28 +170,42 @@ class AnalogChannel(BaseChannel):
         json_dict['map'] = self.scalingMap.toJson()
         return json_dict
 
-ANALOG_CHANNEL_COUNT = 8
+DEFAULT_ANALOG_CHANNEL_COUNT = 8
 
 class AnalogConfig(object):
     def __init__(self, **kwargs):
-        self.channelCount = ANALOG_CHANNEL_COUNT
+        self.channelCount = DEFAULT_ANALOG_CHANNEL_COUNT
         self.channels = []
+        self.build_channels()
 
-        for i in range (self.channelCount):
-            self.channels.append(AnalogChannel())
+    def fromJson(self, analogCfgJson, capabilities=None):
+        if capabilities:
+            self.channelCount = capabilities.channels.analog
+            self.build_channels()
 
-    def fromJson(self, analogCfgJson):
-        for i in range (self.channelCount):
+        for i in range(self.channelCount):
             analogChannelJson = analogCfgJson.get(str(i), None)
             if analogChannelJson:
                 self.channels[i].fromJson(analogChannelJson)
 
     def toJson(self):
         analogCfgJson = {}
-        for i in range(ANALOG_CHANNEL_COUNT):
+        for i in range(self.channelCount):
             analogChannel = self.channels[i]
             analogCfgJson[str(i)] = analogChannel.toJson()
         return {'analogCfg':analogCfgJson}
+
+    def build_channels(self):
+        initialized_channel_count = len(self.channels)
+        required_channel_count = self.channelCount
+
+        if initialized_channel_count == required_channel_count:
+            return
+        else:
+            # Probably got a new capabilities, make a new channels array
+            self.channels = []
+            for i in range(required_channel_count):
+                self.channels.append(AnalogChannel())
 
     @property
     def stale(self):
@@ -446,6 +480,29 @@ class GpsConfig(object):
 
         return gpsJson
 
+class GpsSample(object):
+    """
+    Represents a GPS sample with accompanying quality indicator
+    """
+    def __init__(self, **kwargs):
+        self.gps_qual = 0
+        self.latitude = 0
+        self.longitude = 0
+
+    @property
+    def is_locked(self):
+        """
+        :return True if the GPS is fixed and latitude / longitude values are valid.
+        """
+        return self.gps_qual >= GpsConfig.GPS_QUALITY_NO_FIX and self.latitude != 0 and self.longitude !=0
+    
+    @property
+    def geopoint(self):
+        """
+        Convert the GPS sample to a GeoPoint
+        :return GeoPoint 
+        """
+        return GeoPoint.fromPoint(self.latitude, self.longitude)
 
 TIMER_CHANNEL_COUNT = 3
 
@@ -669,21 +726,26 @@ class Track(object):
             self.stale = False
 
     @classmethod
-    def fromTrackMap(cls, trackMap):
+    def fromTrackMap(cls, track_map):
         t = Track()
-        t.trackId = trackMap.short_id
-        t.trackType = TRACK_TYPE_STAGE if trackMap.finish_point else TRACK_TYPE_CIRCUIT
-        t.startLine = copy(trackMap.start_finish_point)
-        t.finishLine = copy(trackMap.finish_point)
-
-        maxSectorCount = CONFIG_SECTOR_COUNT_CIRCUIT if t.trackType == TRACK_TYPE_CIRCUIT else CONFIG_SECTOR_COUNT_STAGE
-        sectorCount = 0
-        for point in trackMap.sector_points:
-            sectorCount += 1
-            if sectorCount > maxSectorCount: break
-            t.sectors.append(copy(point))
+        t.import_trackmap(track_map)
         return t
 
+    def import_trackmap(self, track_map):
+        self.trackId = track_map.short_id
+        self.trackType = TRACK_TYPE_STAGE if track_map.finish_point else TRACK_TYPE_CIRCUIT
+        self.startLine = copy(track_map.start_finish_point)
+        self.finishLine = GeoPoint() if self.trackType == TRACK_TYPE_CIRCUIT else copy(track_map.finish_point)
+        max_sectors = CONFIG_SECTOR_COUNT_CIRCUIT if self.trackType == TRACK_TYPE_CIRCUIT else CONFIG_SECTOR_COUNT_STAGE
+
+        del self.sectors[:]
+        for i in range (0, max_sectors):
+            if i < len(track_map.sector_points):
+                self.sectors.append(copy(track_map.sector_points[i]))
+            else:
+                self.sectors.append(GeoPoint())
+        self.stale = True
+        
     def toJson(self):
         sectors = []
         for sector in self.sectors:
@@ -855,7 +917,7 @@ class PidConfig(BaseChannel):
     def fromJson(self, json_dict):
         if json_dict:
             super(PidConfig, self).fromJson(json_dict)
-            self.pid = json_dict.get("pid", self.pidId)
+            self.pidId = json_dict.get("pid", self.pidId)
 
     def toJson(self):
         json_dict = {}
@@ -916,14 +978,14 @@ class BluetoothConfig(object):
 
     def fromJson(self, btCfgJson):
         self.btEnabled = btCfgJson['btEn'] == 1
-        self.name = btCfgJson.get('name', self.name)
         self.passKey = btCfgJson.get('pass', self.passKey)
+        self.name = btCfgJson.get('name', self.name)
 
     def toJson(self):
         btCfgJson = {}
         btCfgJson['btEn'] = 1 if self.btEnabled else 0
+        btCfgJson['pass'] = self.passKey
         btCfgJson['name'] = self.name
-        btCfgJson['passKey'] = self.passKey
         return btCfgJson
 
 class CellConfig(object):
@@ -962,6 +1024,62 @@ class TelemetryConfig(object):
         telCfgJson['bgStream'] = 1 if self.backgroundStreaming else 0
         return telCfgJson
 
+
+class WifiConfig(object):
+
+    def __init__(self):
+        self.active = False
+
+        self.client_mode_active = False
+        self.client_ssid = ''
+        self.client_password = ''
+
+        self.ap_mode_active = False
+        self.ap_ssid = ''
+        self.ap_password = ''
+        self.ap_channel = 1
+        self.ap_encryption = 'None'
+        self.stale = False
+
+    def from_json(self, json_config):
+        Logger.debug("RCPConfig: got WiFi config: {}".format(json_config))
+        self.active = json_config.get('active', self.active)
+
+        client_config = json_config.get('client', False)
+
+        if client_config:
+            self.client_mode_active = client_config.get('active', self.client_mode_active)
+            self.client_ssid = client_config.get('ssid', self.client_ssid)
+            self.client_password = client_config.get('password', self.client_password)
+
+        ap_config = json_config.get('ap', False)
+
+        if ap_config:
+            self.ap_mode_active = ap_config.get('active', self.ap_mode_active)
+            self.ap_ssid = ap_config.get('ssid', self.ap_ssid)
+            self.ap_password = ap_config.get('password', self.ap_password)
+            self.ap_channel = ap_config.get('channel', self.ap_channel)
+            self.ap_encryption = ap_config.get('encryption', self.ap_encryption)
+
+    def to_json(self):
+        wifi_config = {'active': self.active,
+                       'client': {
+                           'ssid': self.client_ssid,
+                           'active': self.client_mode_active,
+                           'password': self.client_password
+                           },
+                       'ap': {
+                           'active': self.ap_mode_active,
+                           'ssid': self.ap_ssid,
+                           'password': self.ap_password,
+                           'encryption': self.ap_encryption,
+                           'channel': self.ap_channel
+                       }
+                       }
+
+        return wifi_config
+
+
 class ConnectivityConfig(object):
     stale = False
     bluetoothConfig = BluetoothConfig()
@@ -980,12 +1098,14 @@ class ConnectivityConfig(object):
         telCfgJson = connCfgJson.get('telCfg')
         if telCfgJson:
             self.telemetryConfig.fromJson(telCfgJson)
+
         self.stale = False
 
     def toJson(self):
         connCfgJson = {'btCfg' : self.bluetoothConfig.toJson(),
                        'cellCfg' : self.cellConfig.toJson(),
-                       'telCfg' : self.telemetryConfig.toJson()}
+                       'telCfg' : self.telemetryConfig.toJson()
+                       }
 
         return {'connCfg':connCfgJson}
 
@@ -998,6 +1118,7 @@ class VersionConfig(object):
         self.major = kwargs.get('major', 0)
         self.minor = kwargs.get('minor', 0)
         self.bugfix = kwargs.get('bugfix', 0)
+        self.git_info = kwargs.get('git_info', '')
 
     def __str__(self):
         return '{} {}.{}.{} (s/n# {})'.format(self.name, self.major, self.minor, self.bugfix, self.serial)
@@ -1016,9 +1137,11 @@ class VersionConfig(object):
         self.minor = versionJson.get('minor', self.minor)
         self.bugfix = versionJson.get('bugfix', self.bugfix)
         self.serial = versionJson.get('serial', self.serial)
+        self.git_info = versionJson.get('git_info', self.git_info)
 
     def toJson(self):
-        versionJson = {'name': self.name, 'fname': self.friendlyName, 'major': self.major, 'minor': self.minor, 'bugfix': self.bugfix}
+        versionJson = {'name': self.name, 'fname': self.friendlyName, 'major': self.major, 'minor': self.minor,
+                       'bugfix': self.bugfix, 'git_info': self.git_info}
         return {'ver': versionJson}
 
     def is_compatible_version(self):
@@ -1032,62 +1155,148 @@ class VersionConfig(object):
         '''
         return self.major > 0 and len(self.name) > 0 and len(self.serial) > 0
 
+
 class ChannelCapabilities(object):
-    analog = 8
-    imu = 6
-    gpio = 3
-    timer = 3
-    pwm = 4
-    can = 2
+
+    def __init__(self):
+        self.analog = 8
+        self.imu = 6
+        self.gpio = 3
+        self.timer = 3
+        self.pwm = 3
+        self.can = 2
 
     def from_json_dict(self, json_dict):
         if json_dict:
-            self.analog = int(json_dict.get('analog', self.analog))
-            self.imu = int(json_dict.get('imu', self.imu))
-            self.gpio = int(json_dict.get('gpio', self.gpio))
-            self.pwm = int(json_dict.get('pwm', self.pwm))
-            self.can = int(json_dict.get('can', self.can))
+            self.analog = int(json_dict.get('analog', 0))
+            self.imu = int(json_dict.get('imu', 0))
+            self.gpio = int(json_dict.get('gpio', 0))
+            self.pwm = int(json_dict.get('pwm', 0))
+            self.can = int(json_dict.get('can', 0))
+            self.timer = int(json_dict.get('timer', 0))
 
     def to_json_dict(self):
-        return {'analog':self.analog,
-                'imu':self.imu,
-                'gpio':self.gpio,
-                'timer':self.timer,
-                'pwm':self.pwm,
-                'can':self.can
-                }
+        return {
+            "analog": self.analog,
+            "imu": self.imu,
+            "gpio": self.gpio,
+            "pwm": self.pwm,
+            "can": self.can,
+            "timer": self.timer
+        }
+
 
 class SampleRateCapabilities(object):
-    sensor = 1000
-    gps = 50
+
+    def __init__(self):
+        self.sensor = 1000
+        self.gps = 50
 
     def from_json_dict(self, json_dict):
         if json_dict:
-            self.sensor = json_dict.get('sensor', self.sensor)
-            self.gps = json_dict.get('gps', self.gps)
+            self.sensor = json_dict.get('sensor', 0)
+            self.gps = json_dict.get('gps', 0)
 
     def to_json_dict(self):
-        return {'gps': self.gps, 'sensor':self.sensor}
+        return {
+            "sensor": self.sensor,
+            "gps": self.gps
+        }
 
-class StorageCapabilities():
-    tracks = 240
-    script = 10240
+
+class StorageCapabilities(object):
+
+    def __init__(self):
+        self.tracks = 200
+        self.script = 100000
 
     def from_json_dict(self, json_dict):
         if json_dict:
-            self.tracks = json_dict.get('tracks', self.tracks)
-            self.script = json_dict.get('script', self.script)
+            self.tracks = json_dict.get('tracks', 0)
+            self.script = json_dict.get('script', False)
 
     def to_json_dict(self):
-        return {'tracks': self.tracks, 'script': self.script}
+        return {
+            "tracks": self.tracks,
+            "script": self.script
+        }
+
+
+class LinksCapabilities(object):
+
+    def __init__(self):
+        self.bluetooth = True
+        self.cellular = True
+        self.wifi = True
+        self.usb = True
+
+    def from_flags(self, flags):
+        self.bluetooth = 'bt' in flags
+        self.cellular = 'cell' in flags
+        self.usb = 'usb' in flags
+        self.wifi = 'wifi' in flags
 
 class Capabilities(object):
-    channels = ChannelCapabilities()
-    sample_rates = SampleRateCapabilities()
-    storage = StorageCapabilities()
 
-    def from_json_dict(self, json_dict):
+    MIN_BT_CONFIG_VERSION = "2.9.0"
+    MIN_FLAGS_VERSION = "2.10.0"
+    LEGACY_FLAGS = ['bt', 'cell', 'usb']
+
+    def __init__(self):
+        self.channels = ChannelCapabilities()
+        self.sample_rates = SampleRateCapabilities()
+        self.storage = StorageCapabilities()
+        self.links = LinksCapabilities()
+        self.bluetooth_config = True
+        self.flags = []
+
+    @property
+    def has_analog(self):
+        # We always have at least 1 analog channel for battery
+        return self.channels.analog > 0
+
+    @property
+    def has_gpio(self):
+        return self.channels.gpio > 0
+
+    @property
+    def has_pwm(self):
+        return self.channels.pwm > 0
+
+    @property
+    def has_script(self):
+        return self.storage.script > 0
+
+    @property
+    def has_timer(self):
+        return self.channels.timer > 0
+
+    @property
+    def has_pwm(self):
+        return self.channels.pwm > 0
+
+    @property
+    def has_cellular(self):
+        return self.links.cellular
+
+    @property
+    def has_wifi(self):
+        return self.links.wifi
+
+    @property
+    def has_bluetooth(self):
+        return self.links.bluetooth
+
+    @property
+    def has_streaming(self):
+        return 'telemstream' in self.flags
+
+    def from_json_dict(self, json_dict, version_config=None):
         if json_dict:
+            Logger.debug("RCPConfig: Capabilities: {}".format(json_dict))
+
+            self.flags = json_dict.get('flags', [])
+
             channels = json_dict.get('channels')
             if channels:
                 self.channels.from_json_dict(channels)
@@ -1100,11 +1309,28 @@ class Capabilities(object):
             if storage:
                 self.storage.from_json_dict(storage)
 
+        # For select features/capabilities we need to check RCP version because
+        # the capability wasn't added to the API. Not ideal, but let's at least
+        # insulate other code from inspecting the version string
+        if version_config:
+            rcp_version = StrictVersion(version_config.version_string())
+
+            # Handle flags. Encapsulate legacy firmware versions that don't support flags
+            min_flags_version = StrictVersion(Capabilities.MIN_FLAGS_VERSION)
+            self.links.from_flags(self.flags if rcp_version >= min_flags_version else Capabilities.LEGACY_FLAGS)
+
+            # Handle BT version
+            min_bt_config_version = StrictVersion(Capabilities.MIN_BT_CONFIG_VERSION)
+            self.bluetooth_config = rcp_version >= min_bt_config_version
+
     def to_json_dict(self):
-        return {'channels': self.channels.to_json_dict(),
-                'sampleRates': self.sample_rates.to_json_dict(),
-                'db': self.storage.to_json_dict()
-                }
+        return {
+            "channels": self.channels.to_json_dict(),
+            "db": self.storage.to_json_dict(),
+            "sampleRates": self.sample_rates.to_json_dict(),
+            "flags": self.flags
+        }
+
 
 class RcpConfig(object):
     loaded = False
@@ -1121,6 +1347,7 @@ class RcpConfig(object):
         self.pwmConfig = PwmConfig()
         self.trackConfig = TrackConfig()
         self.connectivityConfig = ConnectivityConfig()
+        self.wifi_config = WifiConfig()
         self.canConfig = CanConfig()
         self.can_channels = CANChannels()
         self.obd2Config = Obd2Config()
@@ -1138,6 +1365,7 @@ class RcpConfig(object):
                 self.pwmConfig.stale or
                 self.trackConfig.stale or
                 self.connectivityConfig.stale or
+                self.wifi_config.stale or
                 self.canConfig.stale or
                 self.can_channels.stale or
                 self.obd2Config.stale or
@@ -1169,11 +1397,13 @@ class RcpConfig(object):
                 if versionJson:
                     self.versionConfig.fromJson(versionJson)
 
-                self.capabilities.from_json_dict(rcpJson.get('capabilities'))
+                capabilities = rcpJson.get('capabilities', None)
+                if capabilities:
+                    self.capabilities.from_json_dict(capabilities, version_config=self.versionConfig)
 
                 analogCfgJson = rcpJson.get('analogCfg', None)
                 if analogCfgJson:
-                    self.analogConfig.fromJson(analogCfgJson)
+                    self.analogConfig.fromJson(analogCfgJson, capabilities=self.capabilities)
 
                 timerCfgJson = rcpJson.get('timerCfg', None)
                 if timerCfgJson:
@@ -1206,6 +1436,10 @@ class RcpConfig(object):
                 connectivtyCfgJson = rcpJson.get('connCfg', None)
                 if connectivtyCfgJson:
                     self.connectivityConfig.fromJson(connectivtyCfgJson)
+
+                wifi_config_json = rcpJson.get('wifiCfg', None)
+                if wifi_config_json:
+                    self.wifi_config.from_json(wifi_config_json)
 
                 canCfgJson = rcpJson.get('canCfg', None)
                 if canCfgJson:
@@ -1250,6 +1484,7 @@ class RcpConfig(object):
                              'canChanCfg':self.can_channels.toJson().get('canChanCfg'),
                              'obd2Cfg':self.obd2Config.toJson().get('obd2Cfg'),
                              'connCfg':self.connectivityConfig.toJson().get('connCfg'),
+                             'wifiCfg': self.wifi_config.to_json(),
                              'trackCfg':self.trackConfig.toJson().get('trackCfg'),
                              'scriptCfg':self.scriptConfig.toJson().get('scriptCfg'),
                              'trackDb': self.trackDb.toJson().get('trackDb')

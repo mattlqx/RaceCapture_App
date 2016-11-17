@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 import kivy
 from valuefield import ValueField
 kivy.require('1.9.1')
@@ -12,6 +32,7 @@ from fieldlabel import FieldLabel
 from autosportlabs.uix.textwidget import TextWidget
 from helplabel import HelpLabel
 from kivy.app import Builder
+from kivy.clock import Clock
 from utils import *
 from mappedspinner import MappedSpinner
 from autosportlabs.racecapture.views.popup.centeredbubble import CenteredBubble, WarnLabel
@@ -113,6 +134,9 @@ class SettingsView(RelativeLayout):
         label.text = value
         
     def setControl(self, widget):
+        if self.control:
+            self.ids.control.remove_widget(self.control)
+
         widget.size_hint_y=1.0
         kvFind(self, 'rcid', 'control').add_widget(widget)
         widget.bind(on_control=self.on_control)
@@ -134,6 +158,7 @@ class SettingsView(RelativeLayout):
             self.add_widget(warn)
             warn.center_below(control)
             self.warn_bubble = warn
+            Clock.schedule_once(lambda dt: self.clear_error(), self.WARN_LONG_TIMEOUT)
 
     def clear_error(self):
         if self.warn_bubble is not None:

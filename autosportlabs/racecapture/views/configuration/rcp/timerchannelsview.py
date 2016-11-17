@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 import kivy
 kivy.require('1.9.1')
 
@@ -7,18 +27,20 @@ from kivy.uix.spinner import Spinner
 from kivy.app import Builder
 from mappedspinner import MappedSpinner
 from utils import *
-from kivy.metrics import dp
+from kivy.metrics import sp
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseMultiChannelConfigView, BaseChannelView
 from autosportlabs.racecapture.config.rcpconfig import *
 
 TIMER_CHANNELS_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/timerchannelsview.kv'
 
+
 class PulseChannelsView(BaseMultiChannelConfigView):
+    Builder.load_file(TIMER_CHANNELS_VIEW_KV)
+
     def __init__(self, **kwargs):
-        Builder.load_file(TIMER_CHANNELS_VIEW_KV)
         super(PulseChannelsView, self).__init__(**kwargs)
         self.channel_title = 'Timer '
-        self.accordion_item_height = dp(100)
+        self.accordion_item_height = sp(150)
 
     def channel_builder(self, index, max_sample_rate):
         editor = PulseChannel(id='timer' + str(index), channels=self.channels)

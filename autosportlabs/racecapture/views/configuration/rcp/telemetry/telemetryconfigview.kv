@@ -1,0 +1,45 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
+#:kivy 1.9.1
+
+<TelemetryConfigView>:
+	StackLayout:
+        height: self.minimum_height
+        size_hint: [1, None]
+        spacing: [0, dp(20)]
+        padding: [dp(20), 0]
+        GridLayout:
+            cols: 1
+            spacing: [0, dp(20)]
+            row_default_height: dp(40)
+            size_hint: [1, None]
+            height: self.minimum_height
+            id: content
+            HSeparator:
+                text: 'Telemetry Configuration'
+                halign: 'left'
+            SettingsView:
+                rcid: 'deviceId'
+                id: device_id
+                label_text: 'Telemetry Device Id'
+                help_text: 'Enter the telemetry Device Id provided by podium.live'
+            HLineSeparator:
+                size_hint_y: 0.05

@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 import traceback
 import threading
 import multiprocessing
@@ -66,7 +86,7 @@ def connection_message_process(connection, device, rx_queue, tx_queue, command_q
                     Logger.debug('Comms: connection process: got close command')
                     reader_writer_should_run.clear()
             except Empty:
-                Logger.info('Comms: keep alive timeout')
+                Logger.debug('Comms: keep alive timeout')
                 reader_writer_should_run.clear()
         Logger.debug('Comms: connection worker exiting')
 
@@ -76,10 +96,11 @@ def connection_message_process(connection, device, rx_queue, tx_queue, command_q
         try:
             connection.close()
         except:
-            Logger.error('Comms: Exception closing connection worker connection')
+            Logger.debug('Comms: Exception closing connection worker connection')
+            Logger.debug(traceback.format_exc())
     except Exception as e:
-        Logger.error('Comms: Exception setting up connection process: ' + str(type(e)) + str(e))
-        Logger.debug(traceback.format_exc())
+        Logger.debug('Comms: Exception setting up connection process: ' + str(type(e)) + str(e))
+        Logger.trace(traceback.format_exc())
 
     Logger.debug('Comms: connection worker exited')
 
@@ -120,7 +141,7 @@ class Comms():
 
     def open(self):
         connection = self._connection
-        Logger.info('Comms: Opening connection ' + str(self.device))
+        Logger.debug('Comms: Opening connection ' + str(self.device))
         self.start_connection_process()
 
     def keep_alive(self):
@@ -151,3 +172,9 @@ class Comms():
     def write_message(self, message):
         if not self.isOpen(): raise PortNotOpenException('Port Closed')
         self._tx_queue.put(message, True, Comms.QUEUE_FULL_TIMEOUT)
+
+    def is_wireless(self):
+        """Returns if this comms object uses wireless communications or not.
+        :return: False
+        """
+        return False

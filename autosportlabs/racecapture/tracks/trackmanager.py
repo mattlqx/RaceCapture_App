@@ -1,3 +1,25 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
+import uuid
+from datetime import datetime
 import json
 import time
 import copy
@@ -11,21 +33,23 @@ from StringIO import StringIO
 import gzip
 import zipfile
 from autosportlabs.racecapture.geo.geopoint import GeoPoint, Region
-from autosportlabs.util.timeutil import time_to_epoch
+from autosportlabs.racecapture.config.rcpconfig import Track
+from autosportlabs.util.timeutil import time_to_epoch, epoch_to_time
 from kivy.logger import Logger
 
-TRACK_DEFAULT_SEARCH_RADIUS_METERS = 2000
-TRACK_DEFAULT_SEARCH_BEARING_DEGREES = 360
-TRACK_DOWNLOAD_TIMEOUT = 30
 
-class TrackMap:
+class TrackMap(object):
     """Very generic object wrapper around RCL's API endpoint for venues
     """
+    DEFAULT_TRACK_NAME = 'Track'
+    DEFAULT_CONFIGURATION = ''
 
     def __init__(self):
+        self.custom = False
         self.map_points = []
         self.sector_points = []
-        self.name = ''
+        self.name = TrackMap.DEFAULT_TRACK_NAME
+        self.configuration = TrackMap.DEFAULT_CONFIGURATION
         self.created = None
         self.updated = None
         self.length = 0
@@ -33,15 +57,46 @@ class TrackMap:
         self.start_finish_point = None
         self.finish_point = None
         self.country_code = None
-        self.configuration = None
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return self.track_id == other.track_id
         return False
 
+    @classmethod
+    def create_new(cls):
+        """
+        Create a new, minimally initialized TrackMap with a new ID and created date
+        """
+        t = TrackMap()
+        t.track_id = str(uuid.uuid1().hex)
+        t.created = datetime.utcnow().isoformat()
+        return t
+
+    @classmethod
+    def from_track_cfg(cls, track):
+        """
+        Convert a Track object to a TrackMap object
+        """
+        track_map = TrackMap()
+        track_map.start_finish_point = track.startLine
+        track_map.finish_point = track.finishLine
+        track_map.sector_points = track.sectors
+        track_map.created = epoch_to_time(track.trackId)
+        return track_map
+
+    @property
+    def full_name(self):
+        """
+        Provides the full name of the track including track configuration, if present
+        """
+        return '{} {}'.format(self.name, '' if self.configuration is None or self.configuration.strip() == '' else '({})'.format(self.configuration))
+
     @property
     def centerpoint(self):
+        """
+        Return the a reference point for the map
+        """
         if len(self.map_points) > 0:
             return self.map_points[0]
         return None
@@ -62,6 +117,7 @@ class TrackMap:
         """Populate this object's values with values from a dict, either from RCL's API or a file
         """
 
+        self.custom = bool(track_dict.get('custom', self.custom))
         self.start_finish_point = GeoPoint.fromPointJson(track_dict.get('start_finish'))
         self.finish_point = GeoPoint.fromPointJson(track_dict.get('finish'))
         self.country_code = track_dict.get('country_code', self.country_code)
@@ -98,6 +154,7 @@ class TrackMap:
         if self.finish_point:
             track_dict['finish'] = self.finish_point.toJson()
 
+        track_dict['custom'] = self.custom
         track_dict['country_code'] = self.country_code
         track_dict['created'] = self.created
         track_dict['updated'] = self.updated
@@ -115,12 +172,15 @@ class TrackMap:
         return track_dict
 
 
-class TrackManager:
+class TrackManager(object):
     """Manages fetching tracks from RCL's API, figuring out if any tracks have been updated, saving and loading tracks
     """
     RCP_VENUE_URL = 'https://podium.live/api/v1/venues'
     READ_RETRIES = 3
     RETRY_DELAY = 1.0
+    TRACK_DEFAULT_SEARCH_RADIUS_METERS = 2000
+    TRACK_DEFAULT_SEARCH_BEARING_DEGREES = 360
+    TRACK_DOWNLOAD_TIMEOUT = 30
 
     def __init__(self, **kwargs):
         self.on_progress = lambda self, value: value
@@ -177,14 +237,32 @@ class TrackManager:
                 return track
         return None
 
-    def find_nearby_track(self, point, searchRadius=TRACK_DEFAULT_SEARCH_RADIUS_METERS, searchBearing=TRACK_DEFAULT_SEARCH_BEARING_DEGREES):
+    def find_nearby_tracks(self, point, searchRadius=None, searchBearing=None):
+        """
+        find a list of nearby tracks near the specified point, ordered by most recent first.
+        :param point the point to reference
+        :type point GeoPoint
+        :param searchRadius the search radius in meters. Defaults to TRACK_DEFAULT_SEARCH_RADIUS_METERS
+        :type searchRadius float
+        :param searchBearing the bearing in degrees to search. 
+        :type searchBearing float. Defaults to TRACK_DEFAULT_SEARCH_BEARING_DEGREES
+        """
+        if searchRadius is None:
+            searchRadius = TrackManager.TRACK_DEFAULT_SEARCH_RADIUS_METERS
+        if searchBearing is None:
+            searchBearing = TrackManager.TRACK_DEFAULT_SEARCH_BEARING_DEGREES
+
+        tracks = []
         radius = point.metersToDegrees(searchRadius, searchBearing)
         for trackId in self.tracks.keys():
             track = self.tracks[trackId]
             trackCenter = track.centerpoint
             if trackCenter and trackCenter.withinCircle(point, radius):
-                return track
-        return None
+                tracks.append(track)
+
+        # order by short id, which is timestamp
+        tracks.sort(key=lambda x: x.short_id, reverse=True)
+        return tracks
 
     def filter_tracks_by_name(self, name, track_ids=None):
         if track_ids is None:
@@ -228,7 +306,7 @@ class TrackManager:
             try:
                 opener = urllib2.build_opener()
                 opener.addheaders = [('Accept', 'application/json'), ('Accept-encoding', 'gzip')]
-                response = opener.open(uri, timeout=TRACK_DOWNLOAD_TIMEOUT)
+                response = opener.open(uri, timeout=TrackManager.TRACK_DOWNLOAD_TIMEOUT)
                 data = response.read()
                 if response.info().get('Content-Encoding') == 'gzip':
                     string_buffer = StringIO(data)
@@ -309,6 +387,14 @@ class TrackManager:
             return copy.deepcopy(track_map)
         except Warning:
             return None
+
+    def add_track(self, track):
+        """ Add the specified track
+        :param track the track to add
+        :type track TrackMap
+        """
+        self.save_track(track)
+        self.tracks[track.track_id] = track
 
     def save_track(self, track):
         path = os.path.join(self.tracks_user_dir, track.track_id + '.json')

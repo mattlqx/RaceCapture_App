@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 from kivy.uix.label import Label
 from kivy.clock import Clock
 from kivy.lang import Builder
@@ -11,6 +31,7 @@ TOAST_KV='''
     size_hint: (None, None)
     halign: 'center'
     valign: 'middle'
+    font_name: "resource/fonts/ASL_light.ttf"
     color: (1.0, 1.0, 1.0, self._transparency)
     canvas:
         Color:
@@ -32,10 +53,9 @@ TOAST_KV='''
 
 '''
 
-Builder.load_string(TOAST_KV)
-
 class _Toast(Label):
     _transparency = NumericProperty(1.0)
+    Builder.load_string(TOAST_KV)
 
     def __init__(self, text, *args, **kwargs):
         '''Show the toast in the main window.  The attatch_to logic from 
@@ -43,6 +63,7 @@ class _Toast(Label):
         does need to go on top of everything.
         '''
         self._bound = False
+        self._center_on = kwargs.get('center_on')
         super(_Toast, self).__init__(text=text, *args, **kwargs)
     
     def show(self, length_long, *largs):
@@ -66,7 +87,10 @@ class _Toast(Label):
             
     def _align(self, win, size):
         self.x = (size[0] - self.width) / 2.0
-        self.y = size[1] * 0.1
+        if self._center_on:
+            self.y = self._center_on.y + self._center_on.size[1] * 0.1
+        else:
+            self.y = size[1] * 0.1
 
     def _in_out(self, dt):
         self._duration -= dt * 1000
@@ -76,5 +100,14 @@ class _Toast(Label):
             Window.remove_widget(self)
             return False
 
-def toast(text, length_long=False):
-    _Toast(text=text).show(length_long)
+def toast(text, length_long=False, center_on=None):
+    """Display a short message on the screen that will automatically dismiss
+    :param text the text to display
+    :type text String
+    :param length_long True if the display should persist longer
+    :type length_long bool
+    :param center_on The widget to center on. if not specified, centers on the window
+    :type center_on Widget
+    :return None
+    """
+    _Toast(text=text, center_on=center_on).show(length_long)

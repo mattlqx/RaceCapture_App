@@ -1,6 +1,10 @@
 {
     "regions": [
         {
+        "name": "All",
+        "points": []
+        },
+        {
             "name": "USA West",
             "points": [
                 [
@@ -329,10 +333,6 @@
                     -86.980894
                 ]
             ]
-        },
-        {
-            "name": "All",
-            "points": []
-        }                     
+        }
     ]
 }

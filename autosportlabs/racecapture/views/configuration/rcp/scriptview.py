@@ -1,3 +1,23 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+# have received a copy of the GNU General Public License along with
+# this code. If not, see <http://www.gnu.org/licenses/>.
+
 import kivy
 kivy.require('1.9.1')
 from kivy.clock import Clock
@@ -32,7 +52,7 @@ class LogLevelSpinner(SettingsMappedSpinner):
     '''
     def __init__(self, **kwargs):    
         super(LogLevelSpinner, self).__init__(**kwargs)
-        self.setValueMap({3: 'Error', 6: 'Info', 7:'Debug', 8:'Trace'}, 6)
+        self.setValueMap({3: 'Error', 6: 'Info', 7:'Debug', 8:'Trace'}, 'Info')
         self.text = 'Info'
 
 class LuaScriptingView(BaseConfigView):
@@ -41,14 +61,23 @@ class LuaScriptingView(BaseConfigView):
     '''
     Builder.load_file(SCRIPT_VIEW_KV)
     
-    def __init__(self, **kwargs):
+    def __init__(self, capabilities, **kwargs):
         super(LuaScriptingView, self).__init__(**kwargs)
         self.script_cfg = None
         self.register_event_type('on_config_updated')
         self._logwindow_max_length = LOGWINDOW_MAX_LENGTH_MOBILE\
             if is_mobile_platform() else LOGWINDOW_MAX_LENGTH_DESKTOP
         self.rc_api.addListener('logfile', lambda value: Clock.schedule_once(lambda dt: self.on_logfile(value)))
-        
+        self._capabilities = capabilities
+
+        if not capabilities.has_script:
+            self._hide_lua()
+
+    def _hide_lua(self):
+        self.ids.buttons.remove_widget(self.ids.run_script)
+        self.ids.lua_log_wrapper.remove_widget(self.ids.lua_script_sv)
+        self.ids.splitter.strip_size = 0
+
     def on_config_updated(self, rcp_cfg):
         '''
         Callback when the configuration is updates
@@ -56,8 +85,10 @@ class LuaScriptingView(BaseConfigView):
         :type RcpConfig
         '''
         cfg = rcp_cfg.scriptConfig
-        self.ids.lua_script.text = cfg.script
-        self.script_cfg = cfg
+
+        if self._capabilities.has_script:
+            self.ids.lua_script.text = cfg.script
+            self.script_cfg = cfg
    
     def on_script_changed(self, instance, value):
         '''
