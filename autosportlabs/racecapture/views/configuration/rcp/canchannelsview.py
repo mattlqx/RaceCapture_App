@@ -122,11 +122,10 @@ class CANChannelConfigView(BoxLayout):
         
         self.ids.endian.setValueMap({0: 'Big (MSB)', 1: 'Little (LSB)'}, 'Big (MSB)')
         
-        self.ids.filters.setValueMap(self.can_filters.filters, self.can_filters.default_value)
+        self.ids.filters.setValueMap(self.can_filters.filters, self.can_filters.default_value)    
         
-        
-        self.load_values()
         self.update_mapping_spinners()
+        self.load_values()
         
     def load_values(self):
 
@@ -147,10 +146,10 @@ class CANChannelConfigView(BoxLayout):
         self.ids.can_id.text = str(self.can_channel_cfg.mapping.can_id)
         
         #CAN offset
-        self.ids.offset.text = str(self.can_channel_cfg.mapping.bit_offset)
+        self.ids.offset.setFromValue(self.can_channel_cfg.mapping.bit_offset)
         
         #CAN length
-        self.ids.length.text = str(self.can_channel_cfg.mapping.bit_length)
+        self.ids.length.setFromValue(self.can_channel_cfg.mapping.bit_length)
         
         #Bit Mode
         self.ids.bitmode.active = self.can_channel_cfg.mapping.bit_mode
@@ -174,7 +173,7 @@ class CANChannelConfigView(BoxLayout):
     def set_mapping_choices(self, bit_mode):
         choices = 63 if bit_mode else 7
         self.ids.offset.setValueMap(self.create_bit_choices(choices), '0')
-        self.ids.length.setValueMap(self.create_bit_choices(1 + choices), '0')
+        self.ids.length.setValueMap(self.create_bit_choices(1 + choices), '1')
 
     def create_bit_choices(self, max_choices):
         bit_choices = {}
