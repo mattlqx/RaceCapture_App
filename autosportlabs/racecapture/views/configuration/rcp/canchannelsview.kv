@@ -24,44 +24,42 @@
         Rectangle:
             pos: self.pos
             size: self.size             
-    padding: (sp(5), sp(5))                    
+    padding: (dp(5), dp(5))                    
 
 <CANChannelConfigView>:
-    spacing: sp(10)
+    spacing: dp(10)
     BoxLayout:
         orientation: 'vertical'
         BoxLayout:
             size_hint_y: 0.9
-            spacing: sp(10)
+            spacing: dp(10)
             orientation: 'vertical'
             
             BoxLayout:
                 orientation: 'horizontal'
+                spacing: dp(5)
+                SectionBoxLayout:
+                    #padding: (dp(5), dp(5))
+                    size_hint_x: 0.2
+                    FieldLabel:
+                        halign: 'right'
+                        text: 'CAN ID'
                 BoxLayout:
-                    padding: (sp(5), sp(5))
-                    size_hint_x: 0.3
-                    orientation: 'horizontal'
-                    ChannelNameSelectorView:
-                        id: chan_id
-                        size_hint_x: 0.35
-                BoxLayout:
-                    spacing: sp(3)
-                    size_hint_x: 0.7
+                    spacing: dp(3)
+                    size_hint_x: 0.8
                     orientation: 'horizontal'
                     SectionBoxLayout:
-                        spacing: sp(5)
+                        spacing: dp(5)
                         size_hint_x: 0.6
-                        FieldLabel:
-                            size_hint_x: 0.2
-                            text: 'Sample Rate'
-                            halign: 'right'
-                        SampleRateSpinner:
-                            id: sr
-                            size_hint_x: 0.15
-                            on_text: root.on_sample_rate(*args)
+                        
+                        LargeIntegerValueField:
+                            id: can_id
+                            size_hint_x: 0.3
+                            on_text: root.on_can_id(*args)
+                        
                     SectionBoxLayout:
                         size_hint_x: 0.4
-                        spacing: sp(5)
+                        spacing: dp(5)
                         FieldLabel:
                             size_hint_x: 0.2
                             text: 'CAN Bus'
@@ -75,31 +73,23 @@
                         
             BoxLayout:
                 orientation: 'horizontal'
-                spacing: sp(5)
-                BoxLayout:
-                    size_hint_x: 0.3
-                    padding: (0, sp(10))
-                    spacing: sp(5)
+                spacing: dp(5)
+                SectionBoxLayout:
+                    size_hint_x: 0.2
+                    spacing: dp(5)
                     orientation: 'horizontal'
                     FieldLabel:
                         halign: 'right'
-                        text: 'CAN ID'
+                        text: 'Offset'
                         size_hint_x: 0.1
-                    LargeIntegerValueField:
-                        id: can_id
-                        size_hint_x: 0.2            
-                        on_text: root.on_can_id(*args)
+
                 BoxLayout:
-                    size_hint_x: 0.7
+                    size_hint_x: 0.8
                     orientation: 'horizontal'
-                    spacing: sp(3)
+                    spacing: dp(3)
                     SectionBoxLayout:
                         size_hint_x: 0.6
-                        spacing: sp(5)
-                        FieldLabel:
-                            halign: 'right'
-                            text: 'Offset'
-                            size_hint_x: 0.1
+                        spacing: dp(5)
                         LargeMappedSpinner:
                             id: offset
                             size_hint_x: 0.1
@@ -117,9 +107,9 @@
                         BoxLayout:
                             orientation: 'vertical'
                             size_hint_x: 0.3
-                            spacing: sp(5)
+                            spacing: dp(5)
                             BoxLayout:
-                                spacing: sp(5)
+                                spacing: dp(5)
                                 orientation: 'horizontal'
                                 FieldLabel:
                                     text: 'Bit Mode'
@@ -128,7 +118,7 @@
                                     id: bitmode
                                     on_active: root.on_bit_mode(*args)
                             BoxLayout:
-                                spacing: sp(5)
+                                spacing: dp(5)
                                 orientation: 'horizontal'
                                 FieldLabel:
                                     text: 'Endian'
@@ -141,15 +131,21 @@
                     
             BoxLayout:
                 orientation: 'horizontal'
-                spacing: sp(5)
-                FieldLabel:
-                    text: 'Formula'
-                    size_hint_x: 0.3
-                    halign: 'right'
+                spacing: dp(5)
+
                 SectionBoxLayout:
-                    padding: (0, sp(10))
+                    size_hint_x: 0.2
+                    spacing: dp(5)
                     orientation: 'horizontal'
-                    size_hint_x: 0.7
+                    FieldLabel:
+                        halign: 'right'
+                        text: 'Formula'
+                        size_hint_x: 0.1
+                
+                SectionBoxLayout:
+                    padding: (0, dp(10))
+                    orientation: 'horizontal'
+                    size_hint_x: 0.8
                     LargeFieldLabel:
                         size_hint_x: 0.3
                         halign: 'right'
@@ -167,49 +163,40 @@
                         size_hint_x: 0.25
                         on_text: root.on_adder(*args)
                 
-            BoxLayout:
-                orientation: 'horizontal'
-                spacing: sp(5)
-                FieldLabel:
-                    halign: 'right'
-                    size_hint_x: 0.3
-                    text: 'Conversion Filter'
-                MappedSpinner:
-                    id: filters     
-                    size_hint_x: 0.7
-                    on_text: root.on_filter(*args)
+#            BoxLayout:
+#                orientation: 'horizontal'
+#                spacing: dp(5)
+#                FieldLabel:
+#                    halign: 'right'
+#                    size_hint_x: 0.3
+#                    text: 'Conversion Filter'
+#                MappedSpinner:
+#                    id: filters     
+#                    size_hint_x: 0.7
+#                    on_text: root.on_filter(*args)
                                
-        BoxLayout:
-            orientation: 'horizontal'
-            size_hint_y: 0.1
-            IconButton:
-                text: u'\uf00c'
-                on_press: root.on_commit()
-            IconButton:
-                text: u'\uf00d'
-                on_press: root.on_cancel()
-
 <CANChannelView>:
     spacing: dp(10)
     size_hint_y: None
     height: dp(30)
     orientation: 'horizontal'
-    FieldLabel:
-        id: channel_name
-        size_hint_x: 0.18
+    ChannelNameSelectorView:
+        id: chan_id
+        size_hint_x: 0.19
+        compact: True
+    SampleRateSpinner:
+        id: sr
+        size_hint_x: 0.15
+        on_text: root.on_sample_rate(*args)
     FieldLabel:
         id: can_id
-        size_hint_x: 0.17
+        size_hint_x: 0.16
     FieldLabel:
         id: can_offset_len
         size_hint_x: 0.2
     FieldLabel:
         size_hint_x: 0.25
         id: can_formula
-    SampleRateSpinner:
-        id: sr
-        size_hint_x: 0.15
-        on_text: root.on_sample_rate(*args)
     IconButton:
         size_hint_x: 0.05        
         text: u'\uf044'
@@ -254,9 +241,13 @@
 			orientation: 'horizontal'
 			size_hint_y: 0.1
 			#spacing: dp(5)
-	        FieldLabel:
-	            text: 'Channel'
-	        	size_hint_x: 0.18
+            FieldLabel:
+                text: 'Channel'
+                size_hint_x: 0.18
+            FieldLabel:
+                text: 'Sample Rate'
+                size_hint_x: 0.15
+	        	
             FieldLabel:
                 text: 'ID'
                 size_hint_x: 0.17
@@ -266,9 +257,6 @@
             FieldLabel:
                 text: 'Formula'
                 size_hint_x: 0.25
-            FieldLabel:
-                text: 'Sample Rate'
-                size_hint_x: 0.15
             FieldLabel:
                 text: ''
                 size_hint_x: 0.1
@@ -318,14 +306,14 @@
 
     orientation: 'vertical'
     size_hint_y: None
-    height: sp(200)
-    padding: (sp(20), sp(0))
-    spacing: sp(10)
+    height: dp(200)
+    padding: (dp(20), dp(0))
+    spacing: dp(10)
     FieldLabel:
         id: title
         size_hint_y: 0.1
     BoxLayout:
-        spacing: sp(10)
+        spacing: dp(10)
         size_hint_y: 0.85
         orientation: 'horizontal'
         AnchorLayout:
@@ -362,7 +350,7 @@
     
 <PresetBrowserView>:
     orientation: 'vertical'
-    spacing: sp(10)
+    spacing: dp(10)
     ScrollView:
         size_hint_y: 0.85
         canvas.before:

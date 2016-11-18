@@ -24,7 +24,7 @@ from kivy.app import Builder
 from kivy.metrics import dp
 from kivy.uix.popup import Popup
 from kivy.uix.boxlayout import BoxLayout
-from kivy.properties import NumericProperty, ListProperty
+from kivy.properties import NumericProperty, ListProperty, BooleanProperty
 from utils import *
 from autosportlabs.racecapture.views.configuration.channels.channelsview import ChannelEditor
 from autosportlabs.racecapture.data.channels import *
@@ -36,6 +36,7 @@ class ChannelNameSelectorView(BoxLayout):
     filter_list = ListProperty([])
     channel_config = None
     runtime_channels = None
+    compact = BooleanProperty(False)
     
     def __init__(self, **kwargs):
         super(ChannelNameSelectorView, self).__init__(**kwargs)
@@ -53,6 +54,11 @@ class ChannelNameSelectorView(BoxLayout):
     def on_channel_type(self, instance, value):
         self.ids.channel_name.channelType = value
     
+    def on_compact(self, instance, value):
+        if value:
+            label = self.ids.channel_label
+            label.parent.remove_widget(label)
+
     def setValue(self, value):
         self.channel_config = value
         self.set_channel_name(value.name)

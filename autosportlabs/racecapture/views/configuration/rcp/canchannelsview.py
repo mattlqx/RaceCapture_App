@@ -13,12 +13,13 @@ from iconbutton import IconButton
 from settingsview import SettingsSwitch
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
 from autosportlabs.racecapture.config.rcpconfig import *
-from autosportlabs.racecapture.views.util.alertview import confirmPopup, choicePopup
+from autosportlabs.racecapture.views.util.alertview import confirmPopup, choicePopup, editor_popup
 from autosportlabs.racecapture.resourcecache.resourcemanager import ResourceCache
 from fieldlabel import FieldLabel
 from utils import *
 from valuefield import FloatValueField, IntegerValueField
 from mappedspinner import MappedSpinner
+import copy
 
 CAN_CHANNELS_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/canchannelsview.kv'
 
@@ -42,31 +43,14 @@ class SectionBoxLayout(BoxLayout):
 
 class CANChannelConfigView(BoxLayout):
     
-    def __init__(self, index, can_channel_cfg, channels, max_sample_rate, can_filters, **kwargs):
+    def __init__(self, index, can_channel_cfg, can_filters, **kwargs):
         super(CANChannelConfigView, self).__init__(**kwargs)
         self._loaded = False
-        self.register_event_type('on_editor_close')
-        self.register_event_type('on_editor_commit')
         self.channel_index = index
         self.can_channel_cfg = can_channel_cfg
-        self.channels = channels
-        self.max_sample_rate = max_sample_rate
         self.can_filters = can_filters
         self.init_view()
         self._loaded = True
-
-    def on_editor_close(self, *args):
-        pass
-
-    def on_editor_commit(self, *args):
-        pass
-        
-    def on_cancel(self):
-        self.dispatch('on_editor_close')        
-    
-    def on_commit(self):
-        self.dispatch('on_editor_commit', self.channel_index, self.can_channel_cfg)
-        self.dispatch('on_editor_close')
         
     def on_bit_mode(self, instance, value):
         if self._loaded:
@@ -110,34 +94,17 @@ class CANChannelConfigView(BoxLayout):
             self.can_channel_cfg.mapping.conversion_filter_id = instance.getValueFromKey(value)
         
     def init_view(self):
-        channel_editor = self.ids.chan_id
-        channel_editor.on_channels_updated(self.channels)
-        channel_editor.setValue(self.can_channel_cfg)
-        
-        sample_rate_spinner = self.ids.sr
-        sample_rate_spinner.set_max_rate(self.max_sample_rate)
-        sample_rate_spinner.setFromValue(self.can_channel_cfg.sampleRate)
-        
         self.ids.can_bus_channel.setValueMap({0: '1', 1: '2'}, '1')
         
         self.ids.endian.setValueMap({0: 'Big (MSB)', 1: 'Little (LSB)'}, 'Big (MSB)')
         
-        self.ids.filters.setValueMap(self.can_filters.filters, self.can_filters.default_value)    
+        # Disable for the initial release
+        #self.ids.filters.setValueMap(self.can_filters.filters, self.can_filters.default_value)    
         
         self.update_mapping_spinners()
         self.load_values()
         
     def load_values(self):
-
-        #Channel Editor        
-        channel_editor = self.ids.chan_id
-        channel_editor.on_channels_updated(self.channels)
-        channel_editor.setValue(self.can_channel_cfg)
-        
-        #Sample Rate
-        sample_rate_spinner = self.ids.sr
-        sample_rate_spinner.set_max_rate(self.max_sample_rate)        
-        sample_rate_spinner.setFromValue(self.can_channel_cfg.sampleRate)
         
         #CAN Channel
         self.ids.can_bus_channel.setFromValue(self.can_channel_cfg.mapping.can_channel)
@@ -164,7 +131,8 @@ class CANChannelConfigView(BoxLayout):
         self.ids.adder.text = str(self.can_channel_cfg.mapping.adder)
         
         #Conversion Filter ID
-        self.ids.filters.setFromValue(self.can_channel_cfg.mapping.conversion_filter_id)
+        # Disable for initial release
+        #self.ids.filters.setFromValue(self.can_channel_cfg.mapping.conversion_filter_id)
         
     def update_mapping_spinners(self):
         bit_mode = self.can_channel_cfg.mapping.bit_mode
@@ -172,12 +140,12 @@ class CANChannelConfigView(BoxLayout):
         
     def set_mapping_choices(self, bit_mode):
         choices = 63 if bit_mode else 7
-        self.ids.offset.setValueMap(self.create_bit_choices(choices), '0')
-        self.ids.length.setValueMap(self.create_bit_choices(1 + choices), '1')
+        self.ids.offset.setValueMap(self.create_bit_choices(0, choices), '0')
+        self.ids.length.setValueMap(self.create_bit_choices(1, 1 + choices), '1')
 
-    def create_bit_choices(self, max_choices):
+    def create_bit_choices(self, starting, max_choices):
         bit_choices = {}
-        for i in range(0,max_choices + 1):
+        for i in range(starting, max_choices + 1):
             bit_choices[i]=str(i)
         return bit_choices
 
@@ -240,11 +208,14 @@ class CANChannelView(BoxLayout):
         self.dispatch('on_customize_channel', self.channel_index)
         
     def set_channel(self):
+        channel_editor = self.ids.chan_id
+        channel_editor.on_channels_updated(self.channels)
+        channel_editor.setValue(self.can_channel_cfg)
+
         sample_rate_spinner = self.ids.sr
         sample_rate_spinner.set_max_rate(self.max_sample_rate)        
         sample_rate_spinner.setFromValue(self.can_channel_cfg.sampleRate)
         
-        self.ids.channel_name.text = '{}'.format(self.can_channel_cfg.name)
         can_mapping = self.can_channel_cfg.mapping
         self.ids.can_id.text = '{}'.format(can_mapping.can_id)
         self.ids.can_offset_len.text = u'{} ( {} )'.format(can_mapping.bit_offset, can_mapping.bit_length)
@@ -378,22 +349,22 @@ class CANChannelsView(BaseConfigView):
     def _replace_config(self, to_cfg, from_cfg):
         to_cfg.__dict__.update(from_cfg.__dict__)
         
-    def on_edited(self, instance, index, can_channel_cfg):
-        self._replace_config(self.can_channels_cfg.channels[index], can_channel_cfg)
-        self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
-        self.dispatch('on_modified')
-
     def popup_dismissed(self, *args):
         self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
     
     def _customize_channel(self, channel_index):
-        working_channel_cfg = copy(self.can_channels_cfg.channels[channel_index])
-        content = CANChannelConfigView(channel_index, working_channel_cfg, self.channels, self.max_sample_rate, self.can_filters)
-        content.bind(on_editor_commit=self.on_edited)
-        content.bind(on_editor_close=lambda *args:popup.dismiss())
-        popup = Popup(title="Customize CAN Channel", content=content, size_hint=(spct(0.75), spct(0.7)))
-        popup.bind(on_dismiss=self.popup_dismissed)
-        popup.open()
+        working_channel_cfg = copy.deepcopy(self.can_channels_cfg.channels[channel_index])
+        content = CANChannelConfigView(channel_index, working_channel_cfg, self.can_filters)
+
+        def _on_answer(instance, answer):
+            if answer:
+                self._replace_config(self.can_channels_cfg.channels[content.channel_index], working_channel_cfg)
+                self.dispatch('on_modified')
+
+            self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
+            popup.dismiss()
+        
+        popup = editor_popup('Customize CAN mapping', content, _on_answer, size_hint=(0.7, 0.7))
         
     def on_customize_channel(self, instance, channel_index):
         self._customize_channel(channel_index)
