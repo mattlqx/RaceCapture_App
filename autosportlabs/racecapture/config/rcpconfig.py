@@ -907,8 +907,6 @@ class CANChannel(BaseChannel):
         json_dict['map'] = self.mapping.to_json_dict()
         return json_dict
 
-CAN_CHANNELS_MAX = 100
-
 class CANChannels(object):
     
     def __init__(self, **kwargs):
@@ -932,11 +930,8 @@ class CANChannels(object):
     def to_json_dict(self):
         channels_json = []
         channel_count = len(self.channels)
-        channel_count = channel_count if channel_count <= CAN_CHANNELS_MAX else CAN_CHANNELS_MAX
-        
         for i in range(channel_count):
             channels_json.append(self.channels[i].to_json_dict())
-
         return {'canChanCfg':{'en': 1 if self.enabled else 0, 'chans':channels_json }}
 
 class PidConfig(BaseChannel):

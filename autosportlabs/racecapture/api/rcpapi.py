@@ -660,7 +660,7 @@ class RcpApi:
         """
         queue writing of all can channels
         """
-        channels = can_channels_json_dict.get('chans')
+        channels = can_channels_json_dict['canChanCfg']['chans']
         if channels:
             index = 0
             for c in channels:
