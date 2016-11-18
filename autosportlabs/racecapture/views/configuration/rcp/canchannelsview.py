@@ -278,7 +278,7 @@ class CANChannelsView(BaseConfigView):
         self.register_event_type('on_config_updated')
         self.can_grid = self.ids.can_grid
         self._base_dir = kwargs.get('base_dir')
-        
+        self.max_can_channels = 0
         can_channels_enable = self.ids.can_channels_enable
         can_channels_enable.bind(on_setting=self.on_can_channels_enabled)
         can_channels_enable.setControl(SettingsSwitch())
@@ -304,17 +304,19 @@ class CANChannelsView(BaseConfigView):
     def on_config_updated(self, rc_cfg):
         can_channels_cfg = rc_cfg.can_channels
         max_sample_rate = rc_cfg.capabilities.sample_rates.sensor
+        max_can_channels = rc_cfg.capabilities.channels.can_channel
         self.ids.can_channels_enable.setValue(can_channels_cfg.enabled)
         
         self.reload_can_channel_grid(can_channels_cfg, max_sample_rate)
         self.can_channels_cfg = can_channels_cfg
         self.max_sample_rate = max_sample_rate
+        self.max_can_channels = max_can_channels
         self.update_view_enabled()
 
     def update_view_enabled(self):
         add_disabled = True
         if self.can_channels_cfg:
-            if len(self.can_channels_cfg.channels) < CAN_CHANNELS_MAX:
+            if len(self.can_channels_cfg.channels) < self.max_can_channels:
                 add_disabled = False
                 
         self.ids.add_can_channel.disabled = add_disabled
