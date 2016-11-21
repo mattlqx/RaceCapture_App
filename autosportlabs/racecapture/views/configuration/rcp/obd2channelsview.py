@@ -26,13 +26,81 @@ from kivy.app import Builder
 from iconbutton import IconButton
 from settingsview import SettingsSwitch
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
+from autosportlabs.racecapture.views.configuration.rcp.canchannelsview import CANChannelView
+from autosportlabs.uix.layout.sections import SectionBoxLayout
+from autosportlabs.racecapture.views.util.alertview import editor_popup
 from autosportlabs.racecapture.OBD2.obd2settings import OBD2Settings
 from utils import *
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 
-OBD2_CHANNELS_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/obd2channelsview.kv'
+OBD2_CHANNEL_CONFIG_VIEW_KV="""
+<OBD2ChannelConfigView>
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: dp(5)
+        BoxLayout:
+            size_hint_y: 0.2
+            spacing: dp(5)
+            orientation: 'horizontal'
+            SectionBoxLayout:
+                size_hint_x: 0.2
+                FieldLabel:
+                    text: 'PID'
+                    halign: 'right'
+            BoxLayout:
+                size_hint_x: 0.8
+                spacing: dp(5)
+                SectionBoxLayout:
+                    orientation: 'horizontal'
+                    size_hint_x: 0.6
+                    IntegerValueField:
+                        id: pid
+                SectionBoxLayout:
+                    size_hint_x: 0.4
+                    FieldLabel:
+                        size_hint_x: 0.6
+                        text: 'Mode'
+                        halign: 'right'
+                    IntegerValueField:
+                        id: mode
+                        size_hint_x: 0.4
+            
+        HLineSeparator:
+                            
+        CANChannelConfigView:
+            id: can_channel_config
+            size_hint_y: 0.8
+"""
+
+class OBD2ChannelConfigView(BoxLayout):
+    Builder.load_string(OBD2_CHANNEL_CONFIG_VIEW_KV)
+    
+    def __init__(self, **kwargs):
+        super(OBD2ChannelConfigView, self).__init__(**kwargs)
+
+OBD2_CHANNEL_KV="""
+<OBD2Channel>:
+    spacing: dp(10)
+    size_hint_y: None
+    height: dp(30)
+    orientation: 'horizontal'
+    ChannelNameSelectorView:
+        size_hint_x: 0.5
+        id: chan_id
+    SampleRateSpinner:
+        size_hint_x: 0.3
+        id: sr
+    IconButton:
+        size_hint_x: 0.1    
+        text: u'\uf044'
+        on_release: root.on_customize()        
+    IconButton:
+        size_hint_x: 0.1
+        text: '\357\200\224'
+        on_release: root.on_delete()
+"""
 
 class OBD2Channel(BoxLayout):
     channel = None
@@ -40,7 +108,8 @@ class OBD2Channel(BoxLayout):
     obd2_settings = None
     max_sample_rate = 0
     pidIndex = 0
-
+    Builder.load_string(OBD2_CHANNEL_KV)
+    
     def __init__(self, obd2_settings, max_sample_rate, **kwargs):
         super(OBD2Channel, self).__init__(**kwargs)
         self.obd2_settings = obd2_settings
@@ -69,6 +138,16 @@ class OBD2Channel(BoxLayout):
     def on_delete(self):
         self.dispatch('on_delete_pid', self.pidIndex)
 
+    def on_customize(self):
+        content = OBD2ChannelConfigView()
+
+        def _on_answer(instance, answer):
+            if answer:
+                self.dispatch('on_modified')
+            popup.dismiss()
+        
+        popup = editor_popup('Customize OBDII mapping', content, _on_answer, size_hint=(0.7, 0.7))
+        
     def set_channel(self, pidIndex, channel, channels):
         self.channel = channel
         self.pidIndex = pidIndex
@@ -83,6 +162,61 @@ class OBD2Channel(BoxLayout):
         channel_editor.setValue(channel)
         channel_editor.bind(on_channel=self.on_channel)
 
+OBD2_CHANNELS_VIEW_KV = """
+<OBD2ChannelsView>:
+    spacing: dp(20)
+    orientation: 'vertical'
+    SettingsView:
+        id: obd2enable
+        label_text: 'OBDII channels'
+        help_text: 'Specify one or more OBDII Channels to enable'
+        size_hint_y: 0.20
+    BoxLayout:
+        size_hint_y: 0.70
+        #spacing: dp(5)
+        orientation: 'vertical'        
+        HSeparator:
+            text: 'OBDII Channels'
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: 0.15
+            spacing: dp(5)
+            HSeparatorMinor:
+                text: 'Channel'
+                size_hint_x: 0.3            
+            HSeparatorMinor:
+                text: 'Logging Rate'
+                size_hint_x: 0.3
+        AnchorLayout:                
+            AnchorLayout:
+                ScrollContainer:
+                    canvas.before:
+                        Color:
+                            rgba: 0.05, 0.05, 0.05, 1
+                        Rectangle:
+                            pos: self.pos
+                            size: self.size                
+                    id: scrlobd2
+                    size_hint_y: 0.95
+                    do_scroll_x:False
+                    do_scroll_y:True
+                    GridLayout:
+                        id: obd2grid
+                        padding: [dp(20), dp(20)]
+                        spacing: [dp(10), dp(10)]
+                        size_hint_y: None
+                        height: max(self.minimum_height, scrlobd2.height)
+                        cols: 1
+            AnchorLayout:
+                anchor_y: 'bottom'
+                IconButton:
+                    size_hint: (None, None)
+                    height: root.height * .12
+                    text: u'\uf055'
+                    color: ColorScheme.get_accent()
+                    on_release: root.on_add_obd2_channel()
+                    disabled: True
+                    id: addpid"""
 
 class OBD2ChannelsView(BaseConfigView):
     DEFAULT_OBD2_SAMPLE_RATE = 1
@@ -91,7 +225,7 @@ class OBD2ChannelsView(BaseConfigView):
     obd2_grid = None
     obd2_settings = None
     base_dir = None
-    Builder.load_file(OBD2_CHANNELS_VIEW_KV)
+    Builder.load_string(OBD2_CHANNELS_VIEW_KV)
 
     def __init__(self, **kwargs):
         super(OBD2ChannelsView, self).__init__(**kwargs)

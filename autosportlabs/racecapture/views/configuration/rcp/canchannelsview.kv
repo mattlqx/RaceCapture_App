@@ -17,14 +17,6 @@
 <LargeFieldLabel>:
     font_size: self.height * 0.8
     
-<SectionBoxLayout>:
-    canvas.before:
-        Color:
-            rgba: 0.1, 0.1, 0.1, 1
-        Rectangle:
-            pos: self.pos
-            size: self.size             
-    padding: (dp(5), dp(5))                    
 
 <CANChannelConfigView>:
     spacing: dp(10)
@@ -39,33 +31,28 @@
                 orientation: 'horizontal'
                 spacing: dp(5)
                 SectionBoxLayout:
-                    #padding: (dp(5), dp(5))
                     size_hint_x: 0.2
                     FieldLabel:
                         halign: 'right'
                         text: 'CAN ID'
                 BoxLayout:
-                    spacing: dp(3)
+                    spacing: dp(5)
                     size_hint_x: 0.8
                     orientation: 'horizontal'
                     SectionBoxLayout:
-                        spacing: dp(5)
                         size_hint_x: 0.6
-                        
                         LargeIntegerValueField:
                             id: can_id
                             size_hint_x: 0.3
                             on_text: root.on_can_id(*args)
-                        
                     SectionBoxLayout:
                         size_hint_x: 0.4
-                        spacing: dp(5)
                         FieldLabel:
-                            size_hint_x: 0.2
+                            size_hint_x: 0.6
                             text: 'CAN Bus'
                             halign: 'right'
                         LargeMappedSpinner:
-                            size_hint_x: 0.1
+                            size_hint_x: 0.4
                             id: can_bus_channel
                             on_text: root.on_can_bus_channel(*args)
     
@@ -76,7 +63,6 @@
                 spacing: dp(5)
                 SectionBoxLayout:
                     size_hint_x: 0.2
-                    spacing: dp(5)
                     orientation: 'horizontal'
                     FieldLabel:
                         halign: 'right'
@@ -86,10 +72,9 @@
                 BoxLayout:
                     size_hint_x: 0.8
                     orientation: 'horizontal'
-                    spacing: dp(3)
+                    spacing: dp(5)
                     SectionBoxLayout:
                         size_hint_x: 0.6
-                        spacing: dp(5)
                         LargeMappedSpinner:
                             id: offset
                             size_hint_x: 0.1
@@ -233,14 +218,12 @@
     	
 	BoxLayout:
         size_hint_y: 0.70
-		#spacing: dp(5)
 		orientation: 'vertical'		
 	    HSeparator:
 	        text: 'CAN Channels'
 		BoxLayout:
 			orientation: 'horizontal'
 			size_hint_y: 0.1
-			#spacing: dp(5)
             FieldLabel:
                 text: 'Channel'
                 size_hint_x: 0.18

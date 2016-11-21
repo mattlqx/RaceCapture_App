@@ -13,6 +13,7 @@ from iconbutton import IconButton
 from settingsview import SettingsSwitch
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
 from autosportlabs.racecapture.config.rcpconfig import *
+from autosportlabs.uix.layout.sections import SectionBoxLayout
 from autosportlabs.racecapture.views.util.alertview import confirmPopup, choicePopup, editor_popup
 from autosportlabs.racecapture.resourcecache.resourcemanager import ResourceCache
 from fieldlabel import FieldLabel
@@ -38,20 +39,19 @@ class LargeIntegerValueField(IntegerValueField):
 class LargeFloatValueField(FloatValueField):
     pass
 
-class SectionBoxLayout(BoxLayout):
-    pass
-
 class CANChannelConfigView(BoxLayout):
     
-    def __init__(self, index, can_channel_cfg, can_filters, **kwargs):
+    def __init__(self, **kwargs):
         super(CANChannelConfigView, self).__init__(**kwargs)
         self._loaded = False
+    
+    def init_config(self, index, can_channel_cfg, can_filters):
         self.channel_index = index
         self.can_channel_cfg = can_channel_cfg
         self.can_filters = can_filters
         self.init_view()
         self._loaded = True
-        
+
     def on_bit_mode(self, instance, value):
         if self._loaded:
             self.can_channel_cfg.mapping.bit_mode = self.ids.bitmode.active
@@ -354,7 +354,8 @@ class CANChannelsView(BaseConfigView):
     
     def _customize_channel(self, channel_index):
         working_channel_cfg = copy.deepcopy(self.can_channels_cfg.channels[channel_index])
-        content = CANChannelConfigView(channel_index, working_channel_cfg, self.can_filters)
+        content = CANChannelConfigView()
+        content.init_config(channel_index, working_channel_cfg, self.can_filters)
 
         def _on_answer(instance, answer):
             if answer:
