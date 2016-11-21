@@ -21,25 +21,187 @@ from utils import *
 from valuefield import FloatValueField, IntegerValueField
 from mappedspinner import MappedSpinner
 import copy
-
-CAN_CHANNELS_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/canchannelsview.kv'
-
+    
 class LargeSpinnerOption(SpinnerOption):
-    pass
+    Builder.load_string("""
+<LargeSpinnerOption>:
+    font_size: self.height * 0.5
+""")
 
 class LargeMappedSpinner(MappedSpinner):
-    pass
+    Builder.load_string("""
+<LargeMappedSpinner>:
+    font_size: self.height * 0.5
+    option_cls: 'LargeSpinnerOption'
+""")
     
 class LargeFieldLabel(FieldLabel):
-    pass
+    Builder.load_string("""
+<LargeFieldLabel>:
+    font_size: self.height * 0.8
+""")    
+
 
 class LargeIntegerValueField(IntegerValueField):
-    pass
+    Builder.load_string("""
+<LargeIntegerValueField>:
+    font_size: self.height * 0.6
+""")    
 
 class LargeFloatValueField(FloatValueField):
-    pass
+    Builder.load_string("""
+<LargeFloatValueField>:
+    font_size: self.height * 0.6
+""")    
+
+
+CAN_CHANNEL_CONFIG_VIEW_KV="""
+<CANChannelConfigView>:
+    spacing: dp(10)
+    BoxLayout:
+        orientation: 'vertical'
+        BoxLayout:
+            size_hint_y: 0.9
+            spacing: dp(10)
+            orientation: 'vertical'
+            
+            BoxLayout:
+                orientation: 'horizontal'
+                spacing: dp(5)
+                SectionBoxLayout:
+                    size_hint_x: 0.2
+                    FieldLabel:
+                        halign: 'right'
+                        text: 'CAN ID'
+                BoxLayout:
+                    spacing: dp(5)
+                    size_hint_x: 0.8
+                    orientation: 'horizontal'
+                    SectionBoxLayout:
+                        size_hint_x: 0.6
+                        LargeIntegerValueField:
+                            id: can_id
+                            size_hint_x: 0.3
+                            on_text: root.on_can_id(*args)
+                    SectionBoxLayout:
+                        size_hint_x: 0.4
+                        FieldLabel:
+                            size_hint_x: 0.6
+                            text: 'CAN Bus'
+                            halign: 'right'
+                        LargeMappedSpinner:
+                            size_hint_x: 0.4
+                            id: can_bus_channel
+                            on_text: root.on_can_bus_channel(*args)
+    
+            HLineSeparator:
+                        
+            BoxLayout:
+                orientation: 'horizontal'
+                spacing: dp(5)
+                SectionBoxLayout:
+                    size_hint_x: 0.2
+                    orientation: 'horizontal'
+                    FieldLabel:
+                        halign: 'right'
+                        text: 'Offset'
+                        size_hint_x: 0.1
+
+                BoxLayout:
+                    size_hint_x: 0.8
+                    orientation: 'horizontal'
+                    spacing: dp(5)
+                    SectionBoxLayout:
+                        size_hint_x: 0.6
+                        LargeMappedSpinner:
+                            id: offset
+                            size_hint_x: 0.1
+                            on_text: root.on_bit_offset(*args)
+                        FieldLabel:
+                            halign: 'right'
+                            text: 'Length'
+                            size_hint_x: 0.1
+                        LargeMappedSpinner:
+                            id: length
+                            size_hint_x: 0.1
+                            on_text: root.on_bit_length(*args)
+                    SectionBoxLayout:
+                        size_hint_x: 0.4                    
+                        BoxLayout:
+                            orientation: 'vertical'
+                            size_hint_x: 0.3
+                            spacing: dp(5)
+                            BoxLayout:
+                                spacing: dp(5)
+                                orientation: 'horizontal'
+                                FieldLabel:
+                                    text: 'Bit Mode'
+                                    halign: 'right'
+                                CheckBox:
+                                    id: bitmode
+                                    on_active: root.on_bit_mode(*args)
+                            BoxLayout:
+                                spacing: dp(5)
+                                orientation: 'horizontal'
+                                FieldLabel:
+                                    text: 'Endian'
+                                    halign: 'right'
+                                MappedSpinner:
+                                    id: endian
+                                    on_text: root.on_endian(*args)
+
+            HLineSeparator
+                    
+            BoxLayout:
+                orientation: 'horizontal'
+                spacing: dp(5)
+
+                SectionBoxLayout:
+                    size_hint_x: 0.2
+                    spacing: dp(5)
+                    orientation: 'horizontal'
+                    FieldLabel:
+                        halign: 'right'
+                        text: 'Formula'
+                        size_hint_x: 0.1
+                
+                SectionBoxLayout:
+                    padding: (0, dp(10))
+                    orientation: 'horizontal'
+                    size_hint_x: 0.8
+                    LargeFieldLabel:
+                        size_hint_x: 0.3
+                        halign: 'right'
+                        text: u'(Raw \u00D7 '
+                    LargeFloatValueField:
+                        id: multiplier
+                        size_hint_x: 0.3
+                        on_text: root.on_multiplier(*args)
+                    LargeFieldLabel:
+                        text: ' ) + '
+                        halign: 'center'
+                        size_hint_x: 0.15
+                    LargeFloatValueField:
+                        id: adder
+                        size_hint_x: 0.25
+                        on_text: root.on_adder(*args)
+                
+#            BoxLayout:
+#                orientation: 'horizontal'
+#                spacing: dp(5)
+#                FieldLabel:
+#                    halign: 'right'
+#                    size_hint_x: 0.3
+#                    text: 'Conversion Filter'
+#                MappedSpinner:
+#                    id: filters     
+#                    size_hint_x: 0.7
+#                    on_text: root.on_filter(*args)
+"""
 
 class CANChannelConfigView(BoxLayout):
+    
+    Builder.load_string(CAN_CHANNEL_CONFIG_VIEW_KV)
     
     def __init__(self, **kwargs):
         super(CANChannelConfigView, self).__init__(**kwargs)
@@ -171,7 +333,41 @@ class CANFilters(object):
         except Exception as detail:
             raise Exception('Error loading CAN filters: ' + str(detail))
 
+CAN_CHANNEL_VIEW_KV = """
+<CANChannelView>:
+    spacing: dp(10)
+    size_hint_y: None
+    height: dp(30)
+    orientation: 'horizontal'
+    ChannelNameSelectorView:
+        id: chan_id
+        size_hint_x: 0.19
+        compact: True
+    SampleRateSpinner:
+        id: sr
+        size_hint_x: 0.15
+        on_text: root.on_sample_rate(*args)
+    FieldLabel:
+        id: can_id
+        size_hint_x: 0.16
+    FieldLabel:
+        id: can_offset_len
+        size_hint_x: 0.2
+    FieldLabel:
+        size_hint_x: 0.25
+        id: can_formula
+    IconButton:
+        size_hint_x: 0.05        
+        text: u'\uf044'
+        on_release: root.on_customize()
+    IconButton:
+        size_hint_x: 0.05        
+        text: u'\uf014'
+        on_release: root.on_delete()
+"""
+
 class CANChannelView(BoxLayout):
+    Builder.load_string(CAN_CHANNEL_VIEW_KV)
     channels = None
     can_channel_cfg = None
     max_sample_rate = 0
@@ -233,6 +429,95 @@ class CANPresetResourceCache(ResourceCache):
         default_preset_dir = os.path.join(base_dir, 'resource', self.preset_name)        
         super(CANPresetResourceCache, self).__init__(settings, self.preset_url, self.preset_name, default_preset_dir, **kwargs)    
     
+CAN_CHANNELS_VIEW_KV="""
+<CANChannelsView>:
+    spacing: dp(20)
+    orientation: 'vertical'
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint_y: 0.20
+        SettingsView:
+            size_hint_y: 0.6
+            id: can_channels_enable
+            label_text: 'CAN channels'
+            help_text: 'Enable CAN data mappings'
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: 0.4        
+            BoxLayout:
+                size_hint_x: 0.8
+            LabelIconButton:
+                size_hint_x: 0.2
+                id: load_preset
+                title: 'Presets'
+                icon_size: self.height * 0.7
+                title_font_size: self.height * 0.5
+                icon: u'\uf150'
+                on_press: root.load_preset_view()
+        
+    BoxLayout:
+        size_hint_y: 0.70
+        orientation: 'vertical'        
+        HSeparator:
+            text: 'CAN Channels'
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: 0.1
+            FieldLabel:
+                text: 'Channel'
+                size_hint_x: 0.18
+            FieldLabel:
+                text: 'Sample Rate'
+                size_hint_x: 0.15
+                
+            FieldLabel:
+                text: 'ID'
+                size_hint_x: 0.17
+            FieldLabel:
+                text: 'Offset(Length)'
+                size_hint_x: 0.2
+            FieldLabel:
+                text: 'Formula'
+                size_hint_x: 0.25
+            FieldLabel:
+                text: ''
+                size_hint_x: 0.1
+            
+        AnchorLayout:                
+            AnchorLayout:
+                ScrollView:
+                    canvas.before:
+                        Color:
+                            rgba: 0.05, 0.05, 0.05, 1
+                        Rectangle:
+                            pos: self.pos
+                            size: self.size                
+                    id: scroller
+                    size_hint_y: 0.95
+                    do_scroll_x:False
+                    do_scroll_y:True
+                    GridLayout:
+                        id: can_grid
+                        spacing: [dp(10), dp(10)]
+                        size_hint_y: None
+                        height: max(self.minimum_height, scroller.height)
+                        cols: 1
+                FieldLabel:
+                    halign: 'center'
+                    id: list_msg
+                    text: ''
+                        
+            AnchorLayout:
+                anchor_y: 'bottom'
+                IconButton:
+                    size_hint: (None, None)
+                    height: root.height * .12
+                    text: u'\uf055'
+                    color: ColorScheme.get_accent()
+                    on_release: root.on_add_can_channel()
+                    disabled: True
+                    id: add_can_channel
+"""
 class CANChannelsView(BaseConfigView):
     DEFAULT_CAN_SAMPLE_RATE = 1    
     can_channels_cfg = None
@@ -241,7 +526,7 @@ class CANChannelsView(BaseConfigView):
     can_channels_settings = None
     can_filters = None
     _popup = None
-    Builder.load_file(CAN_CHANNELS_VIEW_KV)
+    Builder.load_string(CAN_CHANNELS_VIEW_KV)
     
     def __init__(self, **kwargs):
         super(CANChannelsView, self).__init__(**kwargs)
@@ -401,7 +686,62 @@ class CANChannelsView(BaseConfigView):
         popup.bind(on_dismiss=self.popup_dismissed)
         popup.open()
 
+PRESET_ITEM_VIEW_KV = """
+<PresetItemView>:
+    canvas.before:
+        Color:
+            rgba: 0.01, 0.01, 0.01, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size             
+
+    orientation: 'vertical'
+    size_hint_y: None
+    height: dp(200)
+    padding: (dp(20), dp(0))
+    spacing: dp(10)
+    FieldLabel:
+        id: title
+        size_hint_y: 0.1
+    BoxLayout:
+        spacing: dp(10)
+        size_hint_y: 0.85
+        orientation: 'horizontal'
+        AnchorLayout:
+            size_hint_x: 0.75
+            Image:
+                id: image
+            AnchorLayout:
+                anchor_y: 'bottom'
+                BoxLayout:
+                    canvas.before:
+                        Color:
+                            rgba: 0, 0, 0, 0.7
+                        Rectangle:
+                            pos: self.pos
+                            size: self.size
+                    size_hint_y: 0.3
+                    FieldLabel:
+                        halign: 'left'
+                        id: notes
+
+        AnchorLayout:
+            size_hint_x: 0.25
+            anchor_x: 'center'
+            anchor_y: 'center'
+            LabelIconButton:
+                size_hint_x: 1
+                size_hint_y: 0.3
+                id: load_preset
+                title: 'Select'
+                icon_size: self.height * 0.7
+                title_font_size: self.height * 0.5
+                icon: u'\uf046'
+                on_press: root.select_preset()
+"""
 class PresetItemView(BoxLayout):
+    Builder.load_string(PRESET_ITEM_VIEW_KV)
+    
     def __init__(self, preset_id, name, notes, image_path, **kwargs):
         super(PresetItemView, self).__init__(**kwargs)
         self.preset_id = preset_id
@@ -416,8 +756,37 @@ class PresetItemView(BoxLayout):
     def on_preset_selected(self, preset_id):
         pass
     
+PRESET_BROWSER_VIEW_KV="""
+<PresetBrowserView>:
+    orientation: 'vertical'
+    spacing: dp(10)
+    ScrollView:
+        size_hint_y: 0.85
+        canvas.before:
+            Color:
+                rgba: 0.05, 0.05, 0.05, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        id: scroller
+        size_hint_y: 0.95
+        do_scroll_x:False
+        do_scroll_y:True
+        GridLayout:
+            id: preset_grid
+            spacing: [dp(10), dp(10)]
+            size_hint_y: None
+            height: max(self.minimum_height, scroller.height)
+            cols: 1
+    IconButton:
+        size_hint_y: 0.15
+        text: u'\uf00d'
+        on_press: root.on_close()
+"""
+
 class PresetBrowserView(BoxLayout):
     presets = None
+    Builder.load_string(PRESET_BROWSER_VIEW_KV)
     
     def __init__(self, resource_cache, **kwargs):
         super(PresetBrowserView, self).__init__(**kwargs)
