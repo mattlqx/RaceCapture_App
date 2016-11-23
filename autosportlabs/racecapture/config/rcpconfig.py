@@ -52,7 +52,7 @@ class BaseChannel(object):
         json_dict['max'] = self.max
         json_dict['prec'] = self.precision
         json_dict['sr'] = self.sampleRate
-
+    
 SCALING_MAP_POINTS = 5
 SCALING_MAP_MIN_VOLTS = 0
 

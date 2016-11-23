@@ -34,6 +34,7 @@ from utils import *
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
+import copy
 
 OBD2_CHANNEL_CONFIG_VIEW_KV="""
 <OBD2ChannelConfigView>
@@ -104,7 +105,6 @@ OBD2_CHANNEL_KV="""
 
 class OBD2Channel(BoxLayout):
     channel = None
-    channels = None
     obd2_settings = None
     max_sample_rate = 0
     pidIndex = 0
@@ -117,11 +117,14 @@ class OBD2Channel(BoxLayout):
         self.register_event_type('on_delete_pid')
         self.register_event_type('on_modified')
 
-    def on_channel(self, *args):
+    def on_channel(self, instance):
         if self.channel:
+            # copy in the extended PID and CAN mapping
+            obd2_channel = self.obd2_settings.obd2channelInfo.get(self.channel.name)
+            self.channel.pid = obd2_channel.pid
+            self.channel.mode = obd2_channel.mode
+            self.channel.mapping = copy.deepcopy(obd2_channel.mapping)
             self.channel.stale = True
-            pid = self.obd2_settings.getPidForChannelName(self.channel.name)
-            self.channel.pid = pid
             self.dispatch('on_modified')
 
     def on_modified(self):
@@ -148,14 +151,15 @@ class OBD2Channel(BoxLayout):
         
         popup = editor_popup('Customize OBDII mapping', content, _on_answer, size_hint=(0.7, 0.7))
         
+        # TODO remove channels, no longer needed
+        # remove PID index
     def set_channel(self, pidIndex, channel, channels):
         self.channel = channel
-        self.pidIndex = pidIndex
-        self.channels = channels
         sample_rate_spinner = self.ids.sr
         sample_rate_spinner.set_max_rate(self.max_sample_rate)
         sample_rate_spinner.setFromValue(channel.sampleRate)
         sample_rate_spinner.bind(text=self.on_sample_rate)
+        
         channel_editor = self.ids.chan_id
         channel_editor.filter_list = self.obd2_settings.getChannelNames()
         channel_editor.on_channels_updated(channels)
