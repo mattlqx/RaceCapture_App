@@ -638,8 +638,8 @@ class CANChannelsView(BaseConfigView):
         self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
     
     def _customize_channel(self, channel_index):
-        working_channel_cfg = copy.deepcopy(self.can_channels_cfg.channels[channel_index])
         content = CANChannelConfigView()
+        working_channel_cfg = copy.deepcopy(self.can_channels_cfg.channels[channel_index])
         content.init_config(channel_index, working_channel_cfg, self.can_filters)
 
         def _on_answer(instance, answer):

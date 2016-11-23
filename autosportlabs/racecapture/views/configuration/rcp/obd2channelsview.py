@@ -26,7 +26,7 @@ from kivy.app import Builder
 from iconbutton import IconButton
 from settingsview import SettingsSwitch
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
-from autosportlabs.racecapture.views.configuration.rcp.canchannelsview import CANChannelView
+from autosportlabs.racecapture.views.configuration.rcp.canchannelsview import CANChannelView, CANFilters
 from autosportlabs.uix.layout.sections import SectionBoxLayout
 from autosportlabs.racecapture.views.util.alertview import editor_popup
 from autosportlabs.racecapture.OBD2.obd2settings import OBD2Settings
@@ -50,6 +50,7 @@ OBD2_CHANNEL_CONFIG_VIEW_KV="""
                 FieldLabel:
                     text: 'PID'
                     halign: 'right'
+                    id: pid
             BoxLayout:
                 size_hint_x: 0.8
                 spacing: dp(5)
@@ -64,6 +65,7 @@ OBD2_CHANNEL_CONFIG_VIEW_KV="""
                         size_hint_x: 0.6
                         text: 'Mode'
                         halign: 'right'
+                        id: mode
                     IntegerValueField:
                         id: mode
                         size_hint_x: 0.4
@@ -81,6 +83,11 @@ class OBD2ChannelConfigView(BoxLayout):
     def __init__(self, **kwargs):
         super(OBD2ChannelConfigView, self).__init__(**kwargs)
 
+    def init_config(self, index, channel, can_filters):
+        self.ids.can_channel_config.init_config(index, channel, can_filters)
+        self.ids.mode.text = str(channel.mode)
+        self.ids.pid.text = str(channel.pid)
+                    
 OBD2_CHANNEL_KV="""
 <OBD2Channel>:
     spacing: dp(10)
@@ -110,10 +117,11 @@ class OBD2Channel(BoxLayout):
     pidIndex = 0
     Builder.load_string(OBD2_CHANNEL_KV)
     
-    def __init__(self, obd2_settings, max_sample_rate, **kwargs):
+    def __init__(self, obd2_settings, max_sample_rate, can_filters, **kwargs):
         super(OBD2Channel, self).__init__(**kwargs)
         self.obd2_settings = obd2_settings
         self.max_sample_rate = max_sample_rate
+        self.can_filters = can_filters
         self.register_event_type('on_delete_pid')
         self.register_event_type('on_modified')
 
@@ -141,11 +149,18 @@ class OBD2Channel(BoxLayout):
     def on_delete(self):
         self.dispatch('on_delete_pid', self.pidIndex)
 
+    def _replace_config(self, to_cfg, from_cfg):
+        to_cfg.__dict__.update(from_cfg.__dict__)
+
     def on_customize(self):
+        working_channel_cfg = copy.deepcopy(self.channel)
         content = OBD2ChannelConfigView()
+        content.init_config(self.pidIndex, working_channel_cfg, self.can_filters)
 
         def _on_answer(instance, answer):
             if answer:
+                self._replace_config(self.channel, working_channel_cfg)
+                
                 self.dispatch('on_modified')
             popup.dismiss()
         
@@ -228,7 +243,6 @@ class OBD2ChannelsView(BaseConfigView):
     max_sample_rate = 0
     obd2_grid = None
     obd2_settings = None
-    base_dir = None
     Builder.load_string(OBD2_CHANNELS_VIEW_KV)
 
     def __init__(self, **kwargs):
@@ -238,9 +252,10 @@ class OBD2ChannelsView(BaseConfigView):
         obd2_enable = self.ids.obd2enable
         obd2_enable.bind(on_setting=self.on_obd2_enabled)
         obd2_enable.setControl(SettingsSwitch())
-        self.base_dir = kwargs.get('base_dir')
+        base_dir = kwargs.get('base_dir')
 
-        self.obd2_settings = OBD2Settings(base_dir=self.base_dir)
+        self.obd2_settings = OBD2Settings(base_dir=base_dir)
+        self.can_filters = CANFilters(base_dir)        
 
         self.update_view_enabled()
 
@@ -288,7 +303,7 @@ class OBD2ChannelsView(BaseConfigView):
         self.dispatch('on_modified')
 
     def add_obd2_channel(self, index, pidConfig, max_sample_rate):
-        channel = OBD2Channel(obd2_settings=self.obd2_settings, max_sample_rate=max_sample_rate)
+        channel = OBD2Channel(obd2_settings=self.obd2_settings, max_sample_rate=max_sample_rate, can_filters=self.can_filters)
         channel.bind(on_delete_pid=self.on_delete_pid)
         channel.set_channel(index, pidConfig, self.channels)
         channel.bind(on_modified=self.on_modified)

@@ -944,7 +944,7 @@ class PidConfig(BaseChannel):
     def fromJson(self, json_dict):
         if json_dict:
             super(PidConfig, self).fromJson(json_dict)
-            self.pid = json_dict.get("pid", self.pid)
+            self.pid = json_dict.get('pid', self.pid)
             self.mode = json_dict.get('mode', self.mode)
             self.mapping.from_json_dict(json_dict.get('map'))
 
