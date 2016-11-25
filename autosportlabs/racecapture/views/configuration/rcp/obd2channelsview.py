@@ -48,27 +48,48 @@ OBD2_CHANNEL_CONFIG_VIEW_KV = """
             SectionBoxLayout:
                 size_hint_x: 0.15
                 FieldLabel:
-                    text: 'PID'
+                    text: 'OBDII'
                     halign: 'right'
                     id: pid
             BoxLayout:
                 size_hint_x: 0.85
                 spacing: dp(5)
-                SectionBoxLayout:
-                    orientation: 'horizontal'
-                    size_hint_x: 0.6
-                    IntegerValueField:
-                        id: pid
+                
                 SectionBoxLayout:
                     size_hint_x: 0.4
+                    FieldLabel:
+                        text: 'PID'
+                        size_hint_x: 0.15
+                        halign: 'right'
+                    LargeMappedSpinner:
+                        id: pid
+                        on_text: root.on_pid(*args)
+                        size_hint_x: 0.15
+                
+                SectionBoxLayout:
+                    size_hint_x: 0.45
                     FieldLabel:
                         size_hint_x: 0.6
                         text: 'Mode'
                         halign: 'right'
                         id: mode
-                    IntegerValueField:
+                    LargeMappedSpinner:
                         id: mode
+                        on_text: root.on_mode(*args)
                         size_hint_x: 0.4
+            
+                SectionBoxLayout:
+                    orientation: 'horizontal'
+                    size_hint_x: 0.45
+
+                    FieldLabel:
+                        text: 'Passive'
+                        halign: 'right'
+                        size_hint_x: 0.7
+                    CheckBox:
+                        id: passive
+                        size_hint_x: 0.3
+                        on_active: root.on_passive(*args)
             
         HLineSeparator:
                             
@@ -82,11 +103,33 @@ class OBD2ChannelConfigView(BoxLayout):
 
     def __init__(self, **kwargs):
         super(OBD2ChannelConfigView, self).__init__(**kwargs)
+        self.channel = None
 
     def init_config(self, index, channel, can_filters):
+        pids = {}
+        for i in range(1, 255):
+            pids[i] = str(i)
+
+        self.ids.pid.setValueMap(pids, '1')
+        self.ids.mode.setValueMap({1:'01h', 34:'22h'}, '01h')
+
+        self.ids.mode.setFromValue(channel.mode)
+        self.ids.pid.setFromValue(channel.pid)
         self.ids.can_channel_config.init_config(index, channel, can_filters)
-        self.ids.mode.text = str(channel.mode)
-        self.ids.pid.text = str(channel.pid)
+        self.ids.passive.active = channel.passive
+        self.channel = channel
+
+    def on_pid(self, instance, value):
+        if self.channel:
+            self.channel.pid = instance.getValueFromKey(value)
+
+    def on_mode(self, instance, value):
+        if self.channel:
+            self.channel.mode = instance.getValueFromKey(value)
+
+    def on_passive(self, instance, value):
+        if self.channel:
+            self.channel.passive = instance.active
 
 OBD2_CHANNEL_KV = """
 <OBD2Channel>:
@@ -164,9 +207,9 @@ class OBD2Channel(BoxLayout):
                 self.dispatch('on_modified')
             popup.dismiss()
 
-        popup = editor_popup('Customize OBDII mapping', content, _on_answer, size_hint=(0.7, 0.7))
+        popup = editor_popup('Customize OBDII mapping', content, _on_answer, size_hint=(0.7, 0.75))
 
-        # TODO remove channels, no longer needed
+        # TODO
         # remove PID index
     def set_channel(self, pidIndex, channel, channels):
         self.channel = channel
@@ -180,6 +223,7 @@ class OBD2Channel(BoxLayout):
         channel_editor.on_channels_updated(channels)
         channel_editor.setValue(channel)
         channel_editor.bind(on_channel=self.on_channel)
+
 
 OBD2_CHANNELS_VIEW_KV = """
 <OBD2ChannelsView>:

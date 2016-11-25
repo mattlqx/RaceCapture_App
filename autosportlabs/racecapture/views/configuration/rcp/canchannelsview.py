@@ -72,27 +72,47 @@ CAN_CHANNEL_CONFIG_VIEW_KV = """
                     size_hint_x: 0.15
                     FieldLabel:
                         halign: 'right'
-                        text: 'CAN ID'
+                        text: 'CAN'
+
                 BoxLayout:
                     spacing: dp(5)
                     size_hint_x: 0.85
                     orientation: 'horizontal'
-                    SectionBoxLayout:
-                        size_hint_x: 0.6
-                        LargeIntegerValueField:
-                            id: can_id
-                            size_hint_x: 0.3
-                            on_text: root.on_can_id(*args)
+                    
                     SectionBoxLayout:
                         size_hint_x: 0.4
                         FieldLabel:
-                            size_hint_x: 0.6
-                            text: 'CAN Bus'
+                            text: 'Channel'
+                            size_hint_x: 0.15
                             halign: 'right'
                         LargeMappedSpinner:
-                            size_hint_x: 0.4
                             id: can_bus_channel
+                            size_hint_x: 0.15
                             on_text: root.on_can_bus_channel(*args)
+
+                    SectionBoxLayout:
+                        size_hint_x: 0.45
+                        FieldLabel:
+                            size_hint_x: 0.3
+                            text: 'ID'
+                            halign: 'right'
+
+                        LargeIntegerValueField:
+                            id: can_id
+                            size_hint_x: 0.7
+                            on_text: root.on_can_id(*args)
+
+                    SectionBoxLayout:
+                        size_hint_x: 0.45
+                        FieldLabel:
+                            size_hint_x: 0.3
+                            text: 'Mask'
+                            halign: 'right'
+
+                        LargeIntegerValueField:
+                            id: mask
+                            size_hint_x: 0.7
+                            on_text: root.on_mask(*args)
     
             HLineSeparator:
                         
@@ -104,29 +124,37 @@ CAN_CHANNEL_CONFIG_VIEW_KV = """
                     orientation: 'horizontal'
                     FieldLabel:
                         halign: 'right'
-                        text: 'Offset'
+                        text: 'Mapping'
                         size_hint_x: 0.1
 
                 BoxLayout:
                     size_hint_x: 0.85
                     orientation: 'horizontal'
                     spacing: dp(5)
+                    
                     SectionBoxLayout:
-                        size_hint_x: 0.6
+                        size_hint_x: 0.4
+                        FieldLabel:
+                            text: 'Offset'
+                            size_hint_x: 0.15
+                            halign: 'right'
                         LargeMappedSpinner:
                             id: offset
-                            size_hint_x: 0.1
+                            size_hint_x: 0.15
                             on_text: root.on_bit_offset(*args)
+
+                    SectionBoxLayout:
+                        size_hint_x: 0.45             
                         FieldLabel:
                             halign: 'right'
                             text: 'Length'
-                            size_hint_x: 0.1
+                            size_hint_x: 0.6
                         LargeMappedSpinner:
                             id: length
-                            size_hint_x: 0.1
+                            size_hint_x: 0.4
                             on_text: root.on_bit_length(*args)
                     SectionBoxLayout:
-                        size_hint_x: 0.4                    
+                        size_hint_x: 0.45                  
                         BoxLayout:
                             orientation: 'vertical'
                             size_hint_x: 0.3
@@ -166,9 +194,9 @@ CAN_CHANNEL_CONFIG_VIEW_KV = """
                         size_hint_x: 0.1
                 
                 SectionBoxLayout:
-                    padding: (0, dp(10))
                     orientation: 'horizontal'
                     size_hint_x: 0.85
+                    spacing: dp(5)
                     FieldLabel:
                         size_hint_x: 0.1
                         halign: 'right'
@@ -243,6 +271,10 @@ class CANChannelConfigView(BoxLayout):
         if self._loaded:
             self.can_channel_cfg.mapping.can_id = int(value)
 
+    def on_mask(self, instance, value):
+        if self._loaded:
+            self.can_channel_cfg.mapping.mask = int(value)
+
     def on_bit_offset(self, instance, value):
         if self._loaded:
             self.can_channel_cfg.mapping.bit_offset = instance.getValueFromKey(value)
@@ -289,6 +321,9 @@ class CANChannelConfigView(BoxLayout):
 
         # CAN ID
         self.ids.can_id.text = str(self.can_channel_cfg.mapping.can_id)
+
+        # CAN mask
+        self.ids.mask.text = str(self.can_channel_cfg.mapping.can_mask)
 
         # CAN offset
         self.ids.offset.setFromValue(self.can_channel_cfg.mapping.bit_offset)

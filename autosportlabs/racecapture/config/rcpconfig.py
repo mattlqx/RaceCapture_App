@@ -52,7 +52,7 @@ class BaseChannel(object):
         json_dict['max'] = self.max
         json_dict['prec'] = self.precision
         json_dict['sr'] = self.sampleRate
-    
+
 SCALING_MAP_POINTS = 5
 SCALING_MAP_MIN_VOLTS = 0
 
@@ -494,8 +494,8 @@ class GpsSample(object):
         """
         :return True if the GPS is fixed and latitude / longitude values are valid.
         """
-        return self.gps_qual >= GpsConfig.GPS_QUALITY_NO_FIX and self.latitude != 0 and self.longitude !=0
-    
+        return self.gps_qual >= GpsConfig.GPS_QUALITY_NO_FIX and self.latitude != 0 and self.longitude != 0
+
     @property
     def geopoint(self):
         """
@@ -745,7 +745,7 @@ class Track(object):
             else:
                 self.sectors.append(GeoPoint())
         self.stale = True
-        
+
     def toJson(self):
         sectors = []
         for sector in self.sectors:
@@ -818,11 +818,11 @@ class CANMapping(object):
     TYPE_FLOAT = 2
     ID_MASK_DISABLED = 0
     CONVERSION_FILTER_DISABLED = 0
-    
+
     def __init__(self, **kwargs):
         super(CANMapping, self).__init__(**kwargs)
         self.bit_mode = False
-        self.type = CANMapping.TYPE_UNSIGNED        
+        self.type = CANMapping.TYPE_UNSIGNED
         self.can_channel = 0
         self.can_id = 0
         self.can_mask = CANMapping.ID_MASK_DISABLED
@@ -865,7 +865,7 @@ class CANMapping(object):
         json_dict['endian'] = self.endian
         json_dict['filt_id'] = self.conversion_filter_id
         return json_dict
-    
+
 class CanConfig(object):
     def __init__(self, **kwargs):
         self.stale = False
@@ -887,10 +887,10 @@ class CanConfig(object):
         for baud in self.baudRate:
             bauds.append(baud)
         canCfgJson['baud'] = bauds
-        return {'canCfg':canCfgJson}        
+        return {'canCfg':canCfgJson}
 
 class CANChannel(BaseChannel):
-    
+
     def __init__(self, **kwargs):
         super(CANChannel, self).__init__(**kwargs)
         self.mapping = CANMapping()
@@ -908,7 +908,7 @@ class CANChannel(BaseChannel):
         return json_dict
 
 class CANChannels(object):
-    
+
     def __init__(self, **kwargs):
         self.channels = []
         self.enabled = False
@@ -917,7 +917,7 @@ class CANChannels(object):
 
     def from_json_dict(self, json_dict):
         if json_dict:
-            self.enabled = json_dict.get('en', self.enabled) 
+            self.enabled = json_dict.get('en', self.enabled)
             channels_json = json_dict.get("chans", None)
             if channels_json:
                 del self.channels[:]
@@ -939,6 +939,7 @@ class PidConfig(BaseChannel):
         super(PidConfig, self).__init__(**kwargs)
         self.pid = 0
         self.mode = 0
+        self.passive = False
         self.mapping = CANMapping()
 
     def fromJson(self, json_dict):
@@ -946,6 +947,7 @@ class PidConfig(BaseChannel):
             super(PidConfig, self).fromJson(json_dict)
             self.pid = json_dict.get('pid', self.pid)
             self.mode = json_dict.get('mode', self.mode)
+            self.passive = json_dict.get('passive', self.passive)
             self.mapping.from_json_dict(json_dict.get('map'))
 
     def toJson(self):
@@ -953,9 +955,10 @@ class PidConfig(BaseChannel):
         super(PidConfig, self).appendJson(json_dict)
         json_dict['pid'] = self.pid
         json_dict['mode'] = self.mode
+        json_dict['passive'] = self.passive
         json_dict['map'] = self.mapping.to_json_dict()
         return json_dict
-        
+
 OBD2_CONFIG_MAX_PIDS = 20
 
 class Obd2Config(object):
@@ -1319,7 +1322,7 @@ class Capabilities(object):
     @property
     def has_can_channel(self):
         return self.channels.can_channel > 0
-    
+
     @property
     def has_streaming(self):
         return 'telemstream' in self.flags
@@ -1477,7 +1480,7 @@ class RcpConfig(object):
                 canCfgJson = rcpJson.get('canCfg', None)
                 if canCfgJson:
                     self.canConfig.fromJson(canCfgJson)
-                
+
                 can_chan_json = rcpJson.get('canChanCfg', None)
                 if can_chan_json:
                     self.can_channels.from_json_dict(can_chan_json)
