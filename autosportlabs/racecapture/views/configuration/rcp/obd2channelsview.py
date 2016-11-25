@@ -36,7 +36,7 @@ from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 import copy
 
-OBD2_CHANNEL_CONFIG_VIEW_KV="""
+OBD2_CHANNEL_CONFIG_VIEW_KV = """
 <OBD2ChannelConfigView>
     BoxLayout:
         orientation: 'vertical'
@@ -46,13 +46,13 @@ OBD2_CHANNEL_CONFIG_VIEW_KV="""
             spacing: dp(5)
             orientation: 'horizontal'
             SectionBoxLayout:
-                size_hint_x: 0.2
+                size_hint_x: 0.15
                 FieldLabel:
                     text: 'PID'
                     halign: 'right'
                     id: pid
             BoxLayout:
-                size_hint_x: 0.8
+                size_hint_x: 0.85
                 spacing: dp(5)
                 SectionBoxLayout:
                     orientation: 'horizontal'
@@ -79,7 +79,7 @@ OBD2_CHANNEL_CONFIG_VIEW_KV="""
 
 class OBD2ChannelConfigView(BoxLayout):
     Builder.load_string(OBD2_CHANNEL_CONFIG_VIEW_KV)
-    
+
     def __init__(self, **kwargs):
         super(OBD2ChannelConfigView, self).__init__(**kwargs)
 
@@ -87,8 +87,8 @@ class OBD2ChannelConfigView(BoxLayout):
         self.ids.can_channel_config.init_config(index, channel, can_filters)
         self.ids.mode.text = str(channel.mode)
         self.ids.pid.text = str(channel.pid)
-                    
-OBD2_CHANNEL_KV="""
+
+OBD2_CHANNEL_KV = """
 <OBD2Channel>:
     spacing: dp(10)
     size_hint_y: None
@@ -116,7 +116,7 @@ class OBD2Channel(BoxLayout):
     max_sample_rate = 0
     pidIndex = 0
     Builder.load_string(OBD2_CHANNEL_KV)
-    
+
     def __init__(self, obd2_settings, max_sample_rate, can_filters, **kwargs):
         super(OBD2Channel, self).__init__(**kwargs)
         self.obd2_settings = obd2_settings
@@ -160,12 +160,12 @@ class OBD2Channel(BoxLayout):
         def _on_answer(instance, answer):
             if answer:
                 self._replace_config(self.channel, working_channel_cfg)
-                
+
                 self.dispatch('on_modified')
             popup.dismiss()
-        
+
         popup = editor_popup('Customize OBDII mapping', content, _on_answer, size_hint=(0.7, 0.7))
-        
+
         # TODO remove channels, no longer needed
         # remove PID index
     def set_channel(self, pidIndex, channel, channels):
@@ -174,7 +174,7 @@ class OBD2Channel(BoxLayout):
         sample_rate_spinner.set_max_rate(self.max_sample_rate)
         sample_rate_spinner.setFromValue(channel.sampleRate)
         sample_rate_spinner.bind(text=self.on_sample_rate)
-        
+
         channel_editor = self.ids.chan_id
         channel_editor.filter_list = self.obd2_settings.getChannelNames()
         channel_editor.on_channels_updated(channels)
@@ -255,7 +255,7 @@ class OBD2ChannelsView(BaseConfigView):
         base_dir = kwargs.get('base_dir')
 
         self.obd2_settings = OBD2Settings(base_dir=base_dir)
-        self.can_filters = CANFilters(base_dir)        
+        self.can_filters = CANFilters(base_dir)
 
         self.update_view_enabled()
 

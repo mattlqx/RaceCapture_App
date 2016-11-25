@@ -35,13 +35,6 @@ class LargeMappedSpinner(MappedSpinner):
     option_cls: 'LargeSpinnerOption'
 """)
 
-class LargeFieldLabel(FieldLabel):
-    Builder.load_string("""
-<LargeFieldLabel>:
-    font_size: self.height * 0.4
-""")
-
-
 class LargeIntegerValueField(IntegerValueField):
     Builder.load_string("""
 <LargeIntegerValueField>:
@@ -176,7 +169,7 @@ CAN_CHANNEL_CONFIG_VIEW_KV = """
                     padding: (0, dp(10))
                     orientation: 'horizontal'
                     size_hint_x: 0.85
-                    LargeFieldLabel:
+                    FieldLabel:
                         size_hint_x: 0.1
                         halign: 'right'
                         text: 'Raw'
@@ -327,9 +320,10 @@ class CANChannelConfigView(BoxLayout):
         self.set_mapping_choices(bit_mode)
 
     def set_mapping_choices(self, bit_mode):
-        choices = 63 if bit_mode else 7
-        self.ids.offset.setValueMap(self.create_bit_choices(0, choices), '0')
-        self.ids.length.setValueMap(self.create_bit_choices(1, 1 + choices), '1')
+        offset_choices = 63 if bit_mode else 7
+        length_choices = 32 if bit_mode else 4
+        self.ids.offset.setValueMap(self.create_bit_choices(0, offset_choices), '0')
+        self.ids.length.setValueMap(self.create_bit_choices(1, length_choices), '1')
 
     def create_bit_choices(self, starting, max_choices):
         bit_choices = {}
@@ -676,7 +670,7 @@ class CANChannelsView(BaseConfigView):
             self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
             popup.dismiss()
 
-        popup = editor_popup('Customize CAN mapping', content, _on_answer, size_hint=(0.7, 0.7))
+        popup = editor_popup('Customize CAN mapping', content, _on_answer, size_hint=(0.7, 0.6))
 
     def on_customize_channel(self, instance, channel_index):
         self._customize_channel(channel_index)
