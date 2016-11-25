@@ -3,7 +3,7 @@
     "updated": "2015-03-30T03:59:18Z",
     "id": "12345",
     "name": "BMW E46",
-    "notes": "Enables basic E46 CAN mappings",
+    "notes": "E46 OEM CAN channels",
     "img_url": "http://localhost/blah",
     "channels": [{
         "nm": "CHAN1",

@@ -2,8 +2,8 @@
     "created": "2015-03-30T03:59:18Z",
     "updated": "2015-03-30T03:59:18Z",
     "id": "6789",
-    "name": "BMW E46",
-    "notes": "Enables basic E46 CAN mappings",
+    "name": "Megasquirt",
+    "notes": "Mappings for Megasquirt dashboard mode",
     "img_url": "http://localhost/blah",    
     "channels": [{
         "nm": "CHAN1",
