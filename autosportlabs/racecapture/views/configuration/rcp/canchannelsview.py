@@ -13,7 +13,7 @@ from iconbutton import IconButton
 from settingsview import SettingsSwitch
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
 from autosportlabs.racecapture.config.rcpconfig import *
-from autosportlabs.uix.layout.sections import SectionBoxLayout
+from autosportlabs.uix.layout.sections import SectionBoxLayout, HeaderSectionBoxLayout
 from autosportlabs.racecapture.views.util.alertview import confirmPopup, choicePopup, editor_popup
 from autosportlabs.racecapture.resourcecache.resourcemanager import ResourceCache
 from fieldlabel import FieldLabel
@@ -68,7 +68,7 @@ CAN_CHANNEL_CONFIG_VIEW_KV = """
             BoxLayout:
                 orientation: 'horizontal'
                 spacing: dp(5)
-                SectionBoxLayout:
+                HeaderSectionBoxLayout:
                     size_hint_x: 0.15
                     FieldLabel:
                         halign: 'right'
@@ -119,7 +119,7 @@ CAN_CHANNEL_CONFIG_VIEW_KV = """
             BoxLayout:
                 orientation: 'horizontal'
                 spacing: dp(5)
-                SectionBoxLayout:
+                HeaderSectionBoxLayout:
                     size_hint_x: 0.15
                     orientation: 'horizontal'
                     FieldLabel:
@@ -184,7 +184,7 @@ CAN_CHANNEL_CONFIG_VIEW_KV = """
                 orientation: 'horizontal'
                 spacing: dp(5)
 
-                SectionBoxLayout:
+                HeaderSectionBoxLayout:
                     size_hint_x: 0.15
                     spacing: dp(5)
                     orientation: 'horizontal'

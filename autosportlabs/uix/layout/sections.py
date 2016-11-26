@@ -19,3 +19,18 @@ Builder.load_string("""
     padding: (dp(5), dp(5))
     spacing: dp(5)                    
             """)
+
+class HeaderSectionBoxLayout(SectionBoxLayout):
+    """
+    A header variation of Section box layout with a highlighted background color 
+    """
+Builder.load_string("""
+<HeaderSectionBoxLayout>:
+    canvas.before:
+        Color:
+            rgba: ColorScheme.get_medium_background()
+        Rectangle:
+            pos: self.pos
+            size: self.size             
+    
+""")

@@ -45,7 +45,7 @@ OBD2_CHANNEL_CONFIG_VIEW_KV = """
             size_hint_y: 0.2
             spacing: dp(5)
             orientation: 'horizontal'
-            SectionBoxLayout:
+            HeaderSectionBoxLayout:
                 size_hint_x: 0.15
                 FieldLabel:
                     text: 'OBDII'
@@ -85,10 +85,10 @@ OBD2_CHANNEL_CONFIG_VIEW_KV = """
                     FieldLabel:
                         text: 'Passive'
                         halign: 'right'
-                        size_hint_x: 0.7
+                        size_hint_x: 0.5
                     CheckBox:
                         id: passive
-                        size_hint_x: 0.3
+                        size_hint_x: 0.5
                         on_active: root.on_passive(*args)
             
         HLineSeparator:
@@ -100,6 +100,9 @@ OBD2_CHANNEL_CONFIG_VIEW_KV = """
 
 class OBD2ChannelConfigView(BoxLayout):
     Builder.load_string(OBD2_CHANNEL_CONFIG_VIEW_KV)
+    PID_RANGES = (0, 255)
+    SUPPORTED_MODES = {1:'01h', 34:'22h'}
+    DEFAULT_MODE = '01h'
 
     def __init__(self, **kwargs):
         super(OBD2ChannelConfigView, self).__init__(**kwargs)
@@ -107,11 +110,11 @@ class OBD2ChannelConfigView(BoxLayout):
 
     def init_config(self, index, channel, can_filters):
         pids = {}
-        for i in range(1, 255):
+        for i in range(OBD2ChannelConfigView.PID_RANGES[0], OBD2ChannelConfigView.PID_RANGES[1]):
             pids[i] = str(i)
+        self.ids.pid.setValueMap(pids, str(OBD2ChannelConfigView.PID_RANGES[0]))
 
-        self.ids.pid.setValueMap(pids, '1')
-        self.ids.mode.setValueMap({1:'01h', 34:'22h'}, '01h')
+        self.ids.mode.setValueMap(OBD2ChannelConfigView.SUPPORTED_MODES, OBD2ChannelConfigView.DEFAULT_MODE)
 
         self.ids.mode.setFromValue(channel.mode)
         self.ids.pid.setFromValue(channel.pid)
