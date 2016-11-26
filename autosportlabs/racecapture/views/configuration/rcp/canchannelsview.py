@@ -396,20 +396,22 @@ CAN_CHANNEL_VIEW_KV = """
     orientation: 'horizontal'
     ChannelNameSelectorView:
         id: chan_id
-        size_hint_x: 0.19
+        size_hint_x: 0.18
         compact: True
-    SampleRateSpinner:
-        id: sr
-        size_hint_x: 0.15
-        on_text: root.on_sample_rate(*args)
+    BoxLayout:
+        size_hint_x: 0.18
+        SampleRateSpinner:
+            id: sr
+            size_hint_x: 0.9
+            on_text: root.on_sample_rate(*args)
     FieldLabel:
         id: can_id
-        size_hint_x: 0.16
+        size_hint_x: 0.14
     FieldLabel:
         id: can_offset_len
         size_hint_x: 0.15
     FieldLabel:
-        size_hint_x: 0.3
+        size_hint_x: 0.30
         id: can_formula
     IconButton:
         size_hint_x: 0.05        
@@ -519,15 +521,16 @@ CAN_CHANNELS_VIEW_KV = """
             size_hint_y: 0.1
             FieldLabel:
                 text: 'Channel'
+                halign: 'center'
                 size_hint_x: 0.18
             FieldLabel:
                 text: 'Sample Rate'
                 halign: 'center'
-                size_hint_x: 0.15
+                size_hint_x: 0.18
                 
             FieldLabel:
                 text: 'CAN ID'
-                size_hint_x: 0.17
+                size_hint_x: 0.14
             FieldLabel:
                 text: 'Offset(Len)'
                 size_hint_x: 0.15
