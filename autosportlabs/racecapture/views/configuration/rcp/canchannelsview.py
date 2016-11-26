@@ -407,9 +407,9 @@ CAN_CHANNEL_VIEW_KV = """
         size_hint_x: 0.16
     FieldLabel:
         id: can_offset_len
-        size_hint_x: 0.2
+        size_hint_x: 0.15
     FieldLabel:
-        size_hint_x: 0.25
+        size_hint_x: 0.3
         id: can_formula
     IconButton:
         size_hint_x: 0.05        
@@ -469,12 +469,11 @@ class CANChannelView(BoxLayout):
 
         can_mapping = self.can_channel_cfg.mapping
         self.ids.can_id.text = '{}'.format(can_mapping.can_id)
-        self.ids.can_offset_len.text = u'{} ( {} )'.format(can_mapping.bit_offset, can_mapping.bit_length)
-        sign = '-' if can_mapping.adder < 0 else '+'
-        self.ids.can_formula.text = u'\u00D7 {} {} {}'.format(can_mapping.multiplier, sign, abs(can_mapping.adder))
+
         self.ids.can_offset_len.text = u'{}({})'.format(can_mapping.bit_offset, can_mapping.bit_length)
+
         sign = '-' if can_mapping.adder < 0 else '+'
-        self.ids.can_formula.text = u'\u00D7 {} {} {}'.format(can_mapping.multiplier, sign, abs(can_mapping.adder))
+        self.ids.can_formula.text = u'\u00D7 {} \u00F7 {} {} {}'.format(can_mapping.multiplier, can_mapping.divider, sign, abs(can_mapping.adder))
 
 class CANPresetResourceCache(ResourceCache):
     preset_url = "http://podium.live/api/v1/can_presets"
@@ -523,17 +522,18 @@ CAN_CHANNELS_VIEW_KV = """
                 size_hint_x: 0.18
             FieldLabel:
                 text: 'Sample Rate'
+                halign: 'center'
                 size_hint_x: 0.15
                 
             FieldLabel:
-                text: 'ID'
+                text: 'CAN ID'
                 size_hint_x: 0.17
             FieldLabel:
-                text: 'Offset(Length)'
-                size_hint_x: 0.2
+                text: 'Offset(Len)'
+                size_hint_x: 0.15
             FieldLabel:
                 text: 'Formula'
-                size_hint_x: 0.25
+                size_hint_x: 0.30
             FieldLabel:
                 text: ''
                 size_hint_x: 0.1

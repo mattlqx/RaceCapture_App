@@ -22,7 +22,7 @@ Builder.load_string("""
 
 class HeaderSectionBoxLayout(SectionBoxLayout):
     """
-    A header variation of Section box layout with a highlighted background color 
+    A header variation of SectionBoxLayout with a highlighted background color 
     """
 Builder.load_string("""
 <HeaderSectionBoxLayout>:
