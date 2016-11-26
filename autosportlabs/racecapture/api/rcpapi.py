@@ -477,7 +477,7 @@ class RcpApi:
 
             if capabilities.has_can_channel:
                 cmdSequence.append(RcpCmd('canChanCfg', self.get_can_channels_config))
-                
+
             if capabilities.has_script:
                 cmdSequence.append(RcpCmd('scriptCfg', self.getScript))
 
@@ -556,12 +556,12 @@ class RcpApi:
 
         obd2Cfg = cfg.obd2Config
         if obd2Cfg.stale:
-            cmdSequence.append(RcpCmd('setObd2Cfg', self.setObd2Cfg, obd2Cfg.toJson()))
+            self.sequence_write_obd2_channels(obd2Cfg.toJson(), cmdSequence)
 
         can_channels = cfg.can_channels
         if can_channels.stale:
             self.sequence_write_can_channels(can_channels.to_json_dict(), cmdSequence)
-        
+
         trackCfg = cfg.trackConfig
         if trackCfg.stale:
             cmdSequence.append(RcpCmd('setTrackCfg', self.setTrackCfg, trackCfg.toJson()))
@@ -653,8 +653,26 @@ class RcpApi:
     def getObd2Cfg(self):
         self.sendGet('getObd2Cfg', None)
 
-    def setObd2Cfg(self, obd2Cfg):
-        self.sendSet('setObd2Cfg', obd2Cfg)
+    def sequence_write_obd2_channels(self, obd2_channels_json_dict, cmd_sequence):
+        """
+        queue writing of all OBD2 channels
+        """
+        channels = obd2_channels_json_dict['obd2Cfg']['pids']
+        if channels:
+            index = 0
+            for c in channels:
+                cmd_sequence.append(RcpCmd('setObd2Cfg', self.set_obd2_channel_config, c, index))
+                index += 1
+
+    def set_obd2_channel_config(self, obd2_channel, index):
+        """
+        Write a single OBD2 channel configuration by index
+        """
+        return self.sendCommand({'setObd2Cfg':
+                                 {'index':index,
+                                  'pid': obd2_channel
+                                  }
+                                 })
 
     def sequence_write_can_channels(self, can_channels_json_dict, cmd_sequence):
         """
@@ -668,15 +686,18 @@ class RcpApi:
                 index += 1
 
     def set_can_channel_config(self, can_channel, index):
+        """
+        Write a single CAN channel configuration by index
+        """
         return self.sendCommand({'setCanChanCfg':
                                  {'index':index,
                                   'chan': can_channel
                                   }
                                  })
-        
+
     def get_can_channels_config(self):
         self.sendGet('getCanChanCfg', None)
-        
+
     def getConnectivityCfg(self):
         self.sendGet('getConnCfg', None)
 

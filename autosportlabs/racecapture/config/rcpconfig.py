@@ -955,7 +955,7 @@ class PidConfig(BaseChannel):
         super(PidConfig, self).appendJson(json_dict)
         json_dict['pid'] = self.pid
         json_dict['mode'] = self.mode
-        json_dict['passive'] = self.passive
+        json_dict['passive'] = 1 if self.passive else 0
         json_dict['map'] = self.mapping.to_json_dict()
         return json_dict
 
