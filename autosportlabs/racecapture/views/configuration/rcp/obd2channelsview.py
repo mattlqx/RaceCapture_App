@@ -100,7 +100,7 @@ OBD2_CHANNEL_CONFIG_VIEW_KV = """
 
 class OBD2ChannelConfigView(BoxLayout):
     Builder.load_string(OBD2_CHANNEL_CONFIG_VIEW_KV)
-    PID_RANGES = (0, 255)
+    PID_RANGES = (0, 256)
     SUPPORTED_MODES = {1:'01h', 9: '09h', 34:'22h'}
     DEFAULT_MODE = '01h'
 
