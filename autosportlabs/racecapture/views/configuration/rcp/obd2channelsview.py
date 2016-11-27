@@ -101,7 +101,7 @@ OBD2_CHANNEL_CONFIG_VIEW_KV = """
 class OBD2ChannelConfigView(BoxLayout):
     Builder.load_string(OBD2_CHANNEL_CONFIG_VIEW_KV)
     PID_RANGES = (0, 255)
-    SUPPORTED_MODES = {1:'01h', 34:'22h'}
+    SUPPORTED_MODES = {1:'01h', 9: '09h', 34:'22h'}
     DEFAULT_MODE = '01h'
 
     def __init__(self, **kwargs):
@@ -179,6 +179,7 @@ class OBD2Channel(BoxLayout):
             self.channel.mode = obd2_channel.mode
             self.channel.mapping = copy.deepcopy(obd2_channel.mapping)
             self.channel.stale = True
+            self.ids.sr.setFromValue(obd2_channel.sampleRate)
             self.dispatch('on_modified')
 
     def on_modified(self):
@@ -222,7 +223,8 @@ class OBD2Channel(BoxLayout):
         sample_rate_spinner.bind(text=self.on_sample_rate)
 
         channel_editor = self.ids.chan_id
-        channel_editor.filter_list = self.obd2_settings.getChannelNames()
+        channel_names = self.obd2_settings.getChannelNames()
+        channel_editor.filter_list = channel_names
         channel_editor.on_channels_updated(channels)
         channel_editor.setValue(channel)
         channel_editor.bind(on_channel=self.on_channel)
