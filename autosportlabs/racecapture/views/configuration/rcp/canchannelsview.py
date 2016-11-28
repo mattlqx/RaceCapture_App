@@ -425,10 +425,6 @@ CAN_CHANNEL_VIEW_KV = """
 
 class CANChannelView(BoxLayout):
     Builder.load_string(CAN_CHANNEL_VIEW_KV)
-    channels = None
-    can_channel_cfg = None
-    max_sample_rate = 0
-    channel_index = 0
 
     def __init__(self, channel_index, can_channel_cfg, max_sample_rate, channels, **kwargs):
         super(CANChannelView, self).__init__(**kwargs)
@@ -439,12 +435,15 @@ class CANChannelView(BoxLayout):
         self.register_event_type('on_delete_channel')
         self.register_event_type('on_customize_channel')
         self.register_event_type('on_modified')
+        self._loaded = False
         self.set_channel()
 
     def on_modified(self):
         pass
 
     def on_sample_rate(self, instance, value):
+        if not self._loaded:
+            return
         self.can_channel_cfg.sampleRate = instance.getValueFromKey(value)
         self.dispatch('on_modified')
 
@@ -476,6 +475,7 @@ class CANChannelView(BoxLayout):
 
         sign = '-' if can_mapping.adder < 0 else '+'
         self.ids.can_formula.text = u'\u00D7 {} \u00F7 {} {} {}'.format(can_mapping.multiplier, can_mapping.divider, sign, abs(can_mapping.adder))
+        self._loaded = True
 
 class CANPresetResourceCache(ResourceCache):
     preset_url = "http://podium.live/api/v1/can_presets"
