@@ -77,7 +77,7 @@ class TireHeatGauge(AnchorLayout):
         rw = width / float(zones)
         
         with self.canvas:
-            for i in range(0, zones):
+            for i in range(zones, 0, -1):
                 xp = x + (rw * i)
                 color = self.heat_gradient.get_color_value(self.values[i])
                 c = Color(rgba=color)
