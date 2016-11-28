@@ -43,10 +43,12 @@ HEATMAP_VIEW_KV = """
                     id: wheel_fl
                     size_hint: (0.5, 0.5)
                     pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                    direction: 'right-left'
                 TireHeatGauge:
                     id: wheel_fr
                     size_hint: (0.5, 0.5)
                     pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                    direction: 'left-right'
             BoxLayout:
                 spacing: sp(20)        
                 orientation: 'horizontal'
@@ -54,10 +56,12 @@ HEATMAP_VIEW_KV = """
                     id: wheel_rl
                     size_hint: (0.5, 0.5)
                     pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                    direction: 'right-left'
                 TireHeatGauge:
                     id: wheel_rr
                     size_hint: (0.5, 0.5)
                     pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                    direction: 'left-right'
         BoxLayout:
             size_hint_x: 0.6
 

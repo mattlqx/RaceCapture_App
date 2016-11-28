@@ -23,7 +23,7 @@ kivy.require('1.9.1')
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.app import Builder
 from kivy.graphics import *
-from kivy.properties import NumericProperty, ListProperty
+from kivy.properties import NumericProperty, ListProperty, StringProperty
 from kivy.logger import Logger
 from autosportlabs.uix.color.colorgradient import HeatColorGradient
 HEAT_GAUGE_KV = """
@@ -33,6 +33,7 @@ HEAT_GAUGE_KV = """
 class TireHeatGauge(AnchorLayout):
     Builder.load_string(HEAT_GAUGE_KV)
     zones = NumericProperty(8)
+    direction = StringProperty('left-right')
     
     def __init__(self, **kwargs):
         super(TireHeatGauge, self).__init__(**kwargs)        
@@ -42,6 +43,7 @@ class TireHeatGauge(AnchorLayout):
         self.bind(pos=self._update_gauge)
         self.bind(size=self._update_gauge)
         self.bind(zones=self._update_gauge)
+        self.bind(direction=self._update_gauge)
         self.heat_gradient = HeatColorGradient()
         
     def on_zones(self, instance, value):
@@ -76,13 +78,23 @@ class TireHeatGauge(AnchorLayout):
         zones = self.zones
         rw = width / float(zones)
         
+        if self.direction == 'left-right':
+            index = 0
+            index_dir = 1
+        elif self.direction == 'right-left':
+            index = zones - 1
+            index_dir = -1
+        else:
+            raise Exception('Invalid direction {}'.self.dir)
+
         with self.canvas:
-            for i in range(zones, 0, -1):
+            for i in range(0, zones):
                 xp = x + (rw * i)
-                color = self.heat_gradient.get_color_value(self.values[i])
+                color = self.heat_gradient.get_color_value(self.values[index])
                 c = Color(rgba=color)
-                self.colors[i] = c
+                self.colors[index] = c
                 Rectangle(pos=(xp,y), size=(rw, height))
+                index += index_dir
                 
     def on_values(self, instance, value):
         pass
