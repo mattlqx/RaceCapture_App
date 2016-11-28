@@ -50,6 +50,7 @@ from autosportlabs.racecapture.views.dashboard.tachometerview import TachometerV
 from autosportlabs.racecapture.views.dashboard.laptimeview import LaptimeView
 from autosportlabs.racecapture.views.dashboard.rawchannelview import RawChannelView
 from autosportlabs.racecapture.views.dashboard.comboview import ComboView
+from autosportlabs.racecapture.views.dashboard.heatmapview import HeatmapView
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.help.helpmanager import HelpInfo
 
@@ -175,11 +176,15 @@ class DashboardView(Screen):
         def build_combo_view():
             return ComboView(name='comboView', databus=self._databus, settings=self._settings)
 
+        def build_heatmap_view():
+            return HeatmapView(name='heatmapView', databus=self._databus, settings=self._settings)
+        
         builders = self._view_builders
         builders['gaugeView'] = build_gauge_view
         builders['laptimeView'] = build_laptime_view
         builders['tachView'] = build_tachometer_view
         builders['rawchannelView'] = build_raw_channel_view
+        builders['heatmapView'] = build_heatmap_view
         # builders['comboView'] = build_combo_view
 
         for i, v in enumerate(self._view_builders):
