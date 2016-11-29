@@ -26,9 +26,90 @@ from kivy.graphics import *
 from kivy.properties import NumericProperty, ListProperty, StringProperty
 from kivy.logger import Logger
 from autosportlabs.uix.color.colorgradient import HeatColorGradient
+from kivy.core.image import Image as CoreImage
+
 HEAT_GAUGE_KV = """
 <TireHeatGauge>:
 """
+
+class BrakeHeatGauge(AnchorLayout):
+    Builder.load_string(HEAT_GAUGE_KV)
+    zones = NumericProperty(8)
+    CENTER_SIZE_PCT = 0.6
+    ROTOR_IMAGE = CoreImage('autosportlabs/racecapture/widgets/heat/rotor.png')    
+    ROTOR_IMAGE_SIZE = 500
+    
+    def __init__(self, **kwargs):
+        super(BrakeHeatGauge, self).__init__(**kwargs)        
+        self.colors = []
+        self.values = []
+        self._init_view()
+        self.bind(pos=self._update_gauge)
+        self.bind(size=self._update_gauge)
+        self.bind(zones=self._update_gauge)
+        self.heat_gradient = HeatColorGradient()
+        
+    def on_zones(self, instance, value):
+        self._sync_zones()
+        
+    def _init_view(self):
+        self._sync_zones()
+        
+    def _sync_zones(self):
+        zones = self.zones
+        values = self.values
+        values.extend([0] * (zones - len(values)))
+        colors = self.colors
+        colors.extend([Color()] * (zones - len(colors)))
+        
+    def set_value(self, zone, value):
+        try:
+            rgba = self.heat_gradient.get_color_value(value)
+            self.colors[zone].rgba = rgba
+            self.values[zone] = value
+        except IndexError:
+            pass
+        
+    def _update_gauge(self, *args):
+        self.canvas.clear()
+        
+        x = self.pos[0]
+        y = self.pos[1]
+        width = self.size[0]
+        height = self.size[1]
+        
+        zones = self.zones
+        min_size = min(width, height)
+        center_radius = min_size * BrakeHeatGauge.CENTER_SIZE_PCT
+        rw = ((min_size - center_radius) / float(zones))
+        
+        center_x = x + (width / 2)
+        center_y = y + (height / 2)
+        index = zones
+        index_dir = -1
+
+        with self.canvas:
+            Color(rgba=(1.0, 1.0, 1.0, 0.2))
+            Rectangle(pos=(x,y), size=(width, height))            
+            for i in range(0, zones):
+                print('i ' + str(i))
+                xp = (rw * i)
+                color = self.heat_gradient.get_color_value(self.values[index - 1])
+                c = Color(rgba=color)
+                self.colors[index - 1] = c
+                half_size = (index * (rw))  + center_radius
+                c_x = center_x - half_size / 2
+                c_y = center_y - half_size / 2
+                Ellipse(pos=(c_x,c_y), size=(half_size, half_size))
+                index += index_dir
+            Color(1.0, 1.0, 1.0, 1.0)
+            r_x = center_x - (center_radius / 2)
+            r_y = center_y - (center_radius / 2)
+            Rectangle(texture=BrakeHeatGauge.ROTOR_IMAGE.texture, pos=(r_x, r_y), size=(center_radius, center_radius))
+                
+    def on_values(self, instance, value):
+        pass
+    
         
 class TireHeatGauge(AnchorLayout):
     Builder.load_string(HEAT_GAUGE_KV)

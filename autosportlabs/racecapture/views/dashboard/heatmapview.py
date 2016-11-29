@@ -25,7 +25,7 @@ from kivy.uix.label import Label
 from kivy.app import Builder
 from kivy.clock import Clock
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
-from autosportlabs.racecapture.widgets.heat.heatgauge import TireHeatGauge
+from autosportlabs.racecapture.widgets.heat.heatgauge import TireHeatGauge, BrakeHeatGauge
 from autosportlabs.racecapture.views.dashboard.dashboardscreen import DashboardScreen
 
 HEATMAP_VIEW_KV = """
@@ -64,6 +64,10 @@ HEATMAP_VIEW_KV = """
                     direction: 'left-right'
         BoxLayout:
             size_hint_x: 0.6
+            BrakeHeatGauge:
+                id: brake_lf
+                size_hint: (0.5, 0.5)
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
 
 
 """
@@ -81,7 +85,7 @@ class HeatmapView(DashboardScreen):
         self.update_values(self.ids.wheel_fr)
         self.update_values(self.ids.wheel_rl)
         self.update_values(self.ids.wheel_rr)
-        
+        self.update_values(self.ids.brake_lf)
     def update_values(self, widget):
         for x in range(0,8):
             widget.set_value(x, float(x) / 10.0)
