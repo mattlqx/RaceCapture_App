@@ -36,9 +36,8 @@ class BrakeHeatGauge(AnchorLayout):
     Builder.load_string(HEAT_GAUGE_KV)
     zones = NumericProperty(8)
     CENTER_SIZE_PCT = 0.6
-    ROTOR_IMAGE = CoreImage('autosportlabs/racecapture/widgets/heat/rotor.png')    
-    ROTOR_IMAGE_SIZE = 500
-    
+    ROTOR_IMAGE = CoreImage('autosportlabs/racecapture/widgets/heat/rotor.png')
+    TIRE_IMAGE = CoreImage('autosportlabs/racecapture/widgets/heat/tire.png') 
     def __init__(self, **kwargs):
         super(BrakeHeatGauge, self).__init__(**kwargs)        
         self.colors = []
@@ -80,32 +79,26 @@ class BrakeHeatGauge(AnchorLayout):
         
         zones = self.zones
         min_size = min(width, height)
-        center_radius = min_size * BrakeHeatGauge.CENTER_SIZE_PCT
-        rw = ((min_size - center_radius) / float(zones))
+        center_size = min_size * BrakeHeatGauge.CENTER_SIZE_PCT
+        rw = ((min_size - center_size) / float(zones))
         
         center_x = x + (width / 2)
         center_y = y + (height / 2)
         index = zones
-        index_dir = -1
-
         with self.canvas:
-            Color(rgba=(1.0, 1.0, 1.0, 0.2))
-            Rectangle(pos=(x,y), size=(width, height))            
             for i in range(0, zones):
-                print('i ' + str(i))
-                xp = (rw * i)
                 color = self.heat_gradient.get_color_value(self.values[index - 1])
                 c = Color(rgba=color)
                 self.colors[index - 1] = c
-                half_size = (index * (rw))  + center_radius
-                c_x = center_x - half_size / 2
-                c_y = center_y - half_size / 2
-                Ellipse(pos=(c_x,c_y), size=(half_size, half_size))
-                index += index_dir
+                segment_size = (index * (rw))  + center_size
+                c_x = center_x - segment_size / 2
+                c_y = center_y - segment_size / 2
+                Ellipse(pos=(c_x,c_y), size=(segment_size, segment_size))
+                index -= 1
             Color(1.0, 1.0, 1.0, 1.0)
-            r_x = center_x - (center_radius / 2)
-            r_y = center_y - (center_radius / 2)
-            Rectangle(texture=BrakeHeatGauge.ROTOR_IMAGE.texture, pos=(r_x, r_y), size=(center_radius, center_radius))
+            r_x = center_x - (center_size / 2)
+            r_y = center_y - (center_size / 2)
+            Rectangle(texture=BrakeHeatGauge.ROTOR_IMAGE.texture, pos=(r_x, r_y), size=(center_size, center_size))
                 
     def on_values(self, instance, value):
         pass
@@ -176,6 +169,9 @@ class TireHeatGauge(AnchorLayout):
                 self.colors[index] = c
                 Rectangle(pos=(xp,y), size=(rw, height))
                 index += index_dir
+            Color(rgba=(0.0, 0.0, 0.0, 1.0))
+            Rectangle(texture=BrakeHeatGauge.TIRE_IMAGE.texture, pos=(x,y), size=(width, height))            
+                
                 
     def on_values(self, instance, value):
         pass

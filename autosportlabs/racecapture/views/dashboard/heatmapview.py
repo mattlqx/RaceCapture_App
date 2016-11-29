@@ -33,41 +33,66 @@ HEATMAP_VIEW_KV = """
     BoxLayout:
         orientation: 'horizontal'
         BoxLayout:
-            size_hint_x: 0.4
+            size_hint_x: 0.5
             orientation: 'vertical'
-            spacing: sp(20)        
+            spacing: dp(10)        
             BoxLayout:
-                spacing: sp(20)
+                spacing: dp(10)
                 orientation: 'horizontal'
-                TireHeatGauge:
-                    id: wheel_fl
-                    size_hint: (0.5, 0.5)
-                    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                    direction: 'right-left'
-                TireHeatGauge:
-                    id: wheel_fr
-                    size_hint: (0.5, 0.5)
-                    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                    direction: 'left-right'
+                BoxLayout:
+                    padding: (dp(10), dp(10))
+                    spacing: dp(10)                
+                    TireHeatGauge:
+                        id: wheel_fl
+                        size_hint: (0.4, 0.6)
+                        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                        direction: 'right-left'
+                    BrakeHeatGauge:
+                        id: brake_fl
+                        size_hint: (0.6, 0.6)
+                        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                BoxLayout:
+                    padding: (dp(10), dp(10))
+                    spacing: dp(10)
+                    BrakeHeatGauge:
+                        id: brake_fr
+                        size_hint: (0.6, 0.6)
+                        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                    TireHeatGauge:
+                        id: wheel_fr
+                        size_hint: (0.4, 0.6)
+                        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                        direction: 'left-right'
             BoxLayout:
-                spacing: sp(20)        
+                spacing: dp(10)        
                 orientation: 'horizontal'
-                TireHeatGauge:
-                    id: wheel_rl
-                    size_hint: (0.5, 0.5)
-                    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                    direction: 'right-left'
-                TireHeatGauge:
-                    id: wheel_rr
-                    size_hint: (0.5, 0.5)
-                    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                    direction: 'left-right'
+                BoxLayout:
+                    padding: (dp(10), dp(10))
+                    spacing: dp(10)
+                    TireHeatGauge:
+                        id: wheel_rl
+                        size_hint: (0.4, 0.6)
+                        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                        direction: 'right-left'
+                    BrakeHeatGauge:
+                        id: brake_rl
+                        size_hint: (0.6, 0.6)
+                        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                BoxLayout:
+                    padding: (dp(10), dp(10))
+                    spacing: dp(10)
+                    BrakeHeatGauge:
+                        id: brake_rr
+                        size_hint: (0.6, 0.6)
+                        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                    TireHeatGauge:
+                        id: wheel_rr
+                        size_hint: (0.4, 0.6)
+                        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                        direction: 'left-right'
+
         BoxLayout:
-            size_hint_x: 0.6
-            BrakeHeatGauge:
-                id: brake_lf
-                size_hint: (0.5, 0.5)
-                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            size_hint_x: 0.5
 
 
 """
@@ -85,7 +110,10 @@ class HeatmapView(DashboardScreen):
         self.update_values(self.ids.wheel_fr)
         self.update_values(self.ids.wheel_rl)
         self.update_values(self.ids.wheel_rr)
-        self.update_values(self.ids.brake_lf)
+        self.update_values(self.ids.brake_fl)
+        self.update_values(self.ids.brake_fr)
+        self.update_values(self.ids.brake_rl)
+        self.update_values(self.ids.brake_rr)
     def update_values(self, widget):
         for x in range(0,8):
             widget.set_value(x, float(x) / 10.0)
