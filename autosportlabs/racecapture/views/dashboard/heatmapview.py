@@ -24,6 +24,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.app import Builder
 from kivy.clock import Clock
+from kivy.logger import Logger
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
 from autosportlabs.racecapture.widgets.heat.heatgauge import TireHeatGauge, BrakeHeatGauge
 from autosportlabs.racecapture.views.dashboard.dashboardscreen import DashboardScreen
@@ -91,8 +92,14 @@ HEATMAP_VIEW_KV = """
                         pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                         direction: 'left-right'
 
-        BoxLayout:
+        AnchorLayout:
             size_hint_x: 0.5
+            FieldLabel:
+                id: track_name
+                size_hint_y: 0.1
+                halign: 'center'
+            RaceTrackView:
+                id: track
 
 
 """
@@ -100,12 +107,16 @@ HEATMAP_VIEW_KV = """
 class HeatmapView(DashboardScreen):
     Builder.load_string(HEATMAP_VIEW_KV)
 
-    def __init__(self, databus, settings, **kwargs):
+    def __init__(self, databus, settings, track_manager, status_pump, **kwargs):
         super(HeatmapView, self).__init__(**kwargs)
         self._initialized = False
         self.register_event_type('on_tracks_updated')
         self._databus = databus
         self._settings = settings
+        self._track_manager = track_manager
+        status_pump.add_listener(self._update_track_status)
+        self._current_track_id = None
+        
         self.update_values(self.ids.wheel_fl)
         self.update_values(self.ids.wheel_fr)
         self.update_values(self.ids.wheel_rl)
@@ -129,3 +140,22 @@ class HeatmapView(DashboardScreen):
     def on_enter(self):
         if not self._initialized:
             self.init_view()
+
+    def _update_track_status(self, status_data):
+        print('update ' + str(status_data))
+        try:
+            track_status = status_data['status']['track']
+            track_id = track_status['trackId'] 
+            if track_id != 0 and self._current_track_id != track_id:
+                track = self.track_manager.find_track_by_short_id(track_status['trackId'])
+                self.ids.track.initMap(track)
+                self._current_track_id = track_id
+                self._set_state_message('')
+            else:
+                self._set_state_message('Waiting for track')                
+        except Exception as e:
+            Logger.warn("ToolbarView: Could not retrieve track detection status " + str(e))
+            
+    def _set_state_message(self, msg):
+        self.ids.track_name.text = msg
+        

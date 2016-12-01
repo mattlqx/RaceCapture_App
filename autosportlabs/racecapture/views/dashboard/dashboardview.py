@@ -177,7 +177,10 @@ class DashboardView(Screen):
             return ComboView(name='comboView', databus=self._databus, settings=self._settings)
 
         def build_heatmap_view():
-            return HeatmapView(name='heatmapView', databus=self._databus, settings=self._settings)
+            return HeatmapView(name='heatmapView', databus=self._databus, 
+                               settings=self._settings,
+                               track_manager=self._track_manager,
+                               status_pump=self._status_pump)
         
         builders = self._view_builders
         builders['gaugeView'] = build_gauge_view
