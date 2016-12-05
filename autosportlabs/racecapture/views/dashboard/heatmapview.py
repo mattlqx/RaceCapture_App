@@ -63,8 +63,11 @@ class TireCorner(BoxLayout):
         self.ids.tire_values.clear_widgets()
         del(self.tire_value_widgets[:])
         for i in range(0, value):
-            gauge = BarGraphGauge()
-            self.ids.tire_values.add_widget(gauge)
+            tire_values = self.ids.tire_values
+            is_first_widget = self.children.index(tire_values) == 1
+            orientation = 'right-left' if is_first_widget else 'left-right'
+            gauge = BarGraphGauge(orientation=orientation)
+            tire_values.add_widget(gauge)
             self.tire_value_widgets.append(gauge)
             gauge.minval = self.minval
             gauge.maxval = self.maxval
@@ -83,13 +86,15 @@ class TireCorner(BoxLayout):
         
 TIRE_CORNER_LEFT_KV = """
 <TireCornerLeft>:
+    spacing: dp(10)
     GridLayout:
         id: tire_values
-        size_hint: (0.3, 0.6)                        
+        size_hint: (0.4, 0.6)
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}                        
         cols: 1                                    
     TireHeatGauge:
         id: tire
-        size_hint: (0.3, 0.6)
+        size_hint: (0.6, 0.6)
         pos_hint: {'center_x': 0.5, 'center_y': 0.5}
         direction: 'right-left'
 """
@@ -98,14 +103,16 @@ class TireCornerLeft(TireCorner):
 
 TIRE_CORNER_RIGHT_KV = """
 <TireCornerRight>:
+    spacing: dp(10)
     TireHeatGauge:
         id: tire
-        size_hint: (0.3, 0.6)
+        size_hint: (0.6, 0.6)
         pos_hint: {'center_x': 0.5, 'center_y': 0.5}
         direction: 'left-right'
     GridLayout:
         id: tire_values
-        size_hint: (0.3, 0.6)                        
+        size_hint: (0.4, 0.6)
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
         cols: 1                        
 """
 class TireCornerRight(TireCorner):
@@ -165,8 +172,10 @@ HEATMAP_CORNER_LEFT_KV = """
     spacing: dp(10)
     TireCornerLeft:
         id: tire
+        size_hint_x: 0.55
     BrakeCornerLeft:
         id: brake
+        size_hint_x: 0.45
 """
 
 class HeatmapCorner(BoxLayout):
@@ -207,8 +216,10 @@ HEATMAP_CORNER_RIGHT_KV = """
     spacing: dp(10)
     BrakeCornerRight:
         id: brake
+        size_hint_x: 0.45
     TireCornerRight:
         id: tire
+        size_hint_x: 0.55
 """
 class HeatmapCornerRight(HeatmapCorner):
     Builder.load_string(HEATMAP_CORNER_RIGHT_KV)
@@ -218,7 +229,7 @@ HEATMAP_VIEW_KV = """
     BoxLayout:
         orientation: 'horizontal'
         BoxLayout:
-            size_hint_x: 0.5
+            size_hint_x: 0.6
             orientation: 'vertical'
             spacing: dp(10)        
             BoxLayout:
@@ -236,7 +247,7 @@ HEATMAP_VIEW_KV = """
                 HeatmapCornerRight:
                     id: corner_rr
         AnchorLayout:
-            size_hint_x: 0.5
+            size_hint_x: 0.4
             FieldLabel:
                 id: track_name
                 size_hint_y: 0.1

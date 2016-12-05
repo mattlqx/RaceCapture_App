@@ -25,23 +25,47 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.stencilview import StencilView
+from kivy.clock import Clock
 from fieldlabel import FieldLabel
-from kivy.properties import NumericProperty, ListProperty
+from kivy.properties import NumericProperty, ListProperty, StringProperty
 from kivy.app import Builder
 from kivy.graphics import Color, Rectangle
 from utils import *
 from random import random as r
 
-Builder.load_file('autosportlabs/uix/gauge/bargraphgauge.kv')
+BAR_GRAPH_GAUGE_KV = """
+<BarGraphGauge>:
+    RelativeLayout:
+        StencilView:
+            size_hint: (None, 0.9)
+            id: stencil
+            canvas.after:
+                Color:
+                    rgba: root.color
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+    FieldLabel:
+        id: value
         
-class BarGraphGauge(AnchorLayout):    
+"""
+        
+class BarGraphGauge(AnchorLayout):
+    Builder.load_string(BAR_GRAPH_GAUGE_KV)        
     minval = NumericProperty(0)
     maxval = NumericProperty(100)
     value = NumericProperty(0, allownone=True)
     color = ListProperty([1, 1, 1, 0.5])
+    orientation = StringProperty('left-right')
     
     def __init__(self, **kwargs):
+        self.left_right = True
         super(BarGraphGauge, self).__init__(**kwargs)        
+        self.bind(pos=self._refresh_value)
+        self.bind(size=self._refresh_value)
+        
+    def on_precision(self, instance, value):
+        self._refresh_format()
         
     def on_minval(self, instance, value):
         self._refresh_value()
@@ -52,10 +76,19 @@ class BarGraphGauge(AnchorLayout):
     def on_value(self, instance, value):
         self._refresh_value()
         
-    def _refresh_value(self):
+    def on_orientation(self, instance, value):
+        Clock.schedule_once(lambda dt: self._refresh_orientation())
+    
+    def _refresh_orientation(self):
+        self.left_right = True if self.orientation == 'left-right' else False
+        self.ids.value.halign = 'left' if self.left_right == True else 'right'
+        self._refresh_value()
+        
+    def _refresh_value(self, *args):
         stencil = self.ids.stencil
         value = self.value
         width = 0
+        x = 0
         if value is None:
             value = '- - -'
         else:
@@ -64,5 +97,10 @@ class BarGraphGauge(AnchorLayout):
             channel_range = (maxval - minval)
             pct = 0 if channel_range == 0 else ((value - minval) / channel_range) 
             width = self.width * pct
+            if self.left_right == True:
+                x = 0
+            else:
+                x = self.width - width
         stencil.width = width
-        self.ids.value.text = str(value)
+        stencil.x = x
+        self.ids.value.text = '{:.2f}'.format(value).rstrip('0').rstrip('.')
