@@ -253,8 +253,14 @@ HEATMAP_VIEW_KV = """
                 size_hint_y: 0.1
                 halign: 'center'
                 text: 'Waiting for track'
-            RaceTrackView:
-                id: track
+            AnchorLayout:
+                anchor_y: 'top'
+                padding: (dp(10), dp(10))
+                RaceTrackView:
+                    id: track
+                    size_hint: (1.0, 0.7)
+            #                       pos_hint: {'center_x': 0.5, 'center_y': 1.0}
+                    
 """
 
 class HeatmapView(DashboardScreen):
@@ -303,15 +309,15 @@ class HeatmapView(DashboardScreen):
         try:
             track_status = status_data['status']['track']
             track_id = track_status['trackId'] 
-            if track_id != 0 and self._current_track_id != track_id:
-                track = self.track_manager.find_track_by_short_id(track_status['trackId'])
+            if track_id == 0:
+                self._set_state_message('Waiting for track')
+            elif self._current_track_id != track_id:
+                track = self._track_manager.find_track_by_short_id(track_status['trackId'])
                 self.ids.track.initMap(track)
                 self._current_track_id = track_id
                 self._set_state_message('')
-            else:
-                self._set_state_message('Waiting for track')                
         except Exception as e:
-            Logger.warn("ToolbarView: Could not retrieve track detection status " + str(e))
+            Logger.warn("HeatmapView: Could not retrieve track detection status " + str(e))
             
     def _set_state_message(self, msg):
         self.ids.track_name.text = msg
