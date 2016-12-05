@@ -34,7 +34,7 @@ HEAT_GAUGE_KV = """
 
 class BrakeHeatGauge(AnchorLayout):
     Builder.load_string(HEAT_GAUGE_KV)
-    zones = NumericProperty(8)
+    zones = NumericProperty(4)
     CENTER_SIZE_PCT = 0.6
     ROTOR_IMAGE = CoreImage('autosportlabs/racecapture/widgets/heat/rotor.png')
     TIRE_IMAGE = CoreImage('autosportlabs/racecapture/widgets/heat/tire.png') 
@@ -106,7 +106,7 @@ class BrakeHeatGauge(AnchorLayout):
         
 class TireHeatGauge(AnchorLayout):
     Builder.load_string(HEAT_GAUGE_KV)
-    zones = NumericProperty(8)
+    zones = NumericProperty(4)
     direction = StringProperty('left-right')
     
     def __init__(self, **kwargs):
