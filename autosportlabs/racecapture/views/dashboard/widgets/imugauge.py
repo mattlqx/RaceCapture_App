@@ -46,10 +46,14 @@ class ImuGauge(Gauge):
     GYRO_ROLL = "Roll"
     
     channel_metas = ObjectProperty(None)
+    zoom = NumericProperty(1)
     
     def __init__(self, **kwargs):
         super(ImuGauge, self).__init__(**kwargs)
     
+    def on_zoom(self, instance, value):
+        self.ids.imu.position_z /= value
+        
     def on_channel_meta(self, channel_metas):
         self.channel_meta = channel_metas
                         
@@ -104,3 +108,10 @@ class ImuGauge(Gauge):
                 
     def set_gyro_roll(self, value):                
         self.ids.imu.gyro_roll = value  * self.GYRO_SCALING
+        
+    def on_hide(self):
+        self.ids.imu.cleanup_view()
+        
+    def on_show(self):
+        self.ids.imu.init_view()
+        

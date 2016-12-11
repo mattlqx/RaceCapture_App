@@ -105,7 +105,8 @@ class GaugeView(DashboardScreen):
     def on_enter(self):
         if not self._initialized:
             self._init_view()
-
+        super(GaugeView, self).on_enter()
+        
     def _init_view(self):
         dataBus = self._databus
         dataBus.addMetaListener(self.on_meta)

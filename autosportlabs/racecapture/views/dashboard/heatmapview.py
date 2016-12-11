@@ -322,6 +322,7 @@ class HeatmapView(DashboardScreen):
     def on_enter(self):
         if not self._initialized:
             self.init_view()
+        super(HeatmapView, self).on_enter()           
 
     def _update_track_status(self, status_data):
         try:

@@ -32,15 +32,23 @@ from utils import kvFindClass
 
 COMBO_VIEW_KV = """
 <ComboView>:
-    BoxLayout:
-        orientation: 'horizontal'
-        BoxLayout:
-            size_hint_x: 0.1
+    AnchorLayout:
+        AnchorLayout:
+            anchor_y: 'top'
+            Label:
+                text: 'foo'
+                size_hint_y: 0.2
+
+        AnchorLayout:
+            anchor_y: 'bottom'
+            Label:
+                text: 'bottom'
+                size_hint_y: 0.2
         ImuGauge:
             size_hint_x: 0.8
-            rcid: 'imu_gauge'
-        BoxLayout:
-            size_hint_x: 0.1
+            size_hint_y: 1.0
+            padding: (dp(40), dp(40))
+            id: imu_gauge
 """
 
 class ComboView(DashboardScreen):
@@ -63,6 +71,8 @@ class ComboView(DashboardScreen):
             gauge.settings = settings
             gauge.data_bus = data_bus
         self._initialized = True
+        
+        self.ids.imu_gauge.zoom = 0.5
 
     def on_tracks_updated(self, trackmanager):
         pass
@@ -70,3 +80,4 @@ class ComboView(DashboardScreen):
     def on_enter(self):
         if not self._initialized:
             self.init_view()
+        super(ComboView, self).on_enter()            

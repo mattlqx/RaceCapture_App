@@ -116,6 +116,12 @@ class Gauge(AnchorLayout):
     def on_channel_meta(self, channel_metas):
         pass
     
+    def on_hide(self):
+        pass
+    
+    def on_show(self):
+        pass
+    
 class SingleChannelGauge(Gauge):
     _valueView = None    
     channel = StringProperty(None, allownone=True)    

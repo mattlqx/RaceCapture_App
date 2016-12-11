@@ -27,11 +27,11 @@ from kivy.logger import Logger
 from kivy3 import Scene, Renderer, PerspectiveCamera
 from kivy3.loaders import OBJLoader
 from kivy.core.window import Window
-
+from kivy.metrics import dp
 class ImuView(BoxLayout):
     ACCEL_SCALING = 1.0
     GYRO_SCALING = 1.0
-    ZOOM_SCALING = 0.15
+    ZOOM_SCALING = 0.2
     TOUCHWHEEL_ZOOM_MULTIPLIER = 1
     ROTATION_SCALING = 0.2
     
@@ -58,6 +58,7 @@ class ImuView(BoxLayout):
         super(ImuView, self).__init__(**kwargs)
         self._touches = []
         self.imu_obj = None
+        self.size_scaling = 1
         self.init_view()
         
     def init_view(self):
@@ -65,7 +66,7 @@ class ImuView(BoxLayout):
         self._setup_object()
     
     def cleanup_view(self):
-        Window.unbind(on_key_down=self.key_action)
+        Window.unbind(on_motion=self.on_motion)
         
     def _setup_object(self):
         if self.imu_obj is not None:
@@ -113,7 +114,12 @@ class ImuView(BoxLayout):
         if height == 0: 
             return
         self.renderer.camera.aspect = width / float(height)
+        self.size_scaling =  1 / float(dp(1)) #width /  (width * height) / (Window.size[0] * Window.size[1])
                         
+    @property
+    def _zoom_scaling(self):
+        return self.size_scaling * ImuView.ZOOM_SCALING
+        
     def define_rotate_angle(self, touch):
         x_angle = (touch.dx/self.width)*360
         y_angle = -1*(touch.dy/self.height)*360
@@ -176,11 +182,11 @@ class ImuView(BoxLayout):
                 Logger.debug('New distance: %s' % new_distance)
                                 
                 if new_distance > old_distance: 
-                    scale = 1 * ImuView.ZOOM_SCALING
+                    scale = 1 * self._zoom_scaling
                 elif new_distance == old_distance:
                     scale = 0
                 else:
-                    scale = -1 * ImuView.ZOOM_SCALING
+                    scale = -1 * self._zoom_scaling
                 
                 if scale:
                     self.position_z += scale
@@ -191,10 +197,10 @@ class ImuView(BoxLayout):
                 button = motion_event.button                
                 SCALE_FACTOR = 0.1
                 if button == 'scrollup':
-                    self.position_z += ImuView.ZOOM_SCALING * ImuView.TOUCHWHEEL_ZOOM_MULTIPLIER
+                    self.position_z += self._zoom_scaling * ImuView.TOUCHWHEEL_ZOOM_MULTIPLIER
                 else:
                     if button == 'scrolldown':
-                        self.position_z -= ImuView.ZOOM_SCALING * ImuView.TOUCHWHEEL_ZOOM_MULTIPLIER 
+                        self.position_z -= self._zoom_scaling * ImuView.TOUCHWHEEL_ZOOM_MULTIPLIER 
             except:
                 pass  # no scrollwheel support
 

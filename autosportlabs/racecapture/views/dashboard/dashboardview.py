@@ -188,7 +188,7 @@ class DashboardView(Screen):
         builders['tachView'] = build_tachometer_view
         builders['rawchannelView'] = build_raw_channel_view
         builders['heatmapView'] = build_heatmap_view
-        # builders['comboView'] = build_combo_view
+        builders['comboView'] = build_combo_view
 
         for i, v in enumerate(self._view_builders):
             self.ids.carousel.add_widget(AnchorLayout())
@@ -392,16 +392,26 @@ class DashboardView(Screen):
         for listener in listeners:
             listener.user_preferences_updated(self._settings.userPrefs)
 
+    def _exit_screen(self):
+        slide_screen = self.ids.carousel.current_slide
+        if (slide_screen.children) > 0:
+            slide_screen.children[0].on_exit()
+        
     def on_nav_left(self):
+        self._exit_screen()
         self.ids.carousel.load_previous()
 
     def on_nav_right(self):
+        self._exit_screen()
         self.ids.carousel.load_next()
 
     def _check_load_screen(self, slide_screen):
         # checks the current slide if we need to build the dashboard
         # screen on the spot
-        if len(slide_screen.children) == 0:
+        try:
+            view = slide_screen.children[0]
+            view.on_enter()
+        except IndexError:
             # if the current screen has no children build and add the screen
             index = self.ids.carousel.index
             # call the builder to actually build the screen
