@@ -36,7 +36,7 @@ COMBO_VIEW_KV = """
         AnchorLayout:
             anchor_y: 'top'
             Label:
-                text: 'foo'
+                text: 'top'
                 size_hint_y: 0.2
 
         AnchorLayout:

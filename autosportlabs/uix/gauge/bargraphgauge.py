@@ -60,6 +60,7 @@ class BarGraphGauge(AnchorLayout):
     
     def __init__(self, **kwargs):
         self.left_right = True
+        self.zero_centered = False
         super(BarGraphGauge, self).__init__(**kwargs)        
         self.bind(pos=self._refresh_value)
         self.bind(size=self._refresh_value)
@@ -68,6 +69,7 @@ class BarGraphGauge(AnchorLayout):
         self._refresh_format()
         
     def on_minval(self, instance, value):
+        self.zero_centered = value < 0
         self._refresh_value()
         
     def on_maxval(self, instance, value):
@@ -95,12 +97,18 @@ class BarGraphGauge(AnchorLayout):
             minval = self.minval
             maxval = self.maxval
             channel_range = (maxval - minval)
-            pct = 0 if channel_range == 0 else ((value - minval) / channel_range) 
-            width = self.width * pct
-            if self.left_right == True:
-                x = 0
+            if self.zero_centered:
+                channel_range = max(abs(minval), abs(maxval))
             else:
-                x = self.width - width
+                channel_range = (maxval - minval)
+            pct = 0 if channel_range == 0 else abs(value) /  channel_range
+            if self.zero_centered:
+                center = self.width / 2.0
+                width = center * pct
+                x = center - width if value < 0 else center
+            else:
+                width = self.width * pct
+                x = 0 if self.left_right == True else self.width - width 
         stencil.width = width
         stencil.x = x
         self.ids.value.text = '{:.2f}'.format(value).rstrip('0').rstrip('.')
