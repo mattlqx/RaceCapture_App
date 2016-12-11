@@ -31,6 +31,8 @@ from autosportlabs.racecapture.widgets.heat.heatgauge import TireHeatGauge, Brak
 from autosportlabs.racecapture.views.dashboard.dashboardscreen import DashboardScreen
 from autosportlabs.uix.gauge.bargraphgauge import BarGraphGauge
 from autosportlabs.uix.color.colorgradient import HeatColorGradient
+from autosportlabs.racecapture.views.dashboard.widgets.imugauge import ImuGauge
+from utils import kvFindClass
 
 class TireCorner(BoxLayout):
     DEFAULT_TIRE_ZONES = 1
@@ -248,19 +250,27 @@ HEATMAP_VIEW_KV = """
                     id: corner_rr
         AnchorLayout:
             size_hint_x: 0.4
-            FieldLabel:
-                id: track_name
-                size_hint_y: 0.1
-                halign: 'center'
-                text: 'Waiting for track'
-            AnchorLayout:
-                anchor_y: 'top'
-                padding: (dp(10), dp(10))
-                RaceTrackView:
-                    id: track
-                    size_hint: (1.0, 0.7)
-            #                       pos_hint: {'center_x': 0.5, 'center_y': 1.0}
-                    
+            BoxLayout:
+                orientation: 'vertical'
+                                
+                AnchorLayout:
+                    size_hint_y: 0.6
+                    FieldLabel:
+                        id: track_name
+                        size_hint_y: 0.1
+                        halign: 'center'
+                        text: 'Waiting for track'
+                    AnchorLayout:
+                        anchor_y: 'top'
+                        padding: (dp(10), dp(10))
+                        RaceTrackView:
+                            id: track
+                            size_hint: (1.0, 1.0)
+                ImuGauge:
+                    padding: (dp(30), dp(30))
+                    id: imu
+                    size_hint_y: 0.4
+
 """
 
 class HeatmapView(DashboardScreen):
@@ -283,6 +293,14 @@ class HeatmapView(DashboardScreen):
         self._init_corner(self.ids.corner_fr)
         self._init_corner(self.ids.corner_rl)
         self._init_corner(self.ids.corner_rr)
+        
+        gauges = list(kvFindClass(self, Gauge))
+
+        for gauge in gauges:
+            gauge.settings = settings
+            gauge.data_bus = data_bus
+        self._initialized = True
+        
         self._initialized = True
 
     def _init_corner(self, corner):

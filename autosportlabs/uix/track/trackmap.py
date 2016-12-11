@@ -36,8 +36,6 @@ from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.uix.color.colorgradient import HeatColorGradient, SimpleColorGradient
 from utils import *
 
-Builder.load_file('autosportlabs/uix/track/trackmap.kv')
-
 class Point(object):
     x = 0.0
     y = 0.0
@@ -435,6 +433,7 @@ class TrackMapView(Widget):
                 trim_x = texture.size[0] * 0.1
                 trim_y = -texture.size[1] * 0.05
                 Rectangle(size=texture.size, pos=(centered_point[0] + trim_x, centered_point[1] + trim_y), texture=texture)
+            Color(1.0, 1.0, 1.0, 1.0)
 
 
 

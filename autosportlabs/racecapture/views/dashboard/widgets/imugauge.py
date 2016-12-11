@@ -27,9 +27,16 @@ from kivy.properties import NumericProperty, ObjectProperty
 from autosportlabs.uix.imu.imuview import ImuView
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
 
-Builder.load_file('autosportlabs/racecapture/views/dashboard/widgets/imugauge.kv')
+IMU_GAUGE_KV = """
+<ImuGauge>:
+    orientation: 'vertical'
+    ImuView:
+        id: imu
+"""
 
 class ImuGauge(Gauge):
+    Builder.load_string(IMU_GAUGE_KV)
+    
     GYRO_SCALING = 0.1
     ACCEL_X = "AccelX"
     ACCEL_Y = "AccelY"

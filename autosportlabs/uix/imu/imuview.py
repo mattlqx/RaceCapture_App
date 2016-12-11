@@ -20,23 +20,34 @@
 
 import math
 from kivy.clock import Clock
-from kivy.core.window import Window
-from kivy.uix.widget import Widget
+from kivy.uix.boxlayout import BoxLayout
 from kivy.resources import resource_find
-from kivy.graphics.transformation import Matrix
-from kivy.graphics.opengl import *
-from kivy.graphics import *
-from autosportlabs.uix.opengl.objloader import ObjFileLoader
-from kivy.properties import ReferenceListProperty, NumericProperty
+from kivy.properties import ReferenceListProperty, NumericProperty, ObjectProperty
 from kivy.logger import Logger
-from kivy.vector import Vector
-from kivy.core.image import Image
+from kivy3 import Scene, Renderer, PerspectiveCamera
+from kivy3.loaders import OBJLoader
+from kivy.core.window import Window
 
-class ImuView(Widget):
+class ImuView(BoxLayout):
+    ACCEL_SCALING = 1.0
+    GYRO_SCALING = 1.0
+    ZOOM_SCALING = 0.15
+    TOUCHWHEEL_ZOOM_MULTIPLIER = 1
+    ROTATION_SCALING = 0.2
+    
+    position_x = NumericProperty(0)
+    position_y = NumericProperty(-0.15)
+    position_z = NumericProperty(-5.0)
+    rotation_x = NumericProperty(-5)
+    rotation_y = NumericProperty(180)
+    rotation_z = NumericProperty(0)
+
     accel_x = NumericProperty(0)
     accel_y = NumericProperty(0)
     accel_z = NumericProperty(0)
+    
     accel = ReferenceListProperty(accel_x, accel_y, accel_z)
+    imu_obj = ObjectProperty()
     
     gyro_yaw = NumericProperty(0)
     gyro_pitch = NumericProperty(0)
@@ -44,97 +55,103 @@ class ImuView(Widget):
     gyro = ReferenceListProperty(gyro_yaw, gyro_pitch, gyro_roll)
     
     def __init__(self, **kwargs):
-        self.canvas = RenderContext(compute_normal_mat=True)
-        #self.scene = ObjFileLoader(resource_find("resource/models/car-kart-white.obj"))
-        self.scene = ObjFileLoader(resource_find("resource/models/car-formula-white.obj"))
-        #self.scene = ObjFileLoader(resource_find("resource/models/car-parsche-sport-white.obj"))
-#TODO: the following needs work
-        #self.scene = ObjFileLoader(resource_find("resource/models/car-groupc-2-white.obj"))
-        #self.scene = ObjFileLoader(resource_find("resource/models/car-groupc-1-white.obj"))
-
-        self.canvas.shader.source = resource_find('resource/models/shaders.glsl')
         super(ImuView, self).__init__(**kwargs)
-        with self.canvas:
-            self.cb = Callback(self.setup_gl_context)
-            PushMatrix()
-            self.setup_scene()
-            PopMatrix()
-            self.cb = Callback(self.reset_gl_context)
-        self.camera_translate = [0, 0, -2.5]
-        self.camera_ax = 0
-        self.camera_ay = 0
-        Clock.schedule_once(self.update_glsl, .5 )    
         self._touches = []
+        self.imu_obj = None
+        self.init_view()
         
-
-    def setup_gl_context(self, *args):
-        glEnable(GL_DEPTH_TEST)
-
-    def reset_gl_context(self, *args):
-        glDisable(GL_DEPTH_TEST)
-
-    def update_glsl(self, *largs):
-        asp = self.width / float(self.height)
-        asp = asp*0.3
-        asp = 0.8
-        proj = Matrix()
-        mat = Matrix()
-        mat = mat.look_at(0.0, 0.6, self.camera_translate[2], 0, 0, 0, 0, 1, 0)
-        proj = proj.view_clip(-asp, asp, -0.6, .6, 1, 100, 1)
+    def init_view(self):
+        Window.bind(on_motion=self.on_motion)        
+        self._setup_object()
+    
+    def cleanup_view(self):
+        Window.unbind(on_key_down=self.key_action)
         
-        self.canvas['projection_mat'] = proj
-        self.canvas['modelview_mat'] = mat
+    def _setup_object(self):
+        if self.imu_obj is not None:
+            return 
+        
+        shader_file = resource_find('resource/models/shaders.glsl')
+        #self.scene = ObjFileLoader(resource_find("resource/models/car-kart-white.obj"))
+        obj_path = resource_find('resource/models/car-formula-white.obj')
+ #       obj_path = resource_find('resource/models/car-kart-white.obj')
+#        obj_path = resource_find('resource/models/car-parsche-sport-white.obj')
+        #TODO: the following needs work
+        #"resource/models/car-groupc-2-white.obj"
+        #"resource/models/car-groupc-1-white.obj"
 
-    def setup_scene(self):
-        PushMatrix()
-        Translate(0, 0, 0)
-        self.rotx = Rotate(0, 0, 1, 0)
-        self.roty = Rotate(0, 1, 0, 0)
-        self.rotz = Rotate(0, 0, 0, 1)
+        self.renderer = Renderer(shader_file=shader_file)
+        scene = Scene()
+        camera = PerspectiveCamera(15, 1, 1, 1000)
+        loader = OBJLoader()
+        obj = loader.load(obj_path)
+
+        scene.add(*obj.children)
+        for obj in scene.children:
+            obj.pos.x = self.position_x
+            obj.pos.y = self.position_y
+            obj.pos.z = self.position_z
+            obj.rotation.x = self.rotation_x
+            obj.rotation.y = self.rotation_y
+            obj.rotation.z = self.rotation_z
+            obj.material.specular = .85, .85, .85
+            obj.material.color = 1.0, 1.0, 1.0
+            obj.material.diffuse = 0.5, 0.5, 0.5
+            obj.material.transparency = 1.0
+            obj.material.intensity = 0.5
+            self.imu_obj = obj
+            #obj.material.shininess = 1.0
+
+        self.renderer.render(scene, camera)
+        self.add_widget(self.renderer)
+        self.renderer.bind(size=self._adjust_aspect)
         
-        #self.scale = Scale(0.75)
-        m = self.scene.objects.values()[0]
-        UpdateNormalMatrix()
-        print('diffuse color ' + str(m.diffuse_color))
-        print('specular color ' + str(m.specular_color))
-        print('ambient color ' + str(m.ambient_color))
-        ChangeState(Kd=m.diffuse_color,
-                        Ka=m.ambient_color,
-                        Ks=m.specular_color,
-                        Tr=m.transparency,
-                        Ns=1.,
-                        intensity=1.)
-        self.mesh = Mesh(
-            vertices=m.vertices,
-            indices=m.indices,
-            fmt=m.vertex_format,
-            mode='triangles'
-        )
-        PopMatrix()
-        
+    def _adjust_aspect(self, instance, value):
+        rsize = self.renderer.size
+        width = rsize[0]
+        height = rsize[1]
+        if height == 0: 
+            return
+        self.renderer.camera.aspect = width / float(height)
+                        
     def define_rotate_angle(self, touch):
         x_angle = (touch.dx/self.width)*360
         y_angle = -1*(touch.dy/self.height)*360
         return x_angle, y_angle
     
-    def xon_touch_down(self, touch):
-        touch.grab(self)
-        self._touches.append(touch)
+    def on_touch_down(self, touch):
+        x, y = touch.x, touch.y
+        if self.collide_point(x, y):
+            touch.grab(self)
+            self._touches.append(touch)
+
+            super(ImuView, self).on_touch_down(touch)
+            return True
+        else:
+            super(ImuView, self).on_touch_down(touch)
+            return False
         
-    def xon_touch_up(self, touch):
-        touch.ungrab(self)
-        self._touches.remove(touch)
-    
-    def xon_touch_move(self, touch): 
+    def on_touch_up(self, touch):
+        x, y = touch.x, touch.y
+
+        # remove it from our saved touches
+        if touch in self._touches:  # and touch.grab_state:
+            touch.ungrab(self)
+            self._touches.remove(touch)
+            
+        # stop propagating if its within our bounds
+        if self.collide_point(x, y):
+            return True
+      
+    def on_touch_move(self, touch): 
         Logger.debug("dx: %s, dy: %s. Widget: (%s, %s)" % (touch.dx, touch.dy, self.width, self.height))
-        #self.update_glsl()
         if touch in self._touches and touch.grab_current == self:
             if len(self._touches) == 1:
                 # here do just rotation        
                 ax, ay = self.define_rotate_angle(touch)
                 
-                self.rotx.angle += ax
-                self.roty.angle += ay
+                self.rotation_x -= (ay * ImuView.ROTATION_SCALING)
+                self.rotation_y += (ax * ImuView.ROTATION_SCALING)
                 
                 #ax, ay = math.radians(ax), math.radians(ay)
                 
@@ -157,36 +174,64 @@ class ImuView(Widget):
                 new_distance = (new_dx*new_dx + new_dy*new_dy)
                 
                 Logger.debug('New distance: %s' % new_distance)
-                SCALE_FACTOR = 0.05
-                
+                                
                 if new_distance > old_distance: 
-                    scale = -1*SCALE_FACTOR
-                    Logger.info('Scale up')
+                    scale = 1 * ImuView.ZOOM_SCALING
                 elif new_distance == old_distance:
                     scale = 0
                 else:
-                    scale = SCALE_FACTOR
-                    Logger.info('Scale down')
+                    scale = -1 * ImuView.ZOOM_SCALING
                 
                 if scale:
-                    self.camera_translate[2] += scale
-            self.update_glsl()
+                    self.position_z += scale
+
+    def on_motion(self, instance, event, motion_event):
+        if motion_event.x > 0 and motion_event.y > 0 and self.collide_point(motion_event.x, motion_event.y):
+            try:
+                button = motion_event.button                
+                SCALE_FACTOR = 0.1
+                if button == 'scrollup':
+                    self.position_z += ImuView.ZOOM_SCALING * ImuView.TOUCHWHEEL_ZOOM_MULTIPLIER
+                else:
+                    if button == 'scrolldown':
+                        self.position_z -= ImuView.ZOOM_SCALING * ImuView.TOUCHWHEEL_ZOOM_MULTIPLIER 
+            except:
+                pass  # no scrollwheel support
+
+    def on_position_x(self, instance, value):
+        self.imu_obj.pos.x = value
+        
+    def on_position_y(self, instance, value):
+        self.imu_obj.pos.y = value
+
+    def on_position_z(self, instance, value):
+        self.imu_obj.pos.z = value
+
+    def on_rotation_x(self, instance, value):
+        self.imu_obj.rotation.x = value
+        
+    def on_rotation_y(self, instance, value):
+        self.imu_obj.rotation.y = value
+
+    def on_rotation_z(self, instance, value):
+        self.imu_obj.rotation.z = value
 
     def on_accel_x(self, instance, value):
-        pass
+        self.imu_obj.pos.z = self.position_z + (value * ImuView.ACCEL_SCALING)
     
     def on_accel_y(self, instance, value):
-        pass
+        self.imu_obj.pos.x = self.position_x - (value * ImuView.ACCEL_SCALING)
     
-    def on_accel_z(self, instance, value):
-        pass
+    def on_accel_z(self, instance, value):        
+        # subtract 1.0 to compensate for gravity
+        self.imu_obj.pos.y = self.position_y + ((value - 1.0) * ImuView.ACCEL_SCALING) 
     
     def on_gyro_yaw(self, instance, value):
-        self.rotx.angle = value        
+        self.imu_obj.rotation.y = self.rotation_y - (value * ImuView.GYRO_SCALING)        
     
     def on_gyro_pitch(self, instance, value):
-        self.roty.angle = -value
+        self.imu_obj.rotation.x =self.rotation_x - (value * ImuView.GYRO_SCALING)
     
     def on_gyro_roll(self, instance, value):
-        self.rotz.angle = value
+        self.imu_obj.rotation.z = self.rotation_z + (value * ImuView.GYRO_SCALING)
     
