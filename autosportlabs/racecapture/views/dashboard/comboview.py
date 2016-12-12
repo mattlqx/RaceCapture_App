@@ -36,13 +36,13 @@ COMBO_VIEW_KV = """
         AnchorLayout:
             anchor_y: 'top'
             Label:
-                text: 'top'
+                text: ''
                 size_hint_y: 0.2
 
         AnchorLayout:
             anchor_y: 'bottom'
             Label:
-                text: 'bottom'
+                text: ''
                 size_hint_y: 0.2
         ImuGauge:
             size_hint_x: 0.8

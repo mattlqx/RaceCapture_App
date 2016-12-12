@@ -32,53 +32,67 @@ IMU_GAUGE_KV = """
     AnchorLayout:
         ImuView:
             id: imu
+
     AnchorLayout:
         anchor_x: 'left'
         anchor_y: 'center'
         GridLayout:
-            size_hint: (0.15, 0.3)
+            size_hint: (0.2, 0.3)
             spacing: dp(10)
             cols: 2
             FieldLabel:
                 text: 'X'
-                halign: 'right'                
+                halign: 'right'
+                size_hint_x: 0.3
             BarGraphGauge:
                 id: accel_x
+                size_hint_x: 0.7
             FieldLabel:
                 text: 'Y'
                 halign: 'right'
+                size_hint_x: 0.3
             BarGraphGauge:
                 id: accel_y
+                size_hint_x: 0.7
             FieldLabel:
                 text: 'Z'
                 halign: 'right'
+                size_hint_x: 0.3
             BarGraphGauge:
                 id: accel_z
+                size_hint_x: 0.7
     AnchorLayout:
         anchor_x: 'right'
         anchor_y: 'center'
         GridLayout:
-            size_hint: (0.15, 0.3)
-            spacing: dp(10)    
+            size_hint: (0.3, 0.3)
+            spacing: (dp(10), dp(10))
             cols: 2
             BarGraphGauge:
                 id: gyro_yaw
                 orientation: 'right-left'
+                size_hint_x: 0.5
             FieldLabel:
                 text: 'Yaw'
                 halign: 'left'
+                size_hint_x: 0.5
             BarGraphGauge:
                 id: gyro_pitch
                 orientation: 'right-left'                
+                size_hint_x: 0.5
             FieldLabel:
                 text: 'Pitch'
-                halign: 'left'                
+                halign: 'left'
+                size_hint_x: 0.5
             BarGraphGauge:
                 id: gyro_roll
                 orientation: 'right-left'                
+                size_hint_x: 0.5
             FieldLabel:
                 text: 'Roll'
-                halign: 'left'                
+                halign: 'left'
+                size_hint_x: 0.5              
+
 """
 
 class ImuGauge(Gauge):

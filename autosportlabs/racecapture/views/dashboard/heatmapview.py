@@ -267,9 +267,9 @@ HEATMAP_VIEW_KV = """
                             id: track
                             size_hint: (1.0, 1.0)
                 ImuGauge:
-                    padding: (dp(30), dp(30))
                     id: imu
                     size_hint_y: 0.4
+                    zoom: 0.5
 
 """
 
