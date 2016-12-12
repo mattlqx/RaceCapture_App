@@ -25,7 +25,7 @@ from kivy.uix.label import Label
 from kivy.app import Builder
 from kivy.clock import Clock
 from kivy.logger import Logger
-from kivy.properties import NumericProperty, ListProperty
+from kivy.properties import NumericProperty, ListProperty, StringProperty
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
 from autosportlabs.racecapture.widgets.heat.heatgauge import TireHeatGauge, BrakeHeatGauge
 from autosportlabs.racecapture.views.dashboard.dashboardscreen import DashboardScreen
@@ -41,7 +41,7 @@ class TireCorner(BoxLayout):
     zones = NumericProperty()
     minval = NumericProperty()
     maxval = NumericProperty()
-    
+
     def __init__(self, **kwargs):
         super(TireCorner, self).__init__(**kwargs)
         self.tire_value_widgets = []
@@ -55,11 +55,11 @@ class TireCorner(BoxLayout):
     def on_minval(self, instance, value):
         for gauge in self.tire_value_widgets:
             gauge.minval = value
-    
+
     def on_maxval(self, instance, value):
         for gauge in self.tire_value_widgets:
             gauge.maxval = value
-    
+
     def on_zones(self, instance, value):
         self.ids.tire.zones = value
         self.ids.tire_values.clear_widgets()
@@ -80,18 +80,18 @@ class TireCorner(BoxLayout):
         scaled = value / self.maxval
         self.ids.tire.set_value(zone, scaled)
         try:
-            value_widget = self.tire_value_widgets[zone] 
+            value_widget = self.tire_value_widgets[zone]
             value_widget.value = value
-            value_widget.color = self.heat_gradient.get_color_value(scaled) 
+            value_widget.color = self.heat_gradient.get_color_value(scaled)
         except IndexError:
             pass
-        
+
 TIRE_CORNER_LEFT_KV = """
 <TireCornerLeft>:
     spacing: dp(10)
     GridLayout:
         id: tire_values
-        size_hint: (0.4, 0.6)
+        size_hint: (0.4, 0.5)
         pos_hint: {'center_x': 0.5, 'center_y': 0.5}                        
         cols: 1                                    
     TireHeatGauge:
@@ -113,13 +113,13 @@ TIRE_CORNER_RIGHT_KV = """
         direction: 'left-right'
     GridLayout:
         id: tire_values
-        size_hint: (0.4, 0.6)
+        size_hint: (0.4, 0.5)
         pos_hint: {'center_x': 0.5, 'center_y': 0.5}
         cols: 1                        
 """
 class TireCornerRight(TireCorner):
     Builder.load_string(TIRE_CORNER_RIGHT_KV)
-    
+
 class BrakeCorner(BoxLayout):
     DEFAULT_BRAKE_ZONES = 1
     DEFAULT_BRAKE_MIN = 0
@@ -127,43 +127,92 @@ class BrakeCorner(BoxLayout):
     zones = NumericProperty()
     minval = NumericProperty()
     maxval = NumericProperty()
+    bar_gauge_orientation = StringProperty()
 
     def __init__(self, **kwargs):
         super(BrakeCorner, self).__init__(**kwargs)
         self.brake_value_widgets = []
         self.heat_gradient = HeatColorGradient()
 
+
     def on_zones(self, instance, value):
         self.ids.brake.zones = value
+        self.ids.brake_values_top.clear_widgets()
+        self.ids.brake_values_bottom.clear_widgets()
+        current_grid = self.ids.brake_values_top
+        del(self.brake_value_widgets[:])
+        for i in range(0, value):
+            if i > 1:
+                current_grid = self.ids.brake_values_bottom  # 2 values above, 2 below
+            gauge = BarGraphGauge(orientation=self.bar_gauge_orientation)
+            gauge.minval = self.minval
+            gauge.maxval = self.maxval
+            current_grid.add_widget(gauge)
+            self.brake_value_widgets.append(gauge)
 
     def set_value(self, zone, value):
         value = min(self.maxval, value)
         value = max(self.minval, value)
         scaled = value / self.maxval
         self.ids.brake.set_value(zone, scaled)
-#        try:
-#            value_widget = self.tire_value_widgets[zone] 
-#            value_widget.value = value
-#            value_widget.color = self.heat_gradient.get_color_value(scaled) 
-#        except IndexError:
-#            pass
+        print('brake scaled ' + str(scaled))
+        try:
+            value_widget = self.brake_value_widgets[zone]
+            value_widget.value = value
+            value_widget.color = self.heat_gradient.get_color_value(scaled)
+        except IndexError:
+            pass
+
+    def on_minval(self, instance, value):
+        for gauge in self.brake_value_widgets:
+            gauge.minval = value
+
+    def on_maxval(self, instance, value):
+        for gauge in self.brake_value_widgets:
+            gauge.maxval = value
+
 
 BRAKE_CORNER_LEFT_KV = """
 <BrakeCornerLeft>:
+    orientation: 'vertical'
+    bar_gauge_orientation: 'right-left'
+    GridLayout:
+        id: brake_values_top
+        size_hint: (0.5, 0.2)
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}                        
+        cols: 1                                        
     BrakeHeatGauge:
         id: brake
-        size_hint: (0.4, 0.6)
+        size_hint: (1.0, 0.6)
         pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-"""    
+    GridLayout:
+        id: brake_values_bottom
+        size_hint: (0.5, 0.2)
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}                        
+        cols: 1                                    
+"""
 class BrakeCornerLeft(BrakeCorner):
     Builder.load_string(BRAKE_CORNER_LEFT_KV)
 
 BRAKE_CORNER_RIGHT_KV = """
 <BrakeCornerRight>:
+    orientation: 'vertical'
+    bar_gauge_orientation: 'left-right'
+    GridLayout:
+        id: brake_values_top
+        size_hint: (0.5, 0.2)
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}                        
+        cols: 1                                        
     BrakeHeatGauge:
         id: brake
-        size_hint: (0.4, 0.6)
+        size_hint: (1.0, 0.6)
         pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    GridLayout:
+        id: brake_values_bottom
+        size_hint: (0.5, 0.2)
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}                        
+        cols: 1                                    
+        
 """
 class BrakeCornerRight(BrakeCorner):
     Builder.load_string(BRAKE_CORNER_RIGHT_KV)
@@ -184,31 +233,31 @@ class HeatmapCorner(BoxLayout):
     brake_zones = NumericProperty()
     tire_zones = NumericProperty()
     brake_range = ListProperty()
-    tire_range = ListProperty() 
+    tire_range = ListProperty()
 
     def __init__(self, **kwargs):
         super(HeatmapCorner, self).__init__(**kwargs)
-                                            
+
     def on_brake_zones(self, instance, value):
         self.ids.brake.zones = value
-        
+
     def on_tire_zones(self, instance, value):
         self.ids.tire.zones = value
 
     def on_tire_range(self, instance, value):
         self.ids.tire.minval = value[0]
         self.ids.tire.maxval = value[1]
-        
+
     def on_brake_range(self, instance, value):
         self.ids.brake.minval = value[0]
         self.ids.brake.maxval = value[1]
-        
+
     def set_brake_value(self, zone, value):
         self.ids.brake.set_value(zone, value)
-        
+
     def set_tire_value(self, zone, value):
         self.ids.tire.set_value(zone, value)
-        
+
 class HeatmapCornerLeft(HeatmapCorner):
     Builder.load_string(HEATMAP_CORNER_LEFT_KV)
 
@@ -225,7 +274,7 @@ HEATMAP_CORNER_RIGHT_KV = """
 """
 class HeatmapCornerRight(HeatmapCorner):
     Builder.load_string(HEATMAP_CORNER_RIGHT_KV)
-    
+
 HEATMAP_VIEW_KV = """
 <HeatmapView>:
     BoxLayout:
@@ -285,7 +334,7 @@ class HeatmapView(DashboardScreen):
         self._track_manager = track_manager
         status_pump.add_listener(self._update_track_status)
         self._current_track_id = None
-            
+
     def init_view(self):
         data_bus = self._databus
         settings = self._settings
@@ -293,14 +342,14 @@ class HeatmapView(DashboardScreen):
         self._init_corner(self.ids.corner_fr)
         self._init_corner(self.ids.corner_rl)
         self._init_corner(self.ids.corner_rr)
-        
+
         gauges = list(kvFindClass(self, Gauge))
 
         for gauge in gauges:
             gauge.settings = settings
             gauge.data_bus = data_bus
         self._initialized = True
-        
+
         self._initialized = True
 
     def _init_corner(self, corner):
@@ -308,26 +357,26 @@ class HeatmapView(DashboardScreen):
         tire_zones = 4
         corner.brake_zones = brake_zones
         corner.tire_zones = tire_zones
-        corner.brake_range = [0,1000]
-        corner.tire_range = [0,300]
+        corner.brake_range = [0, 1000]
+        corner.tire_range = [0, 300]
         for i in range(0, brake_zones):
             corner.set_brake_value(i, i * (1000.0 / brake_zones))
-            
+
         for i in range(0, tire_zones):
             corner.set_tire_value(i, i * (300.0 / tire_zones))
-        
+
     def on_tracks_updated(self, trackmanager):
         pass
 
     def on_enter(self):
         if not self._initialized:
             self.init_view()
-        super(HeatmapView, self).on_enter()           
+        super(HeatmapView, self).on_enter()
 
     def _update_track_status(self, status_data):
         try:
             track_status = status_data['status']['track']
-            track_id = track_status['trackId'] 
+            track_id = track_status['trackId']
             if track_id == 0:
                 self._set_state_message('Waiting for track')
             elif self._current_track_id != track_id:
@@ -337,7 +386,7 @@ class HeatmapView(DashboardScreen):
                 self._set_state_message('')
         except Exception as e:
             Logger.warn("HeatmapView: Could not retrieve track detection status " + str(e))
-            
+
     def _set_state_message(self, msg):
         self.ids.track_name.text = msg
-        
+
