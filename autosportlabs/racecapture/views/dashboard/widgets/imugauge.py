@@ -84,7 +84,8 @@ IMU_GAUGE_KV = """
 class ImuGauge(Gauge):
     Builder.load_string(IMU_GAUGE_KV)
     
-    GYRO_SCALING = 0.1
+    GYRO_SCALING = 0.5
+    ACCEL_SCALING = 1.0
     ACCEL_X = "AccelX"
     ACCEL_Y = "AccelY"
     ACCEL_Z = "AccelZ"
@@ -92,7 +93,7 @@ class ImuGauge(Gauge):
     GYRO_PITCH = "Pitch"
     GYRO_ROLL = "Roll"
     
-    IMU_AMPLIFICATION = 0.5
+    IMU_AMPLIFICATION = 2.0
     
     channel_metas = ObjectProperty(None)
     zoom = NumericProperty(1)
@@ -131,38 +132,41 @@ class ImuGauge(Gauge):
         self._update_gauge_meta()
                 
     def _update_channel_binding(self):
-        dataBus = self.data_bus
-        if dataBus:
-            dataBus.addChannelListener(self.ACCEL_X, self.set_accel_x)
-            dataBus.addChannelListener(self.ACCEL_Y, self.set_accel_y)
-            dataBus.addChannelListener(self.ACCEL_Z, self.set_accel_z)
-            dataBus.addChannelListener(self.GYRO_YAW, self.set_gyro_yaw)
-            dataBus.addChannelListener(self.GYRO_PITCH, self.set_gyro_pitch)
-            dataBus.addChannelListener(self.GYRO_ROLL, self.set_gyro_roll)
-            dataBus.addMetaListener(self.on_channel_meta)
+        data_bus = self.data_bus
+        if data_bus:
+            data_bus.addChannelListener(self.ACCEL_X, self.set_accel_x)
+            data_bus.addChannelListener(self.ACCEL_Y, self.set_accel_y)
+            data_bus.addChannelListener(self.ACCEL_Z, self.set_accel_z)
+            data_bus.addChannelListener(self.GYRO_YAW, self.set_gyro_yaw)
+            data_bus.addChannelListener(self.GYRO_PITCH, self.set_gyro_pitch)
+            data_bus.addChannelListener(self.GYRO_ROLL, self.set_gyro_roll)
+            data_bus.addMetaListener(self.on_channel_meta)
+            meta = data_bus.getMeta()
+            if len(data_bus.getMeta()) > 0:
+                self.on_channel_meta(meta)
 
     def set_accel_x(self, value):
-        self.ids.imu.accel_x = value
+        self.ids.imu.accel_x = value * ImuGauge.ACCEL_SCALING
         self.ids.accel_x.value = value
         
     def set_accel_y(self, value):
-        self.ids.imu.accel_y = value
+        self.ids.imu.accel_y = value * ImuGauge.ACCEL_SCALING
         self.ids.accel_y.value = value        
         
     def set_accel_z(self, value):
-        self.ids.imu.accel_z = value
+        self.ids.imu.accel_z = value * ImuGauge.ACCEL_SCALING
         self.ids.accel_z.value = value
                 
     def set_gyro_yaw(self, value):
-        self.ids.imu.gyro_yaw = value * self.GYRO_SCALING
+        self.ids.imu.gyro_yaw = value * ImuGauge.GYRO_SCALING
         self.ids.gyro_yaw.value = value
                 
     def set_gyro_pitch(self, value):
-        self.ids.imu.gyro_pitch = value  * self.GYRO_SCALING
+        self.ids.imu.gyro_pitch = value  * ImuGauge.GYRO_SCALING
         self.ids.gyro_pitch.value = value
                 
     def set_gyro_roll(self, value):                
-        self.ids.imu.gyro_roll = value  * self.GYRO_SCALING
+        self.ids.imu.gyro_roll = value  * ImuGauge.GYRO_SCALING
         self.ids.gyro_roll.value = value
         
     def on_hide(self):
@@ -172,8 +176,10 @@ class ImuGauge(Gauge):
         self.ids.imu.init_view()
         
     def _update_imu_meta(self, channel_meta, gauge):
-        gauge.minval = channel_meta.min * ImuGauge.IMU_AMPLIFICATION
-        gauge.maxval = channel_meta.max * ImuGauge.IMU_AMPLIFICATION
+        if channel_meta is None:
+            return
+        gauge.minval = channel_meta.min / ImuGauge.IMU_AMPLIFICATION
+        gauge.maxval = channel_meta.max / ImuGauge.IMU_AMPLIFICATION
         gauge.color = self._color_sequence.get_color(channel_meta.name)
         
     def on_channel_metas(self, instance, value):
