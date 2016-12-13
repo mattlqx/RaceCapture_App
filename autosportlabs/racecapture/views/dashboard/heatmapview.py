@@ -393,10 +393,6 @@ class HeatmapView(DashboardScreen):
     def init_view(self):
         data_bus = self._databus
         settings = self._settings
-        self._init_corner(self.ids.corner_fl)
-        self._init_corner(self.ids.corner_fr)
-        self._init_corner(self.ids.corner_rl)
-        self._init_corner(self.ids.corner_rr)
 
         gauges = list(kvFindClass(self, Gauge))
 
@@ -404,21 +400,6 @@ class HeatmapView(DashboardScreen):
             gauge.settings = settings
             gauge.data_bus = data_bus
         self._initialized = True
-
-        self._initialized = True
-
-    def _init_corner(self, corner):
-        brake_zones = 4
-        tire_zones = 4
-        corner.brake_zones = brake_zones
-        corner.tire_zones = tire_zones
-        corner.brake_range = [0, 1000]
-        corner.tire_range = [0, 300]
-        for i in range(0, brake_zones):
-            corner.set_brake_value(i, i * (1000.0 / brake_zones))
-
-        for i in range(0, tire_zones):
-            corner.set_tire_value(i, i * (300.0 / tire_zones))
 
     def on_tracks_updated(self, trackmanager):
         pass
