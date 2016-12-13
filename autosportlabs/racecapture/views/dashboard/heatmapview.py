@@ -19,13 +19,15 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
+from Cython.Shadow import numeric
 kivy.require('1.9.1')
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.label import Label
 from kivy.app import Builder
 from kivy.clock import Clock
 from kivy.logger import Logger
-from kivy.properties import NumericProperty, ListProperty, StringProperty
+from kivy.properties import NumericProperty, ListProperty, StringProperty, ObjectProperty
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
 from autosportlabs.racecapture.widgets.heat.heatgauge import TireHeatGauge, BrakeHeatGauge
 from autosportlabs.racecapture.views.dashboard.dashboardscreen import DashboardScreen
@@ -155,7 +157,6 @@ class BrakeCorner(BoxLayout):
         value = max(self.minval, value)
         scaled = value / self.maxval
         self.ids.brake.set_value(zone, scaled)
-        print('brake scaled ' + str(scaled))
         try:
             value_widget = self.brake_value_widgets[zone]
             value_widget.value = value
@@ -217,19 +218,7 @@ BRAKE_CORNER_RIGHT_KV = """
 class BrakeCornerRight(BrakeCorner):
     Builder.load_string(BRAKE_CORNER_RIGHT_KV)
 
-HEATMAP_CORNER_LEFT_KV = """
-<HeatmapCornerLeft>:
-    padding: (dp(10), dp(10))
-    spacing: dp(10)
-    TireCornerLeft:
-        id: tire
-        size_hint_x: 0.55
-    BrakeCornerLeft:
-        id: brake
-        size_hint_x: 0.45
-"""
-
-class HeatmapCorner(BoxLayout):
+class HeatmapCorner(AnchorLayout):
     brake_zones = NumericProperty()
     tire_zones = NumericProperty()
     brake_range = ListProperty()
@@ -258,22 +247,84 @@ class HeatmapCorner(BoxLayout):
     def set_tire_value(self, zone, value):
         self.ids.tire.set_value(zone, value)
 
+HEATMAP_CORNER_LEFT_KV = """
+<HeatmapCornerLeft>:
+    BoxLayout:
+        padding: (dp(10), dp(10))
+        spacing: dp(10)
+        TireCornerLeft:
+            id: tire
+            size_hint_x: 0.55
+        BrakeCornerLeft:
+            id: brake
+            size_hint_x: 0.45
+"""
+
 class HeatmapCornerLeft(HeatmapCorner):
     Builder.load_string(HEATMAP_CORNER_LEFT_KV)
 
 HEATMAP_CORNER_RIGHT_KV = """
 <HeatmapCornerRight>:
-    padding: (dp(10), dp(10))
-    spacing: dp(10)
-    BrakeCornerRight:
-        id: brake
-        size_hint_x: 0.45
-    TireCornerRight:
-        id: tire
-        size_hint_x: 0.55
+    BoxLayout:
+        padding: (dp(10), dp(10))
+        spacing: dp(10)
+        BrakeCornerRight:
+            id: brake
+            size_hint_x: 0.45
+        TireCornerRight:
+            id: tire
+            size_hint_x: 0.55
 """
 class HeatmapCornerRight(HeatmapCorner):
     Builder.load_string(HEATMAP_CORNER_RIGHT_KV)
+
+class HeatmapCornerGauge(Gauge, HeatmapCorner):
+    corner_prefix = StringProperty('')
+    tire_channel_prefix = StringProperty("TireTmp")
+    brake_channel_prefix = StringProperty("BrakeTmp")
+
+    channel_metas = ObjectProperty()
+
+    def on_data_bus(self, instance, value):
+       self._update_channel_binding()
+
+    def _update_channel_binding(self):
+        data_bus = self.data_bus
+        if data_bus is None:
+            return
+
+        for zone in range (0, self.tire_zones):
+            channel = '{}{}{}'.format(self.tire_channel_prefix, self.corner_prefix, zone + 1)
+            data_bus.addChannelListener(channel, lambda value, z=zone: self._set_tire_value(value, z))
+
+        for zone in range (0, self.brake_zones):
+            channel = '{}{}{}'.format(self.brake_channel_prefix, self.corner_prefix, zone + 1)
+            data_bus.addChannelListener(channel, lambda value, z=zone: self._set_brake_value(value, z))
+
+        data_bus.addMetaListener(self.on_channel_meta)
+        meta = data_bus.getMeta()
+        if len(data_bus.getMeta()) > 0:
+            self.on_channel_meta(meta)
+
+    def _set_tire_value(self, value, index):
+        self.set_tire_value(index, value)
+
+    def _set_brake_value(self, value, index):
+        self.set_brake_value(index, value)
+
+    def on_channel_meta(self, channel_metas):
+        self.channel_metas = channel_metas
+
+    def on_channel_metas(self, instance, value):
+        pass
+
+class HeatmapCornerLeftGauge(HeatmapCornerGauge, HeatmapCornerLeft):
+    pass
+
+class HeatmapCornerRightGauge(HeatmapCornerGauge, HeatmapCornerRight):
+    pass
+
+
 
 HEATMAP_VIEW_KV = """
 <HeatmapView>:
@@ -286,17 +337,21 @@ HEATMAP_VIEW_KV = """
             BoxLayout:
                 spacing: dp(10)
                 orientation: 'horizontal'
-                HeatmapCornerLeft:
+                HeatmapCornerLeftGauge:
                     id: corner_fl
-                HeatmapCornerRight:
+                    corner_prefix: 'FL'
+                HeatmapCornerRightGauge:
                     id: corner_fr
+                    corner_prefix: 'FR'
             BoxLayout:
                 spacing: dp(10)        
                 orientation: 'horizontal'
-                HeatmapCornerLeft:
+                HeatmapCornerLeftGauge:
                     id: corner_rl
-                HeatmapCornerRight:
+                    corner_prefix: 'RL'
+                HeatmapCornerRightGauge:
                     id: corner_rr
+                    corner_prefix: 'RR'
         AnchorLayout:
             size_hint_x: 0.4
             BoxLayout:
