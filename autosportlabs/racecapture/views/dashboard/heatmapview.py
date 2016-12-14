@@ -18,8 +18,9 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import kivy
-from Cython.Shadow import numeric
+from kivy.uix.behaviors import ButtonBehavior
 kivy.require('1.9.1')
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.anchorlayout import AnchorLayout
@@ -27,13 +28,16 @@ from kivy.uix.label import Label
 from kivy.app import Builder
 from kivy.clock import Clock
 from kivy.logger import Logger
+from kivy.uix.modalview import ModalView
 from kivy.properties import NumericProperty, ListProperty, StringProperty, ObjectProperty
+from kivy.uix.settings import SettingsWithNoMenu
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
 from autosportlabs.racecapture.widgets.heat.heatgauge import TireHeatGauge, BrakeHeatGauge
 from autosportlabs.racecapture.views.dashboard.dashboardscreen import DashboardScreen
 from autosportlabs.uix.gauge.bargraphgauge import BarGraphGauge
 from autosportlabs.uix.color.colorgradient import HeatColorGradient
 from autosportlabs.racecapture.views.dashboard.widgets.imugauge import ImuGauge
+
 from utils import kvFindClass
 
 class TireCorner(BoxLayout):
@@ -279,14 +283,16 @@ class HeatmapCornerRight(HeatmapCorner):
     Builder.load_string(HEATMAP_CORNER_RIGHT_KV)
 
 class HeatmapCornerGauge(Gauge, HeatmapCorner):
+    DEFAULT_TIRE_CHANNEL_PREFIX = 'TireTmp'
+    DEFAULT_BRAKE_CHANNEL_PREFIX = 'BrakeTmp'
     corner_prefix = StringProperty('')
-    tire_channel_prefix = StringProperty("TireTmp")
-    brake_channel_prefix = StringProperty("BrakeTmp")
+    tire_channel_prefix = StringProperty(DEFAULT_TIRE_CHANNEL_PREFIX)
+    brake_channel_prefix = StringProperty(DEFAULT_BRAKE_CHANNEL_PREFIX)
 
     channel_metas = ObjectProperty()
 
     def on_data_bus(self, instance, value):
-       self._update_channel_binding()
+        self._update_channel_binding()
 
     def _update_channel_binding(self):
         data_bus = self.data_bus
@@ -324,13 +330,15 @@ class HeatmapCornerLeftGauge(HeatmapCornerGauge, HeatmapCornerLeft):
 class HeatmapCornerRightGauge(HeatmapCornerGauge, HeatmapCornerRight):
     pass
 
-
+class HeatmapContainer(ButtonBehavior, BoxLayout):
+    pass
 
 HEATMAP_VIEW_KV = """
 <HeatmapView>:
     BoxLayout:
         orientation: 'horizontal'
-        BoxLayout:
+        HeatmapContainer:
+            on_press: root.on_heatmap_options()
             size_hint_x: 0.6
             orientation: 'vertical'
             spacing: dp(10)        
@@ -379,7 +387,8 @@ HEATMAP_VIEW_KV = """
 
 class HeatmapView(DashboardScreen):
     Builder.load_string(HEATMAP_VIEW_KV)
-
+    _POPUP_SIZE_HINT = (0.75, 0.8)
+    
     def __init__(self, databus, settings, track_manager, status_pump, **kwargs):
         super(HeatmapView, self).__init__(**kwargs)
         self._initialized = False
@@ -389,7 +398,21 @@ class HeatmapView(DashboardScreen):
         self._track_manager = track_manager
         status_pump.add_listener(self._update_track_status)
         self._current_track_id = None
+        self._set_default_preferences()
 
+    def _set_default_preferences(self):
+        self._settings.userPrefs.config.adddefaultsection('heatmap_preferences')
+        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'tire_temp_channel_prefix', HeatmapCornerGauge.DEFAULT_TIRE_CHANNEL_PREFIX)
+        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'brake_temp_channel_prefix', HeatmapCornerGauge.DEFAULT_BRAKE_CHANNEL_PREFIX)
+        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'tire_zones_fl', '1')
+        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'tire_zones_fr', '1')
+        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'tire_zones_rl', '1')
+        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'tire_zones_rr', '1')
+        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'brake_zones_fl', '1')
+        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'brake_zones_fr', '1')
+        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'brake_zones_rl', '1')
+        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'brake_zones_rr', '1')
+        
     def init_view(self):
         data_bus = self._databus
         settings = self._settings
@@ -426,3 +449,16 @@ class HeatmapView(DashboardScreen):
     def _set_state_message(self, msg):
         self.ids.track_name.text = msg
 
+
+    def on_heatmap_options(self):
+        def popup_dismissed(response):
+            print('dismissed')
+            
+        settings_view = SettingsWithNoMenu()
+        base_dir = self._settings.base_dir
+        settings_view.add_json_panel('Heatmap Settings', self._settings.userPrefs.config, os.path.join(base_dir, 'resource', 'settings', 'heatmap_settings.json'))
+
+        popup = ModalView(size_hint=HeatmapView._POPUP_SIZE_HINT)
+        popup.add_widget(settings_view)
+        popup.bind(on_dismiss=popup_dismissed)
+        popup.open()

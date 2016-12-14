@@ -20,6 +20,7 @@
 
 import kivy
 kivy.require('1.9.1')
+from kivy.uix.behaviors import ButtonBehavior
 from kivy.app import Builder
 from kivy.metrics import dp
 from utils import kvFind, kvquery
@@ -27,6 +28,7 @@ from kivy.properties import NumericProperty, ObjectProperty
 from autosportlabs.uix.imu.imuview import ImuView
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
 from autosportlabs.uix.color.colorsequence import ColorSequence
+from kivy.uix.settings import SettingsWithNoMenu
 IMU_GAUGE_KV = """
 <ImuGauge>:
     AnchorLayout:
