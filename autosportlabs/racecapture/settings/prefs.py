@@ -98,17 +98,16 @@ class UserPrefs(EventDispatcher):
     '''
     A class to manage user preferences for the RaceCapture app
     '''
+    DEFAULT_PREFS_DICT = {'range_alerts': {}, 
+                          'gauge_settings':{}, 
+                          'screens':['2x1x2_gauge_view', '3x1_gauge_view', '2x1_gauge_view', '4x2_gauge_view', 'laptime_view', 'tach_view', 'rawchannel_view']}
+    
     DEFAULT_ANALYSIS_CHANNELS = ['Speed']
-    _schedule_save = None
-    _prefs_dict = {'range_alerts': {}, 'gauge_settings':{}}
-    store = None
     prefs_file_name = 'prefs.json'
-    prefs_file = None
-    config = None
-    data_dir = '.'
-    user_files_dir = '.'
 
     def __init__(self, data_dir, user_files_dir, save_timeout=2, **kwargs):
+        self._prefs_dict = UserPrefs.DEFAULT_PREFS_DICT
+        self.config = ConfigParser()
         self.data_dir = data_dir
         self.user_files_dir = user_files_dir
         self.prefs_file = path.join(self.data_dir, self.prefs_file_name)
@@ -161,6 +160,14 @@ class UserPrefs(EventDispatcher):
         '''
         return self._prefs_dict["gauge_settings"].get(gauge_id, False)
 
+    def get_dashboard_screens(self):
+        return self._prefs_dict.get("screens")
+
+
+
+# Regular preferences
+
+
     def get_last_selected_track_id(self):
         return self.get_pref('track_detection', 'last_selected_track_id')
 
@@ -205,7 +212,7 @@ class UserPrefs(EventDispatcher):
         self.config.setdefault('preferences', 'import_datalog_dir', default_user_files_dir)
         self.config.setdefault('preferences', 'send_telemetry', '0')
         self.config.setdefault('preferences', 'record_session', '1')
-        self.config.setdefault('preferences', 'last_dash_screen', 'gaugeView')
+        self.config.setdefault('preferences', 'last_dash_screen', '2x1x2_gauge_view')
         self.config.setdefault('preferences', 'global_help', True)
 
         # Connection type for mobile
@@ -239,11 +246,8 @@ class UserPrefs(EventDispatcher):
 
     def load(self):
         Logger.info('UserPrefs: Data Dir is: {}'.format(self.data_dir))
-        self.config = ConfigParser()
         self.config.read(os.path.join(self.data_dir, 'preferences.ini'))
         self.set_config_defaults()
-
-        self._prefs_dict = {'range_alerts': {}, 'gauge_settings':{}}
 
         try:
             with open(self.prefs_file, 'r') as data:
@@ -257,6 +261,9 @@ class UserPrefs(EventDispatcher):
                 if content_dict.has_key("gauge_settings"):
                     for id, channel in content_dict["gauge_settings"].iteritems():
                         self._prefs_dict["gauge_settings"][id] = channel
+                
+                if content_dict.has_key('screens'):
+                    self._prefs_dict['screens'] = content_dict['screens']
 
         except Exception:
             pass

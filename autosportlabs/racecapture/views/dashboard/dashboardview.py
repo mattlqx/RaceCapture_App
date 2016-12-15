@@ -45,15 +45,62 @@ from autosportlabs.racecapture.views.util.alertview import editor_popup
 from autosportlabs.racecapture.config.rcpconfig import Track, TrackConfig, Capabilities, GpsConfig, GpsSample
 from autosportlabs.racecapture.tracks.trackmanager import TrackMap, TrackManager
 # Dashboard screens
-from autosportlabs.racecapture.views.dashboard.gaugeview import GaugeView
+from autosportlabs.racecapture.views.dashboard.gaugeview import *
 from autosportlabs.racecapture.views.dashboard.tachometerview import TachometerView
 from autosportlabs.racecapture.views.dashboard.laptimeview import LaptimeView
 from autosportlabs.racecapture.views.dashboard.rawchannelview import RawChannelView
 from autosportlabs.racecapture.views.dashboard.comboview import ComboView
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.help.helpmanager import HelpInfo
-
 from collections import OrderedDict
+
+class DashboardFactory(object):
+    def __init__(self, databus, settings, **kwargs):
+        self._view_builders = {}
+        self._databus = databus
+        self._settings = settings
+        self._init_factory()
+        
+    def create_screen(self, key):
+        view = self._view_builders[key]()
+        return view
+    
+    def _init_factory(self):
+        builders = self._view_builders
+        builders['2x1x2_gauge_view'] = self.build_2x1x2_gauge_view
+        builders['3x1_gauge_view'] = self.build_3x1_gauge_view
+        builders['2x1_gauge_view'] = self.build_2x1_gauge_view
+        builders['4x2_gauge_view'] = self.build_4x2_gauge_view
+        builders['laptime_view'] = self.build_laptime_view
+        builders['tach_view'] = self.build_tachometer_view
+        builders['rawchannel_view'] = self.build_raw_channel_view
+        # builders['comboView'] = build_combo_view
+    
+    def build_2x1x2_gauge_view(self):
+        return GaugeView3x1(name='2x1x2_gauge_view', databus=self._databus, settings=self._settings)
+
+    def build_3x1_gauge_view(self):
+        return GaugeView2x1x2(name='3x1_gauge_view', databus=self._databus, settings=self._settings)
+
+    def build_2x1_gauge_view(self):
+        return GaugeView2x1(name='2x1_gauge_view', databus=self._databus, settings=self._settings)
+
+    def build_4x2_gauge_view(self):
+        return GaugeView4x2(name='3x2_gauge_view', databus=self._databus, settings=self._settings)
+
+    def build_tachometer_view(self):
+        return TachometerView(name='tach_view', databus=self._databus, settings=self._settings)
+
+    def build_laptime_view(self):
+        return LaptimeView(name='laptime_view', databus=self._databus, settings=self._settings)
+
+    def build_raw_channel_view(self):
+        return RawChannelView(name='rawchannel_view', databus=self._databus, settings=self._settings)
+
+    def build_combo_view(self):
+        return ComboView(name='comboView', databus=self._databus, settings=self._settings)
+
+    
 DASHBOARD_VIEW_KV = """
 <DashboardView>:
     AnchorLayout:
@@ -112,11 +159,12 @@ class DashboardView(Screen):
 
     def __init__(self, status_pump, track_manager, rc_api, rc_config, databus, settings, **kwargs):
         self._initialized = False
-        self._view_builders = OrderedDict()
         super(DashboardView, self).__init__(**kwargs)
+        self._dashboard_factory = DashboardFactory(databus, settings)
         self.register_event_type('on_tracks_updated')
         self.register_event_type('on_config_updated')
         self.register_event_type('on_config_written')
+        self._screens = []
         self._status_pump = status_pump
         self._databus = databus
         self._settings = settings
@@ -155,36 +203,6 @@ class DashboardView(Screen):
         self._rc_config = rc_config
         self._race_setup()
 
-    def _init_view_builders(self):
-        # Factory / builder functions for views
-        # To add a new dashboard screen, add a function here for the builder
-        # And add it to the dictionary below.
-
-        def build_gauge_view():
-            return GaugeView(name='gaugeView', databus=self._databus, settings=self._settings)
-
-        def build_tachometer_view():
-            return TachometerView(name='tachView', databus=self._databus, settings=self._settings)
-
-        def build_laptime_view():
-            return LaptimeView(name='laptimeView', databus=self._databus, settings=self._settings)
-
-        def build_raw_channel_view():
-            return RawChannelView(name='rawchannelView', databus=self._databus, settings=self._settings)
-
-        def build_combo_view():
-            return ComboView(name='comboView', databus=self._databus, settings=self._settings)
-
-        builders = self._view_builders
-        builders['gaugeView'] = build_gauge_view
-        builders['laptimeView'] = build_laptime_view
-        builders['tachView'] = build_tachometer_view
-        builders['rawchannelView'] = build_raw_channel_view
-        # builders['comboView'] = build_combo_view
-
-        for i, v in enumerate(self._view_builders):
-            self.ids.carousel.add_widget(AnchorLayout())
-
     def _init_global_gauges(self):
         databus = self._databus
         settings = self._settings
@@ -200,7 +218,12 @@ class DashboardView(Screen):
         settings = self._settings
 
         self._init_global_gauges()
-        self._init_view_builders()
+        
+        #add the initial set of empty screens
+        screens = self._screens
+        screens += self._settings.userPrefs.get_dashboard_screens()
+        for i in range (0, len(screens)):
+            self.ids.carousel.add_widget(AnchorLayout())
 
         # Find all of the global and set the objects they need
         gauges = list(kvFindClass(self, DigitalGauge))
@@ -219,7 +242,6 @@ class DashboardView(Screen):
 
         self._rc_api.add_connect_listener(self._on_rc_connect)
         self._initialized = True
-
 
         Clock.schedule_once(lambda dt: HelpInfo.help_popup('dashboard_gauge_help', self, arrow_pos='right_mid'), 2.0)
 
@@ -397,7 +419,8 @@ class DashboardView(Screen):
             # if the current screen has no children build and add the screen
             index = self.ids.carousel.index
             # call the builder to actually build the screen
-            view = self._view_builders.items()[index][1]()
+            screen_key = self._screens[index]
+            view = self._dashboard_factory.create_screen(screen_key)
             slide_screen.add_widget(view)
             view.on_enter()
 
@@ -411,11 +434,9 @@ class DashboardView(Screen):
         # Find the index of the screen based on the screen name
         # and use that to select the index of the carousel
         carousel = self.ids.carousel
-        for i, key in enumerate(self._view_builders.keys()):
-            if key == screen_name:
-                carousel.index = i
-                self._check_load_screen(carousel.current_slide)
-
+        screens = self._screens
+        carousel.index = 0 if screen_name not in screens else self._screens.index(screen_name) 
+        self._check_load_screen(carousel.current_slide)
 
     def _show_last_view(self):
         last_screen_name = self._settings.userPrefs.get_pref('preferences', 'last_dash_screen')
