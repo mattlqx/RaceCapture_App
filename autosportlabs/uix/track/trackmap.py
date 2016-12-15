@@ -248,6 +248,7 @@ class TrackMapView(Widget):
         :type color list
         '''
         self._marker_points[key] = MarkerPoint(color)
+        self._draw_current_map()
 
     def remove_marker(self, key):
         '''
@@ -396,13 +397,6 @@ class TrackMapView(Widget):
                     Color(*self._paths[key].color)
                     Line(points=path_points, width=sp(self.path_width_scale * self.height), closed=True, cap='square', joint='miter')
 
-            # draw the dynamic markers
-            marker_size = (self.marker_width_scale * self.height) * self.marker_scale
-            for key, marker_point in self._marker_points.iteritems():
-                scaled_point = self._scale_point(marker_point, self.height, left, bottom)
-                Color(*marker_point.color)
-                self._marker_locations[key] = Line(circle=(scaled_point.x, scaled_point.y, marker_size), width=marker_size, closed=True)
-
             target_size = (self.target_width_scale * self.height) * self.target_scale
             # draw start point
             if GeoPoint.is_valid(self.start_point):
@@ -418,7 +412,6 @@ class TrackMapView(Widget):
 
             # draw the sector points
             sector_count = 0
-            sector_target_size = target_size / 3.0
             for sector_point in self.sector_points:
                 sector_count += 1
                 scaled_point = self._scale_geopoint(sector_point)
@@ -433,6 +426,14 @@ class TrackMapView(Widget):
                 trim_x = texture.size[0] * 0.1
                 trim_y = -texture.size[1] * 0.05
                 Rectangle(size=texture.size, pos=(centered_point[0] + trim_x, centered_point[1] + trim_y), texture=texture)
+                
+            # draw the dynamic markers
+            marker_size = (self.marker_width_scale * self.height) * self.marker_scale
+            for key, marker_point in self._marker_points.iteritems():
+                scaled_point = self._scale_point(marker_point, self.height, left, bottom)
+                Color(*marker_point.color)
+                self._marker_locations[key] = Line(circle=(scaled_point.x, scaled_point.y, marker_size), width=marker_size, closed=True)
+                
             Color(1.0, 1.0, 1.0, 1.0)
 
 
