@@ -48,8 +48,8 @@ IMU_GAUGE_KV = """
         anchor_x: 'left'
         anchor_y: 'center'
         GridLayout:
-            size_hint: (0.3, None)
-            spacing: dp(10)
+            size_hint: (0.3, 0.5)
+            spacing: (dp(10), dp(10))
             cols: 2
             ImuLabel:
                 text: 'X'
@@ -76,7 +76,7 @@ IMU_GAUGE_KV = """
         anchor_x: 'right'
         anchor_y: 'center'
         GridLayout:
-            size_hint: (0.3, None)
+            size_hint: (0.3, 0.5)
             spacing: (dp(10), dp(10))
             cols: 2
             BarGraphGauge:
