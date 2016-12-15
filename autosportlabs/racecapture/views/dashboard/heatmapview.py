@@ -157,9 +157,10 @@ class HeatmapView(DashboardScreen):
             self._set_state_message('Waiting for track')
         elif self._current_track_id != track_id:
             track = self._track_manager.find_track_by_short_id(track_status['trackId'])
-            self.ids.track.init_map(track)
-            self._current_track_id = track_id
-            self._set_state_message('')
+            if track is not None:
+                self.ids.track.init_map(track)
+                self._current_track_id = track_id
+                self._set_state_message('')
 
     def _set_state_message(self, msg):
         self.ids.track_name.text = msg

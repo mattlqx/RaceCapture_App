@@ -65,8 +65,12 @@ class TrackMapGauge(Gauge):
         self.position = [self.position[0], value]
 
     def on_position(self, instance, value):
-        self.ids.track.update_reference_mark(TrackMapGauge.REFERENCE_MARK_KEY, GeoPoint.fromPoint(value[0], value[1]))
+        self._update_reference_mark()
 
+    def _update_reference_mark(self):
+        point = self.position
+        self.ids.track.update_reference_mark(TrackMapGauge.REFERENCE_MARK_KEY, GeoPoint.fromPoint(point[0], point[1]))
+        
     def _update_channel_metas(self):
         channel_metas = self.channel_metas
         if channel_metas is None:
@@ -81,5 +85,6 @@ class TrackMapGauge(Gauge):
     def init_map(self, track):
         self.ids.track.initMap(track)
         self.ids.track.add_reference_mark(TrackMapGauge.REFERENCE_MARK_KEY, TrackMapGauge.reference_mark_color)
+        self._update_reference_mark()
 
 
