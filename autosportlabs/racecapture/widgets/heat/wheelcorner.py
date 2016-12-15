@@ -29,9 +29,6 @@ from autosportlabs.racecapture.widgets.heat.heatgauge import TireHeatGauge, Brak
 from kivy.app import Builder
 
 class TireCorner(BoxLayout):
-    DEFAULT_TIRE_ZONES = 1
-    DEFAULT_TIRE_MIN = 0
-    DEFAULT_TIRE_MAX = 300
     zones = NumericProperty()
     minval = NumericProperty()
     maxval = NumericProperty()
@@ -71,7 +68,7 @@ class TireCorner(BoxLayout):
     def set_value(self, zone, value):
         value = min(self.maxval, value)
         value = max(self.minval, value)
-        scaled = value / self.maxval
+        scaled = value / self.maxval if self.maxval > 0 else 0
         self.ids.tire.set_value(zone, scaled)
         try:
             value_widget = self.tire_value_widgets[zone]
@@ -115,9 +112,6 @@ class TireCornerRight(TireCorner):
     Builder.load_string(TIRE_CORNER_RIGHT_KV)
 
 class BrakeCorner(BoxLayout):
-    DEFAULT_BRAKE_ZONES = 1
-    DEFAULT_BRAKE_MIN = 0
-    DEFAULT_BRAKE_MAX = 1000
     zones = NumericProperty()
     minval = NumericProperty()
     maxval = NumericProperty()
@@ -147,7 +141,7 @@ class BrakeCorner(BoxLayout):
     def set_value(self, zone, value):
         value = min(self.maxval, value)
         value = max(self.minval, value)
-        scaled = value / self.maxval
+        scaled = value / self.maxval if self.maxval > 0 else 0
         self.ids.brake.set_value(zone, scaled)
         try:
             value_widget = self.brake_value_widgets[zone]
@@ -211,8 +205,8 @@ class BrakeCornerRight(BrakeCorner):
     Builder.load_string(BRAKE_CORNER_RIGHT_KV)
 
 class HeatmapCorner(AnchorLayout):
-    brake_zones = NumericProperty()
-    tire_zones = NumericProperty()
+    brake_zones = NumericProperty(None)
+    tire_zones = NumericProperty(None)
     brake_range = ListProperty()
     tire_range = ListProperty()
 
@@ -221,9 +215,14 @@ class HeatmapCorner(AnchorLayout):
 
     def on_brake_zones(self, instance, value):
         self.ids.brake.zones = value
+        self._update_note()
 
     def on_tire_zones(self, instance, value):
         self.ids.tire.zones = value
+        self._update_note()
+
+    def _update_note(self):
+        self.ids.note.text = 'No sensors' if self.tire_zones == 0 and self.brake_zones == 0 else ''
 
     def on_tire_range(self, instance, value):
         self.ids.tire.minval = value[0]
@@ -241,6 +240,9 @@ class HeatmapCorner(AnchorLayout):
 
 HEATMAP_CORNER_LEFT_KV = """
 <HeatmapCornerLeft>:
+    FieldLabel:
+        id: note
+        size_hint_x: 0.5
     BoxLayout:
         padding: (dp(10), dp(10))
         spacing: dp(10)
@@ -257,6 +259,9 @@ class HeatmapCornerLeft(HeatmapCorner):
 
 HEATMAP_CORNER_RIGHT_KV = """
 <HeatmapCornerRight>:
+    FieldLabel:
+        id: note
+        size_hint_x: 0.5
     BoxLayout:
         padding: (dp(10), dp(10))
         spacing: dp(10)

@@ -68,7 +68,7 @@
         "title": "Tire Zones",
         "desc": "Number of brake temperature zones",
         "section": "heatmap_preferences",
-        "key": "tire_zones_rl",
+        "key": "tire_zones_rr",
     	"options": ["None", "1", "2", "3", "4"]        	
     },    
     {
@@ -76,7 +76,7 @@
         "title": "Brake zones",
         "desc": "Number of brake temperature zones",
         "section": "heatmap_preferences",
-        "key": "tire_zones_rr",
+        "key": "brake_zones_rr",
     	"options": ["None", "1", "2", "3", "4"]        	
     },
     {

@@ -91,7 +91,7 @@ HEATMAP_VIEW_KV = """
 class HeatmapView(DashboardScreen):
     Builder.load_string(HEATMAP_VIEW_KV)
     _POPUP_SIZE_HINT = (0.75, 0.8)
-    
+
     def __init__(self, databus, settings, track_manager, status_pump, **kwargs):
         super(HeatmapView, self).__init__(**kwargs)
         self._initialized = False
@@ -102,20 +102,34 @@ class HeatmapView(DashboardScreen):
         status_pump.add_listener(self._update_track_status)
         self._current_track_id = None
         self._set_default_preferences()
+        self._update_heatmap_preferences()
 
     def _set_default_preferences(self):
-        self._settings.userPrefs.config.adddefaultsection('heatmap_preferences')
-        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'tire_temp_channel_prefix', HeatmapCornerGauge.DEFAULT_TIRE_CHANNEL_PREFIX)
-        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'brake_temp_channel_prefix', HeatmapCornerGauge.DEFAULT_BRAKE_CHANNEL_PREFIX)
-        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'tire_zones_fl', '1')
-        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'tire_zones_fr', '1')
-        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'tire_zones_rl', '1')
-        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'tire_zones_rr', '1')
-        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'brake_zones_fl', '1')
-        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'brake_zones_fr', '1')
-        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'brake_zones_rl', '1')
-        self._settings.userPrefs.config.setdefault('heatmap_preferences', 'brake_zones_rr', '1')
-        
+        config = self._settings.userPrefs.config
+        config.adddefaultsection('heatmap_preferences')
+        config.setdefault('heatmap_preferences', 'tire_temp_channel_prefix', HeatmapCornerGauge.DEFAULT_TIRE_CHANNEL_PREFIX)
+        config.setdefault('heatmap_preferences', 'brake_temp_channel_prefix', HeatmapCornerGauge.DEFAULT_BRAKE_CHANNEL_PREFIX)
+        config.setdefault('heatmap_preferences', 'tire_zones_fl', '1')
+        config.setdefault('heatmap_preferences', 'tire_zones_fr', '1')
+        config.setdefault('heatmap_preferences', 'tire_zones_rl', '1')
+        config.setdefault('heatmap_preferences', 'tire_zones_rr', '1')
+        config.setdefault('heatmap_preferences', 'brake_zones_fl', '1')
+        config.setdefault('heatmap_preferences', 'brake_zones_fr', '1')
+        config.setdefault('heatmap_preferences', 'brake_zones_rl', '1')
+        config.setdefault('heatmap_preferences', 'brake_zones_rr', '1')
+
+    def _update_heatmap_preferences(self):
+        zones = ['fl', 'fr', 'rl', 'rr']
+        config = self._settings.userPrefs.config
+        for zone in zones:
+            tire_zones = config.get('heatmap_preferences', 'tire_zones_{}'.format(zone))
+            brake_zones = config.get('heatmap_preferences', 'brake_zones_{}'.format(zone))
+            tire_zones = 0 if tire_zones == 'None' else int(tire_zones)
+            brake_zones = 0 if brake_zones == 'None' else int(brake_zones)
+            corner_widget = self.ids.get('corner_{}'.format(zone))
+            corner_widget.tire_zones = tire_zones
+            corner_widget.brake_zones = brake_zones
+
     def init_view(self):
         data_bus = self._databus
         settings = self._settings
@@ -152,23 +166,19 @@ class HeatmapView(DashboardScreen):
     def _set_state_message(self, msg):
         self.ids.track_name.text = msg
 
-
-    def _update_heatmap_preferences(self):
-        print 'updatae'
-        
     def on_heatmap_options(self):
         def popup_dismissed(response):
             self._update_heatmap_preferences()
-            
+
         settings_view = SettingsWithNoMenu()
         base_dir = self._settings.base_dir
-        settings_view.add_json_panel('Heatmap Settings', 
-                                     self._settings.userPrefs.config, 
-                                     os.path.join(base_dir, 
-                                                  'autosportlabs', 
-                                                  'racecapture', 
-                                                  'views', 
-                                                  'dashboard', 
+        settings_view.add_json_panel('Heatmap Settings',
+                                     self._settings.userPrefs.config,
+                                     os.path.join(base_dir,
+                                                  'autosportlabs',
+                                                  'racecapture',
+                                                  'views',
+                                                  'dashboard',
                                                   'heatmap_settings.json'))
 
         popup = ModalView(size_hint=HeatmapView._POPUP_SIZE_HINT)

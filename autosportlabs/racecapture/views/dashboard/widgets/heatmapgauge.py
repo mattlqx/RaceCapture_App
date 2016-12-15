@@ -36,23 +36,54 @@ class HeatmapCornerGauge(Gauge, HeatmapCorner):
     def on_data_bus(self, instance, value):
         self._update_channel_binding()
 
+    def _get_tire_channel(self, zone):
+        return '{}{}{}'.format(self.tire_channel_prefix, self.corner_prefix, zone)
+
+    def _get_brake_channel(self, zone):
+        return '{}{}{}'.format(self.brake_channel_prefix, self.corner_prefix, zone)
+
+    def on_brake_zones(self, instance, value):
+        super(HeatmapCornerGauge, self).on_brake_zones(instance, value)
+        self._update_channel_binding()
+        self._update_channel_metas()
+
+    def on_tire_zones(self, instance, value):
+        super(HeatmapCornerGauge, self).on_tire_zones(instance, value)
+        self._update_channel_binding()
+        self._update_channel_metas()
+
     def _update_channel_binding(self):
         data_bus = self.data_bus
         if data_bus is None:
             return
 
         for zone in range (0, self.tire_zones):
-            channel = '{}{}{}'.format(self.tire_channel_prefix, self.corner_prefix, zone + 1)
+            channel = self._get_tire_channel(zone + 1)
             data_bus.addChannelListener(channel, lambda value, z=zone: self._set_tire_value(value, z))
 
         for zone in range (0, self.brake_zones):
-            channel = '{}{}{}'.format(self.brake_channel_prefix, self.corner_prefix, zone + 1)
+            channel = self._get_brake_channel(zone + 1)
             data_bus.addChannelListener(channel, lambda value, z=zone: self._set_brake_value(value, z))
 
         data_bus.addMetaListener(self.on_channel_meta)
         meta = data_bus.getMeta()
         if len(data_bus.getMeta()) > 0:
             self.on_channel_meta(meta)
+
+    def _update_channel_metas(self):
+        channel_metas = self.channel_metas
+        if channel_metas is None:
+            return
+
+        for zone in range (0, self.tire_zones):
+            channel = channel_metas.get(self._get_tire_channel(zone + 1))
+            if channel:
+                self.tire_range = [channel.min, channel.max]
+
+        for zone in range (0, self.brake_zones):
+            channel = channel_metas.get(self._get_brake_channel(zone + 1))
+            if channel:
+                self.brake_range = [channel.min, channel.max]
 
     def _set_tire_value(self, value, index):
         self.set_tire_value(index, value)
@@ -64,7 +95,7 @@ class HeatmapCornerGauge(Gauge, HeatmapCorner):
         self.channel_metas = channel_metas
 
     def on_channel_metas(self, instance, value):
-        pass
+        self._update_channel_metas()
 
 class HeatmapCornerLeftGauge(HeatmapCornerGauge, HeatmapCornerLeft):
     pass
