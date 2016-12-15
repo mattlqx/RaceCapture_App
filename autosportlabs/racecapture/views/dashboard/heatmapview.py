@@ -31,6 +31,7 @@ from kivy.uix.settings import SettingsWithNoMenu
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
 from autosportlabs.racecapture.views.dashboard.dashboardscreen import DashboardScreen
 from autosportlabs.racecapture.views.dashboard.widgets.imugauge import ImuGauge
+from autosportlabs.racecapture.views.dashboard.widgets.trackmapgauge import TrackMapGauge
 from autosportlabs.racecapture.views.dashboard.widgets.heatmapgauge import HeatmapCornerGauge
 from utils import kvFindClass
 
@@ -79,7 +80,7 @@ HEATMAP_VIEW_KV = """
                     AnchorLayout:
                         anchor_y: 'top'
                         padding: (dp(10), dp(10))
-                        RaceTrackView:
+                        TrackMapGauge:
                             id: track
                             size_hint: (1.0, 1.0)
                 ImuGauge:
@@ -150,18 +151,15 @@ class HeatmapView(DashboardScreen):
         super(HeatmapView, self).on_enter()
 
     def _update_track_status(self, status_data):
-        try:
-            track_status = status_data['status']['track']
-            track_id = track_status['trackId']
-            if track_id == 0:
-                self._set_state_message('Waiting for track')
-            elif self._current_track_id != track_id:
-                track = self._track_manager.find_track_by_short_id(track_status['trackId'])
-                self.ids.track.initMap(track)
-                self._current_track_id = track_id
-                self._set_state_message('')
-        except Exception as e:
-            Logger.warn("HeatmapView: Could not retrieve track detection status " + str(e))
+        track_status = status_data['status']['track']
+        track_id = track_status['trackId']
+        if track_id == 0:
+            self._set_state_message('Waiting for track')
+        elif self._current_track_id != track_id:
+            track = self._track_manager.find_track_by_short_id(track_status['trackId'])
+            self.ids.track.init_map(track)
+            self._current_track_id = track_id
+            self._set_state_message('')
 
     def _set_state_message(self, msg):
         self.ids.track_name.text = msg
