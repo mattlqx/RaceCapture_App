@@ -47,45 +47,45 @@ BAR_GRAPH_GAUGE_KV = """
                     size: self.size
     FieldLabel:
         id: value
-        
+        font_size: min(dp(18), max(1,self.height * 1.0))
 """
-        
+
 class BarGraphGauge(AnchorLayout):
-    Builder.load_string(BAR_GRAPH_GAUGE_KV)        
+    Builder.load_string(BAR_GRAPH_GAUGE_KV)
     minval = NumericProperty(0)
     maxval = NumericProperty(100)
     value = NumericProperty(0, allownone=True)
     color = ListProperty([1, 1, 1, 0.5])
     orientation = StringProperty('left-right')
-    
+
     def __init__(self, **kwargs):
         self.left_right = True
         self.zero_centered = False
-        super(BarGraphGauge, self).__init__(**kwargs)        
+        super(BarGraphGauge, self).__init__(**kwargs)
         self.bind(pos=self._refresh_value)
         self.bind(size=self._refresh_value)
-        
+
     def on_precision(self, instance, value):
         self._refresh_format()
-        
+
     def on_minval(self, instance, value):
         self.zero_centered = value < 0
         self._refresh_value()
-        
+
     def on_maxval(self, instance, value):
         self._refresh_value()
-        
+
     def on_value(self, instance, value):
         self._refresh_value()
-        
+
     def on_orientation(self, instance, value):
         Clock.schedule_once(lambda dt: self._refresh_orientation())
-    
+
     def _refresh_orientation(self):
         self.left_right = True if self.orientation == 'left-right' else False
         self.ids.value.halign = 'left' if self.left_right == True else 'right'
         self._refresh_value()
-        
+
     def _refresh_value(self, *args):
         stencil = self.ids.stencil
         value = self.value
@@ -101,14 +101,14 @@ class BarGraphGauge(AnchorLayout):
                 channel_range = max(abs(minval), abs(maxval))
             else:
                 channel_range = (maxval - minval)
-            pct = 0 if channel_range == 0 else abs(value) /  channel_range
+            pct = 0 if channel_range == 0 else abs(value) / channel_range
             if self.zero_centered:
                 center = self.width / 2.0
                 width = center * pct
                 x = center - width if value < 0 else center
             else:
                 width = self.width * pct
-                x = 0 if self.left_right == True else self.width - width 
+                x = 0 if self.left_right == True else self.width - width
         stencil.width = width
         stencil.x = x
         self.ids.value.text = '{:.2f}'.format(value).rstrip('0').rstrip('.')
