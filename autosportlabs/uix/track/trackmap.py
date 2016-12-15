@@ -29,7 +29,7 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.widget import Widget
 from kivy.uix.scatter import Scatter
 from kivy.app import Builder
-from kivy.metrics import sp
+from kivy.metrics import dp
 from kivy.properties import ListProperty, NumericProperty, ObjectProperty
 from kivy.graphics import Color, Line, Bezier, Rectangle
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
@@ -76,7 +76,7 @@ class TrackMapView(Widget):
     alt_track_color = ListProperty([1.0, 0.0, 0.0, 0.5])
     marker_scale = NumericProperty(1.0)
 
-    MIN_PADDING = sp(1)
+    MIN_PADDING = dp(1)
     DEFAULT_TARGET_WIDTH_SCALE = 0.075
     DEFAULT_TRACK_WIDTH_SCALE = 0.01
     DEFAULT_MARKER_WIDTH_SCALE = 0.02
@@ -351,13 +351,13 @@ class TrackMapView(Widget):
         bottom = self.pos[1]
         self.canvas.clear()
 
-        heat_width_step = sp(self.HEAT_MAP_WIDTH_STEP)
+        heat_width_step = dp(self.HEAT_MAP_WIDTH_STEP)
         path_count = len(self._scaled_paths.keys())
-        heat_width = sp(self.heat_width_scale * self.height) + ((path_count - 1) * heat_width_step)
+        heat_width = dp(self.heat_width_scale * self.height) + ((path_count - 1) * heat_width_step)
 
         with self.canvas:
             Color(*self.track_color)
-            Line(points=self._scaled_map_points, width=sp(self.track_width_scale * self.height), closed=True, cap='round', joint='round')
+            Line(points=self._scaled_map_points, width=dp(self.track_width_scale * self.height), closed=True, cap='round', joint='round')
 
             color_gradient = HeatColorGradient()
 
@@ -395,7 +395,7 @@ class TrackMapView(Widget):
                 else:
                     # draw regular map trace
                     Color(*self._paths[key].color)
-                    Line(points=path_points, width=sp(self.path_width_scale * self.height), closed=True, cap='square', joint='miter')
+                    Line(points=path_points, width=dp(self.path_width_scale * self.height), closed=True, cap='square', joint='miter')
 
             target_size = (self.target_width_scale * self.height) * self.target_scale
             # draw start point
