@@ -221,6 +221,9 @@ class DashboardView(Screen):
         status_pump.add_listener(self.status_updated)
 
     def status_updated(self, status):
+        """
+        Process a status update
+        """
         status = status['status']['GPS']
         quality = status['qual']
         latitude = status['lat']
@@ -292,7 +295,7 @@ class DashboardView(Screen):
         Remove and re-adds screens to match the new configuration
         """
         
-        #prevent events from triggering and interfering with this update process
+        # Prevent events from triggering and interfering with this update process
         self._initialized = False
         carousel = self.ids.carousel
         current_screens = self._screens
@@ -338,7 +341,10 @@ class DashboardView(Screen):
         Clock.schedule_once(lambda dt: self._race_setup())
 
     def _race_setup(self):
-
+        """
+        Logic tree for setting up a race event, including track map selection and
+        automatic configuration
+        """
         # skip if this screen is not active
         if self.manager.current_screen != self:
             return
@@ -398,6 +404,9 @@ class DashboardView(Screen):
         Clock.schedule_once(lambda dt: self._load_track_setup_view(track_cfg))
 
     def _load_track_setup_view(self, track_cfg):
+        """
+        Present the user with the track setup view
+        """
 
         def cancelled_track():
             # user cancelled, store current location as where they cancelled
@@ -471,13 +480,16 @@ class DashboardView(Screen):
         return False
 
     def on_preferences(self, *args):
+        """
+        Display the dashboard preferences view 
+        """
         settings_view = DashboardPreferences(self._settings, self._dashboard_factory)
 
         def popup_dismissed(*args):
             self._notify_preference_listeners()
             screens = settings_view.get_selected_screens()
             all_screens = self._dashboard_factory.available_dashboards
-            # re-order selected screens based on ordering
+            # re-order selected screens based on native order
             screens = [x for x in all_screens if x in screens]
             self._settings.userPrefs.set_dashboard_screens(screens)
             self._update_screens(screens)
@@ -538,6 +550,9 @@ class DashboardView(Screen):
         self._check_load_screen(carousel.current_slide)
 
     def _show_last_view(self):
+        """
+        Select the last configured screen
+        """
         last_screen_name = self._settings.userPrefs.get_pref('preferences', 'last_dash_screen')
         Clock.schedule_once(lambda dt: self._show_screen(last_screen_name))
 
@@ -549,6 +564,9 @@ DASHBOARD_PREFERENCES_SCREEN_KV = """
 """
 
 class DashboardPreferenceScreen(AnchorLayout, AndroidTabsBase):
+    """
+    Wrapper class to allow customization and styling
+    """
     Builder.load_string(DASHBOARD_PREFERENCES_SCREEN_KV)
     tab_font_name = StringProperty()
     tab_font_size = NumericProperty()
@@ -570,6 +588,9 @@ DASHBOARD_SCREEN_ITEM_KV = """
     padding: (dp(5), dp(5))
 """
 class DashboardScreenItem(BoxLayout):
+    """
+    Contains the line-item for a dashboard screen 
+    """
     Builder.load_string(DASHBOARD_SCREEN_ITEM_KV)
 
 DASHBOARD_SCREEN_PREFERENCES_KV = """
@@ -597,6 +618,9 @@ DASHBOARD_SCREEN_PREFERENCES_KV = """
             cols: 1        
 """
 class DashboardScreenPreferences(DashboardPreferenceScreen):
+    """
+    Provides the interface for selecting screens to enable
+    """
     Builder.load_string(DASHBOARD_SCREEN_PREFERENCES_KV)
 
     def __init__(self, settings, dashboard_factory, **kwargs):
@@ -637,6 +661,9 @@ DASHBOARD_MAIN_PREFERENCES_KV = """
         id: settings
 """
 class DashboardMainPreferences(DashboardPreferenceScreen):
+    """
+    Provides the interface for the main behavioral preferences for the dashboard
+    """
     Builder.load_string(DASHBOARD_MAIN_PREFERENCES_KV)
 
     def __init__(self, settings, **kwargs):
@@ -656,6 +683,9 @@ DASHBOARD_PREFERENCES_KV = """
         id: tabs
 """
 class DashboardPreferences(AnchorLayout):
+    """
+    Main container for the Dashboard preferences screen
+    """
     Builder.load_string(DASHBOARD_PREFERENCES_KV)
 
     def __init__(self, settings, dashboard_factory, **kwargs):
