@@ -170,8 +170,7 @@ class UserPrefs(EventDispatcher):
         self._prefs_dict['screens'] = copy(screens)
         self._schedule_save()
 
-# Regular preferences
-
+# Regular preferences below here
 
     def get_last_selected_track_id(self):
         return self.get_pref('track_detection', 'last_selected_track_id')
