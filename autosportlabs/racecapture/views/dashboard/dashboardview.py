@@ -539,7 +539,7 @@ class DashboardView(Screen):
         if self._initialized == True:
             self._check_load_screen(slide_screen)
             view = slide_screen.children[0]
-            self._settings.userPrefs.set_pref('preferences', 'last_dash_screen', view.name)
+            self._settings.userPrefs.set_pref('dashboard_preferences', 'last_dash_screen', view.name)
 
     def _show_screen(self, screen_name):
         # Find the index of the screen based on the screen name
@@ -553,7 +553,7 @@ class DashboardView(Screen):
         """
         Select the last configured screen
         """
-        last_screen_name = self._settings.userPrefs.get_pref('preferences', 'last_dash_screen')
+        last_screen_name = self._settings.userPrefs.get_pref('dashboard_preferences', 'last_dash_screen')
         Clock.schedule_once(lambda dt: self._show_screen(last_screen_name))
 
 
