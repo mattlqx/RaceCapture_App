@@ -216,7 +216,6 @@ class UserPrefs(EventDispatcher):
         self.config.setdefault('preferences', 'import_datalog_dir', default_user_files_dir)
         self.config.setdefault('preferences', 'send_telemetry', '0')
         self.config.setdefault('preferences', 'record_session', '1')
-        self.config.setdefault('preferences', 'last_dash_screen', '5x_gauge_view')
         self.config.setdefault('preferences', 'global_help', True)
 
         # Connection type for mobile
@@ -230,6 +229,7 @@ class UserPrefs(EventDispatcher):
 
         # Dashboard preferences
         self.config.adddefaultsection('dashboard_preferences')
+        self.config.setdefault('dashboard_preferences', 'last_dash_screen', '5x_gauge_view')
         self.config.setdefault('dashboard_preferences', 'pitstoptimer_enabled', 1)
         self.config.setdefault('dashboard_preferences', 'pitstoptimer_trigger_speed', 5)
         self.config.setdefault('dashboard_preferences', 'pitstoptimer_alert_speed', 25)

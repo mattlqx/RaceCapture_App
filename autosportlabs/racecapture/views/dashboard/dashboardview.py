@@ -103,12 +103,6 @@ class DashboardFactory(object):
         self._add_screen('tach_view', self.build_tachometer_view, 'Tachometer', 'tachometer_view.png')
         self._add_screen('rawchannel_view', self.build_raw_channel_view, 'Raw Channels', 'raw_channel_view.png')
         self._add_screen('heatmap_view', self.build_heatmap_view, 'Heatmap', 'raw_channel_view.png')
-        
-        def build_heatmap_view():
-            return HeatmapView(name='heatmapView', databus=self._databus, 
-                               settings=self._settings,
-                               track_manager=self._track_manager,
-                               status_pump=self._status_pump)
 
     @property
     def available_dashboards(self):
@@ -152,10 +146,10 @@ class DashboardFactory(object):
         return ComboView(name='comboView', databus=self._databus, settings=self._settings)
     
     def build_heatmap_view(self):
-        return HeatmapView(name='heatmapView', databus=self._databus, 
-                               settings=self._settings,
-                               track_manager=self._track_manager,
-                               status_pump=self._status_pump)
+        return HeatmapView(name='heatmap_view', databus=self._databus, 
+                           settings=self._settings,
+                           track_manager=self._track_manager,
+                           status_pump=self._status_pump)
 
 
 DASHBOARD_VIEW_KV = """
@@ -577,8 +571,7 @@ class DashboardView(Screen):
         Select the last configured screen
         """
         last_screen_name = self._settings.userPrefs.get_pref('dashboard_preferences', 'last_dash_screen')
-        print('last screen_name ' + str(last_screen_name))
-        Clock.schedule_once(lambda dt: self._show_screen(last_screen_name), 1.0)
+        Clock.schedule_once(lambda dt: self._show_screen(last_screen_name))
 
 
 DASHBOARD_PREFERENCES_SCREEN_KV = """
