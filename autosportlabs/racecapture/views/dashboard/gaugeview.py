@@ -31,8 +31,49 @@ from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
 from autosportlabs.racecapture.views.dashboard.widgets.digitalgauge import DigitalGauge
 from autosportlabs.racecapture.views.dashboard.dashboardscreen import DashboardScreen
 
-GAUGE_VIEW_KV = """
-<GaugeView>:
+class GaugeView(DashboardScreen):
+    def __init__(self, databus, settings, **kwargs):
+        super(GaugeView, self).__init__(**kwargs)
+        self._databus = databus
+        self._settings = settings
+        self._initialized = False
+
+    def on_meta(self, channelMetas):
+        gauges = self._find_active_gauges()
+
+        for gauge in gauges:
+            channel = gauge.channel
+            if channel:
+                channelMeta = channelMetas.get(channel)
+                if channelMeta:
+                    gauge.precision = channelMeta.precision
+                    gauge.min = channelMeta.min
+                    gauge.max = channelMeta.max
+
+    def _find_active_gauges(self):
+        return list(kvFindClass(self, Gauge))
+        
+    def on_enter(self):
+        if not self._initialized:
+            self._init_view()
+        super(GaugeView, self).on_enter()            
+
+    def _init_view(self):
+        dataBus = self._databus
+        dataBus.addMetaListener(self.on_meta)
+
+        gauges = self._find_active_gauges()
+        for gauge in gauges:
+            gauge.settings = self._settings
+            gauge.data_bus = dataBus
+            channel = self._settings.userPrefs.get_gauge_config(gauge.rcid)
+            if channel:
+                gauge.channel = channel
+
+        self._initialized = True
+
+GAUGE_VIEW_5x_KV = """
+<GaugeView5x>:
     AnchorLayout:
 
         AnchorLayout:
@@ -77,46 +118,71 @@ GAUGE_VIEW_KV = """
                     rcid: 'center'
 """
 
-class GaugeView(DashboardScreen):
+class GaugeView5x(GaugeView):
+    Builder.load_string(GAUGE_VIEW_5x_KV)
 
-    Builder.load_string(GAUGE_VIEW_KV)
+GAUGE_VIEW_3x_KV = """
+<GaugeView3x>:
+    AnchorLayout:
+        AnchorLayout:
+            anchor_x: 'center'
+            RoundGauge:
+                size_hint_x: 0.45
+                rcid: 'center'
+        AnchorLayout:
+            anchor_x: 'left'
+            RoundGauge:
+                size_hint_x: 0.3
+                rcid: 'left'
+        AnchorLayout:
+            anchor_x: 'right'
+            RoundGauge:
+                size_hint_x: 0.3
+                rcid: 'right'
+"""
 
-    def __init__(self, databus, settings, **kwargs):
-        super(GaugeView, self).__init__(**kwargs)
-        self._databus = databus
-        self._settings = settings
-        self._initialized = False
+class GaugeView3x(GaugeView):
+    Builder.load_string(GAUGE_VIEW_3x_KV)
 
-    def on_meta(self, channelMetas):
-        gauges = self._find_active_gauges()
+GAUGE_VIEW_2x_KV = """
+<GaugeView2x>:
+    AnchorLayout:
+        AnchorLayout:
+            anchor_x: 'left'
+            RoundGauge:
+                size_hint_x: 0.5
+                rcid: 'left'
+        AnchorLayout:
+            anchor_x: 'right'
+            RoundGauge:
+                size_hint_x: 0.5
+                rcid: 'right'
+"""
 
-        for gauge in gauges:
-            channel = gauge.channel
-            if channel:
-                channelMeta = channelMetas.get(channel)
-                if channelMeta:
-                    gauge.precision = channelMeta.precision
-                    gauge.min = channelMeta.min
-                    gauge.max = channelMeta.max
+class GaugeView2x(GaugeView):
+    Builder.load_string(GAUGE_VIEW_2x_KV)
 
-    def _find_active_gauges(self):
-        return list(kvFindClass(self, Gauge))
+GAUGE_VIEW_8x_KV = """
+<GaugeView8x>:
+    GridLayout:
+        cols: 4
+        RoundGauge:
+            rcid: 't1'
+        RoundGauge:
+            rcid: 't2'
+        RoundGauge:
+            rcid: 't3'
+        RoundGauge:
+            rcid: 't4'
+        RoundGauge:
+            rcid: 'b1'
+        RoundGauge:
+            rcid: 'b2'
+        RoundGauge:
+            rcid: 'b3'
+        RoundGauge:
+            rcid: 'b4'
+"""
 
-    def on_enter(self):
-        if not self._initialized:
-            self._init_view()
-        super(GaugeView, self).on_enter()
-        
-    def _init_view(self):
-        dataBus = self._databus
-        dataBus.addMetaListener(self.on_meta)
-
-        gauges = self._find_active_gauges()
-        for gauge in gauges:
-            gauge.settings = self._settings
-            gauge.data_bus = dataBus
-            channel = self._settings.userPrefs.get_gauge_config(gauge.rcid)
-            if channel:
-                gauge.channel = channel
-
-        self._initialized = True
+class GaugeView8x(GaugeView):
+    Builder.load_string(GAUGE_VIEW_8x_KV)

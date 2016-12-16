@@ -29,6 +29,7 @@ import os
 from os import path
 from os.path import dirname, expanduser, sep
 from utils import is_android, is_ios, is_mobile_platform
+from copy import copy
 
 class Range(EventDispatcher):
     '''
@@ -98,17 +99,18 @@ class UserPrefs(EventDispatcher):
     '''
     A class to manage user preferences for the RaceCapture app
     '''
+    DEFAULT_DASHBOARD_SCREENS = ['5x_gauge_view', 'laptime_view', 'tach_view', 'rawchannel_view']
+    DEFAULT_PREFS_DICT = {'range_alerts': {},
+                          'gauge_settings':{},
+                          'screens':DEFAULT_DASHBOARD_SCREENS}
+
     DEFAULT_ANALYSIS_CHANNELS = ['Speed']
-    _schedule_save = None
-    _prefs_dict = {'range_alerts': {}, 'gauge_settings':{}}
-    store = None
+
     prefs_file_name = 'prefs.json'
-    prefs_file = None
-    config = None
-    data_dir = '.'
-    user_files_dir = '.'
 
     def __init__(self, data_dir, user_files_dir, save_timeout=2, **kwargs):
+        self._prefs_dict = UserPrefs.DEFAULT_PREFS_DICT
+        self.config = ConfigParser()
         self.data_dir = data_dir
         self.user_files_dir = user_files_dir
         self.prefs_file = path.join(self.data_dir, self.prefs_file_name)
@@ -161,6 +163,15 @@ class UserPrefs(EventDispatcher):
         '''
         return self._prefs_dict["gauge_settings"].get(gauge_id, False)
 
+    def get_dashboard_screens(self):
+        return copy(self._prefs_dict['screens'])
+
+    def set_dashboard_screens(self, screens):
+        self._prefs_dict['screens'] = copy(screens)
+        self._schedule_save()
+
+# Regular preferences below here
+
     def get_last_selected_track_id(self):
         return self.get_pref('track_detection', 'last_selected_track_id')
 
@@ -205,7 +216,7 @@ class UserPrefs(EventDispatcher):
         self.config.setdefault('preferences', 'import_datalog_dir', default_user_files_dir)
         self.config.setdefault('preferences', 'send_telemetry', '0')
         self.config.setdefault('preferences', 'record_session', '1')
-        self.config.setdefault('preferences', 'last_dash_screen', 'gaugeView')
+        self.config.setdefault('preferences', 'last_dash_screen', '5x_gauge_view')
         self.config.setdefault('preferences', 'global_help', True)
 
         # Connection type for mobile
@@ -239,11 +250,8 @@ class UserPrefs(EventDispatcher):
 
     def load(self):
         Logger.info('UserPrefs: Data Dir is: {}'.format(self.data_dir))
-        self.config = ConfigParser()
         self.config.read(os.path.join(self.data_dir, 'preferences.ini'))
         self.set_config_defaults()
-
-        self._prefs_dict = {'range_alerts': {}, 'gauge_settings':{}}
 
         try:
             with open(self.prefs_file, 'r') as data:
@@ -257,6 +265,9 @@ class UserPrefs(EventDispatcher):
                 if content_dict.has_key("gauge_settings"):
                     for id, channel in content_dict["gauge_settings"].iteritems():
                         self._prefs_dict["gauge_settings"][id] = channel
+
+                if content_dict.has_key('screens'):
+                    self._prefs_dict['screens'] = content_dict['screens']
 
         except Exception:
             pass
@@ -345,7 +356,7 @@ class UserPrefs(EventDispatcher):
             return self.config.get(section, option).split(',')
         except (NoOptionError, ValueError):
             return default
-        
+
     def set_pref(self, section, option, value):
         '''
         Set a preference value
@@ -380,17 +391,19 @@ class UserPrefs(EventDispatcher):
             self.set_pref(section, option, ','.join(value))
         except TypeError:
             Logger.error('UserPrefs: failed to set preference list for {}:{} - {}'.format(section, option, value))
-        
+
     def to_json(self):
         '''
         Serialize preferences to json
         '''
-        data = {'range_alerts': {}, 'gauge_settings':{}}
+        data = {'range_alerts': {}, 'gauge_settings':{}, 'screens': []}
 
         for name, range_alert in self._prefs_dict["range_alerts"].iteritems():
             data["range_alerts"][name] = range_alert.to_dict()
 
         for id, channel in self._prefs_dict["gauge_settings"].iteritems():
             data["gauge_settings"][id] = channel
+
+        data['screens'] = self._prefs_dict['screens']
 
         return json.dumps(data)
