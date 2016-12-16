@@ -70,11 +70,13 @@ class DashboardFactory(object):
     Screens are instances of DashboardScreen
     Screens are referenced and managed by their key name. 
     """
-    def __init__(self, databus, settings, **kwargs):
+    def __init__(self, databus, settings, track_manager, status_pump, **kwargs):
         self._view_builders = OrderedDict()
         self._view_previews = OrderedDict()
         self._databus = databus
         self._settings = settings
+        self._track_manager = track_manager
+        self._status_pump = status_pump
         self._init_factory()
 
     def create_screen(self, key):
@@ -100,6 +102,13 @@ class DashboardFactory(object):
         self._add_screen('laptime_view', self.build_laptime_view, 'Predictive Timer', 'laptime_view.png')
         self._add_screen('tach_view', self.build_tachometer_view, 'Tachometer', 'tachometer_view.png')
         self._add_screen('rawchannel_view', self.build_raw_channel_view, 'Raw Channels', 'raw_channel_view.png')
+        self._add_screen('heatmap_view', self.build_heatmap_view, 'Heatmap', 'raw_channel_view.png')
+        
+        def build_heatmap_view():
+            return HeatmapView(name='heatmapView', databus=self._databus, 
+                               settings=self._settings,
+                               track_manager=self._track_manager,
+                               status_pump=self._status_pump)
 
     @property
     def available_dashboards(self):
@@ -141,6 +150,12 @@ class DashboardFactory(object):
 
     def build_combo_view(self):
         return ComboView(name='comboView', databus=self._databus, settings=self._settings)
+    
+    def build_heatmap_view(self):
+        return HeatmapView(name='heatmapView', databus=self._databus, 
+                               settings=self._settings,
+                               track_manager=self._track_manager,
+                               status_pump=self._status_pump)
 
 
 DASHBOARD_VIEW_KV = """
@@ -202,7 +217,7 @@ class DashboardView(Screen):
     def __init__(self, status_pump, track_manager, rc_api, rc_config, databus, settings, **kwargs):
         self._initialized = False
         super(DashboardView, self).__init__(**kwargs)
-        self._dashboard_factory = DashboardFactory(databus, settings)
+        self._dashboard_factory = DashboardFactory(databus, settings, track_manager, status_pump)
         self.register_event_type('on_tracks_updated')
         self.register_event_type('on_config_updated')
         self.register_event_type('on_config_written')
@@ -547,7 +562,7 @@ class DashboardView(Screen):
         if self._initialized == True:
             self._check_load_screen(slide_screen)
             view = slide_screen.children[0]
-            self._settings.userPrefs.set_pref('preferences', 'last_dash_screen', view.name)
+            self._settings.userPrefs.set_pref('dashboard_preferences', 'last_dash_screen', view.name)
 
     def _show_screen(self, screen_name):
         # Find the index of the screen based on the screen name
@@ -561,8 +576,9 @@ class DashboardView(Screen):
         """
         Select the last configured screen
         """
-        last_screen_name = self._settings.userPrefs.get_pref('preferences', 'last_dash_screen')
-        Clock.schedule_once(lambda dt: self._show_screen(last_screen_name))
+        last_screen_name = self._settings.userPrefs.get_pref('dashboard_preferences', 'last_dash_screen')
+        print('last screen_name ' + str(last_screen_name))
+        Clock.schedule_once(lambda dt: self._show_screen(last_screen_name), 1.0)
 
 
 DASHBOARD_PREFERENCES_SCREEN_KV = """
