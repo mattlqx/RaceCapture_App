@@ -31,10 +31,13 @@ from kivy.logger import Logger
 from kivy.clock import Clock
 from kivy.uix.modalview import ModalView
 from kivy.uix.screenmanager import Screen
+from kivy.properties import StringProperty, NumericProperty
 from utils import kvFindClass
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.button import Button
+from kivy.uix.checkbox import CheckBox
+from kivy.uix.image import Image
 from autosportlabs.util.timeutil import epoch_to_time, time_to_epoch
 from autosportlabs.racecapture.views.dashboard.widgets.digitalgauge import DigitalGauge
 from autosportlabs.racecapture.views.dashboard.widgets.stopwatch import PitstopTimerView
@@ -51,42 +54,56 @@ from autosportlabs.racecapture.views.dashboard.laptimeview import LaptimeView
 from autosportlabs.racecapture.views.dashboard.rawchannelview import RawChannelView
 from autosportlabs.racecapture.views.dashboard.comboview import ComboView
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
+from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.help.helpmanager import HelpInfo
+from garden_androidtabs import AndroidTabsBase, AndroidTabs
+from autosportlabs.racecapture.theme.color import ColorScheme
 from collections import OrderedDict
 
 class DashboardFactory(object):
     def __init__(self, databus, settings, **kwargs):
-        self._view_builders = {}
+        self._view_builders = OrderedDict()
+        self._view_previews = OrderedDict()
         self._databus = databus
         self._settings = settings
         self._init_factory()
-        
+
     def create_screen(self, key):
         view = self._view_builders[key]()
         return view
-    
+
+    def _add_screen(self, key, builder, title, preview_image):
+        self._view_builders[key] = builder
+        image_source = os.path.join(self._settings.base_dir, 'resource', 'dashboard', preview_image)
+        self._view_previews[key] = (title, image_source)
+
     def _init_factory(self):
-        builders = self._view_builders
-        builders['2x1x2_gauge_view'] = self.build_2x1x2_gauge_view
-        builders['3x1_gauge_view'] = self.build_3x1_gauge_view
-        builders['2x1_gauge_view'] = self.build_2x1_gauge_view
-        builders['4x2_gauge_view'] = self.build_4x2_gauge_view
-        builders['laptime_view'] = self.build_laptime_view
-        builders['tach_view'] = self.build_tachometer_view
-        builders['rawchannel_view'] = self.build_raw_channel_view
-        # builders['comboView'] = build_combo_view
-    
-    def build_2x1x2_gauge_view(self):
-        return GaugeView3x1(name='2x1x2_gauge_view', databus=self._databus, settings=self._settings)
+        self._add_screen('2x_gauge_view', self.build_2x_gauge_view, '2x Gauges', '2x_gauge_view.png')
+        self._add_screen('3x_gauge_view', self.build_3x_gauge_view, '3x Gauges', '3x_gauge_view.png')
+        self._add_screen('5x_gauge_view', self.build_5x_gauge_view, '5x Gauges', '5x_gauge_view.png')
+        self._add_screen('8x_gauge_view', self.build_8x_gauge_view, '8x Gauges', '8x_gauge_view.png')
+        self._add_screen('laptime_view', self.build_laptime_view, 'Laptime View', 'laptime_view.png')
+        self._add_screen('tach_view', self.build_tachometer_view, 'Tachometer View', 'tachometer_view.png')
+        self._add_screen('rawchannel_view', self.build_raw_channel_view, 'Raw Channels', 'raw_channel_view.png')
 
-    def build_3x1_gauge_view(self):
-        return GaugeView2x1x2(name='3x1_gauge_view', databus=self._databus, settings=self._settings)
+    @property
+    def available_dashboards(self):
+        return self._view_builders.keys()
 
-    def build_2x1_gauge_view(self):
-        return GaugeView2x1(name='2x1_gauge_view', databus=self._databus, settings=self._settings)
+    def get_dashboard_preview(self, key):
+        return self._view_previews.get(key)
 
-    def build_4x2_gauge_view(self):
-        return GaugeView4x2(name='3x2_gauge_view', databus=self._databus, settings=self._settings)
+    def build_5x_gauge_view(self):
+        return GaugeView5x(name='5x_gauge_view', databus=self._databus, settings=self._settings)
+
+    def build_3x_gauge_view(self):
+        return GaugeView3x(name='3x_gauge_view', databus=self._databus, settings=self._settings)
+
+    def build_2x_gauge_view(self):
+        return GaugeView2x(name='2x_gauge_view', databus=self._databus, settings=self._settings)
+
+    def build_8x_gauge_view(self):
+        return GaugeView8x(name='8x_gauge_view', databus=self._databus, settings=self._settings)
 
     def build_tachometer_view(self):
         return TachometerView(name='tach_view', databus=self._databus, settings=self._settings)
@@ -100,7 +117,7 @@ class DashboardFactory(object):
     def build_combo_view(self):
         return ComboView(name='comboView', databus=self._databus, settings=self._settings)
 
-    
+
 DASHBOARD_VIEW_KV = """
 <DashboardView>:
     AnchorLayout:
@@ -152,7 +169,7 @@ class DashboardView(Screen):
     The main dashboard view.
     Provides the framework for adding and managing various dashboard screens.
     """
-    _POPUP_SIZE_HINT = (0.75, 0.8)
+    _POPUP_SIZE_HINT = (0.75, 0.9)
     _POPUP_DISMISS_TIMEOUT_LONG = 60.0
     AUTO_CONFIGURE_WAIT_PERIOD_DAYS = 1
     Builder.load_string(DASHBOARD_VIEW_KV)
@@ -218,8 +235,8 @@ class DashboardView(Screen):
         settings = self._settings
 
         self._init_global_gauges()
-        
-        #add the initial set of empty screens
+
+        # add the initial set of empty screens
         screens = self._screens
         screens += self._settings.userPrefs.get_dashboard_screens()
         for i in range (0, len(screens)):
@@ -382,19 +399,16 @@ class DashboardView(Screen):
         return False
 
     def on_preferences(self, *args):
-        settings_view = SettingsWithNoMenu()
-        base_dir = self._settings.base_dir
-        settings_view.add_json_panel('Dashboard Preferences', self._settings.userPrefs.config, os.path.join(base_dir, 'resource', 'settings', 'dashboard_settings.json'))
+
+        def popup_dismissed(*args):
+            self._notify_preference_listeners()
+
+        settings_view = DashboardPreferences(self._settings, self._dashboard_factory)
 
         popup = ModalView(size_hint=DashboardView._POPUP_SIZE_HINT)
         popup.add_widget(settings_view)
-        popup.bind(on_dismiss=self._popup_dismissed)
+        popup.bind(on_dismiss=popup_dismissed)
         popup.open()
-        self._popup = popup
-        # self._dismiss_popup_trigger()
-
-    def _popup_dismissed(self, *args):
-        self._notify_preference_listeners()
 
     def _dismiss_popup(self, *args):
         if self._popup:
@@ -435,9 +449,113 @@ class DashboardView(Screen):
         # and use that to select the index of the carousel
         carousel = self.ids.carousel
         screens = self._screens
-        carousel.index = 0 if screen_name not in screens else self._screens.index(screen_name) 
+        carousel.index = 0 if screen_name not in screens else self._screens.index(screen_name)
         self._check_load_screen(carousel.current_slide)
 
     def _show_last_view(self):
         last_screen_name = self._settings.userPrefs.get_pref('preferences', 'last_dash_screen')
         Clock.schedule_once(lambda dt: self._show_screen(last_screen_name))
+
+
+DASHBOARD_PREFERENCES_SCREEN_KV = """
+<DashboardPreferenceScreen>:
+    tab_font_name: "resource/fonts/ASL_light.ttf"
+    tab_font_size: sp(20)
+"""
+
+class DashboardPreferenceScreen(AnchorLayout, AndroidTabsBase):
+    Builder.load_string(DASHBOARD_PREFERENCES_SCREEN_KV)
+    tab_font_name = StringProperty()
+    tab_font_size = NumericProperty()
+
+    def on_tab_font_name(self, instance, value):
+        self.tab_label.font_name = value
+
+    def on_tab_font_size(self, instance, value):
+        self.tab_label.font_size = value
+
+DASHBOARD_SCREEN_PREFERENCES_KV = """
+<DashboardScreenPreferences>:
+    canvas.before:
+        Color:
+            rgba: ColorScheme.get_dark_background()
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    text: 'Screens'
+    
+    ScrollContainer:
+        id: scroll
+        size_hint_y: 1.0
+        do_scroll_x:False
+        do_scroll_y:True
+        GridLayout:
+            id: grid
+            padding: [self.height * 0.02, self.height * 0.02]
+            row_default_height: root.height * 0.3
+            size_hint_y: None
+            height: self.minimum_height
+            cols: 3        
+"""
+class DashboardScreenPreferences(DashboardPreferenceScreen):
+    Builder.load_string(DASHBOARD_SCREEN_PREFERENCES_KV)
+
+    def __init__(self, settings, dashboard_factory, **kwargs):
+        super(DashboardScreenPreferences, self).__init__(**kwargs)
+        self._settings = settings
+        screen_keys = dashboard_factory.available_dashboards
+        for key in screen_keys:
+            preview = dashboard_factory.get_dashboard_preview(key)
+            name = preview[0]
+            image = preview[1]
+            checkbox = CheckBox()
+            checkbox.bind(active=lambda i, v, k=key:self._screen_selected(k, v))
+            self.ids.grid.add_widget(checkbox)
+            self.ids.grid.add_widget(FieldLabel(text=name))
+            self.ids.grid.add_widget(Image(source=image))
+
+    def _screen_selected(self, value, key):
+        print('{} {}'.format(value, key))
+
+DASHBOARD_MAIN_PREFERENCES_KV = """
+<DashboardMainPreferences>:
+    canvas.before:
+        Color:
+            rgba: ColorScheme.get_dark_background()
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    text: 'Behavior'
+    SettingsWithNoMenu:
+        id: settings
+"""
+class DashboardMainPreferences(DashboardPreferenceScreen):
+    Builder.load_string(DASHBOARD_MAIN_PREFERENCES_KV)
+
+    def __init__(self, settings, **kwargs):
+        super(DashboardMainPreferences, self).__init__(**kwargs)
+        self.ids.settings.add_json_panel('Dashboard', settings.userPrefs.config, os.path.join(settings.base_dir, 'resource', 'settings', 'dashboard_settings.json'))
+
+DASHBOARD_PREFERENCES_KV = """
+<DashboardPreferences>:
+    canvas.before:
+        Color:
+            rgba: ColorScheme.get_accent()
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    #padding: (dp(5), dp(5))
+    AndroidTabs:
+        tab_indicator_color: ColorScheme.get_light_primary()
+        id: tabs
+"""
+class DashboardPreferences(AnchorLayout):
+    Builder.load_string(DASHBOARD_PREFERENCES_KV)
+
+    def __init__(self, settings, dashboard_factory, **kwargs):
+        super(DashboardPreferences, self).__init__(**kwargs)
+        main_prefs = DashboardMainPreferences(settings)
+        self.ids.tabs.add_widget(main_prefs)
+
+        screen_prefs = DashboardScreenPreferences(settings, dashboard_factory)
+        self.ids.tabs.add_widget(screen_prefs)

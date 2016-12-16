@@ -98,10 +98,10 @@ class UserPrefs(EventDispatcher):
     '''
     A class to manage user preferences for the RaceCapture app
     '''
-    DEFAULT_PREFS_DICT = {'range_alerts': {}, 
-                          'gauge_settings':{}, 
-                          'screens':['2x1x2_gauge_view', '3x1_gauge_view', '2x1_gauge_view', '4x2_gauge_view', 'laptime_view', 'tach_view', 'rawchannel_view']}
-    
+    DEFAULT_PREFS_DICT = {'range_alerts': {},
+                          'gauge_settings':{},
+                          'screens':['5x_gauge_view', '3x_gauge_view', '2x_gauge_view', '8x_gauge_view', 'laptime_view', 'tach_view', 'rawchannel_view']}
+
     DEFAULT_ANALYSIS_CHANNELS = ['Speed']
     prefs_file_name = 'prefs.json'
 
@@ -212,7 +212,7 @@ class UserPrefs(EventDispatcher):
         self.config.setdefault('preferences', 'import_datalog_dir', default_user_files_dir)
         self.config.setdefault('preferences', 'send_telemetry', '0')
         self.config.setdefault('preferences', 'record_session', '1')
-        self.config.setdefault('preferences', 'last_dash_screen', '2x1x2_gauge_view')
+        self.config.setdefault('preferences', 'last_dash_screen', '5x_gauge_view')
         self.config.setdefault('preferences', 'global_help', True)
 
         # Connection type for mobile
@@ -261,7 +261,7 @@ class UserPrefs(EventDispatcher):
                 if content_dict.has_key("gauge_settings"):
                     for id, channel in content_dict["gauge_settings"].iteritems():
                         self._prefs_dict["gauge_settings"][id] = channel
-                
+
                 if content_dict.has_key('screens'):
                     self._prefs_dict['screens'] = content_dict['screens']
 
@@ -352,7 +352,7 @@ class UserPrefs(EventDispatcher):
             return self.config.get(section, option).split(',')
         except (NoOptionError, ValueError):
             return default
-        
+
     def set_pref(self, section, option, value):
         '''
         Set a preference value
@@ -387,7 +387,7 @@ class UserPrefs(EventDispatcher):
             self.set_pref(section, option, ','.join(value))
         except TypeError:
             Logger.error('UserPrefs: failed to set preference list for {}:{} - {}'.format(section, option, value))
-        
+
     def to_json(self):
         '''
         Serialize preferences to json

@@ -71,8 +71,8 @@ class GaugeView(DashboardScreen):
 
         self._initialized = True
 
-GAUGE_VIEW_2x1x2_KV = """
-<GaugeView2x1x2>:
+GAUGE_VIEW_5x_KV = """
+<GaugeView5x>:
     AnchorLayout:
 
         AnchorLayout:
@@ -117,11 +117,11 @@ GAUGE_VIEW_2x1x2_KV = """
                     rcid: 'center'
 """
 
-class GaugeView2x1x2(GaugeView):
-    Builder.load_string(GAUGE_VIEW_2x1x2_KV)
-    
-GAUGE_VIEW_3x1_KV = """
-<GaugeView3x1>:
+class GaugeView5x(GaugeView):
+    Builder.load_string(GAUGE_VIEW_5x_KV)
+
+GAUGE_VIEW_3x_KV = """
+<GaugeView3x>:
     AnchorLayout:
         AnchorLayout:
             anchor_x: 'center'
@@ -139,12 +139,12 @@ GAUGE_VIEW_3x1_KV = """
                 size_hint_x: 0.3
                 rcid: 'right'
 """
-    
-class GaugeView3x1(GaugeView):
-    Builder.load_string(GAUGE_VIEW_3x1_KV)
 
-GAUGE_VIEW_2x1_KV = """
-<GaugeView2x1>:
+class GaugeView3x(GaugeView):
+    Builder.load_string(GAUGE_VIEW_3x_KV)
+
+GAUGE_VIEW_2x_KV = """
+<GaugeView2x>:
     AnchorLayout:
         AnchorLayout:
             anchor_x: 'left'
@@ -157,12 +157,12 @@ GAUGE_VIEW_2x1_KV = """
                 size_hint_x: 0.5
                 rcid: 'right'
 """
-    
-class GaugeView2x1(GaugeView):
-    Builder.load_string(GAUGE_VIEW_2x1_KV)
-    
-GAUGE_VIEW_4x2_KV = """
-<GaugeView4x2>:
+
+class GaugeView2x(GaugeView):
+    Builder.load_string(GAUGE_VIEW_2x_KV)
+
+GAUGE_VIEW_8x_KV = """
+<GaugeView8x>:
     GridLayout:
         cols: 4
         RoundGauge:
@@ -183,6 +183,6 @@ GAUGE_VIEW_4x2_KV = """
             rcid: 'b4'
 
 """
-    
-class GaugeView4x2(GaugeView):
-    Builder.load_string(GAUGE_VIEW_4x2_KV)    
+
+class GaugeView8x(GaugeView):
+    Builder.load_string(GAUGE_VIEW_8x_KV)
