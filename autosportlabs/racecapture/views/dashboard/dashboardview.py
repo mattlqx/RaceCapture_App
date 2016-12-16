@@ -82,8 +82,8 @@ class DashboardFactory(object):
         self._add_screen('3x_gauge_view', self.build_3x_gauge_view, '3x Gauges', '3x_gauge_view.png')
         self._add_screen('5x_gauge_view', self.build_5x_gauge_view, '5x Gauges', '5x_gauge_view.png')
         self._add_screen('8x_gauge_view', self.build_8x_gauge_view, '8x Gauges', '8x_gauge_view.png')
-        self._add_screen('laptime_view', self.build_laptime_view, 'Laptime View', 'laptime_view.png')
-        self._add_screen('tach_view', self.build_tachometer_view, 'Tachometer View', 'tachometer_view.png')
+        self._add_screen('laptime_view', self.build_laptime_view, 'Predictive Timer', 'laptime_view.png')
+        self._add_screen('tach_view', self.build_tachometer_view, 'Tachometer', 'tachometer_view.png')
         self._add_screen('rawchannel_view', self.build_raw_channel_view, 'Raw Channels', 'raw_channel_view.png')
 
     @property
@@ -182,6 +182,7 @@ class DashboardView(Screen):
         self.register_event_type('on_config_updated')
         self.register_event_type('on_config_written')
         self._screens = []
+        self._loaded_screens = {}
         self._status_pump = status_pump
         self._databus = databus
         self._settings = settings
@@ -263,16 +264,32 @@ class DashboardView(Screen):
         Clock.schedule_once(lambda dt: HelpInfo.help_popup('dashboard_gauge_help', self, arrow_pos='right_mid'), 2.0)
 
     def _update_screens(self, new_screens):
-        done = False
-        while not done:
-            for screen in new_screens:
-                if screen not in self._screens:
-                    widget = self.ids.carousel.children
+        carousel = self.ids.carousel
+        current_index = carousel.index
+        loaded_screens = self._loaded_screens
+        carousel.clear_widgets()
+        
+        for screen_key in new_screens:
+            current_screen = loaded_screens.get(screen_key)
+            if current_screen is None:
+                current_screen = AnchorLayout()
 
-
-
-
-
+            carousel.add_widget(current_screen)
+        
+        # clean up removed screens
+        keys = copy(loaded_screens.keys())
+        for key in keys:
+            if key not in new_screens:
+                print ('removing screen ' + key)
+                # todo cleanup / shutdown screen
+                del loaded_screens[key]
+                
+        self._screens = new_screens
+                
+        current_index = current_index if current_index < len(carousel.children) else 0
+        carousel.index = current_index
+        self._check_load_screen(carousel.current_slide)        
+                
     def _on_rc_connect(self, *args):
         Clock.schedule_once(lambda dt: self._race_setup())
 
@@ -450,6 +467,7 @@ class DashboardView(Screen):
             screen_key = self._screens[index]
             view = self._dashboard_factory.create_screen(screen_key)
             slide_screen.add_widget(view)
+            self._loaded_screens[screen_key] = slide_screen
             view.on_enter()
 
     def on_current_slide(self, slide_screen):
@@ -535,7 +553,7 @@ class DashboardScreenPreferences(DashboardPreferenceScreen):
     def _screen_selected(self, key, selected):
         screens = self._current_screens
         if key in screens and not selected:
-            del screens[key]
+            screens.remove(key)
         if key not in screens and selected:
             screens.append(key)
 
