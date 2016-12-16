@@ -59,7 +59,7 @@ from autosportlabs.help.helpmanager import HelpInfo
 from garden_androidtabs import AndroidTabsBase, AndroidTabs
 from autosportlabs.racecapture.theme.color import ColorScheme
 from collections import OrderedDict
-
+from copy import copy
 class DashboardFactory(object):
     def __init__(self, databus, settings, **kwargs):
         self._view_builders = OrderedDict()
@@ -262,6 +262,17 @@ class DashboardView(Screen):
 
         Clock.schedule_once(lambda dt: HelpInfo.help_popup('dashboard_gauge_help', self, arrow_pos='right_mid'), 2.0)
 
+    def _update_screens(self, new_screens):
+        done = False
+        while not done:
+            for screen in new_screens:
+                if screen not in self._screens:
+                    widget = self.ids.carousel.children
+
+
+
+
+
     def _on_rc_connect(self, *args):
         Clock.schedule_once(lambda dt: self._race_setup())
 
@@ -399,16 +410,19 @@ class DashboardView(Screen):
         return False
 
     def on_preferences(self, *args):
+        settings_view = DashboardPreferences(self._settings, self._dashboard_factory)
 
         def popup_dismissed(*args):
             self._notify_preference_listeners()
-
-        settings_view = DashboardPreferences(self._settings, self._dashboard_factory)
+            screens = settings_view.get_selected_screens()
+            self._settings.userPrefs.set_dashboard_screens(screens)
+            self._update_screens(screens)
 
         popup = ModalView(size_hint=DashboardView._POPUP_SIZE_HINT)
         popup.add_widget(settings_view)
         popup.bind(on_dismiss=popup_dismissed)
         popup.open()
+
 
     def _dismiss_popup(self, *args):
         if self._popup:
@@ -503,19 +517,31 @@ class DashboardScreenPreferences(DashboardPreferenceScreen):
     def __init__(self, settings, dashboard_factory, **kwargs):
         super(DashboardScreenPreferences, self).__init__(**kwargs)
         self._settings = settings
+
+        current_screens = self._settings.userPrefs.get_dashboard_screens()
         screen_keys = dashboard_factory.available_dashboards
         for key in screen_keys:
             preview = dashboard_factory.get_dashboard_preview(key)
             name = preview[0]
             image = preview[1]
             checkbox = CheckBox()
+            checkbox.active = True if key in current_screens else False
             checkbox.bind(active=lambda i, v, k=key:self._screen_selected(k, v))
             self.ids.grid.add_widget(checkbox)
             self.ids.grid.add_widget(FieldLabel(text=name))
             self.ids.grid.add_widget(Image(source=image))
+        self._current_screens = current_screens
 
-    def _screen_selected(self, value, key):
-        print('{} {}'.format(value, key))
+    def _screen_selected(self, key, selected):
+        screens = self._current_screens
+        if key in screens and not selected:
+            del screens[key]
+        if key not in screens and selected:
+            screens.append(key)
+
+    @property
+    def selected_screens(self):
+        return self._current_screens
 
 DASHBOARD_MAIN_PREFERENCES_KV = """
 <DashboardMainPreferences>:
@@ -559,3 +585,7 @@ class DashboardPreferences(AnchorLayout):
 
         screen_prefs = DashboardScreenPreferences(settings, dashboard_factory)
         self.ids.tabs.add_widget(screen_prefs)
+        self._screen_prefs = screen_prefs
+
+    def get_selected_screens(self):
+        return self._screen_prefs.selected_screens

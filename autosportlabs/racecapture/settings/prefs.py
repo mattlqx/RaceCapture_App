@@ -29,6 +29,7 @@ import os
 from os import path
 from os.path import dirname, expanduser, sep
 from utils import is_android, is_ios, is_mobile_platform
+from copy import copy
 
 class Range(EventDispatcher):
     '''
@@ -98,11 +99,13 @@ class UserPrefs(EventDispatcher):
     '''
     A class to manage user preferences for the RaceCapture app
     '''
+    DEFAULT_DASHBOARD_SCREENS = ['5x_gauge_view', 'laptime_view', 'tach_view', 'rawchannel_view']
     DEFAULT_PREFS_DICT = {'range_alerts': {},
                           'gauge_settings':{},
-                          'screens':['5x_gauge_view', '3x_gauge_view', '2x_gauge_view', '8x_gauge_view', 'laptime_view', 'tach_view', 'rawchannel_view']}
+                          'screens':DEFAULT_DASHBOARD_SCREENS}
 
     DEFAULT_ANALYSIS_CHANNELS = ['Speed']
+
     prefs_file_name = 'prefs.json'
 
     def __init__(self, data_dir, user_files_dir, save_timeout=2, **kwargs):
@@ -161,9 +164,11 @@ class UserPrefs(EventDispatcher):
         return self._prefs_dict["gauge_settings"].get(gauge_id, False)
 
     def get_dashboard_screens(self):
-        return self._prefs_dict.get("screens")
+        return copy(self._prefs_dict['screens'])
 
-
+    def set_dashboard_screens(self, screens):
+        self._prefs_dict['screens'] = copy(screens)
+        self._schedule_save()
 
 # Regular preferences
 
@@ -392,12 +397,14 @@ class UserPrefs(EventDispatcher):
         '''
         Serialize preferences to json
         '''
-        data = {'range_alerts': {}, 'gauge_settings':{}}
+        data = {'range_alerts': {}, 'gauge_settings':{}, 'screens': []}
 
         for name, range_alert in self._prefs_dict["range_alerts"].iteritems():
             data["range_alerts"][name] = range_alert.to_dict()
 
         for id, channel in self._prefs_dict["gauge_settings"].iteritems():
             data["gauge_settings"][id] = channel
+
+        data['screens'] = self._prefs_dict['screens']
 
         return json.dumps(data)
