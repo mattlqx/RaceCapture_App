@@ -23,17 +23,18 @@ import time
 import datetime
 import kivy
 kivy.require('1.9.1')
-from kivy.uix.carousel import Carousel
-from kivy.uix.settings import SettingsWithNoMenu
 from kivy.app import Builder
 from kivy.core.window import Window, Keyboard
 from kivy.logger import Logger
 from kivy.clock import Clock
-from kivy.uix.modalview import ModalView
-from kivy.uix.screenmanager import Screen
 from kivy.properties import StringProperty, NumericProperty
 from utils import kvFindClass
+from kivy.uix.carousel import Carousel
+from kivy.uix.settings import SettingsWithNoMenu
+from kivy.uix.modalview import ModalView
+from kivy.uix.screenmanager import Screen
 from kivy.uix.anchorlayout import AnchorLayout
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.button import Button
 from kivy.uix.checkbox import CheckBox
@@ -558,6 +559,19 @@ class DashboardPreferenceScreen(AnchorLayout, AndroidTabsBase):
     def on_tab_font_size(self, instance, value):
         self.tab_label.font_size = value
 
+DASHBOARD_SCREEN_ITEM_KV = """
+<DashboardScreenItem>:
+    canvas.before:
+        Color:
+            rgba: ColorScheme.get_widget_translucent_background()
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    padding: (dp(5), dp(5))
+"""
+class DashboardScreenItem(BoxLayout):
+    Builder.load_string(DASHBOARD_SCREEN_ITEM_KV)
+
 DASHBOARD_SCREEN_PREFERENCES_KV = """
 <DashboardScreenPreferences>:
     canvas.before:
@@ -575,11 +589,12 @@ DASHBOARD_SCREEN_PREFERENCES_KV = """
         do_scroll_y:True
         GridLayout:
             id: grid
-            padding: [self.height * 0.02, self.height * 0.02]
+            padding: (dp(10), dp(10))
+            spacing: dp(10)
             row_default_height: root.height * 0.3
             size_hint_y: None
             height: self.minimum_height
-            cols: 3        
+            cols: 1        
 """
 class DashboardScreenPreferences(DashboardPreferenceScreen):
     Builder.load_string(DASHBOARD_SCREEN_PREFERENCES_KV)
@@ -597,9 +612,11 @@ class DashboardScreenPreferences(DashboardPreferenceScreen):
             checkbox = CheckBox()
             checkbox.active = True if key in current_screens else False
             checkbox.bind(active=lambda i, v, k=key:self._screen_selected(k, v))
-            self.ids.grid.add_widget(checkbox)
-            self.ids.grid.add_widget(FieldLabel(text=name))
-            self.ids.grid.add_widget(Image(source=image))
+            screen_item = DashboardScreenItem()
+            screen_item.add_widget(checkbox)
+            screen_item.add_widget(FieldLabel(text=name))
+            screen_item.add_widget(Image(source=image))
+            self.ids.grid.add_widget(screen_item)
         self._current_screens = current_screens
 
     def _screen_selected(self, key, selected):
@@ -615,12 +632,6 @@ class DashboardScreenPreferences(DashboardPreferenceScreen):
 
 DASHBOARD_MAIN_PREFERENCES_KV = """
 <DashboardMainPreferences>:
-    canvas.before:
-        Color:
-            rgba: ColorScheme.get_dark_background()
-        Rectangle:
-            pos: self.pos
-            size: self.size
     text: 'Behavior'
     SettingsWithNoMenu:
         id: settings
