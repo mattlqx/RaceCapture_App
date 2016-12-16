@@ -60,7 +60,14 @@ from garden_androidtabs import AndroidTabsBase, AndroidTabs
 from autosportlabs.racecapture.theme.color import ColorScheme
 from collections import OrderedDict
 from copy import copy
+
+
 class DashboardFactory(object):
+    """
+    Factory for creating dashboard screens. 
+    Screens are instances of DashboardScreen
+    Screens are referenced and managed by their key name. 
+    """
     def __init__(self, databus, settings, **kwargs):
         self._view_builders = OrderedDict()
         self._view_previews = OrderedDict()
@@ -69,6 +76,12 @@ class DashboardFactory(object):
         self._init_factory()
 
     def create_screen(self, key):
+        """
+        Create a new dashboard screen instance by key
+        :param key the key of the screen
+        :type key String
+        :return a new instance of a dashboard screen
+        """
         view = self._view_builders[key]()
         return view
 
@@ -88,9 +101,19 @@ class DashboardFactory(object):
 
     @property
     def available_dashboards(self):
+        """
+        Provide a list of available dashboards by key
+        :return String
+        """
         return self._view_builders.keys()
 
     def get_dashboard_preview(self, key):
+        """
+        Get the preview image source path for the specified dashboard key
+        :param key the key of the dashboard
+        :param key String
+        :return String path to the preview image, or None if the preview is not found
+        """
         return self._view_previews.get(key)
 
     def build_5x_gauge_view(self):
@@ -264,31 +287,51 @@ class DashboardView(Screen):
         Clock.schedule_once(lambda dt: HelpInfo.help_popup('dashboard_gauge_help', self, arrow_pos='right_mid'), 2.0)
 
     def _update_screens(self, new_screens):
+        """
+        Remove and re-adds screens to match the new configuration
+        """
+        
+        #prevent events from triggering and interfering with this update process
+        self._initialized = False
         carousel = self.ids.carousel
-        current_index = carousel.index
+        current_screens = self._screens
         loaded_screens = self._loaded_screens
-        carousel.clear_widgets()
         
-        for screen_key in new_screens:
-            current_screen = loaded_screens.get(screen_key)
-            if current_screen is None:
-                current_screen = AnchorLayout()
+        new_screen_count = len(new_screens)
+        current_screen_count = len(current_screens)
+        
+        # Note, our lazy loading scheme has the actual dashboard
+        # screens as part of the outer screen containers 
+        # screen containers - placeholders.
+        
+        # clear all of the dashboard screens from the outer container
+        for screen in loaded_screens.values():
+            parent = screen.parent
+            if parent is not None:
+                parent.remove_widget(screen)
+            
+        # add more carousel panes as needed
+        while True:
+            if current_screen_count == new_screen_count:
+                break
+            if current_screen_count < new_screen_count:
+                carousel.add_widget(AnchorLayout())
+                current_screen_count += 1
+            if current_screen_count > new_screen_count:
+                carousel.remove_widget(carousel.slides[0])
+                current_screen_count -= 1    
 
-            carousel.add_widget(current_screen)
+        # Now re-add the screens for the new screen keys
+        for (screen_key, container) in zip(new_screens, carousel.slides):
+            screen = loaded_screens.get(screen_key)
+            if screen is not None:
+                container.add_widget(screen)
         
-        # clean up removed screens
-        keys = copy(loaded_screens.keys())
-        for key in keys:
-            if key not in new_screens:
-                print ('removing screen ' + key)
-                # todo cleanup / shutdown screen
-                del loaded_screens[key]
-                
         self._screens = new_screens
-                
-        current_index = current_index if current_index < len(carousel.children) else 0
-        carousel.index = current_index
-        self._check_load_screen(carousel.current_slide)        
+        if current_screen_count != new_screen_count:
+            carousel.index = 0
+        self._check_load_screen(carousel.current_slide)      
+        self._initialized = True
                 
     def _on_rc_connect(self, *args):
         Clock.schedule_once(lambda dt: self._race_setup())
@@ -432,6 +475,9 @@ class DashboardView(Screen):
         def popup_dismissed(*args):
             self._notify_preference_listeners()
             screens = settings_view.get_selected_screens()
+            all_screens = self._dashboard_factory.available_dashboards
+            # re-order selected screens based on ordering
+            screens = [x for x in all_screens if x in screens]
             self._settings.userPrefs.set_dashboard_screens(screens)
             self._update_screens(screens)
 
@@ -460,14 +506,20 @@ class DashboardView(Screen):
     def _check_load_screen(self, slide_screen):
         # checks the current slide if we need to build the dashboard
         # screen on the spot
+        if slide_screen is None:
+            return
+        
         if len(slide_screen.children) == 0:
             # if the current screen has no children build and add the screen
             index = self.ids.carousel.index
             # call the builder to actually build the screen
             screen_key = self._screens[index]
-            view = self._dashboard_factory.create_screen(screen_key)
+            # was this screen created before?
+            view = self._loaded_screens.get(screen_key)
+            if view is None:
+                view = self._dashboard_factory.create_screen(screen_key)
             slide_screen.add_widget(view)
-            self._loaded_screens[screen_key] = slide_screen
+            self._loaded_screens[screen_key] = view
             view.on_enter()
 
     def on_current_slide(self, slide_screen):
@@ -588,7 +640,6 @@ DASHBOARD_PREFERENCES_KV = """
         Rectangle:
             pos: self.pos
             size: self.size
-    #padding: (dp(5), dp(5))
     AndroidTabs:
         tab_indicator_color: ColorScheme.get_light_primary()
         id: tabs
