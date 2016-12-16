@@ -162,7 +162,7 @@ class BrakeCorner(BoxLayout):
 BRAKE_CORNER_LEFT_KV = """
 <BrakeCornerLeft>:
     orientation: 'vertical'
-    bar_gauge_orientation: 'right-left'
+    bar_gauge_orientation: 'center'
     GridLayout:
         id: brake_values_top
         size_hint: (0.5, 0.2)
@@ -184,7 +184,7 @@ class BrakeCornerLeft(BrakeCorner):
 BRAKE_CORNER_RIGHT_KV = """
 <BrakeCornerRight>:
     orientation: 'vertical'
-    bar_gauge_orientation: 'left-right'
+    bar_gauge_orientation: 'center'
     GridLayout:
         id: brake_values_top
         size_hint: (0.5, 0.2)

@@ -51,6 +51,9 @@ BAR_GRAPH_GAUGE_KV = """
 """
 
 class BarGraphGauge(AnchorLayout):
+    ORIENTATION_LEFT_RIGHT = 0
+    ORIENTATION_CENTER = 1
+    ORIENTATION_RIGHT_LEFT = 2
     Builder.load_string(BAR_GRAPH_GAUGE_KV)
     minval = NumericProperty(0)
     maxval = NumericProperty(100)
@@ -59,8 +62,8 @@ class BarGraphGauge(AnchorLayout):
     orientation = StringProperty('left-right')
 
     def __init__(self, **kwargs):
-        self.left_right = True
-        self.zero_centered = False
+        self._orientation = BarGraphGauge.ORIENTATION_LEFT_RIGHT
+        self._zero_centered = False
         super(BarGraphGauge, self).__init__(**kwargs)
         self.bind(pos=self._refresh_value)
         self.bind(size=self._refresh_value)
@@ -69,7 +72,7 @@ class BarGraphGauge(AnchorLayout):
         self._refresh_format()
 
     def on_minval(self, instance, value):
-        self.zero_centered = value < 0
+        self._zero_centered = value < 0
         self._refresh_value()
 
     def on_maxval(self, instance, value):
@@ -82,8 +85,15 @@ class BarGraphGauge(AnchorLayout):
         Clock.schedule_once(lambda dt: self._refresh_orientation())
 
     def _refresh_orientation(self):
-        self.left_right = True if self.orientation == 'left-right' else False
-        self.ids.value.halign = 'left' if self.left_right == True else 'right'
+        if self.orientation == 'left-right':
+            self._orientation = BarGraphGauge.ORIENTATION_LEFT_RIGHT
+            self.ids.value.halign = 'left'
+        elif self.orientation == 'center':
+            self._orientation = BarGraphGauge.ORIENTATION_CENTER
+            self.ids.value.halign = 'center'
+        elif self.orientation == 'right-left':
+            self._orientation = BarGraphGauge.ORIENTATION_RIGHT_LEFT
+            self.ids.value.halign = 'right'
         self._refresh_value()
 
     def _refresh_value(self, *args):
@@ -97,18 +107,27 @@ class BarGraphGauge(AnchorLayout):
             minval = self.minval
             maxval = self.maxval
             channel_range = (maxval - minval)
-            if self.zero_centered:
+            if self._zero_centered:
                 channel_range = max(abs(minval), abs(maxval))
             else:
                 channel_range = (maxval - minval)
             pct = 0 if channel_range == 0 else abs(value) / channel_range
-            if self.zero_centered:
+            if self._zero_centered:
                 center = self.width / 2.0
                 width = center * pct
                 x = center - width if value < 0 else center
             else:
                 width = self.width * pct
-                x = 0 if self.left_right == True else self.width - width
+                if self._orientation == BarGraphGauge.ORIENTATION_CENTER:
+                    center = self.width / 2.0
+                    x = center - width / 2.0
+                    print('center')
+                elif self._orientation == BarGraphGauge.ORIENTATION_RIGHT_LEFT:
+                    x = self.width - width
+                else:
+                    x = 0 # BarGraphGauge.ORIENTATION_RIGHT_LEFT
+
+
         stencil.width = width
         stencil.x = x
         self.ids.value.text = '{:.2f}'.format(value).rstrip('0').rstrip('.')
