@@ -30,8 +30,10 @@ class HeatmapCornerGauge(Gauge, HeatmapCorner):
     corner_prefix = StringProperty('')
     tire_channel_prefix = StringProperty(DEFAULT_TIRE_CHANNEL_PREFIX)
     brake_channel_prefix = StringProperty(DEFAULT_BRAKE_CHANNEL_PREFIX)
-
-    channel_metas = ObjectProperty()
+    
+    def __init__(self, **kwargs):
+        super(HeatmapCornerGauge, self).__init__(**kwargs)
+        self.channel_metas = None
 
     def on_data_bus(self, instance, value):
         self._update_channel_binding()
@@ -74,7 +76,7 @@ class HeatmapCornerGauge(Gauge, HeatmapCorner):
         channel_metas = self.channel_metas
         if channel_metas is None:
             return
-
+        
         for zone in range (0, self.tire_zones):
             channel = channel_metas.get(self._get_tire_channel(zone + 1))
             if channel:
@@ -93,8 +95,6 @@ class HeatmapCornerGauge(Gauge, HeatmapCorner):
 
     def on_channel_meta(self, channel_metas):
         self.channel_metas = channel_metas
-
-    def on_channel_metas(self, instance, value):
         self._update_channel_metas()
 
 class HeatmapCornerLeftGauge(HeatmapCornerGauge, HeatmapCornerLeft):

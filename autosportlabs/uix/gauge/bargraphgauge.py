@@ -121,7 +121,6 @@ class BarGraphGauge(AnchorLayout):
                 if self._orientation == BarGraphGauge.ORIENTATION_CENTER:
                     center = self.width / 2.0
                     x = center - width / 2.0
-                    print('center')
                 elif self._orientation == BarGraphGauge.ORIENTATION_RIGHT_LEFT:
                     x = self.width - width
                 else:

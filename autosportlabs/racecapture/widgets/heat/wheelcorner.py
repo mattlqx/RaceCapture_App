@@ -53,12 +53,28 @@ class TireCorner(BoxLayout):
 
     def on_zones(self, instance, value):
         self.ids.tire.zones = value
+
+        self.ids.tire_values_top.clear_widgets()
+        self.ids.tire_values_bottom.clear_widgets()
         self.ids.tire_values.clear_widgets()
+        
+        if value > 2:
+            tv = self.ids.tire_values
+            value_containers = [tv]
+            orientation = 'right-left' if self.children.index(tv) == 1 else 'left-right'
+        else:
+            value_containers = [self.ids.tire_values_top, self.ids.tire_values_bottom]
+            orientation = 'center'
+        
+        if len(value_containers) == 2:
+            for c in value_containers:
+                c.size_hint_y = 0.1
+            self.ids.tire.size_hint_y = 0.6
+
+        
         del(self.tire_value_widgets[:])
         for i in range(0, value):
-            tire_values = self.ids.tire_values
-            is_first_widget = self.children.index(tire_values) == 1
-            orientation = 'right-left' if is_first_widget else 'left-right'
+            tire_values = value_containers[0] if i % len(value_containers) == 0 else value_containers[1]
             gauge = BarGraphGauge(orientation=orientation)
             tire_values.add_widget(gauge)
             self.tire_value_widgets.append(gauge)
@@ -84,12 +100,25 @@ TIRE_CORNER_LEFT_KV = """
         id: tire_values
         size_hint: (0.4, 0.5)
         pos_hint: {'center_x': 0.5, 'center_y': 0.5}                        
-        cols: 1                                    
-    TireHeatGauge:
-        id: tire
-        size_hint: (0.6, 0.6)
+        cols: 1
+    BoxLayout:
+        size_hint: (0.6, 0.8)
+        orientation: 'vertical'
         pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-        direction: 'right-left'
+        spacing: dp(5)              
+        GridLayout:
+            id: tire_values_top
+            size_hint_y: 0.1
+            cols: 1            
+        TireHeatGauge:
+            id: tire
+            size_hint_y: 0.8
+            direction: 'right-left'
+        GridLayout:
+            id: tire_values_bottom
+            size_hint_y: 0.1
+            cols: 1                                                
+                
 """
 class TireCornerLeft(TireCorner):
     Builder.load_string(TIRE_CORNER_LEFT_KV)
@@ -97,21 +126,59 @@ class TireCornerLeft(TireCorner):
 TIRE_CORNER_RIGHT_KV = """
 <TireCornerRight>:
     spacing: dp(10)
-    TireHeatGauge:
-        id: tire
-        size_hint: (0.6, 0.6)
+    BoxLayout:
+        size_hint: (0.6, 0.8)
+        orientation: 'vertical'
         pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-        direction: 'left-right'
+        spacing: dp(5)
+        GridLayout:
+            id: tire_values_top
+            size_hint_y: 0.1
+            cols: 1            
+        TireHeatGauge:
+            id: tire
+            size_hint_y: 0.8
+            direction: 'left-right'
+        GridLayout:
+            id: tire_values_bottom
+            size_hint_y: 0.1
+            cols: 1                                                
     GridLayout:
         id: tire_values
         size_hint: (0.4, 0.5)
         pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-        cols: 1                        
+        cols: 1
+        
 """
 class TireCornerRight(TireCorner):
     Builder.load_string(TIRE_CORNER_RIGHT_KV)
 
+BRAKE_CORNER_KV = """
+<BrakeCorner>:
+    bar_gauge_orientation: 'center'
+    orientation: 'vertical'
+    AnchorLayout:
+        anchor_y: 'bottom'
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+        size_hint: (0.5, 0.2)
+        GridLayout:
+            id: brake_values_top
+            cols: 1                                        
+    BrakeHeatGauge:
+        id: brake
+        size_hint: (1.0, 0.6)
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    AnchorLayout:
+        anchor_y: 'top'
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+        size_hint: (0.5, 0.2)
+        GridLayout:
+            id: brake_values_bottom
+            cols: 1                                                                            
+"""
+
 class BrakeCorner(BoxLayout):
+    Builder.load_string(BRAKE_CORNER_KV)    
     zones = NumericProperty()
     minval = NumericProperty()
     maxval = NumericProperty()
@@ -122,21 +189,30 @@ class BrakeCorner(BoxLayout):
         self.brake_value_widgets = []
         self.heat_gradient = HeatColorGradient()
 
-
     def on_zones(self, instance, value):
         self.ids.brake.zones = value
-        self.ids.brake_values_top.clear_widgets()
-        self.ids.brake_values_bottom.clear_widgets()
-        current_grid = self.ids.brake_values_top
+        top_values = self.ids.brake_values_top
+        bottom_values = self.ids.brake_values_bottom  
+        top_values.clear_widgets()
+        bottom_values.clear_widgets()
         del(self.brake_value_widgets[:])
+        
+        
         for i in range(0, value):
-            if i > 1:
-                current_grid = self.ids.brake_values_bottom  # 2 values above, 2 below
+            if value <= 2: # if zones are 2 or less zones go above and below
+                current_grid = top_values if i % 2 == 0 else bottom_values
+            else: # if zones > 2 then go top to bottom
+                current_grid = top_values if i < 2 else bottom_values
+
             gauge = BarGraphGauge(orientation=self.bar_gauge_orientation)
             gauge.minval = self.minval
             gauge.maxval = self.maxval
             current_grid.add_widget(gauge)
             self.brake_value_widgets.append(gauge)
+            
+        size_hint_y = 0.5 if value <= 2 else 1.0
+        top_values.size_hint_y = size_hint_y
+        bottom_values.size_hint_y = size_hint_y
 
     def set_value(self, zone, value):
         value = min(self.maxval, value)
@@ -157,52 +233,6 @@ class BrakeCorner(BoxLayout):
     def on_maxval(self, instance, value):
         for gauge in self.brake_value_widgets:
             gauge.maxval = value
-
-
-BRAKE_CORNER_LEFT_KV = """
-<BrakeCornerLeft>:
-    orientation: 'vertical'
-    bar_gauge_orientation: 'center'
-    GridLayout:
-        id: brake_values_top
-        size_hint: (0.5, 0.2)
-        pos_hint: {'center_x': 0.5, 'center_y': 0.5}                        
-        cols: 1                                        
-    BrakeHeatGauge:
-        id: brake
-        size_hint: (1.0, 0.6)
-        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-    GridLayout:
-        id: brake_values_bottom
-        size_hint: (0.5, 0.2)
-        pos_hint: {'center_x': 0.5, 'center_y': 0.5}                        
-        cols: 1                                    
-"""
-class BrakeCornerLeft(BrakeCorner):
-    Builder.load_string(BRAKE_CORNER_LEFT_KV)
-
-BRAKE_CORNER_RIGHT_KV = """
-<BrakeCornerRight>:
-    orientation: 'vertical'
-    bar_gauge_orientation: 'center'
-    GridLayout:
-        id: brake_values_top
-        size_hint: (0.5, 0.2)
-        pos_hint: {'center_x': 0.5, 'center_y': 0.5}                        
-        cols: 1                                        
-    BrakeHeatGauge:
-        id: brake
-        size_hint: (1.0, 0.6)
-        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-    GridLayout:
-        id: brake_values_bottom
-        size_hint: (0.5, 0.2)
-        pos_hint: {'center_x': 0.5, 'center_y': 0.5}                        
-        cols: 1                                    
-        
-"""
-class BrakeCornerRight(BrakeCorner):
-    Builder.load_string(BRAKE_CORNER_RIGHT_KV)
 
 class HeatmapCorner(AnchorLayout):
     brake_zones = NumericProperty(None)
@@ -249,7 +279,7 @@ HEATMAP_CORNER_LEFT_KV = """
         TireCornerLeft:
             id: tire
             size_hint_x: 0.55
-        BrakeCornerLeft:
+        BrakeCorner:
             id: brake
             size_hint_x: 0.45
 """
@@ -265,7 +295,7 @@ HEATMAP_CORNER_RIGHT_KV = """
     BoxLayout:
         padding: (dp(10), dp(10))
         spacing: dp(10)
-        BrakeCornerRight:
+        BrakeCorner:
             id: brake
             size_hint_x: 0.45
         TireCornerRight:
