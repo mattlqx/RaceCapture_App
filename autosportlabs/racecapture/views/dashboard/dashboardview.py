@@ -145,6 +145,10 @@ class DashboardFactory(object):
 DASHBOARD_VIEW_KV = """
 <DashboardView>:
     AnchorLayout:
+        FieldLabel:
+            id: dash_notice
+            halign: 'center'
+            font_size: self.height * 0.05
         BoxLayout:
             orientation: 'vertical'
             Carousel:
@@ -294,26 +298,27 @@ class DashboardView(Screen):
         """
         Remove and re-adds screens to match the new configuration
         """
-        
+
         # Prevent events from triggering and interfering with this update process
         self._initialized = False
         carousel = self.ids.carousel
         current_screens = self._screens
         loaded_screens = self._loaded_screens
-        
+
         new_screen_count = len(new_screens)
         current_screen_count = len(current_screens)
-        
+        original_screen_count = current_screen_count
+
         # Note, our lazy loading scheme has the actual dashboard
-        # screens as part of the outer screen containers 
+        # screens as part of the outer screen containers
         # screen containers - placeholders.
-        
+
         # clear all of the dashboard screens from the outer container
         for screen in loaded_screens.values():
             parent = screen.parent
             if parent is not None:
                 parent.remove_widget(screen)
-            
+
         # add more carousel panes as needed
         while True:
             if current_screen_count == new_screen_count:
@@ -323,20 +328,23 @@ class DashboardView(Screen):
                 current_screen_count += 1
             if current_screen_count > new_screen_count:
                 carousel.remove_widget(carousel.slides[0])
-                current_screen_count -= 1    
+                current_screen_count -= 1
 
         # Now re-add the screens for the new screen keys
         for (screen_key, container) in zip(new_screens, carousel.slides):
             screen = loaded_screens.get(screen_key)
             if screen is not None:
                 container.add_widget(screen)
-        
+
         self._screens = new_screens
-        if current_screen_count != new_screen_count:
+
+        if original_screen_count == 0 and new_screen_count > original_screen_count:
             carousel.index = 0
-        self._check_load_screen(carousel.current_slide)      
+
+        self._check_load_screen(carousel.current_slide)
+
         self._initialized = True
-                
+
     def _on_rc_connect(self, *args):
         Clock.schedule_once(lambda dt: self._race_setup())
 
@@ -519,9 +527,12 @@ class DashboardView(Screen):
     def _check_load_screen(self, slide_screen):
         # checks the current slide if we need to build the dashboard
         # screen on the spot
+
+        self.ids.dash_notice.text = '' if len(self.ids.carousel.slides) > 0 else 'No dashboard screens selected'
+
         if slide_screen is None:
             return
-        
+
         if len(slide_screen.children) == 0:
             # if the current screen has no children build and add the screen
             index = self.ids.carousel.index
