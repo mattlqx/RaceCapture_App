@@ -102,8 +102,8 @@ class DashboardFactory(object):
         self._add_screen('laptime_view', self.build_laptime_view, 'Predictive Timer', 'laptime_view.png')
         self._add_screen('tach_view', self.build_tachometer_view, 'Tachometer', 'tachometer_view.png')
         self._add_screen('rawchannel_view', self.build_raw_channel_view, 'Raw Channels', 'raw_channel_view.png')
-        self._add_screen('traction_view', self.build_traction_view, 'Traction', 'raw_channel_view.png')
-        self._add_screen('heatmap_view', self.build_heatmap_view, 'Heatmap', 'raw_channel_view.png')
+        self._add_screen('traction_view', self.build_traction_view, 'Traction', 'traction_view.png')
+        self._add_screen('heatmap_view', self.build_heatmap_view, 'Heatmap', 'heatmap_view.png')
 
     @property
     def available_dashboards(self):
