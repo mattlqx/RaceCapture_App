@@ -53,7 +53,7 @@ from autosportlabs.racecapture.views.dashboard.gaugeview import *
 from autosportlabs.racecapture.views.dashboard.tachometerview import TachometerView
 from autosportlabs.racecapture.views.dashboard.laptimeview import LaptimeView
 from autosportlabs.racecapture.views.dashboard.rawchannelview import RawChannelView
-from autosportlabs.racecapture.views.dashboard.comboview import ComboView
+from autosportlabs.racecapture.views.dashboard.tractionview import TractionView
 from autosportlabs.racecapture.views.dashboard.heatmapview import HeatmapView
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
@@ -102,6 +102,7 @@ class DashboardFactory(object):
         self._add_screen('laptime_view', self.build_laptime_view, 'Predictive Timer', 'laptime_view.png')
         self._add_screen('tach_view', self.build_tachometer_view, 'Tachometer', 'tachometer_view.png')
         self._add_screen('rawchannel_view', self.build_raw_channel_view, 'Raw Channels', 'raw_channel_view.png')
+        self._add_screen('traction_view', self.build_traction_view, 'Traction', 'raw_channel_view.png')
         self._add_screen('heatmap_view', self.build_heatmap_view, 'Heatmap', 'raw_channel_view.png')
 
     @property
@@ -142,11 +143,11 @@ class DashboardFactory(object):
     def build_raw_channel_view(self):
         return RawChannelView(name='rawchannel_view', databus=self._databus, settings=self._settings)
 
-    def build_combo_view(self):
-        return ComboView(name='comboView', databus=self._databus, settings=self._settings)
-    
+    def build_traction_view(self):
+        return TractionView(name='traction_view', databus=self._databus, settings=self._settings)
+
     def build_heatmap_view(self):
-        return HeatmapView(name='heatmap_view', databus=self._databus, 
+        return HeatmapView(name='heatmap_view', databus=self._databus,
                            settings=self._settings,
                            track_manager=self._track_manager,
                            status_pump=self._status_pump)
@@ -532,7 +533,7 @@ class DashboardView(Screen):
         slide_screen = self.ids.carousel.current_slide
         if (slide_screen.children) > 0:
             slide_screen.children[0].on_exit()
-        
+
     def on_nav_left(self):
         self._exit_screen()
         self.ids.carousel.load_previous()
