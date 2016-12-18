@@ -38,6 +38,7 @@ from kivy.core.window import Window
 from kivy.uix.carousel import Carousel
 from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
 from autosportlabs.racecapture.views.analysis.analysismap import AnalysisMap
+from autosportlabs.racecapture.views.analysis.channelstats import ChannelStats
 from autosportlabs.racecapture.views.analysis.channelvaluesview import ChannelValuesView
 from autosportlabs.racecapture.views.analysis.addstreamview import AddStreamView
 from autosportlabs.racecapture.views.analysis.sessionlistview import SessionListView
@@ -56,64 +57,6 @@ from kivy.core.window import Window
 
 RC_LOG_FILE_EXTENSION = '.log'
 
-class AnalysisPage(AnchorLayout):
-
-    track_manager = ObjectProperty()
-    datastore = ObjectProperty()
-
-    def refresh_view(self):
-        """
-        Refresh the current view
-        """
-        pass
-
-    def add_reference_mark(self, source, color):
-        """
-        Add a reference mark for the specified source
-        :param source the key representing the reference mark
-        :type source string
-        :param color the color of the reference mark
-        :type color list
-        """
-        pass
-
-    def remove_reference_mark(self, source):
-        """
-        Removes the specified reference mark
-        :param source the key for the reference mark to remove
-        :type source string
-        """
-        pass
-
-    def update_reference_mark(self, source, point):
-        """
-        Update the specified reference mark
-        :param source the key for the reference mark
-        :type source string
-        :param point the updated point
-        :type GeoPoint
-        """
-        pass
-
-    def add_map_path(self, source_ref, path, color):
-        """
-        Add a map path for the specified session/lap source reference
-        :param source_ref the lap/session reference
-        :type source_ref SourceRef
-        :param path a list of points representing the map path
-        :type path list
-        :param color the path of the color
-        :type color list
-        """
-        pass
-
-    def remove_map_path(self, source_ref):
-        """
-        Remove the map path for the specified session/lap source reference
-        :param source_ref the source session/lap reference
-        :type source_ref SourceRef
-        """
-        pass
 
 ANALYSIS_VIEW_KV = '''
 <AnalysisView>:
@@ -131,12 +74,8 @@ ANALYSIS_VIEW_KV = '''
                     on_current_slide: root.on_current_screen(args[1])
                     AnalysisMap:
                         id: analysismap
-                    AnalysisPage:
-                        Label:
-                            text: 'screen 2'
-                    AnalysisPage:
-                        Label:
-                            text: 'screen 3'
+                    ChannelStats:
+                        id: channel_stats
                 AnchorLayout:
                     anchor_y: 'bottom'
                     BoxLayout:

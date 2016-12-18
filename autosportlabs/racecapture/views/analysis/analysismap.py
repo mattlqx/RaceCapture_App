@@ -18,6 +18,8 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
+import kivy
+kivy.require('1.9.1')
 from kivy.properties import ObjectProperty, ListProperty, StringProperty, NumericProperty
 from kivy.app import Builder
 from kivy.core.window import Window
