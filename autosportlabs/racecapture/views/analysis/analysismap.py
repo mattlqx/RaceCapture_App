@@ -26,7 +26,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.graphics.transformation import Matrix
 from kivy.uix.screenmanager import Screen, SwapTransition
 from kivy.uix.popup import Popup
-from autosportlabs.racecapture.views.analysis.analysiswidget import AnalysisWidget
+from autosportlabs.racecapture.views.analysis.analysiswidget import GeoAnalysisWidget
 from autosportlabs.uix.track.racetrackview import RaceTrackView
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.racecapture.datastore import Filter
@@ -38,7 +38,7 @@ from autosportlabs.uix.options.optionsview import OptionsView, BaseOptionsScreen
 
 # The scaling we use while we zoom
 ANALYSIS_MAP_ZOOM_SCALE = 1.1
-class AnalysisMap(AnalysisWidget):
+class AnalysisMap(GeoAnalysisWidget):
     """
     Displays a track map with options
     """
@@ -147,9 +147,6 @@ class AnalysisMap(AnalysisWidget):
 
 
     def refresh_view(self):
-        """
-        Refresh the current view
-        """
         self._refresh_lap_legends()
 
     def add_option_buttons(self):
@@ -289,28 +286,12 @@ class AnalysisMap(AnalysisWidget):
         self.ids.track.remove_marker(source)
 
     def add_reference_mark(self, source, color):
-        """
-        Add a reference mark for the specified source
-        :param source the key representing the reference mark
-        :type source string
-        :param color the color of the reference mark
-        :type color list
-        """
         self.ids.track.add_marker(source, color)
 
     def update_reference_mark(self, source, point):
         self.ids.track.update_marker(str(source), point)
 
     def add_map_path(self, source_ref, path, color):
-        """
-        Add a map path for the specified session/lap source reference
-        :param source_ref the lap/session reference
-        :type source_ref SourceRef
-        :param path a list of points representing the map path
-        :type path list
-        :param color the path of the color
-        :type color list
-        """
         source_key = str(source_ref)
         self.sources[source_key] = source_ref
         self.ids.track.add_path(source_key, path, color)
@@ -320,11 +301,6 @@ class AnalysisMap(AnalysisWidget):
         self._refresh_lap_legends()
 
     def remove_map_path(self, source_ref):
-        """
-        Remove the map path for the specified session/lap source reference
-        :param source_ref the source session/lap reference
-        :type source_ref SourceRef
-        """
         source_key = str(source_ref)
         self.ids.track.remove_path(source_key)
         self.sources.pop(source_key, None)

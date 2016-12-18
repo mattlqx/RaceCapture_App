@@ -62,21 +62,57 @@ class AnalysisPage(AnchorLayout):
     datastore = ObjectProperty()
 
     def refresh_view(self):
+        """
+        Refresh the current view
+        """
         pass
 
     def add_reference_mark(self, source, color):
+        """
+        Add a reference mark for the specified source
+        :param source the key representing the reference mark
+        :type source string
+        :param color the color of the reference mark
+        :type color list
+        """
         pass
 
     def remove_reference_mark(self, source):
+        """
+        Removes the specified reference mark
+        :param source the key for the reference mark to remove
+        :type source string
+        """
         pass
 
     def update_reference_mark(self, source, point):
+        """
+        Update the specified reference mark
+        :param source the key for the reference mark
+        :type source string
+        :param point the updated point
+        :type GeoPoint
+        """
         pass
 
     def add_map_path(self, source_ref, path, color):
+        """
+        Add a map path for the specified session/lap source reference
+        :param source_ref the lap/session reference
+        :type source_ref SourceRef
+        :param path a list of points representing the map path
+        :type path list
+        :param color the path of the color
+        :type color list
+        """
         pass
 
     def remove_map_path(self, source_ref):
+        """
+        Remove the map path for the specified session/lap source reference
+        :param source_ref the source session/lap reference
+        :type source_ref SourceRef
+        """
         pass
 
 ANALYSIS_VIEW_KV = '''
