@@ -112,10 +112,6 @@ class CachingAnalysisDatastore(DataStore):
         self._refresh_session_data()
         return session_id
 
-    def delete_session(self, session_id):
-        super(CachingAnalysisDatastore, self).delete_session(session_id)
-        self._refresh_session_data()
-
     @timing
     def _refresh_session_data(self):
         self._session_info_cache.clear()
@@ -150,6 +146,10 @@ class CachingAnalysisDatastore(DataStore):
             self._refresh_session_data()
             laps = self.session_info_cache.get(session_id)
         return laps
+
+#    def delete_session(self, session_id):
+ #       super(CachingAnalysisDatastore, self).delete_session(session_id)
+  #      self._refresh_session_data()
 
     def delete_session(self, session_id):
         """

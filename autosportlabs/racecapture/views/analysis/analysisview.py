@@ -196,6 +196,7 @@ class AnalysisView(Screen):
         if selected:
             self.ids.mainchart.add_lap(source_ref)
             self.ids.channelvalues.add_lap(source_ref)
+            self.ids.channel_stats.add_lap(source_ref)
             map_path_color = self._color_sequence.get_color(source_key)
             self._current_screen.add_reference_mark(source_key, map_path_color)
             self._sync_analysis_map(source_ref.session)
@@ -204,6 +205,7 @@ class AnalysisView(Screen):
         else:
             self.ids.mainchart.remove_lap(source_ref)
             self.ids.channelvalues.remove_lap(source_ref)
+            self.ids.channel_stats.remove_lap(source_ref)
             self._current_screen.remove_reference_mark(source_key)
             self._current_screen.remove_map_path(source_ref)
 
@@ -383,6 +385,8 @@ class AnalysisView(Screen):
         channelvalues.settings = self._settings
         self.ids.analysismap.track_manager = self._track_manager
         self.ids.analysismap.datastore = self._datastore
+        self.ids.channel_stats.track_manager = self._track_manager
+        self.ids.channel_stats.datastore = self._datastore
         self.ids.sessions_view.datastore = self._datastore
         self.ids.sessions_view.settings = self._settings
         self.ids.sessions_view.init_view()

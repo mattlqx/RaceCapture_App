@@ -79,9 +79,19 @@ class AnalysisWidget(AnchorLayout):
         pass
 
     def on_lap_added(self, source_ref):
+        """
+        Event to indicate a lap was added
+        :param source_ref the lap reference
+        :type source_ref string
+        """
         pass
 
     def on_lap_removed(self, source_ref):
+        """
+        Indicate a lap was removed
+        :param source_ref the lap reference
+        :type source_ref string
+        """
         pass
 
     def add_lap(self, source_ref):

@@ -27,8 +27,21 @@ from kivy.properties import ObjectProperty
 
 class AnalysisPage(AnchorLayout):
 
+    track = ObjectProperty()
     track_manager = ObjectProperty()
     datastore = ObjectProperty()
+
+    def select_map(self, latitude, longitude):
+        """
+        Find and display a nearby track by latitude / longitude
+        :param latitude
+        :type  latitude float
+        :param longitude
+        :type longitude float
+        :returns the selected track
+        :type Track 
+        """
+        pass
 
     def refresh_view(self):
         """
@@ -82,4 +95,20 @@ class AnalysisPage(AnchorLayout):
         :param source_ref the source session/lap reference
         :type source_ref SourceRef
         """
+        pass
+
+    def add_lap(self, source_ref):
+        '''
+        Add a lap specified by the source reference
+        :param source_ref indicating the selected session / lap
+        :type SourceRef
+        '''
+        pass
+
+    def remove_lap(self, source_ref):
+        '''
+        Remove a lap specified by the source reference
+        :param source_ref indicating the selected session / lap
+        :type SourceRef
+        '''
         pass
