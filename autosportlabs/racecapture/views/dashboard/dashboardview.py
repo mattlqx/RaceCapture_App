@@ -48,19 +48,22 @@ from autosportlabs.racecapture.views.configuration.rcp.track.trackbuilder import
 from autosportlabs.racecapture.views.util.alertview import editor_popup
 from autosportlabs.racecapture.config.rcpconfig import Track, TrackConfig, Capabilities, GpsConfig, GpsSample
 from autosportlabs.racecapture.tracks.trackmanager import TrackMap, TrackManager
-# Dashboard screens
-from autosportlabs.racecapture.views.dashboard.gaugeview import *
-from autosportlabs.racecapture.views.dashboard.tachometerview import TachometerView
-from autosportlabs.racecapture.views.dashboard.laptimeview import LaptimeView
-from autosportlabs.racecapture.views.dashboard.rawchannelview import RawChannelView
-from autosportlabs.racecapture.views.dashboard.comboview import ComboView
+
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.help.helpmanager import HelpInfo
 from garden_androidtabs import AndroidTabsBase, AndroidTabs
 from autosportlabs.racecapture.theme.color import ColorScheme
+from fieldlabel import FieldLabel
 from collections import OrderedDict
 from copy import copy
+
+# Dashboard screens
+from autosportlabs.racecapture.views.dashboard.gaugeview import GaugeView2x, GaugeView3x, GaugeView5x, GaugeView8x
+from autosportlabs.racecapture.views.dashboard.tachometerview import TachometerView
+from autosportlabs.racecapture.views.dashboard.laptimeview import LaptimeView
+from autosportlabs.racecapture.views.dashboard.rawchannelview import RawChannelView
+
 
 
 class DashboardFactory(object):
@@ -270,7 +273,7 @@ class DashboardView(Screen):
 
         # add the initial set of empty screens
         screens = self._screens
-        screens += self._settings.userPrefs.get_dashboard_screens()
+        screens += self._filter_dashboard_screens(self._settings.userPrefs.get_dashboard_screens())
         for i in range (0, len(screens)):
             self.ids.carousel.add_widget(AnchorLayout())
 
@@ -487,6 +490,14 @@ class DashboardView(Screen):
             self.on_nav_right()
         return False
 
+    def _filter_dashboard_screens(self, screens):
+        """
+        Filter the supplied list of screens against the actual list of available screens, including normalizing for order
+        """
+        all_screens = self._dashboard_factory.available_dashboards
+        # re-order selected screens based on native order
+        return [x for x in all_screens if x in screens]
+        
     def on_preferences(self, *args):
         """
         Display the dashboard preferences view 
@@ -496,9 +507,7 @@ class DashboardView(Screen):
         def popup_dismissed(*args):
             self._notify_preference_listeners()
             screens = settings_view.get_selected_screens()
-            all_screens = self._dashboard_factory.available_dashboards
-            # re-order selected screens based on native order
-            screens = [x for x in all_screens if x in screens]
+            screens = self._filter_dashboard_screens(screens)
             self._settings.userPrefs.set_dashboard_screens(screens)
             self._update_screens(screens)
 
@@ -566,7 +575,6 @@ class DashboardView(Screen):
         """
         last_screen_name = self._settings.userPrefs.get_pref('dashboard_preferences', 'last_dash_screen')
         Clock.schedule_once(lambda dt: self._show_screen(last_screen_name))
-
 
 DASHBOARD_PREFERENCES_SCREEN_KV = """
 <DashboardPreferenceScreen>:
