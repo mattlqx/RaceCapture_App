@@ -111,7 +111,7 @@ class DashboardFactory(object):
         """
         return self._view_builders.keys()
 
-    def get_dashboard_preview(self, key):
+    def get_dashboard_preview_image_path(self, key):
         """
         Get the preview image source path for the specified dashboard key
         :param key the key of the dashboard
@@ -649,9 +649,7 @@ class DashboardScreenPreferences(DashboardPreferenceScreen):
         current_screens = self._settings.userPrefs.get_dashboard_screens()
         screen_keys = dashboard_factory.available_dashboards
         for key in screen_keys:
-            preview = dashboard_factory.get_dashboard_preview(key)
-            name = preview[0]
-            image = preview[1]
+            [name, image]  = dashboard_factory.get_dashboard_preview_image_path(key)
             checkbox = CheckBox()
             checkbox.active = True if key in current_screens else False
             checkbox.bind(active=lambda i, v, k=key:self._screen_selected(k, v))
