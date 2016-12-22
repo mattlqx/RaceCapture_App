@@ -24,9 +24,59 @@ import traceback
 kivy.require('1.9.1')
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.properties import ObjectProperty
+from kivy.uix.screenmanager import Screen
 
-class AnalysisPage(AnchorLayout):
+class AnalysisPageCollection(object):
+    """
+    Wrapper for a collection of AnalysisPage objects.
+    """
 
+    def __init__(self, **kwargs):
+        self._screens = []
+
+    def add_screen(self, screen):
+        self._screens.append(screen)
+
+    def select_map(self, latitude, longitude):
+        for s in self._screens:
+            s.select_map(latitude, longitude)
+
+    def refresh_view(self):
+        for s in self._screens:
+            s.refresh_view()
+
+    def add_reference_mark(self, source, color):
+        for s in self._screens:
+            s.add_reference_mark(source, color)
+
+    def remove_reference_mark(self, source):
+        for s in self._screens:
+            s.remove_reference_mark(source)
+
+    def update_reference_mark(self, source, point):
+        for s in self._screens:
+            s.update_reference_mark(source, point)
+
+    def add_map_path(self, source_ref, path, color):
+        for s in self._screens:
+            s.add_map_path(source_ref, path, color)
+
+    def remove_map_path(self, source_ref):
+        for s in self._screens:
+            s.remove_map_path(source_ref)
+
+    def add_lap(self, source_ref):
+        for s in self._screens:
+            s.add_lap(source_ref)
+
+    def remove_lap(self, source_ref):
+        for s in self._screens:
+            s.remove_lap(source_ref)
+
+class AnalysisPage(Screen):
+    """
+    Base Class for an Analysis Screen. Extend this class to create a new Page for the analysis view
+    """
     track = ObjectProperty()
     track_manager = ObjectProperty()
     datastore = ObjectProperty()

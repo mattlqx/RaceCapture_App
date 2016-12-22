@@ -28,7 +28,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.graphics.transformation import Matrix
 from kivy.uix.screenmanager import Screen, SwapTransition
 from kivy.uix.popup import Popup
-from autosportlabs.racecapture.views.analysis.analysiswidget import GeoAnalysisWidget
+from autosportlabs.racecapture.views.analysis.analysispage import AnalysisPage
 from autosportlabs.uix.track.racetrackview import RaceTrackView
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.racecapture.datastore import Filter
@@ -40,7 +40,7 @@ from autosportlabs.uix.options.optionsview import OptionsView, BaseOptionsScreen
 
 # The scaling we use while we zoom
 ANALYSIS_MAP_ZOOM_SCALE = 1.1
-class AnalysisMap(GeoAnalysisWidget):
+class AnalysisMap(AnalysisPage):
     """
     Displays a track map with options
     """

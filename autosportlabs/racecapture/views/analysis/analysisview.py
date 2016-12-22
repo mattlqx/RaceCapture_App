@@ -35,7 +35,7 @@ from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.properties import ObjectProperty
 from kivy.core.window import Window
-from kivy.uix.carousel import Carousel
+from kivy.uix.screenmanager import ScreenManager
 from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
 from autosportlabs.racecapture.views.analysis.analysismap import AnalysisMap
 from autosportlabs.racecapture.views.analysis.channelstats import ChannelStats
@@ -44,6 +44,7 @@ from autosportlabs.racecapture.views.analysis.addstreamview import AddStreamView
 from autosportlabs.racecapture.views.analysis.sessionlistview import SessionListView
 from autosportlabs.racecapture.views.analysis.flyinpanel import FlyinPanel
 from autosportlabs.racecapture.views.analysis.markerevent import MarkerEvent, SourceRef
+from autosportlabs.racecapture.views.analysis.analysispage import AnalysisPageCollection
 from autosportlabs.racecapture.views.analysis.linechart import LineChart
 from autosportlabs.racecapture.views.file.loaddialogview import LoadDialog
 from autosportlabs.racecapture.views.file.savedialogview import SaveDialog
@@ -57,7 +58,6 @@ from kivy.core.window import Window
 
 RC_LOG_FILE_EXTENSION = '.log'
 
-
 ANALYSIS_VIEW_KV = '''
 <AnalysisView>:
     AnchorLayout:
@@ -68,14 +68,14 @@ ANALYSIS_VIEW_KV = '''
                 spacing: sp(10)       
                 size_hint_y: 0.55
                 orientation: 'horizontal'
-                Carousel:
-                    id: carousel
-                    loop: True
-                    on_current_slide: root.on_current_screen(args[1])
+                ScreenManager:
+                    id: screen_manager
                     AnalysisMap:
                         id: analysismap
+                        name: 'map'
                     ChannelStats:
                         id: channel_stats
+                        name: 'stats'
                 AnchorLayout:
                     anchor_y: 'bottom'
                     BoxLayout:
@@ -155,8 +155,10 @@ class AnalysisView(Screen):
         self.stream_connecting = False
         Window.bind(mouse_pos=self.on_mouse_pos)
         Window.bind(on_motion=self.on_motion)
-        self._current_screen = self.ids.carousel.current_slide
         self._layout_complete = False
+        self._screens = AnalysisPageCollection()
+        self._screens.add_screen(self.ids.analysismap)
+        self._screens.add_screen(self.ids.channel_stats)
 
     def on_motion(self, instance, event, motion_event):
         flyin = self.ids.laps_flyin
@@ -185,7 +187,7 @@ class AnalysisView(Screen):
 
     def session_updated(self, instance, session):
         self.ids.channelvalues.refresh_view()
-        self._current_screen.refresh_view()
+        self._screens.refresh_view()
 
     def sessions_loaded(self, instance):
         if self.ids.sessions_view.session_count == 0:
@@ -198,19 +200,19 @@ class AnalysisView(Screen):
             self.ids.channelvalues.add_lap(source_ref)
             self.ids.channel_stats.add_lap(source_ref)
             map_path_color = self._color_sequence.get_color(source_key)
-            self._current_screen.add_reference_mark(source_key, map_path_color)
+            self._screens.add_reference_mark(source_key, map_path_color)
             self._sync_analysis_map(source_ref.session)
-            self._datastore.get_location_data(source_ref, lambda x: self._current_screen.add_map_path(source_ref, x, map_path_color))
+            self._datastore.get_location_data(source_ref, lambda x: self._screens.add_map_path(source_ref, x, map_path_color))
 
         else:
             self.ids.mainchart.remove_lap(source_ref)
             self.ids.channelvalues.remove_lap(source_ref)
             self.ids.channel_stats.remove_lap(source_ref)
-            self._current_screen.remove_reference_mark(source_key)
-            self._current_screen.remove_map_path(source_ref)
+            self._screens.remove_reference_mark(source_key)
+            self._screens.remove_map_path(source_ref)
 
     def on_tracks_updated(self, track_manager):
-        self._current_screen.track_manager = track_manager
+        self._screens.track_manager = track_manager
 
     def on_channel_selected(self, instance, value):
         channels = self.ids.channelvalues.merge_selected_channels(value)
@@ -225,10 +227,10 @@ class AnalysisView(Screen):
                 point = cache[marker.data_index]
             except IndexError:
                 point = cache[len(cache) - 1]
-            self._current_screen.update_reference_mark(source, point)
+            self._screens.update_reference_mark(source, point)
 
     def _sync_analysis_map(self, session):
-        analysis_map = self._current_screen
+        analysis_map = self.ids.analysismap
         current_track = analysis_map.track
 
         lat_avg, lon_avg = self._datastore.get_location_center([session])
@@ -409,10 +411,8 @@ class AnalysisView(Screen):
             self._popup = None
 
     def on_nav_left(self):
-        self.ids.carousel.load_previous()
+        self.ids.screen_manager.current = self.ids.screen_manager.previous()
 
     def on_nav_right(self):
-        self.ids.carousel.load_next()
+        self.ids.screen_manager.current = self.ids.screen_manager.next()
 
-    def on_current_screen(self, slide):
-        self._current_screen = slide
