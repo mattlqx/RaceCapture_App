@@ -22,11 +22,12 @@ import kivy
 kivy.require('1.9.1')
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.boxlayout import BoxLayout
-from kivy.properties import StringProperty, NumericProperty
+from kivy.properties import StringProperty, NumericProperty, ObjectProperty
 from autosportlabs.racecapture.views.analysis.analysispage import AnalysisPage
 from autosportlabs.racecapture.views.util.viewutils import format_laptime
 from kivy.base import Builder
 from fieldlabel import FieldLabel
+from utils import kvFindClass
 
 class StatsFieldLabel(FieldLabel):
     Builder.load_string("""
@@ -39,10 +40,12 @@ class StatsFieldLabel(FieldLabel):
             size: self.size
     
     """)
-LAP_STATS_ITEM_KV = """
+
+class LapStatsItem(BoxLayout):
+    Builder.load_string("""
 <LapStatsItem>:
-    size_hint_y: None
-    height: dp(30)
+#    size_hint_y: None
+#    height: dp(30)
     FieldLabel:
         id: lap_session
         size_hint_x: 0.6
@@ -54,14 +57,12 @@ LAP_STATS_ITEM_KV = """
     FieldLabel:
         id: lap_time
         size_hint_x: 0.3
-        text: root.lap_time
-"""
-
-class LapStatsItem(BoxLayout):
-    Builder.load_string(LAP_STATS_ITEM_KV)
+        text: root.lap_time    
+""")
     lap_session = StringProperty()
     lap_time = StringProperty()
     lap_number = StringProperty()
+    source_ref = ObjectProperty()
 
 
 class LapChannelHeader(BoxLayout):
@@ -69,6 +70,7 @@ class LapChannelHeader(BoxLayout):
 <LapChannelHeader>:
     FieldLabel:
         text: root.name
+        halign: 'center'
 """)
     name = StringProperty()
 
@@ -87,6 +89,7 @@ class CurrentLapChannelStats(BoxLayout):
             id: max
             text: root.max_value
 """)
+    source_ref = ObjectProperty()
     min_value = StringProperty()
     current_value = StringProperty()
     max_value = StringProperty()
@@ -100,6 +103,7 @@ class ChannelStatsSlice(BoxLayout):
    # size_hint_y: None
     #height: len(self.children) * dp(20) 
 """)
+    channel = StringProperty()
 
     def add_widget(self, widget, index=0):
         super(ChannelStatsSlice, self).add_widget(widget, index=index)
@@ -107,31 +111,10 @@ class ChannelStatsSlice(BoxLayout):
 CHANNEL_STATS_KV = """
 <ChannelStats>:
     BoxLayout:
-        orientation: 'vertical'
-        BoxLayout:
-            size_hint_y: 0.2
-            orientation: 'horizontal'
-            FieldLabel:
-                text: 'Selected Laps'
-                size_hint_x: 0.3
-            AnchorLayout:
-                size_hint_x: 0.7
-                BoxLayout:
-                    size_hint_x: 0.2
-                    IconButton:
-                        size_hint_x: 0.1
-                        text: u'\uf055'
-                        color: ColorScheme.get_accent()
-                        on_release: root.add_channel_stats()
-                    FieldLabel:
-                        text: 'Channels'
-                        halign: 'center'
-                        valign: 'middle'
-                        size_hint_x: 0.9
-                
+        orientation: 'vertical'                
         ScrollContainer:
             id: scroll
-            size_hint_y: 0.8
+            size_hint_y: 1.0
             do_scroll_x:False
             do_scroll_y:True
             GridLayout:
@@ -149,6 +132,9 @@ CHANNEL_STATS_KV = """
                     size_hint_x: 0.3
                     height: self.minimum_height
                     cols: 1
+                    FieldLabel:
+                        text: 'Selected Laps'
+                    
                 ScrollContainer:
                     id: scroll_stats
                     size_hint_x: 0.7
@@ -177,10 +163,9 @@ class ChannelStats(AnalysisPage):
 
     def __init__(self, **kwargs):
         super(ChannelStats, self).__init__(**kwargs)
-        self._laps = {}
+        self._channels = []
 
     def add_lap(self, source_ref):
-        print('add lap {}'.format(source_ref))
         lap = LapStatsItem()
 #        lap.lap_number = str(source_ref)
         # lap.lap_session = str('{} -- {}'.format(source_ref.lap, source_ref.session))
@@ -191,25 +176,59 @@ class ChannelStats(AnalysisPage):
         session = self.datastore.get_session_by_id(source_ref.session)
         lap.lap_session = session.name
         lap.lap_number = str(source_ref.lap)
-        self._laps[str(source_ref)] = lap
-        print(' laps ' + str(self._laps.keys()))
+        lap.source_ref = source_ref
 
+        self._add_lap_slices(source_ref)
 
-    def remove_lap(self, source_ref):
-        print('remove lap {}'.format(source_ref))
-
-    def add_channel_stats(self):
-        print('foo')
-        slice = ChannelStatsSlice()
-        header = LapChannelHeader()
-        header.name = 'Speed'
-        # slice.add_widget(header)
-        for lap in self._laps.keys():
-            print('fasdf ' + str(lap))
+    def _add_lap_slices(self, source_ref):
+        for channel_slice in self.ids.stats.children:
             channel_stats = CurrentLapChannelStats()
+            channel_stats.source_ref = source_ref
+            channel_slice.add_widget(channel_stats)
+        
+    def remove_lap(self, source_ref):
+        channel_slices = list(kvFindClass(self.ids.stats, CurrentLapChannelStats))
+        for channel_slice in channel_slices:
+            if channel_slice.source_ref == source_ref:
+                channel_slice.parent.remove_widget(channel_slice)
+
+        lap_stats = list(kvFindClass(self.ids.grid, LapStatsItem))
+        for item in lap_stats:
+            if item.source_ref == source_ref:
+                item.parent.remove_widget(item)
+                            
+    def _add_channel_stats(self, channel):
+        channel_slice = ChannelStatsSlice(channel=channel)
+        header = LapChannelHeader()
+        header.name = channel
+        channel_slice.add_widget(header)
+        lap_stats = list(kvFindClass(self.ids.grid, LapStatsItem))        
+        for item in lap_stats:
+            channel_stats = CurrentLapChannelStats()
+            channel_stats.source_ref = item.source_ref
             channel_stats.min_value = str(0)
             channel_stats.max_value = str(1000)
             channel_stats.current_value = str(333)
-            slice.add_widget(channel_stats)
-        self.ids.stats.add_widget(slice)
-        print('len ' + str(len(slice.children)))
+            channel_slice.add_widget(channel_stats)
+        self.ids.stats.add_widget(channel_slice)
+        self._channels.append(channel)
+
+    def _remove_channel_stats(self, channel):
+        for c in self.ids.stats.children:
+            if c.channel == channel:
+                
+                self.ids.stats.remove_widget(c)
+                break
+        self._channels.remove(channel)
+        
+    def set_selected_channels(self, channels):
+        current = self._channels
+        removed = [c for c in current if c not in channels]
+        added = [c for c in channels if c not in current]
+
+        for c in added:
+            self._add_channel_stats(c)
+            
+        for c in removed:
+            self._remove_channel_stats(c)
+        

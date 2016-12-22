@@ -114,8 +114,15 @@ class AnalysisWidget(AnchorLayout):
         self.selected_laps.pop(str(source_ref), None)
         self.laps_selected = bool(self.selected_laps)
 
+    def _filter_suggested_channels(self, channels):
+        """
+        Filter list of channels to ensure they are valid
+        """
+        return [c for c in channels if len(c.strip()) > 0 ]
+    
     def _get_suggested_channels(self):
         suggested_channels = self.settings.userPrefs.get_pref_list('analysis_preferences', 'selected_analysis_channels')
+        suggested_channels = self._filter_suggested_channels(suggested_channels)
         if len(suggested_channels) == 0:
             suggested_channels = UserPrefs.DEFAULT_ANALYSIS_CHANNELS
         return suggested_channels

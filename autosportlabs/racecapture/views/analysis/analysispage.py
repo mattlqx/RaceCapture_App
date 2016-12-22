@@ -73,6 +73,10 @@ class AnalysisPageCollection(object):
         for s in self._screens:
             s.remove_lap(source_ref)
 
+    def set_selected_channels(self, channels):
+        for s in self._screens:
+            s.set_selected_channels(channels)
+
 class AnalysisPage(Screen):
     """
     Base Class for an Analysis Screen. Extend this class to create a new Page for the analysis view
@@ -162,3 +166,10 @@ class AnalysisPage(Screen):
         :type SourceRef
         '''
         pass
+    
+    def set_selected_channels(self, channels):
+        """
+        Update the list of selected channels
+        :param channels the list of selected channels
+        :type channels
+        """

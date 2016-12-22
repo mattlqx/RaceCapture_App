@@ -32,6 +32,17 @@ class SourceRef(object):
     def __str__(self):
         return "{}_{}".format(self.lap, self.session)
     
+    def __eq__(self, other):
+        """Override the default Equals behavior"""
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
+    def __ne__(self, other):
+        """Define a non-equality test"""
+        if isinstance(other, self.__class__):
+            return not self.__eq__(other)
+        return NotImplemented    
 class MarkerEvent(object):
     '''
     Describes an event to synchronize views

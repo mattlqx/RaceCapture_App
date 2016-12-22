@@ -216,6 +216,7 @@ class AnalysisView(Screen):
 
     def on_channel_selected(self, instance, value):
         channels = self.ids.channelvalues.merge_selected_channels(value)
+        self._screens.set_selected_channels(channels)
         self._set_suggested_channels(channels)
 
     def on_marker(self, instance, marker):
