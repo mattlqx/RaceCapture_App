@@ -200,13 +200,15 @@ class ChannelStats(AnalysisPage):
         channel_stats = CurrentLapChannelStats()
         channel_stats.source_ref = source_ref
         session = source_ref.session
-        min_value = self.datastore.get_channel_min(channel, [session])
+        lap = source_ref.lap
+        print('the lap {}'.format(lap))
+        min_value = self.datastore.get_channel_min(channel, laps=[lap], sessions=[session])
         channel_stats.min_value = str(min_value)
 
-        max_value = self.datastore.get_channel_max(channel, [session])
+        max_value = self.datastore.get_channel_max(channel, laps=[lap], sessions=[session])
         channel_stats.max_value = str(max_value)
 
-        avg_value = self.datastore.get_channel_average(channel, [session])
+        avg_value = self.datastore.get_channel_average(channel, laps=[lap], sessions=[session])
         channel_stats.avg_value = str(avg_value)
         return channel_stats
 

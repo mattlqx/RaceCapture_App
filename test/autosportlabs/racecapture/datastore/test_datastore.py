@@ -149,6 +149,7 @@ class DataStoreTest(unittest.TestCase):
     def test_channel_average(self):
         lat_avg = self.ds.get_channel_average("Latitude")
         lon_avg = self.ds.get_channel_average("Longitude")
+        print('{} {} '.format(lat_avg, lon_avg))
         self.assertEqual(round(lat_avg, 6), 47.256164)
         self.assertEqual(round(lon_avg, 6), -123.191297)
 

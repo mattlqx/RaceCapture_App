@@ -825,18 +825,13 @@ class DataStore(object):
             sql += ' JOIN sample ON datapoint.sample_id=sample.id WHERE sample.session_id IN({})'.format(subs)
         return sql
 
-    def get_channel_average(self, channel, sessions=None):
-        c = self._conn.cursor()
-        params = []
+    def _lap_select_clause(self, laps=None):
+        sql = ''
+        if type(laps) == list and len(laps) > 0:
+            subs = ','.join(['?'] * len(laps))
 
-        if sessions is not None:
-            params = params + sessions
-
-        base_sql = "SELECT AVG({}) from datapoint ".format(_scrub_sql_value(channel)) + self._session_select_clause(sessions)
-        c.execute(base_sql, params)
-        res = c.fetchone()
-        average = None if res == None else res[0]
-        return average
+            sql += ' CurrentLap IN({}) '.format(subs)
+        return sql
 
     def _extra_channels(self, extra_channels=None):
         sql = ''
@@ -845,29 +840,38 @@ class DataStore(object):
                 sql += ',{}'.format(_scrub_sql_value(channel))
         return sql
 
-    def _get_channel_aggregate(self, aggregate, channel, sessions=None, extra_channels=None, exclude_zero=True):
+    def _get_channel_aggregate(self, aggregate, channel, sessions=None, laps=None, extra_channels=None, exclude_zero=True):
         c = self._conn.cursor()
         params = []
 
         if sessions is not None:
             params = params + sessions
 
-        base_sql = "SELECT {}({}) {} from datapoint {} {};".format(aggregate, _scrub_sql_value(channel),
+        if laps is not None:
+            params = params + laps
+
+        base_sql = "SELECT {}({}) {} from datapoint {} {} {} {};".format(aggregate, _scrub_sql_value(channel),
                                                                  self._extra_channels(extra_channels),
                                                                  self._session_select_clause(sessions),
+                                                                 'AND' if sessions and laps else '',
+                                                                 self._lap_select_clause(laps),
                                                                  '{} {} > 0'.format('AND' if sessions else 'WHERE',
                                                                                     _scrub_sql_value(channel))
                                                                    if exclude_zero else '')
 
+        print('{} {}'.format(base_sql, params))
         c.execute(base_sql, params)
         res = c.fetchone()
         return None if res == None else res if extra_channels else res[0]
 
-    def get_channel_max(self, channel, sessions=None, extra_channels=None):
-        return self._get_channel_aggregate('MAX', channel, sessions=sessions, extra_channels=extra_channels)
+    def get_channel_average(self, channel, laps=None, sessions=None, extra_channels=None):
+        return self._get_channel_aggregate('AVG', channel, laps=laps, sessions=sessions, extra_channels=extra_channels)
 
-    def get_channel_min(self, channel, sessions=None, extra_channels=None, exclude_zero=True):
-        return self._get_channel_aggregate('MIN', channel, sessions=sessions, extra_channels=extra_channels)
+    def get_channel_max(self, channel, laps=None, sessions=None, extra_channels=None):
+        return self._get_channel_aggregate('MAX', channel, laps=laps, sessions=sessions, extra_channels=extra_channels)
+
+    def get_channel_min(self, channel, laps=None, sessions=None, extra_channels=None, exclude_zero=True):
+        return self._get_channel_aggregate('MIN', channel, laps=laps, sessions=sessions, extra_channels=extra_channels)
 
     def set_channel_smoothing(self, channel, smoothing):
         """
