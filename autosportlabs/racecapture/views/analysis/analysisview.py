@@ -277,6 +277,7 @@ class AnalysisView(Screen):
                 suggested_channels = self._get_suggested_channels()
                 main_chart.select_channels(suggested_channels)
                 self.ids.channelvalues.select_channels(suggested_channels)
+                self._screens.set_selected_channels(suggested_channels)
                 sessions_view.select_lap(new_session_id, best_lap_id, True)
                 HelpInfo.help_popup('suggested_lap', main_chart, arrow_pos='left_mid')
             else:

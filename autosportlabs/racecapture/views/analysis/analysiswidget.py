@@ -119,7 +119,7 @@ class AnalysisWidget(AnchorLayout):
         Filter list of channels to ensure they are valid
         """
         return [c for c in channels if len(c.strip()) > 0 ]
-    
+
     def _get_suggested_channels(self):
         suggested_channels = self.settings.userPrefs.get_pref_list('analysis_preferences', 'selected_analysis_channels')
         suggested_channels = self._filter_suggested_channels(suggested_channels)
@@ -257,6 +257,7 @@ class ChannelAnalysisWidget(AnalysisWidget):
             current.append(c)
         self._add_channels_all_laps(added)
         self.channels_selected = bool(self.selected_channels)
+        self.dispatch('on_channel_selected', self.selected_channels)
         return current
 
     def select_channels(self, selected_channels):
@@ -266,7 +267,6 @@ class ChannelAnalysisWidget(AnalysisWidget):
     def _channels_customized(self, instance, updated_channels):
         self._dismiss_popup()
         self.select_channels(updated_channels)
-        self.dispatch('on_channel_selected', updated_channels)
 
     def on_options(self, *args):
         self.show_customize_dialog()

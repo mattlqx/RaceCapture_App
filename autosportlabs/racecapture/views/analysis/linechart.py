@@ -375,7 +375,7 @@ class LineChart(ChannelAnalysisWidget):
                 time_data = time_data_values.values
                 sample_count = len(time_data)
                 interval = max(1, int(sample_count / self.MAX_SAMPLES_TO_DISPLAY))
-                Logger.info('LineChart: plot interval {}'.format(interval))
+                Logger.debug('LineChart: plot interval {}'.format(interval))
                 start_time = time_data[0]
                 while sample_index < sample_count:
                     sample = channel_data[sample_index]
@@ -420,7 +420,7 @@ class LineChart(ChannelAnalysisWidget):
                 channel_data = channel_data_values.values
                 sample_count = len(distance_data)
                 interval = max(1, int(sample_count / self.MAX_SAMPLES_TO_DISPLAY))
-                Logger.info('LineChart: plot interval {}'.format(interval))
+                Logger.debug('LineChart: plot interval {}'.format(interval))
                 while sample_index < sample_count:
                     sample = channel_data[sample_index]
                     distance = distance_data[sample_index]
@@ -488,7 +488,7 @@ class LineChart(ChannelAnalysisWidget):
             self.datastore.get_channel_data(source_ref, ['Interval', 'Distance'] + channels, get_results)
         except Exception as e:
             alertPopup('Could not load lap', "There was a problem loading the lap due to missing data:\r\n\r\n{}".format(e))
-            raise  e# allow CrashHandler to record the issue
+            raise  e  # allow CrashHandler to record the issue
         finally:
             ProgressSpinner.decrement_refcount()
 

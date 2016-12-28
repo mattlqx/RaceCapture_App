@@ -83,15 +83,15 @@ class CurrentLapChannelStats(BoxLayout):
             id: min
             text: root.min_value
         StatsFieldLabel:
-            id: current
-            text: root.current_value
+            id: average
+            text: root.avg_value
         StatsFieldLabel:
             id: max
             text: root.max_value
 """)
     source_ref = ObjectProperty()
     min_value = StringProperty()
-    current_value = StringProperty()
+    avg_value = StringProperty()
     max_value = StringProperty()
 
 class ChannelStatsSlice(BoxLayout):
@@ -181,11 +181,10 @@ class ChannelStats(AnalysisPage):
         self._add_lap_slices(source_ref)
 
     def _add_lap_slices(self, source_ref):
-        for channel_slice in self.ids.stats.children:
-            channel_stats = CurrentLapChannelStats()
-            channel_stats.source_ref = source_ref
+        for channel, channel_slice in zip(self._channels, self.ids.stats.children):
+            channel_stats = self._build_current_lap_channel_stats(source_ref, channel)
             channel_slice.add_widget(channel_stats)
-        
+
     def remove_lap(self, source_ref):
         channel_slices = list(kvFindClass(self.ids.stats, CurrentLapChannelStats))
         for channel_slice in channel_slices:
@@ -196,19 +195,29 @@ class ChannelStats(AnalysisPage):
         for item in lap_stats:
             if item.source_ref == source_ref:
                 item.parent.remove_widget(item)
-                            
+
+    def _build_current_lap_channel_stats(self, source_ref, channel):
+        channel_stats = CurrentLapChannelStats()
+        channel_stats.source_ref = source_ref
+        session = source_ref.session
+        min_value = self.datastore.get_channel_min(channel, [session])
+        channel_stats.min_value = str(min_value)
+
+        max_value = self.datastore.get_channel_max(channel, [session])
+        channel_stats.max_value = str(max_value)
+
+        avg_value = self.datastore.get_channel_average(channel, [session])
+        channel_stats.avg_value = str(avg_value)
+        return channel_stats
+
     def _add_channel_stats(self, channel):
         channel_slice = ChannelStatsSlice(channel=channel)
         header = LapChannelHeader()
         header.name = channel
         channel_slice.add_widget(header)
-        lap_stats = list(kvFindClass(self.ids.grid, LapStatsItem))        
+        lap_stats = list(kvFindClass(self.ids.grid, LapStatsItem))
         for item in lap_stats:
-            channel_stats = CurrentLapChannelStats()
-            channel_stats.source_ref = item.source_ref
-            channel_stats.min_value = str(0)
-            channel_stats.max_value = str(1000)
-            channel_stats.current_value = str(333)
+            channel_stats = self._build_current_lap_channel_stats(item.source_ref, channel)
             channel_slice.add_widget(channel_stats)
         self.ids.stats.add_widget(channel_slice)
         self._channels.append(channel)
@@ -216,11 +225,11 @@ class ChannelStats(AnalysisPage):
     def _remove_channel_stats(self, channel):
         for c in self.ids.stats.children:
             if c.channel == channel:
-                
+
                 self.ids.stats.remove_widget(c)
                 break
         self._channels.remove(channel)
-        
+
     def set_selected_channels(self, channels):
         current = self._channels
         removed = [c for c in current if c not in channels]
@@ -228,7 +237,6 @@ class ChannelStats(AnalysisPage):
 
         for c in added:
             self._add_channel_stats(c)
-            
+
         for c in removed:
             self._remove_channel_stats(c)
-        
