@@ -181,8 +181,8 @@ class ChannelStats(AnalysisPage):
         self._add_lap_slices(source_ref)
 
     def _add_lap_slices(self, source_ref):
-        for channel, channel_slice in zip(self._channels, self.ids.stats.children):
-            channel_stats = self._build_current_lap_channel_stats(source_ref, channel)
+        for channel_slice in self.ids.stats.children:
+            channel_stats = self._build_current_lap_channel_stats(source_ref, channel_slice.channel)
             channel_slice.add_widget(channel_stats)
 
     def remove_lap(self, source_ref):
@@ -201,7 +201,6 @@ class ChannelStats(AnalysisPage):
         channel_stats.source_ref = source_ref
         session = source_ref.session
         lap = source_ref.lap
-        print('the lap {}'.format(lap))
         min_value = self.datastore.get_channel_min(channel, laps=[lap], sessions=[session])
         channel_stats.min_value = str(min_value)
 

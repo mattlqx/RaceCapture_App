@@ -855,19 +855,18 @@ class DataStore(object):
                                                                  self._session_select_clause(sessions),
                                                                  'AND' if sessions and laps else '',
                                                                  self._lap_select_clause(laps),
-                                                                 '{} {} > 0'.format('AND' if sessions else 'WHERE',
+                                                                 '{} {} != 0'.format('AND' if sessions else 'WHERE',
                                                                                     _scrub_sql_value(channel))
                                                                    if exclude_zero else '')
 
-        print('{} {}'.format(base_sql, params))
         c.execute(base_sql, params)
         res = c.fetchone()
         return None if res == None else res if extra_channels else res[0]
 
-    def get_channel_average(self, channel, laps=None, sessions=None, extra_channels=None):
+    def get_channel_average(self, channel, laps=None, sessions=None, extra_channels=None, exclude_zero=False):
         return self._get_channel_aggregate('AVG', channel, laps=laps, sessions=sessions, extra_channels=extra_channels)
 
-    def get_channel_max(self, channel, laps=None, sessions=None, extra_channels=None):
+    def get_channel_max(self, channel, laps=None, sessions=None, extra_channels=None, exclude_zero=True):
         return self._get_channel_aggregate('MAX', channel, laps=laps, sessions=sessions, extra_channels=extra_channels)
 
     def get_channel_min(self, channel, laps=None, sessions=None, extra_channels=None, exclude_zero=True):
