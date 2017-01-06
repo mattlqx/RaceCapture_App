@@ -73,9 +73,24 @@ class LapStatsItem(BoxLayout):
 class LapChannelHeader(BoxLayout):
     Builder.load_string("""
 <LapChannelHeader>:
+    orientation: 'vertical'
     FieldLabel:
         text: root.name
         halign: 'center'
+    BoxLayout:
+        orientation: 'horizontal'
+        FieldLabel:
+            text: 'Min'
+            font_size: self.height * 0.8
+            halign: 'center'
+        FieldLabel:
+            text: 'Avg'
+            font_size: self.height * 0.8
+            halign: 'center'
+        FieldLabel:
+            text: 'Max'
+            font_size: self.height * 0.8
+            halign: 'center'            
 """)
     name = StringProperty()
 
