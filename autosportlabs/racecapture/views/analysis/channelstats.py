@@ -32,6 +32,7 @@ from utils import kvFindClass
 
 class StatsFieldLabel(FieldLabel):
     alert_color = ObjectProperty(ColorScheme.get_shadow())
+    value = NumericProperty()
     Builder.load_string("""
 <StatsFieldLabel>:
     canvas.before:
@@ -40,8 +41,10 @@ class StatsFieldLabel(FieldLabel):
         Rectangle:
             pos: self.pos
             size: self.size
-    
     """)
+
+    def on_value(self, instance, value):
+        self.text = str(value)
 
 class LapStatsItem(BoxLayout):
     Builder.load_string("""
@@ -82,39 +85,30 @@ class CurrentLapChannelStats(BoxLayout):
     BoxLayout:
         padding: (dp(3), dp(1), dp(3), dp(1))
         StatsFieldLabel:
-            id: min_field
-            alert_color: root.min_alert_color
+            id: min_value
         StatsFieldLabel:
-            id: avg_field
-            alert_color: root.avg_alert_color
+            id: avg_value
         StatsFieldLabel:
-            id: max_field
-            alert_color: root.max_alert_color
+            id: max_value
 """)
     source_ref = ObjectProperty()
-    min_value = NumericProperty()
-    avg_value = NumericProperty()
-    max_value = NumericProperty()
 
-    min_alert_color = ObjectProperty(ColorScheme.get_shadow())
-    avg_alert_color = ObjectProperty(ColorScheme.get_shadow())
-    max_alert_color = ObjectProperty(ColorScheme.get_shadow())
+    def set_stat_value(self, stat_key, value):
+        self.ids.get(stat_key).value = value
 
-    def on_min_value(self, instance, value):
-        self.ids.min_field.text = str(value)
-        
-    def on_avg_value(self, instance, value):
-        self.ids.avg_field.text = str(value)
-        
-    def on_max_value(self, instance, value):
-        self.ids.max_field.text = str(value)
-        
+    def set_stat_alert_color(self, stat_key, color):
+        self.ids.get(stat_key).alert_color = color
+
+    def get_stat_value(self, stat_key):
+        print('the stat key ' + str(stat_key))
+        return self.ids.get(stat_key).value
+
 class RangeTracker():
     min_value = None
     max_value = None
     min_widget = None
     max_widget = None
-    
+
 class ChannelStatsSlice(BoxLayout):
     Builder.load_string("""
 <ChannelStatsSlice>:
@@ -129,39 +123,34 @@ class ChannelStatsSlice(BoxLayout):
     def add_widget(self, widget, index=0):
         super(ChannelStatsSlice, self).add_widget(widget, index=index)
         self._update_alert_colors()
-    
+
     def remove_widget(self, widget):
         super(ChannelStatsSlice, self).remove_widget(widget)
         self._update_alert_colors()
-        
-    def _update_alert_colors(self):
-        min_values = {}
-        avg_values = {}
-        max_values = {}
-        stats_children = list(kvFindClass(self, CurrentLapChannelStats))        
+
+    def _highlight_values(self, stats_children, stat_key):
+        values = {}
         for c in stats_children:
-            min_values[c.min_value] = c
-            avg_values[c.avg_value] = c
-            max_values[c.max_value] = c
-            
-        sorted_min_values = sorted(min_values)
-        sorted_avg_values = sorted(avg_values)
-        sorted_max_values = sorted(max_values)
-        
-        for k in sorted_min_values:
-            min_values[k].min_alert_color = ColorScheme.get_shadow()
-        if len(sorted_min_values) > 1:
-            try:
-                min_min = sorted_min_values[0]
-                min_values[min_min].min_alert_color = [0, 0.3, 0, 1]
-            except IndexError:
-                pass
-                
-            try:
-                max_min = sorted_min_values[-1]
-                min_values[max_min].min_alert_color = [0.3, 0, 0, 1]
-            except IndexError:
-                pass
+            values[c.get_stat_value(stat_key)] = c
+
+        sorted_values = sorted(values)
+
+        for k in sorted_values:
+            values[k].set_stat_alert_color(stat_key, ColorScheme.get_shadow())
+
+        if len(sorted_values) > 1:
+            min_item = values[sorted_values[0]]
+            min_item.set_stat_alert_color(stat_key, [0, 0.3, 0, 1])
+
+            max_item = values[sorted_values[-1]]
+            max_item.set_stat_alert_color(stat_key, [0.3, 0, 0, 1])
+
+    def _update_alert_colors(self):
+        stats_children = list(kvFindClass(self, CurrentLapChannelStats))
+
+        self._highlight_values(stats_children, 'min_value')
+        self._highlight_values(stats_children, 'avg_value')
+        self._highlight_values(stats_children, 'max_value')
 
 CHANNEL_STATS_KV = """
 <ChannelStats>:
@@ -256,14 +245,16 @@ class ChannelStats(AnalysisPage):
         channel_stats.source_ref = source_ref
         session = source_ref.session
         lap = source_ref.lap
+
         min_value = self.datastore.get_channel_min(channel, laps=[lap], sessions=[session])
-        channel_stats.min_value = min_value
+        channel_stats.set_stat_value('min_value', min_value)
 
         max_value = self.datastore.get_channel_max(channel, laps=[lap], sessions=[session])
-        channel_stats.max_value = max_value
+        channel_stats.set_stat_value('max_value', max_value)
 
         avg_value = self.datastore.get_channel_average(channel, laps=[lap], sessions=[session])
-        channel_stats.avg_value = avg_value
+        channel_stats.set_stat_value('avg_value', avg_value)
+
         return channel_stats
 
     def _add_channel_stats(self, channel):
