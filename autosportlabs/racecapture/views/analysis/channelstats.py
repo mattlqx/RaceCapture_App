@@ -44,7 +44,7 @@ class StatsFieldLabel(FieldLabel):
     """)
 
     def on_value(self, instance, value):
-        self.text = str(value)
+        self.text = '{:.2f}'.format(value).rstrip('0').rstrip('.')
 
 class LapStatsItem(BoxLayout):
     Builder.load_string("""
@@ -100,7 +100,6 @@ class CurrentLapChannelStats(BoxLayout):
         self.ids.get(stat_key).alert_color = color
 
     def get_stat_value(self, stat_key):
-        print('the stat key ' + str(stat_key))
         return self.ids.get(stat_key).value
 
 class RangeTracker():
