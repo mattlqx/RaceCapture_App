@@ -25,16 +25,18 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import StringProperty, NumericProperty, ObjectProperty
 from autosportlabs.racecapture.views.analysis.analysispage import AnalysisPage
 from autosportlabs.racecapture.views.util.viewutils import format_laptime
+from autosportlabs.racecapture.theme.color import ColorScheme
 from kivy.base import Builder
 from fieldlabel import FieldLabel
 from utils import kvFindClass
 
 class StatsFieldLabel(FieldLabel):
+    alert_color = ObjectProperty(ColorScheme.get_shadow())
     Builder.load_string("""
 <StatsFieldLabel>:
     canvas.before:
         Color:
-            rgba: ColorScheme.get_shadow()
+            rgba: root.alert_color
         Rectangle:
             pos: self.pos
             size: self.size
@@ -80,20 +82,39 @@ class CurrentLapChannelStats(BoxLayout):
     BoxLayout:
         padding: (dp(3), dp(1), dp(3), dp(1))
         StatsFieldLabel:
-            id: min
-            text: root.min_value
+            id: min_field
+            alert_color: root.min_alert_color
         StatsFieldLabel:
-            id: average
-            text: root.avg_value
+            id: avg_field
+            alert_color: root.avg_alert_color
         StatsFieldLabel:
-            id: max
-            text: root.max_value
+            id: max_field
+            alert_color: root.max_alert_color
 """)
     source_ref = ObjectProperty()
-    min_value = StringProperty()
-    avg_value = StringProperty()
-    max_value = StringProperty()
+    min_value = NumericProperty()
+    avg_value = NumericProperty()
+    max_value = NumericProperty()
 
+    min_alert_color = ObjectProperty(ColorScheme.get_shadow())
+    avg_alert_color = ObjectProperty(ColorScheme.get_shadow())
+    max_alert_color = ObjectProperty(ColorScheme.get_shadow())
+
+    def on_min_value(self, instance, value):
+        self.ids.min_field.text = str(value)
+        
+    def on_avg_value(self, instance, value):
+        self.ids.avg_field.text = str(value)
+        
+    def on_max_value(self, instance, value):
+        self.ids.max_field.text = str(value)
+        
+class RangeTracker():
+    min_value = None
+    max_value = None
+    min_widget = None
+    max_widget = None
+    
 class ChannelStatsSlice(BoxLayout):
     Builder.load_string("""
 <ChannelStatsSlice>:
@@ -107,6 +128,40 @@ class ChannelStatsSlice(BoxLayout):
 
     def add_widget(self, widget, index=0):
         super(ChannelStatsSlice, self).add_widget(widget, index=index)
+        self._update_alert_colors()
+    
+    def remove_widget(self, widget):
+        super(ChannelStatsSlice, self).remove_widget(widget)
+        self._update_alert_colors()
+        
+    def _update_alert_colors(self):
+        min_values = {}
+        avg_values = {}
+        max_values = {}
+        stats_children = list(kvFindClass(self, CurrentLapChannelStats))        
+        for c in stats_children:
+            min_values[c.min_value] = c
+            avg_values[c.avg_value] = c
+            max_values[c.max_value] = c
+            
+        sorted_min_values = sorted(min_values)
+        sorted_avg_values = sorted(avg_values)
+        sorted_max_values = sorted(max_values)
+        
+        for k in sorted_min_values:
+            min_values[k].min_alert_color = ColorScheme.get_shadow()
+        if len(sorted_min_values) > 1:
+            try:
+                min_min = sorted_min_values[0]
+                min_values[min_min].min_alert_color = [0, 0.3, 0, 1]
+            except IndexError:
+                pass
+                
+            try:
+                max_min = sorted_min_values[-1]
+                min_values[max_min].min_alert_color = [0.3, 0, 0, 1]
+            except IndexError:
+                pass
 
 CHANNEL_STATS_KV = """
 <ChannelStats>:
@@ -202,13 +257,13 @@ class ChannelStats(AnalysisPage):
         session = source_ref.session
         lap = source_ref.lap
         min_value = self.datastore.get_channel_min(channel, laps=[lap], sessions=[session])
-        channel_stats.min_value = str(min_value)
+        channel_stats.min_value = min_value
 
         max_value = self.datastore.get_channel_max(channel, laps=[lap], sessions=[session])
-        channel_stats.max_value = str(max_value)
+        channel_stats.max_value = max_value
 
         avg_value = self.datastore.get_channel_average(channel, laps=[lap], sessions=[session])
-        channel_stats.avg_value = str(avg_value)
+        channel_stats.avg_value = avg_value
         return channel_stats
 
     def _add_channel_stats(self, channel):
