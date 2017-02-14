@@ -202,7 +202,7 @@ class ConfigView(Screen):
         if self.rc_config.capabilities.has_analog:
             attach_node('Analog Sensors', None, lambda: AnalogChannelsView(channels=runtime_channels))
 
-        if self.rc_config.capabilities.has_pwm:
+        if self.rc_config.capabilities.has_timer:
             attach_node('Pulse/RPM Sensors', None, lambda: PulseChannelsView(channels=runtime_channels))
 
         if self.rc_config.capabilities.has_gpio:

@@ -539,11 +539,26 @@ class TimerConfig(object):
     def __init__(self, **kwargs):
         self.channelCount = TIMER_CHANNEL_COUNT
         self.channels = []
+        self.build_channels()
 
-        for i in range (self.channelCount):
-            self.channels.append(TimerChannel())
 
-    def fromJson(self, json):
+    def build_channels(self):
+        initialized_channel_count = len(self.channels)
+        required_channel_count = self.channelCount
+
+        if initialized_channel_count == required_channel_count:
+            return
+        else:
+            # Probably got a new capabilities, make a new channels array
+            self.channels = []
+            for i in range(required_channel_count):
+                self.channels.append(TimerChannel())
+
+    def fromJson(self, json, capabilities=None):
+        if capabilities:
+            self.channelCount = capabilities.channels.timer
+            self.build_channels()
+
         for i in range (self.channelCount):
             timerChannelJson = json.get(str(i), None)
             if timerChannelJson:
@@ -551,9 +566,10 @@ class TimerConfig(object):
 
     def toJson(self):
         timerCfgJson = {}
-        for i in range(TIMER_CHANNEL_COUNT):
+        for i in range(self.channelCount):
             timerChannel = self.channels[i]
             timerCfgJson[str(i)] = timerChannel.toJson()
+
         return {'timerCfg':timerCfgJson}
 
     @property
@@ -1443,7 +1459,7 @@ class RcpConfig(object):
 
                 timerCfgJson = rcpJson.get('timerCfg', None)
                 if timerCfgJson:
-                    self.timerConfig.fromJson(timerCfgJson)
+                    self.timerConfig.fromJson(timerCfgJson, capabilities=self.capabilities)
 
                 imuCfgJson = rcpJson.get('imuCfg', None)
                 if imuCfgJson:

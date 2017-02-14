@@ -521,31 +521,31 @@ class RcpApi:
             cmdSequence.append(RcpCmd('setLapCfg', self.setLapCfg, lapCfg.toJson()))
 
         imuCfg = cfg.imuConfig
-        for i in range(IMU_CHANNEL_COUNT):
+        for i in range(imuCfg.channelCount):
             imuChannel = imuCfg.channels[i]
             if imuChannel.stale:
                 cmdSequence.append(RcpCmd('setImuCfg', self.setImuCfg, imuChannel.toJson(), i))
 
         analogCfg = cfg.analogConfig
-        for i in range(cfg.analogConfig.channelCount):
+        for i in range(analogCfg.channelCount):
             analogChannel = analogCfg.channels[i]
             if analogChannel.stale:
                 cmdSequence.append(RcpCmd('setAnalogCfg', self.setAnalogCfg, analogChannel.toJson(), i))
 
         timerCfg = cfg.timerConfig
-        for i in range(TIMER_CHANNEL_COUNT):
+        for i in range(timerCfg.channelCount):
             timerChannel = timerCfg.channels[i]
             if timerChannel.stale:
                 cmdSequence.append(RcpCmd('setTimerCfg', self.setTimerCfg, timerChannel.toJson(), i))
 
         gpioCfg = cfg.gpioConfig
-        for i in range(GPIO_CHANNEL_COUNT):
+        for i in range(gpioCfg.channelCount):
             gpioChannel = gpioCfg.channels[i]
             if gpioChannel.stale:
                 cmdSequence.append(RcpCmd('setGpioCfg', self.setGpioCfg, gpioChannel.toJson(), i))
 
         pwmCfg = cfg.pwmConfig
-        for i in range(PWM_CHANNEL_COUNT):
+        for i in range(pwmCfg.channelCount):
             pwmChannel = pwmCfg.channels[i]
             if pwmChannel.stale:
                 cmdSequence.append(RcpCmd('setPwmCfg', self.setPwmCfg, pwmChannel.toJson(), i))
