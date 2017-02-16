@@ -914,13 +914,13 @@ class CANChannel(BaseChannel):
     def from_json_dict(self, json_dict):
         if json_dict:
             super(CANChannel, self).fromJson(json_dict)
-            self.mapping.from_json_dict(json_dict.get('map'))
+            self.mapping.from_json_dict(json_dict)
         return self
 
     def to_json_dict(self):
         json_dict = {}
         super(CANChannel, self).appendJson(json_dict)
-        json_dict['map'] = self.mapping.to_json_dict()
+        json_dict.update(self.mapping.to_json_dict())
         return json_dict
 
 class CANChannels(object):
