@@ -88,7 +88,7 @@ CAN_CHANNEL_CONFIG_VIEW_KV = """
                         LargeMappedSpinner:
                             id: can_bus_channel
                             size_hint_x: 0.15
-                            on_text: root.on_can_bus_channel(*args)
+                            on_text: root.on_can_bus(*args)
 
                     SectionBoxLayout:
                         size_hint_x: 0.45
@@ -141,7 +141,7 @@ CAN_CHANNEL_CONFIG_VIEW_KV = """
                         LargeMappedSpinner:
                             id: offset
                             size_hint_x: 0.15
-                            on_text: root.on_bit_offset(*args)
+                            on_text: root.on_mapping_offset(*args)
 
                     SectionBoxLayout:
                         size_hint_x: 0.45             
@@ -152,7 +152,7 @@ CAN_CHANNEL_CONFIG_VIEW_KV = """
                         LargeMappedSpinner:
                             id: length
                             size_hint_x: 0.4
-                            on_text: root.on_bit_length(*args)
+                            on_text: root.on_mapping_length(*args)
                     SectionBoxLayout:
                         size_hint_x: 0.45                  
                         BoxLayout:
@@ -263,9 +263,9 @@ class CANChannelConfigView(BoxLayout):
         if self._loaded:
             self.can_channel_cfg.sampleRate = instance.getValueFromKey(value)
 
-    def on_can_bus_channel(self, instance, value):
+    def on_can_bus(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.mapping.can_channel = instance.getValueFromKey(value)
+            self.can_channel_cfg.mapping.can_bus = instance.getValueFromKey(value)
 
     def on_can_id(self, instance, value):
         if self._loaded:
@@ -273,15 +273,15 @@ class CANChannelConfigView(BoxLayout):
 
     def on_mask(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.mapping.mask = int(value)
+            self.can_channel_cfg.mapping.can_mask = int(value)
 
-    def on_bit_offset(self, instance, value):
+    def on_mapping_offset(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.mapping.bit_offset = instance.getValueFromKey(value)
+            self.can_channel_cfg.mapping.offset = instance.getValueFromKey(value)
 
-    def on_bit_length(self, instance, value):
+    def on_mapping_length(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.mapping.bit_length = instance.getValueFromKey(value)
+            self.can_channel_cfg.mapping.length = instance.getValueFromKey(value)
 
     def on_endian(self, instance, value):
         if self._loaded:
@@ -317,7 +317,7 @@ class CANChannelConfigView(BoxLayout):
     def load_values(self):
 
         # CAN Channel
-        self.ids.can_bus_channel.setFromValue(self.can_channel_cfg.mapping.can_channel)
+        self.ids.can_bus_channel.setFromValue(self.can_channel_cfg.mapping.can_bus)
 
         # CAN ID
         self.ids.can_id.text = str(self.can_channel_cfg.mapping.can_id)
@@ -326,10 +326,10 @@ class CANChannelConfigView(BoxLayout):
         self.ids.mask.text = str(self.can_channel_cfg.mapping.can_mask)
 
         # CAN offset
-        self.ids.offset.setFromValue(self.can_channel_cfg.mapping.bit_offset)
+        self.ids.offset.setFromValue(self.can_channel_cfg.mapping.offset)
 
         # CAN length
-        self.ids.length.setFromValue(self.can_channel_cfg.mapping.bit_length)
+        self.ids.length.setFromValue(self.can_channel_cfg.mapping.length)
 
         # Bit Mode
         self.ids.bitmode.active = self.can_channel_cfg.mapping.bit_mode
@@ -471,7 +471,7 @@ class CANChannelView(BoxLayout):
         can_mapping = self.can_channel_cfg.mapping
         self.ids.can_id.text = '{}'.format(can_mapping.can_id)
 
-        self.ids.can_offset_len.text = u'{}({})'.format(can_mapping.bit_offset, can_mapping.bit_length)
+        self.ids.can_offset_len.text = u'{}({})'.format(can_mapping.offset, can_mapping.length)
 
         sign = '-' if can_mapping.adder < 0 else '+'
         self.ids.can_formula.text = u'\u00D7 {} \u00F7 {} {} {}'.format(can_mapping.multiplier, can_mapping.divider, sign, abs(can_mapping.adder))
