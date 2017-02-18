@@ -234,7 +234,7 @@ class RcpApi:
                     msgJson = json.loads(msg, strict=False)
 
                     if 's' in msgJson:
-                        Logger.trace('RCPAPI: Rx: ' + str(msg))
+                        Logger.debug('RCPAPI: Rx: ' + str(msg))
                     else:
                         Logger.debug('RCPAPI: Rx: ' + str(msg))
                     Clock.schedule_once(lambda dt: self.on_rx(True))
