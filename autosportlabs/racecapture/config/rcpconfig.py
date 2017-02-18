@@ -963,16 +963,16 @@ class PidConfig(BaseChannel):
             super(PidConfig, self).fromJson(json_dict)
             self.pid = json_dict.get('pid', self.pid)
             self.mode = json_dict.get('mode', self.mode)
-            self.passive = json_dict.get('passive', self.passive)
-            self.mapping.from_json_dict(json_dict.get('map'))
+            self.passive = bool(json_dict.get('pass', self.passive))
+            self.mapping.from_json_dict(json_dict)
 
     def toJson(self):
         json_dict = {}
         super(PidConfig, self).appendJson(json_dict)
         json_dict['pid'] = self.pid
         json_dict['mode'] = self.mode
-        json_dict['passive'] = 1 if self.passive else 0
-        json_dict['map'] = self.mapping.to_json_dict()
+        json_dict['pass'] = self.passive
+        json_dict.update(self.mapping.to_json_dict())
         return json_dict
 
 OBD2_CONFIG_MAX_PIDS = 20

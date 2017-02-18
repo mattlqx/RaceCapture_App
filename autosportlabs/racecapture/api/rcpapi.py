@@ -658,19 +658,21 @@ class RcpApi:
         queue writing of all OBD2 channels
         """
         channels = obd2_channels_json_dict['obd2Cfg']['pids']
+        enabled = obd2_channels_json_dict['obd2Cfg']['en']
         if channels:
             index = 0
             for c in channels:
-                cmd_sequence.append(RcpCmd('setObd2Cfg', self.set_obd2_channel_config, c, index))
+                cmd_sequence.append(RcpCmd('setObd2Cfg', self.set_obd2_channel_config, c, index, enabled))
                 index += 1
 
-    def set_obd2_channel_config(self, obd2_channel, index):
+    def set_obd2_channel_config(self, obd2_channel, index, enabled):
         """
         Write a single OBD2 channel configuration by index
         """
         return self.sendCommand({'setObd2Cfg':
-                                 {'index':index,
-                                  'pid': obd2_channel
+                                 {'en': enabled,
+                                     'index':index,
+                                  'pids': [obd2_channel]
                                   }
                                  })
 
@@ -679,19 +681,21 @@ class RcpApi:
         queue writing of all can channels
         """
         channels = can_channels_json_dict['canChanCfg']['chans']
+        enabled = can_channels_json_dict['canChanCfg']['en']
         if channels:
             index = 0
             for c in channels:
-                cmd_sequence.append(RcpCmd('setCanChanCfg', self.set_can_channel_config, c, index))
+                cmd_sequence.append(RcpCmd('setCanChanCfg', self.set_can_channel_config, c, index, enabled))
                 index += 1
 
-    def set_can_channel_config(self, can_channel, index):
+    def set_can_channel_config(self, can_channel, index, enabled):
         """
         Write a single CAN channel configuration by index
         """
         return self.sendCommand({'setCanChanCfg':
-                                 {'index':index,
-                                  'chan': can_channel
+                                 {'en': enabled,
+                                  'index':index,
+                                  'chans': [can_channel]
                                   }
                                  })
 
