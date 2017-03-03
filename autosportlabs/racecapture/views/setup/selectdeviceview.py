@@ -62,6 +62,20 @@ SELECT_DEVICE_VIEW_KV = """
                     size_hint: (0.35, 0.5)
                     text: 'RaceCapture/Pro'
                     on_release: root.select_device('RCP_MK2')
+        AnchorLayout:
+            size_hint_y: 0.3        
+            Image:
+                allow_stretch: True
+                source: 'resource/setup/device_SIM.png'             
+            AnchorLayout:
+                anchor_x: 'right'
+                padding: (dp(10), dp(10))
+                BetterToggleButton:
+                    id: racecapturesimbridge
+                    group: 'device'
+                    size_hint: (0.35, 0.5)
+                    text: 'RaceCapture/Sim Bridge'
+                    on_release: root.select_device('RCP_SIM')
         BoxLayout:
             size_hint_y: 0.2
 """
