@@ -481,8 +481,7 @@ class RaceCaptureApp(App):
             self._telemetry_connection.data_connected = True
 
             if self.rc_config.loaded == False:
-                pass
-                #Clock.schedule_once(lambda dt: self.on_read_config(self))
+                Clock.schedule_once(lambda dt: self.on_read_config(self))
             else:
                 self.showActivity('Connected')
         else:
