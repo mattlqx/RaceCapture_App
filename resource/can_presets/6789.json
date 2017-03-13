@@ -12,19 +12,17 @@
 		"max": 10000,
 		"prec": 0,
 		"sr": 10,
-		"map": {
-			"type": 0,
-			"bm": 0,
-			"chan": 0,
-			"id": 1512,
-			"offset": 2,
-			"len": 2,
-			"mult": 1,
-			"div": 1,
-			"add": 0,
-			"endian": 0,
-			"filt_id": 0
-		}
+		"type": 0,
+		"bm": 0,
+		"chan": 0,
+		"id": 1512,
+		"offset": 2,
+		"len": 2,
+		"mult": 1,
+		"div": 1,
+		"add": 0,
+		"endian": 0,
+		"filt_id": 0
 	}, {
 		"nm": "TPS",
 		"ut": "%",
@@ -32,19 +30,17 @@
 		"max": 100,
 		"prec": 0,
 		"sr": 10,
-		"map": {
-			"type": 0,
-			"bm": 1,
-			"chan": 1,
-			"id": 1512,
-			"offset": 6,
-			"len": 2,
-			"mult": 0.1,
-			"div": 1,
-			"add": 0,
-			"endian": 0,
-			"filt_id": 0
-		}
+		"type": 0,
+		"bm": 1,
+		"chan": 1,
+		"id": 1512,
+		"offset": 6,
+		"len": 2,
+		"mult": 0.1,
+		"div": 1,
+		"add": 0,
+		"endian": 0,
+		"filt_id": 0
 	}, {
 		"nm": "MAP",
 		"ut": "kPa",
@@ -52,19 +48,17 @@
 		"max": 105,
 		"prec": 0,
 		"sr": 10,
-		"map": {
-			"type": 0,
-			"bm": 1,
-			"chan": 1,
-			"id": 1512,
-			"offset": 0,
-			"len": 2,
-			"mult": 0.1,
-			"div": 1,
-			"add": 0,
-			"endian": 0,
-			"filt_id": 0
-		}
+		"type": 0,
+		"bm": 1,
+		"chan": 1,
+		"id": 1512,
+		"offset": 0,
+		"len": 2,
+		"mult": 0.1,
+		"div": 1,
+		"add": 0,
+		"endian": 0,
+		"filt_id": 0
 	}, {
 		"nm": "Coolant",
 		"ut": "F",
@@ -72,19 +66,17 @@
 		"max": 100,
 		"prec": 0,
 		"sr": 10,
-		"map": {
-			"type": 0,
-			"bm": 1,
-			"chan": 1,
-			"id": 1512,
-			"offset": 4,
-			"len": 2,
-			"mult": 0.1,
-			"div": 1,
-			"add": 0,
-			"endian": 0,
-			"filt_id": 0
-		}
+		"type": 0,
+		"bm": 1,
+		"chan": 1,
+		"id": 1512,
+		"offset": 4,
+		"len": 2,
+		"mult": 0.1,
+		"div": 1,
+		"add": 0,
+		"endian": 0,
+		"filt_id": 0
 	}, {
 		"nm": "AFR",
 		"ut": "",
@@ -92,18 +84,16 @@
 		"max": 20,
 		"prec": 0,
 		"sr": 10,
-		"map": {
-			"type": 0,
-			"bm": 1,
-			"chan": 1,
-			"id": 1514,
-			"offset": 1,
-			"len": 1,
-			"mult": 0.1,
-			"div": 1,
-			"add": 0,
-			"endian": 0,
-			"filt_id": 0
-		}
+		"type": 0,
+		"bm": 1,
+		"chan": 1,
+		"id": 1514,
+		"offset": 1,
+		"len": 1,
+		"mult": 0.1,
+		"div": 1,
+		"add": 0,
+		"endian": 0,
+		"filt_id": 0
 	}]
 }

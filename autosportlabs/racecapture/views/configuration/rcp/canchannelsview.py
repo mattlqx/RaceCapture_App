@@ -394,16 +394,12 @@ CAN_CHANNEL_VIEW_KV = """
     size_hint_y: None
     height: dp(30)
     orientation: 'horizontal'
-    ChannelNameSelectorView:
-        id: chan_id
+    FieldLabel:
+        id: name
         size_hint_x: 0.18
-        compact: True
-    BoxLayout:
+    FieldLabel:
+        id: sample_rate
         size_hint_x: 0.18
-        SampleRateSpinner:
-            id: sr
-            size_hint_x: 0.9
-            on_text: root.on_sample_rate(*args)
     FieldLabel:
         id: can_id
         size_hint_x: 0.14
@@ -441,12 +437,6 @@ class CANChannelView(BoxLayout):
     def on_modified(self):
         pass
 
-    def on_sample_rate(self, instance, value):
-        if not self._loaded:
-            return
-        self.can_channel_cfg.sampleRate = instance.getValueFromKey(value)
-        self.dispatch('on_modified')
-
     def on_delete_channel(self, channel_index):
         pass
 
@@ -460,14 +450,10 @@ class CANChannelView(BoxLayout):
         self.dispatch('on_customize_channel', self.channel_index)
 
     def set_channel(self):
-        channel_editor = self.ids.chan_id
-        channel_editor.on_channels_updated(self.channels)
-        channel_editor.setValue(self.can_channel_cfg)
-
-        sample_rate_spinner = self.ids.sr
-        sample_rate_spinner.set_max_rate(self.max_sample_rate)
-        sample_rate_spinner.setFromValue(self.can_channel_cfg.sampleRate)
-
+        self.ids.name.text = self.can_channel_cfg.name
+        
+        self.ids.sample_rate.text = '{} Hz'.format(self.can_channel_cfg.sampleRate)
+        
         can_mapping = self.can_channel_cfg.mapping
         self.ids.can_id.text = '{}'.format(can_mapping.can_id)
 
@@ -521,11 +507,11 @@ CAN_CHANNELS_VIEW_KV = """
             size_hint_y: 0.1
             FieldLabel:
                 text: 'Channel'
-                halign: 'center'
+                halign: 'left'
                 size_hint_x: 0.18
             FieldLabel:
                 text: 'Sample Rate'
-                halign: 'center'
+                halign: 'left'
                 size_hint_x: 0.18
                 
             FieldLabel:
