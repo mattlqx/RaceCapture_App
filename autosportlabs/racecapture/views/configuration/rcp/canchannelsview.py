@@ -8,7 +8,10 @@ from kivy.uix.switch import Switch
 from kivy.uix.spinner import SpinnerOption
 from kivy.uix.popup import Popup
 from kivy.uix.image import Image
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.textinput import TextInput
+from kivy.properties import StringProperty, NumericProperty
+from garden_androidtabs import AndroidTabsBase, AndroidTabs
 from iconbutton import IconButton
 from settingsview import SettingsSwitch
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
@@ -54,210 +57,86 @@ class SymbolFieldLabel(FieldLabel):
     font_name: 'resource/fonts/Roboto-Bold.ttf'    
 """)
 
+class CANChannelMappingTab(AnchorLayout, AndroidTabsBase):
+    """
+    Wrapper class to allow customization and styling
+    """
+    Builder.load_string("""
+<CANChannelMappingTab>:
+    canvas.before:
+        Color:
+            rgba: ColorScheme.get_dark_background()
+        Rectangle:
+            pos: self.pos
+            size: self.size
 
-CAN_CHANNEL_CONFIG_VIEW_KV = """
-<CANChannelConfigView>:
-    spacing: dp(10)
+    tab_font_name: "resource/fonts/ASL_light.ttf"
+    tab_font_size: sp(20)    
+""")
+    tab_font_name = StringProperty()
+    tab_font_size = NumericProperty()
+
+    def on_tab_font_name(self, instance, value):
+        self.tab_label.font_name = value
+
+    def on_tab_font_size(self, instance, value):
+        self.tab_label.font_size = value
+
+class CANIDMappingTab(CANChannelMappingTab):
+    Builder.load_string("""
+<CANIDMappingTab>:
+    text: 'CAN ID Match'
     BoxLayout:
+        size_hint_y: 0.9
+        spacing: dp(10)
         orientation: 'vertical'
+        
         BoxLayout:
-            size_hint_y: 0.9
-            spacing: dp(10)
-            orientation: 'vertical'
-            
-            BoxLayout:
-                orientation: 'horizontal'
-                spacing: dp(5)
-                HeaderSectionBoxLayout:
-                    size_hint_x: 0.15
-                    FieldLabel:
-                        halign: 'right'
-                        text: 'CAN'
-
-                BoxLayout:
-                    spacing: dp(5)
-                    size_hint_x: 0.85
-                    orientation: 'horizontal'
-                    
-                    SectionBoxLayout:
-                        size_hint_x: 0.4
-                        FieldLabel:
-                            text: 'Channel'
-                            size_hint_x: 0.15
-                            halign: 'right'
-                        LargeMappedSpinner:
-                            id: can_bus_channel
-                            size_hint_x: 0.15
-                            on_text: root.on_can_bus(*args)
-
-                    SectionBoxLayout:
-                        size_hint_x: 0.45
-                        FieldLabel:
-                            size_hint_x: 0.3
-                            text: 'ID'
-                            halign: 'right'
-
-                        LargeIntegerValueField:
-                            id: can_id
-                            size_hint_x: 0.7
-                            on_text: root.on_can_id(*args)
-
-                    SectionBoxLayout:
-                        size_hint_x: 0.45
-                        FieldLabel:
-                            size_hint_x: 0.3
-                            text: 'Mask'
-                            halign: 'right'
-
-                        LargeIntegerValueField:
-                            id: mask
-                            size_hint_x: 0.7
-                            on_text: root.on_mask(*args)
-    
-            HLineSeparator:
-                        
-            BoxLayout:
-                orientation: 'horizontal'
-                spacing: dp(5)
-                HeaderSectionBoxLayout:
-                    size_hint_x: 0.15
-                    orientation: 'horizontal'
-                    FieldLabel:
-                        halign: 'right'
-                        text: 'Mapping'
-                        size_hint_x: 0.1
-
-                BoxLayout:
-                    size_hint_x: 0.85
-                    orientation: 'horizontal'
-                    spacing: dp(5)
-                    
-                    SectionBoxLayout:
-                        size_hint_x: 0.4
-                        FieldLabel:
-                            text: 'Offset'
-                            size_hint_x: 0.15
-                            halign: 'right'
-                        LargeMappedSpinner:
-                            id: offset
-                            size_hint_x: 0.15
-                            on_text: root.on_mapping_offset(*args)
-
-                    SectionBoxLayout:
-                        size_hint_x: 0.45             
-                        FieldLabel:
-                            halign: 'right'
-                            text: 'Length'
-                            size_hint_x: 0.6
-                        LargeMappedSpinner:
-                            id: length
-                            size_hint_x: 0.4
-                            on_text: root.on_mapping_length(*args)
-                    SectionBoxLayout:
-                        size_hint_x: 0.45                  
-                        BoxLayout:
-                            orientation: 'vertical'
-                            size_hint_x: 0.3
-                            spacing: dp(5)
-                            BoxLayout:
-                                spacing: dp(5)
-                                orientation: 'horizontal'
-                                FieldLabel:
-                                    text: 'Bit Mode'
-                                    halign: 'right'
-                                CheckBox:
-                                    id: bitmode
-                                    on_active: root.on_bit_mode(*args)
-                            BoxLayout:
-                                spacing: dp(5)
-                                orientation: 'horizontal'
-                                FieldLabel:
-                                    text: 'Endian'
-                                    halign: 'right'
-                                MappedSpinner:
-                                    id: endian
-                                    on_text: root.on_endian(*args)
-
-            HLineSeparator
-                    
-            BoxLayout:
-                orientation: 'horizontal'
-                spacing: dp(5)
-
-                HeaderSectionBoxLayout:
-                    size_hint_x: 0.15
-                    spacing: dp(5)
-                    orientation: 'horizontal'
-                    FieldLabel:
-                        halign: 'right'
-                        text: 'Formula'
-                        size_hint_x: 0.1
-                
+            orientation: 'horizontal'
+            AnchorLayout:
+                size_hint_x: 0.35
+                spacing: dp(20)
+                padding: (dp(20), dp(20))
                 SectionBoxLayout:
-                    orientation: 'horizontal'
-                    size_hint_x: 0.85
-                    spacing: dp(5)
+                    size_hint_y: 0.6
                     FieldLabel:
-                        size_hint_x: 0.1
+                        text: 'CAN bus'
                         halign: 'right'
-                        text: 'Raw'
-                    SymbolFieldLabel:
-                        size_hint_x: 0.1
-                        halign: 'center'
-                        text: u' \u00D7 '
-                    LargeFloatValueField:
-                        id: multiplier
-                        size_hint_x: 0.2
-                        on_text: root.on_multiplier(*args)
-                    SymbolFieldLabel:
-                        halign: 'center'
-                        text: u' \u00F7 '
-                        size_hint_x: 0.1
-                    LargeFloatValueField:
-                        id: divider
-                        size_hint_x: 0.2
-                        on_text: root.on_divider(*args)
-                    SymbolFieldLabel:
-                        text: ' + '
-                        halign: 'center'
-                        size_hint_x: 0.1
-                    LargeFloatValueField:
-                        id: adder
-                        size_hint_x: 0.2
-                        on_text: root.on_adder(*args)
-                
-#            BoxLayout:
-#                orientation: 'horizontal'
-#                spacing: dp(5)
-#                FieldLabel:
-#                    halign: 'right'
-#                    size_hint_x: 0.3
-#                    text: 'Conversion Filter'
-#                MappedSpinner:
-#                    id: filters     
-#                    size_hint_x: 0.7
-#                    on_text: root.on_filter(*args)
-"""
+                    LargeMappedSpinner:
+                        id: can_bus_channel
+                        on_text: root.on_can_bus(*args)
 
-class CANChannelConfigView(BoxLayout):
+            SectionBoxLayout:
+                spacing: dp(20)
+                padding: (dp(20), dp(20))
+                size_hint_x: 0.65
+                orientation: 'vertical'
+                SectionBoxLayout:
+                    FieldLabel:
+                        size_hint_x: 0.3
+                        text: 'CAN ID' 
+                        halign: 'right'
 
-    Builder.load_string(CAN_CHANNEL_CONFIG_VIEW_KV)
+                    LargeIntegerValueField:
+                        id: can_id
+                        size_hint_x: 0.7
+                        on_text: root.on_can_id(*args)
+
+                SectionBoxLayout:
+                    FieldLabel:
+                        size_hint_x: 0.3
+                        text: 'Mask'
+                        halign: 'right'
+
+                    LargeIntegerValueField:
+                        id: mask
+                        size_hint_x: 0.7
+                        on_text: root.on_mask(*args)
+""")
 
     def __init__(self, **kwargs):
-        super(CANChannelConfigView, self).__init__(**kwargs)
+        super(CANIDMappingTab, self).__init__(**kwargs)
         self._loaded = False
-
-    def init_config(self, index, can_channel_cfg, can_filters):
-        self.channel_index = index
-        self.can_channel_cfg = can_channel_cfg
-        self.can_filters = can_filters
-        self.init_view()
-        self._loaded = True
-
-    def on_bit_mode(self, instance, value):
-        if self._loaded:
-            self.can_channel_cfg.mapping.bit_mode = self.ids.bitmode.active
-            self.update_mapping_spinners()
 
     def on_sample_rate(self, instance, value):
         if self._loaded:
@@ -275,6 +154,115 @@ class CANChannelConfigView(BoxLayout):
         if self._loaded:
             self.can_channel_cfg.mapping.can_mask = int(value)
 
+    def init_view(self, can_channel_cfg):
+        self.can_channel_cfg = can_channel_cfg
+        self.ids.can_bus_channel.setValueMap({0: '1', 1: '2'}, '1')
+
+        # CAN Channel
+        self.ids.can_bus_channel.setFromValue(self.can_channel_cfg.mapping.can_bus)
+
+        # CAN ID
+        self.ids.can_id.text = str(self.can_channel_cfg.mapping.can_id)
+
+        # CAN mask
+        self.ids.mask.text = str(self.can_channel_cfg.mapping.can_mask)
+
+        self._loaded = True
+
+class CANValueMappingTab(CANChannelMappingTab):
+    Builder.load_string("""
+<CANValueMappingTab>:
+    text: 'Raw Value Mapping'
+    
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: dp(20)
+        padding: (dp(20), dp(20))
+        BoxLayout:
+            orientation: 'horizontal'
+            spacing: dp(5)
+            
+            SectionBoxLayout:
+                size_hint_x: 0.33
+                FieldLabel:
+                    text: 'Offset'
+                    halign: 'right'
+                LargeMappedSpinner:
+                    id: offset
+                    on_text: root.on_mapping_offset(*args)
+            SectionBoxLayout:
+                size_hint_x: 0.33             
+                FieldLabel:
+                    halign: 'right'
+                    text: 'Length'
+                LargeMappedSpinner:
+                    id: length
+                    on_text: root.on_mapping_length(*args)
+
+            SectionBoxLayout:
+                size_hint_x: 0.33                  
+                FieldLabel:
+                    text: 'Bit Mode'
+                    halign: 'right'
+                CheckBox:
+                    id: bitmode
+                    on_active: root.on_bit_mode(*args)
+        AnchorLayout:
+            anchor_x: 'right'
+            SectionBoxLayout:
+                size_hint_x: 0.33
+                FieldLabel:
+                    text: 'Endian'
+                    halign: 'right'
+                MappedSpinner:
+                    id: endian
+                    on_text: root.on_endian(*args)
+""")
+
+    def __init__(self, **kwargs):
+        super(CANValueMappingTab, self).__init__(**kwargs)
+        self._loaded = False
+
+    def init_view(self, can_channel_cfg):
+        self.can_channel_cfg = can_channel_cfg
+        self.ids.endian.setValueMap({0: 'Big (MSB)', 1: 'Little (LSB)'}, 'Big (MSB)')
+        self.update_mapping_spinners()
+
+        # CAN offset
+        self.ids.offset.setFromValue(self.can_channel_cfg.mapping.offset)
+
+        # CAN length
+        self.ids.length.setFromValue(self.can_channel_cfg.mapping.length)
+
+        # Bit Mode
+        self.ids.bitmode.active = self.can_channel_cfg.mapping.bit_mode
+
+        # Endian
+        self.ids.endian.setFromValue(self.can_channel_cfg.mapping.endian)
+
+        self._loaded = True
+
+    def update_mapping_spinners(self):
+        bit_mode = self.can_channel_cfg.mapping.bit_mode
+        self.set_mapping_choices(bit_mode)
+
+    def set_mapping_choices(self, bit_mode):
+        offset_choices = 63 if bit_mode else 7
+        length_choices = 32 if bit_mode else 4
+        self.ids.offset.setValueMap(self.create_bit_choices(0, offset_choices), '0')
+        self.ids.length.setValueMap(self.create_bit_choices(1, length_choices), '1')
+
+    def create_bit_choices(self, starting, max_choices):
+        bit_choices = {}
+        for i in range(starting, max_choices + 1):
+            bit_choices[i] = str(i)
+        return bit_choices
+
+    def on_bit_mode(self, instance, value):
+        if self._loaded:
+            self.can_channel_cfg.mapping.bit_mode = self.ids.bitmode.active
+            self.update_mapping_spinners()
+
     def on_mapping_offset(self, instance, value):
         if self._loaded:
             self.can_channel_cfg.mapping.offset = instance.getValueFromKey(value)
@@ -286,6 +274,90 @@ class CANChannelConfigView(BoxLayout):
     def on_endian(self, instance, value):
         if self._loaded:
             self.can_channel_cfg.mapping.endian = instance.getValueFromKey(value)
+
+class CANFormulaMappingTab(CANChannelMappingTab):
+    Builder.load_string("""
+<CANFormulaMappingTab>:
+    text: 'Conversion Formula'
+
+    AnchorLayout:
+        size_hint_y: 0.5
+        SectionBoxLayout:
+            orientation: 'horizontal'
+            spacing: dp(5)
+            FieldLabel:
+                size_hint_x: 0.1
+                halign: 'right'
+                text: 'Raw'
+            SymbolFieldLabel:
+                size_hint_x: 0.1
+                halign: 'center'
+                text: u' \u00D7 '
+            AnchorLayout:
+                size_hint_x: 0.2
+                LargeFloatValueField:
+                    id: multiplier
+                    size_hint_y: 0.7
+                    on_text: root.on_multiplier(*args)
+            SymbolFieldLabel:
+                halign: 'center'
+                text: u' \u00F7 '
+                size_hint_x: 0.1
+            AnchorLayout:
+                size_hint_x: 0.2
+                LargeFloatValueField:
+                    id: divider
+                    size_hint_y: 0.7
+                    on_text: root.on_divider(*args)
+            SymbolFieldLabel:
+                text: ' + '
+                halign: 'center'
+                size_hint_x: 0.1
+            AnchorLayout:
+                size_hint_x: 0.2
+                LargeFloatValueField:
+                    id: adder
+                    size_hint_y: 0.7
+                    on_text: root.on_adder(*args)
+        
+    #            BoxLayout:
+    #                orientation: 'horizontal'
+    #                spacing: dp(5)
+    #                FieldLabel:
+    #                    halign: 'right'
+    #                    size_hint_x: 0.3
+    #                    text: 'Conversion Filter'
+    #                MappedSpinner:
+    #                    id: filters     
+    #                    size_hint_x: 0.7
+    #                    on_text: root.on_filter(*args)
+""")
+
+    def __init__(self, **kwargs):
+        super(CANFormulaMappingTab, self).__init__(**kwargs)
+        self._loaded = False
+
+    def init_view(self, can_channel_cfg):
+        self.can_channel_cfg = can_channel_cfg
+
+        # Disable for the initial release
+        # self.ids.filters.setValueMap(self.can_filters.filters, self.can_filters.default_value)
+
+        # Multiplier
+        self.ids.multiplier.text = str(self.can_channel_cfg.mapping.multiplier)
+
+        # Divider
+        self.ids.divider.text = str(self.can_channel_cfg.mapping.divider)
+
+        # Adder
+        self.ids.adder.text = str(self.can_channel_cfg.mapping.adder)
+
+        # Conversion Filter ID
+        # Disable for initial release
+        # self.ids.filters.setFromValue(self.can_channel_cfg.mapping.conversion_filter_id)
+
+        self._loaded = True
+
 
     def on_multiplier(self, instance, value):
         if self._loaded:
@@ -303,68 +375,48 @@ class CANChannelConfigView(BoxLayout):
         if self._loaded:
             self.can_channel_cfg.mapping.conversion_filter_id = instance.getValueFromKey(value)
 
+
+
+class CANChannelConfigView(BoxLayout):
+
+    Builder.load_string("""
+<CANChannelConfigView>:
+    canvas.before:
+        Color:
+            rgba: ColorScheme.get_accent()
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    AndroidTabs:
+        tab_indicator_color: ColorScheme.get_light_primary()
+        id: tabs
+""")
+
+    def __init__(self, **kwargs):
+        super(CANChannelConfigView, self).__init__(**kwargs)
+
+        can_id_tab = CANIDMappingTab()
+        self.ids.tabs.add_widget(can_id_tab)
+        self.can_id_tab = can_id_tab
+
+        can_value_map_tab = CANValueMappingTab()
+        self.ids.tabs.add_widget(can_value_map_tab)
+        self.can_value_map_tab = can_value_map_tab
+
+        can_formula_tab = CANFormulaMappingTab()
+        self.ids.tabs.add_widget(can_formula_tab)
+        self.can_formula_tab = can_formula_tab
+
+    def init_config(self, index, can_channel_cfg, can_filters):
+        self.channel_index = index
+        self.can_channel_cfg = can_channel_cfg
+        self.can_filters = can_filters
+        self.init_view()
+
     def init_view(self):
-        self.ids.can_bus_channel.setValueMap({0: '1', 1: '2'}, '1')
-
-        self.ids.endian.setValueMap({0: 'Big (MSB)', 1: 'Little (LSB)'}, 'Big (MSB)')
-
-        # Disable for the initial release
-        # self.ids.filters.setValueMap(self.can_filters.filters, self.can_filters.default_value)
-
-        self.update_mapping_spinners()
-        self.load_values()
-
-    def load_values(self):
-
-        # CAN Channel
-        self.ids.can_bus_channel.setFromValue(self.can_channel_cfg.mapping.can_bus)
-
-        # CAN ID
-        self.ids.can_id.text = str(self.can_channel_cfg.mapping.can_id)
-
-        # CAN mask
-        self.ids.mask.text = str(self.can_channel_cfg.mapping.can_mask)
-
-        # CAN offset
-        self.ids.offset.setFromValue(self.can_channel_cfg.mapping.offset)
-
-        # CAN length
-        self.ids.length.setFromValue(self.can_channel_cfg.mapping.length)
-
-        # Bit Mode
-        self.ids.bitmode.active = self.can_channel_cfg.mapping.bit_mode
-
-        # Endian
-        self.ids.endian.setFromValue(self.can_channel_cfg.mapping.endian)
-
-        # Multiplier
-        self.ids.multiplier.text = str(self.can_channel_cfg.mapping.multiplier)
-
-        # Divider
-        self.ids.divider.text = str(self.can_channel_cfg.mapping.divider)
-
-        # Adder
-        self.ids.adder.text = str(self.can_channel_cfg.mapping.adder)
-
-        # Conversion Filter ID
-        # Disable for initial release
-        # self.ids.filters.setFromValue(self.can_channel_cfg.mapping.conversion_filter_id)
-
-    def update_mapping_spinners(self):
-        bit_mode = self.can_channel_cfg.mapping.bit_mode
-        self.set_mapping_choices(bit_mode)
-
-    def set_mapping_choices(self, bit_mode):
-        offset_choices = 63 if bit_mode else 7
-        length_choices = 32 if bit_mode else 4
-        self.ids.offset.setValueMap(self.create_bit_choices(0, offset_choices), '0')
-        self.ids.length.setValueMap(self.create_bit_choices(1, length_choices), '1')
-
-    def create_bit_choices(self, starting, max_choices):
-        bit_choices = {}
-        for i in range(starting, max_choices + 1):
-            bit_choices[i] = str(i)
-        return bit_choices
+        self.can_id_tab.init_view(self.can_channel_cfg)
+        self.can_value_map_tab.init_view(self.can_channel_cfg)
+        self.can_formula_tab.init_view(self.can_channel_cfg)
 
 class CANFilters(object):
     filters = None
@@ -451,9 +503,9 @@ class CANChannelView(BoxLayout):
 
     def set_channel(self):
         self.ids.name.text = self.can_channel_cfg.name
-        
+
         self.ids.sample_rate.text = '{} Hz'.format(self.can_channel_cfg.sampleRate)
-        
+
         can_mapping = self.can_channel_cfg.mapping
         self.ids.can_id.text = '{}'.format(can_mapping.can_id)
 
