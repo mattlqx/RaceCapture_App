@@ -248,14 +248,16 @@ class AndroidTabsBar(BoxLayout):
         if not dst:
             return
 
+        x = None
         if scroll_is_late and target.center_x > bound_left:
             x = lsx + dst
 
         elif not scroll_is_late and target.center_x < bound_right:
             x = lsx - dst
 
-        x = boundary(x, 0.0, 1.0)
-        self.scrollview.goto(x, None)
+        if x:
+            x = boundary(x, 0.0, 1.0)
+            self.scrollview.goto(x, None)
 
 
     def android_animation(self, carousel, offset):

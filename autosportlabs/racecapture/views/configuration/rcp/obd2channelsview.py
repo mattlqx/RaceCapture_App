@@ -26,7 +26,7 @@ from kivy.app import Builder
 from iconbutton import IconButton
 from settingsview import SettingsSwitch
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
-from autosportlabs.racecapture.views.configuration.rcp.canchannelsview import CANChannelView, CANFilters
+from autosportlabs.racecapture.views.configuration.rcp.canchannelsview import CANChannelConfigView, CANChannelMappingTab, CANFilters
 from autosportlabs.uix.layout.sections import SectionBoxLayout
 from autosportlabs.racecapture.views.util.alertview import editor_popup
 from autosportlabs.racecapture.OBD2.obd2settings import OBD2Settings
@@ -36,103 +36,99 @@ from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 import copy
 
-OBD2_CHANNEL_CONFIG_VIEW_KV = """
-<OBD2ChannelConfigView>
-    BoxLayout:
-        orientation: 'vertical'
-        spacing: dp(5)
-        BoxLayout:
-            size_hint_y: 0.2
-            spacing: dp(5)
-            orientation: 'horizontal'
-            HeaderSectionBoxLayout:
-                size_hint_x: 0.15
-                FieldLabel:
-                    text: 'OBDII'
-                    halign: 'right'
-                    id: pid
-            BoxLayout:
-                size_hint_x: 0.85
-                spacing: dp(5)
-                
-                SectionBoxLayout:
-                    size_hint_x: 0.4
-                    FieldLabel:
-                        text: 'PID'
-                        size_hint_x: 0.15
-                        halign: 'right'
-                    LargeMappedSpinner:
-                        id: pid
-                        on_text: root.on_pid(*args)
-                        size_hint_x: 0.15
-                
-                SectionBoxLayout:
-                    size_hint_x: 0.45
-                    FieldLabel:
-                        size_hint_x: 0.6
-                        text: 'Mode'
-                        halign: 'right'
-                        id: mode
-                    LargeMappedSpinner:
-                        id: mode
-                        on_text: root.on_mode(*args)
-                        size_hint_x: 0.4
-            
-                SectionBoxLayout:
-                    orientation: 'horizontal'
-                    size_hint_x: 0.45
 
-                    FieldLabel:
-                        text: 'Passive'
-                        halign: 'right'
-                        size_hint_x: 0.5
-                    CheckBox:
-                        id: passive
-                        size_hint_x: 0.5
-                        on_active: root.on_passive(*args)
-            
-        HLineSeparator:
-                            
-        CANChannelConfigView:
-            id: can_channel_config
-            size_hint_y: 0.8
-"""
-
-class OBD2ChannelConfigView(BoxLayout):
-    Builder.load_string(OBD2_CHANNEL_CONFIG_VIEW_KV)
+class PIDConfigTab(CANChannelMappingTab):
     PID_RANGES = (0, 256)
     SUPPORTED_MODES = {1:'01h', 9: '09h', 34:'22h'}
     DEFAULT_MODE = '01h'
 
+    Builder.load_string("""
+<PIDConfigTab>:
+    text: 'OBDII PID'
+    AnchorLayout:
+        size_hint_y: 0.33
+        BoxLayout:
+            spacing: dp(10)
+            SectionBoxLayout:
+                size_hint_x: 0.4
+                FieldLabel:
+                    text: 'OBDII PID'
+                    size_hint_x: 0.15
+                    halign: 'right'
+                LargeMappedSpinner:
+                    id: pid
+                    on_text: root.on_pid(*args)
+                    size_hint_x: 0.15
+            
+            SectionBoxLayout:
+                size_hint_x: 0.45
+                FieldLabel:
+                    size_hint_x: 0.6
+                    text: 'Mode'
+                    halign: 'right'
+                    id: mode
+                LargeMappedSpinner:
+                    id: mode
+                    on_text: root.on_mode(*args)
+                    size_hint_x: 0.4
+        
+            SectionBoxLayout:
+                orientation: 'horizontal'
+                size_hint_x: 0.45
+                FieldLabel:
+                    text: 'Passive'
+                    halign: 'right'
+                    size_hint_x: 0.5
+                CheckBox:
+                    id: passive
+                    size_hint_x: 0.5
+                    on_active: root.on_passive(*args)
+    """)
+
     def __init__(self, **kwargs):
-        super(OBD2ChannelConfigView, self).__init__(**kwargs)
-        self.channel = None
+        super(PIDConfigTab, self).__init__(**kwargs)
+        self._loaded = False
 
-    def init_config(self, index, channel, can_filters):
+    def init_view(self, channel_cfg):
+        self.channel_cfg = channel_cfg
+
         pids = {}
-        for i in range(OBD2ChannelConfigView.PID_RANGES[0], OBD2ChannelConfigView.PID_RANGES[1]):
+        for i in range(PIDConfigTab.PID_RANGES[0], PIDConfigTab.PID_RANGES[1]):
             pids[i] = str(i)
-        self.ids.pid.setValueMap(pids, str(OBD2ChannelConfigView.PID_RANGES[0]))
+        self.ids.pid.setValueMap(pids, str(PIDConfigTab.PID_RANGES[0]))
 
-        self.ids.mode.setValueMap(OBD2ChannelConfigView.SUPPORTED_MODES, OBD2ChannelConfigView.DEFAULT_MODE)
+        self.ids.mode.setValueMap(PIDConfigTab.SUPPORTED_MODES, PIDConfigTab.DEFAULT_MODE)
 
-        self.ids.mode.setFromValue(channel.mode)
-        self.ids.pid.setFromValue(channel.pid)
-        self.ids.can_channel_config.init_config(index, channel, can_filters)
-        self.ids.passive.active = channel.passive
-        self.channel = channel
+        self.ids.mode.setFromValue(channel_cfg.mode)
+        self.ids.pid.setFromValue(channel_cfg.pid)
+        self.ids.passive.active = channel_cfg.passive
+        self._loaded = True
 
     def on_pid(self, instance, value):
-        if self.channel:
-            self.channel.pid = instance.getValueFromKey(value)
+        if self._loaded:
+            self.channel_cfg.pid = instance.getValueFromKey(value)
 
     def on_mode(self, instance, value):
-        if self.channel:
-            self.channel.mode = instance.getValueFromKey(value)
+        if self._loaded:
+            self.channel_cfg.mode = instance.getValueFromKey(value)
 
     def on_passive(self, instance, value):
-        if self.channel:
-            self.channel.passive = instance.active
+        if self._loaded:
+            self.channel_cfg.passive = instance.active
+
+class OBD2ChannelConfigView(CANChannelConfigView):
+    def __init__(self, **kwargs):
+        super(OBD2ChannelConfigView, self).__init__(**kwargs)
+
+    def init_tabs(self):
+        pid_config_tab = PIDConfigTab()
+        self.ids.tabs.add_widget(pid_config_tab)
+        self.pid_config_tab = pid_config_tab
+        super(OBD2ChannelConfigView, self).init_tabs()
+
+    def load_tabs(self):
+        super(OBD2ChannelConfigView, self).load_tabs()
+        self.pid_config_tab.init_view(self.can_channel_cfg)
 
 OBD2_CHANNEL_KV = """
 <OBD2Channel>:
@@ -163,11 +159,12 @@ class OBD2Channel(BoxLayout):
     pidIndex = 0
     Builder.load_string(OBD2_CHANNEL_KV)
 
-    def __init__(self, obd2_settings, max_sample_rate, can_filters, **kwargs):
+    def __init__(self, obd2_settings, max_sample_rate, can_filters, channels, **kwargs):
         super(OBD2Channel, self).__init__(**kwargs)
         self.obd2_settings = obd2_settings
         self.max_sample_rate = max_sample_rate
         self.can_filters = can_filters
+        self.channels = channels
         self.register_event_type('on_delete_pid')
         self.register_event_type('on_modified')
 
@@ -202,7 +199,7 @@ class OBD2Channel(BoxLayout):
     def on_customize(self):
         working_channel_cfg = copy.deepcopy(self.channel)
         content = OBD2ChannelConfigView()
-        content.init_config(self.pidIndex, working_channel_cfg, self.can_filters)
+        content.init_config(self.pidIndex, working_channel_cfg, self.can_filters, self.max_sample_rate, self.channels)
 
         def _on_answer(instance, answer):
             if answer:
@@ -352,7 +349,7 @@ class OBD2ChannelsView(BaseConfigView):
         self.dispatch('on_modified')
 
     def add_obd2_channel(self, index, pidConfig, max_sample_rate):
-        channel = OBD2Channel(obd2_settings=self.obd2_settings, max_sample_rate=max_sample_rate, can_filters=self.can_filters)
+        channel = OBD2Channel(obd2_settings=self.obd2_settings, max_sample_rate=max_sample_rate, can_filters=self.can_filters, channels=self.channels)
         channel.bind(on_delete_pid=self.on_delete_pid)
         channel.set_channel(index, pidConfig, self.channels)
         channel.bind(on_modified=self.on_modified)

@@ -54,7 +54,8 @@ class SymbolFieldLabel(FieldLabel):
     Builder.load_string("""
 <SymbolFieldLabel>:
     font_size: self.height * 0.6
-    font_name: 'resource/fonts/Roboto-Bold.ttf'    
+    font_name: 'resource/fonts/Roboto-Bold.ttf'
+    shorten: False
 """)
 
 class CANChannelMappingTab(AnchorLayout, AndroidTabsBase):
@@ -87,20 +88,20 @@ class CANChannelCustomizationTab(CANChannelMappingTab):
 <CANChannelCustomizationTab>:
     text: 'Channel'
     AnchorLayout:
-        size_hint_y: 0.5
-        SectionBoxLayout:
-            spacing: dp(20)
-            padding: (dp(20), dp(20))
-            ChannelNameSelectorView:
+        size_hint_y: 0.33
+        BoxLayout:
+            spacing: dp(10)
+            SectionBoxLayout:
                 size_hint_x: 0.5
-                id: chan_id
-            FieldLabel:
-                halign: 'right'
-                text: 'Sample Rate'
-                size_hint_x: 0.25
-            SampleRateSpinner:
-                size_hint_x: 0.25
-                id: sr
+                ChannelNameSelectorView:
+                    id: chan_id
+            SectionBoxLayout:
+                size_hint_x: 0.5
+                FieldLabel:
+                    halign: 'right'
+                    text: 'Sample Rate'
+                SampleRateSpinner:
+                    id: sr
 """)
 
     def __init__(self, **kwargs):
@@ -130,18 +131,14 @@ class CANIDMappingTab(CANChannelMappingTab):
 <CANIDMappingTab>:
     text: 'CAN ID Match'
     BoxLayout:
-        size_hint_y: 0.9
-        spacing: dp(10)
         orientation: 'vertical'
-        
         BoxLayout:
             orientation: 'horizontal'
+            spacing: dp(10)            
             AnchorLayout:
                 size_hint_x: 0.35
-                spacing: dp(20)
-                padding: (dp(20), dp(20))
                 SectionBoxLayout:
-                    size_hint_y: 0.6
+                    size_hint_y: 0.33
                     FieldLabel:
                         text: 'CAN bus'
                         halign: 'right'
@@ -149,32 +146,34 @@ class CANIDMappingTab(CANChannelMappingTab):
                         id: can_bus_channel
                         on_text: root.on_can_bus(*args)
 
-            BoxLayout:
-                spacing: dp(20)
-                padding: (dp(20), dp(20))
+            AnchorLayout:
                 size_hint_x: 0.65
-                orientation: 'vertical'
-                SectionBoxLayout:
-                    FieldLabel:
-                        size_hint_x: 0.3
-                        text: 'CAN ID' 
-                        halign: 'right'
-
-                    LargeIntegerValueField:
-                        id: can_id
-                        size_hint_x: 0.7
-                        on_text: root.on_can_id(*args)
-
-                SectionBoxLayout:
-                    FieldLabel:
-                        size_hint_x: 0.3
-                        text: 'Mask'
-                        halign: 'right'
-
-                    LargeIntegerValueField:
-                        id: mask
-                        size_hint_x: 0.7
-                        on_text: root.on_mask(*args)
+                BoxLayout:
+                    size_hint_y: 0.8
+                    spacing: dp(20)
+                    padding: (dp(20), dp(20))
+                    orientation: 'vertical'
+                    SectionBoxLayout:
+                        FieldLabel:
+                            size_hint_x: 0.3
+                            text: 'CAN ID' 
+                            halign: 'right'
+    
+                        LargeIntegerValueField:
+                            id: can_id
+                            size_hint_x: 0.7
+                            on_text: root.on_can_id(*args)
+    
+                    SectionBoxLayout:
+                        FieldLabel:
+                            size_hint_x: 0.3
+                            text: 'Mask'
+                            halign: 'right'
+    
+                        LargeIntegerValueField:
+                            id: mask
+                            size_hint_x: 0.7
+                            on_text: root.on_mask(*args)
 """)
 
     def __init__(self, **kwargs):
@@ -224,7 +223,7 @@ class CANValueMappingTab(CANChannelMappingTab):
         AnchorLayout:
             size_hint_x: 0.6        
             BoxLayout:
-                size_hint_y: 0.5
+                size_hint_y: 0.33
                 orientation: 'horizontal'
                 spacing: dp(5)
                 
@@ -441,7 +440,9 @@ class CANChannelConfigView(BoxLayout):
 
     def __init__(self, **kwargs):
         super(CANChannelConfigView, self).__init__(**kwargs)
+        self.init_tabs()
 
+    def init_tabs(self):
         can_channel_customization_tab = CANChannelCustomizationTab()
         self.ids.tabs.add_widget(can_channel_customization_tab)
         self.can_channel_customization_tab = can_channel_customization_tab
@@ -464,9 +465,9 @@ class CANChannelConfigView(BoxLayout):
         self.can_filters = can_filters
         self.max_sample_rate = max_sample_rate
         self.channels = channels
-        self.init_view()
+        self.load_tabs()
 
-    def init_view(self):
+    def load_tabs(self):
         self.can_channel_customization_tab.init_view(self.can_channel_cfg, self.channels, self.max_sample_rate)
         self.can_id_tab.init_view(self.can_channel_cfg)
         self.can_value_map_tab.init_view(self.can_channel_cfg)
