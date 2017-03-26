@@ -82,6 +82,49 @@ class CANChannelMappingTab(AnchorLayout, AndroidTabsBase):
     def on_tab_font_size(self, instance, value):
         self.tab_label.font_size = value
 
+class CANChannelCustomizationTab(CANChannelMappingTab):
+    Builder.load_string("""
+<CANChannelCustomizationTab>:
+    text: 'Channel'
+    AnchorLayout:
+        size_hint_y: 0.5
+        SectionBoxLayout:
+            spacing: dp(20)
+            padding: (dp(20), dp(20))
+            ChannelNameSelectorView:
+                size_hint_x: 0.5
+                id: chan_id
+            FieldLabel:
+                halign: 'right'
+                text: 'Sample Rate'
+                size_hint_x: 0.25
+            SampleRateSpinner:
+                size_hint_x: 0.25
+                id: sr
+""")
+
+    def __init__(self, **kwargs):
+        super(CANChannelCustomizationTab, self).__init__(**kwargs)
+        self._loaded = False
+
+    def init_view(self, can_channel_cfg, channels, max_sample_rate):
+        self.can_channel_cfg = can_channel_cfg
+
+        channel_editor = self.ids.chan_id
+        channel_editor.on_channels_updated(channels)
+        channel_editor.setValue(self.can_channel_cfg)
+
+        sample_rate_spinner = self.ids.sr
+        sample_rate_spinner.set_max_rate(max_sample_rate)
+        sample_rate_spinner.setFromValue(self.can_channel_cfg.sampleRate)
+        sample_rate_spinner.bind(text=self.on_sample_rate)
+
+        self._loaded = True
+
+    def on_sample_rate(self, instance, value):
+        if self._loaded:
+            self.can_channel_cfg.sampleRate = instance.getValueFromKey(value)
+
 class CANIDMappingTab(CANChannelMappingTab):
     Builder.load_string("""
 <CANIDMappingTab>:
@@ -106,7 +149,7 @@ class CANIDMappingTab(CANChannelMappingTab):
                         id: can_bus_channel
                         on_text: root.on_can_bus(*args)
 
-            SectionBoxLayout:
+            BoxLayout:
                 spacing: dp(20)
                 padding: (dp(20), dp(20))
                 size_hint_x: 0.65
@@ -138,6 +181,21 @@ class CANIDMappingTab(CANChannelMappingTab):
         super(CANIDMappingTab, self).__init__(**kwargs)
         self._loaded = False
 
+    def init_view(self, can_channel_cfg):
+        self.can_channel_cfg = can_channel_cfg
+        self.ids.can_bus_channel.setValueMap({0: '1', 1: '2'}, '1')
+
+        # CAN Channel
+        self.ids.can_bus_channel.setFromValue(self.can_channel_cfg.mapping.can_bus)
+
+        # CAN ID
+        self.ids.can_id.text = str(self.can_channel_cfg.mapping.can_id)
+
+        # CAN mask
+        self.ids.mask.text = str(self.can_channel_cfg.mapping.can_mask)
+
+        self._loaded = True
+
     def on_sample_rate(self, instance, value):
         if self._loaded:
             self.can_channel_cfg.sampleRate = instance.getValueFromKey(value)
@@ -154,63 +212,52 @@ class CANIDMappingTab(CANChannelMappingTab):
         if self._loaded:
             self.can_channel_cfg.mapping.can_mask = int(value)
 
-    def init_view(self, can_channel_cfg):
-        self.can_channel_cfg = can_channel_cfg
-        self.ids.can_bus_channel.setValueMap({0: '1', 1: '2'}, '1')
-
-        # CAN Channel
-        self.ids.can_bus_channel.setFromValue(self.can_channel_cfg.mapping.can_bus)
-
-        # CAN ID
-        self.ids.can_id.text = str(self.can_channel_cfg.mapping.can_id)
-
-        # CAN mask
-        self.ids.mask.text = str(self.can_channel_cfg.mapping.can_mask)
-
-        self._loaded = True
-
 class CANValueMappingTab(CANChannelMappingTab):
     Builder.load_string("""
 <CANValueMappingTab>:
     text: 'Raw Value Mapping'
     
     BoxLayout:
-        orientation: 'vertical'
+        orientation: 'horizontal'
         spacing: dp(20)
         padding: (dp(20), dp(20))
+        AnchorLayout:
+            size_hint_x: 0.6        
+            BoxLayout:
+                size_hint_y: 0.5
+                orientation: 'horizontal'
+                spacing: dp(5)
+                
+                SectionBoxLayout:
+                    size_hint_x: 0.33
+                    FieldLabel:
+                        text: 'Offset'
+                        halign: 'right'
+                    LargeMappedSpinner:
+                        id: offset
+                        on_text: root.on_mapping_offset(*args)
+                SectionBoxLayout:
+                    size_hint_x: 0.33             
+                    FieldLabel:
+                        halign: 'right'
+                        text: 'Length'
+                    LargeMappedSpinner:
+                        id: length
+                        on_text: root.on_mapping_length(*args)
         BoxLayout:
-            orientation: 'horizontal'
-            spacing: dp(5)
-            
+            anchor_x: 'right'
+            orientation: 'vertical'
+            size_hint_x: 0.4       
+            spacing: dp(10)
+            padding: (dp(10), dp(10))
             SectionBoxLayout:
-                size_hint_x: 0.33
-                FieldLabel:
-                    text: 'Offset'
-                    halign: 'right'
-                LargeMappedSpinner:
-                    id: offset
-                    on_text: root.on_mapping_offset(*args)
-            SectionBoxLayout:
-                size_hint_x: 0.33             
-                FieldLabel:
-                    halign: 'right'
-                    text: 'Length'
-                LargeMappedSpinner:
-                    id: length
-                    on_text: root.on_mapping_length(*args)
-
-            SectionBoxLayout:
-                size_hint_x: 0.33                  
                 FieldLabel:
                     text: 'Bit Mode'
                     halign: 'right'
                 CheckBox:
                     id: bitmode
                     on_active: root.on_bit_mode(*args)
-        AnchorLayout:
-            anchor_x: 'right'
             SectionBoxLayout:
-                size_hint_x: 0.33
                 FieldLabel:
                     text: 'Endian'
                     halign: 'right'
@@ -395,6 +442,10 @@ class CANChannelConfigView(BoxLayout):
     def __init__(self, **kwargs):
         super(CANChannelConfigView, self).__init__(**kwargs)
 
+        can_channel_customization_tab = CANChannelCustomizationTab()
+        self.ids.tabs.add_widget(can_channel_customization_tab)
+        self.can_channel_customization_tab = can_channel_customization_tab
+
         can_id_tab = CANIDMappingTab()
         self.ids.tabs.add_widget(can_id_tab)
         self.can_id_tab = can_id_tab
@@ -407,13 +458,16 @@ class CANChannelConfigView(BoxLayout):
         self.ids.tabs.add_widget(can_formula_tab)
         self.can_formula_tab = can_formula_tab
 
-    def init_config(self, index, can_channel_cfg, can_filters):
+    def init_config(self, index, can_channel_cfg, can_filters, max_sample_rate, channels):
         self.channel_index = index
         self.can_channel_cfg = can_channel_cfg
         self.can_filters = can_filters
+        self.max_sample_rate = max_sample_rate
+        self.channels = channels
         self.init_view()
 
     def init_view(self):
+        self.can_channel_customization_tab.init_view(self.can_channel_cfg, self.channels, self.max_sample_rate)
         self.can_id_tab.init_view(self.can_channel_cfg)
         self.can_value_map_tab.init_view(self.can_channel_cfg)
         self.can_formula_tab.init_view(self.can_channel_cfg)
@@ -534,7 +588,7 @@ CAN_CHANNELS_VIEW_KV = """
             size_hint_y: 0.6
             id: can_channels_enable
             label_text: 'CAN channels'
-            help_text: 'Enable CAN data mappings'
+            help_text: ''
         BoxLayout:
             orientation: 'horizontal'
             size_hint_y: 0.4        
@@ -736,7 +790,7 @@ class CANChannelsView(BaseConfigView):
     def _customize_channel(self, channel_index):
         content = CANChannelConfigView()
         working_channel_cfg = copy.deepcopy(self.can_channels_cfg.channels[channel_index])
-        content.init_config(channel_index, working_channel_cfg, self.can_filters)
+        content.init_config(channel_index, working_channel_cfg, self.can_filters, self.max_sample_rate, self.channels)
 
         def _on_answer(instance, answer):
             if answer:
