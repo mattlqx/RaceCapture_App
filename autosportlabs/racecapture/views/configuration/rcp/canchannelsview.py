@@ -108,23 +108,23 @@ class CANChannelCustomizationTab(CANChannelMappingTab):
         super(CANChannelCustomizationTab, self).__init__(**kwargs)
         self._loaded = False
 
-    def init_view(self, can_channel_cfg, channels, max_sample_rate):
-        self.can_channel_cfg = can_channel_cfg
+    def init_view(self, channel_cfg, channels, max_sample_rate):
+        self.channel_cfg = channel_cfg
 
         channel_editor = self.ids.chan_id
         channel_editor.on_channels_updated(channels)
-        channel_editor.setValue(self.can_channel_cfg)
+        channel_editor.setValue(self.channel_cfg)
 
         sample_rate_spinner = self.ids.sr
         sample_rate_spinner.set_max_rate(max_sample_rate)
-        sample_rate_spinner.setFromValue(self.can_channel_cfg.sampleRate)
+        sample_rate_spinner.setFromValue(self.channel_cfg.sampleRate)
         sample_rate_spinner.bind(text=self.on_sample_rate)
 
         self._loaded = True
 
     def on_sample_rate(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.sampleRate = instance.getValueFromKey(value)
+            self.channel_cfg.sampleRate = instance.getValueFromKey(value)
 
 class CANIDMappingTab(CANChannelMappingTab):
     Builder.load_string("""
@@ -180,36 +180,36 @@ class CANIDMappingTab(CANChannelMappingTab):
         super(CANIDMappingTab, self).__init__(**kwargs)
         self._loaded = False
 
-    def init_view(self, can_channel_cfg):
-        self.can_channel_cfg = can_channel_cfg
+    def init_view(self, channel_cfg):
+        self.channel_cfg = channel_cfg
         self.ids.can_bus_channel.setValueMap({0: '1', 1: '2'}, '1')
 
         # CAN Channel
-        self.ids.can_bus_channel.setFromValue(self.can_channel_cfg.mapping.can_bus)
+        self.ids.can_bus_channel.setFromValue(self.channel_cfg.mapping.can_bus)
 
         # CAN ID
-        self.ids.can_id.text = str(self.can_channel_cfg.mapping.can_id)
+        self.ids.can_id.text = str(self.channel_cfg.mapping.can_id)
 
         # CAN mask
-        self.ids.mask.text = str(self.can_channel_cfg.mapping.can_mask)
+        self.ids.mask.text = str(self.channel_cfg.mapping.can_mask)
 
         self._loaded = True
 
     def on_sample_rate(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.sampleRate = instance.getValueFromKey(value)
+            self.channel_cfg.sampleRate = instance.getValueFromKey(value)
 
     def on_can_bus(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.mapping.can_bus = instance.getValueFromKey(value)
+            self.channel_cfg.mapping.can_bus = instance.getValueFromKey(value)
 
     def on_can_id(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.mapping.can_id = int(value)
+            self.channel_cfg.mapping.can_id = int(value)
 
     def on_mask(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.mapping.can_mask = int(value)
+            self.channel_cfg.mapping.can_mask = int(value)
 
 class CANValueMappingTab(CANChannelMappingTab):
     Builder.load_string("""
@@ -269,27 +269,27 @@ class CANValueMappingTab(CANChannelMappingTab):
         super(CANValueMappingTab, self).__init__(**kwargs)
         self._loaded = False
 
-    def init_view(self, can_channel_cfg):
-        self.can_channel_cfg = can_channel_cfg
+    def init_view(self, channel_cfg):
+        self.channel_cfg = channel_cfg
         self.ids.endian.setValueMap({0: 'Big (MSB)', 1: 'Little (LSB)'}, 'Big (MSB)')
         self.update_mapping_spinners()
 
         # CAN offset
-        self.ids.offset.setFromValue(self.can_channel_cfg.mapping.offset)
+        self.ids.offset.setFromValue(self.channel_cfg.mapping.offset)
 
         # CAN length
-        self.ids.length.setFromValue(self.can_channel_cfg.mapping.length)
+        self.ids.length.setFromValue(self.channel_cfg.mapping.length)
 
         # Bit Mode
-        self.ids.bitmode.active = self.can_channel_cfg.mapping.bit_mode
+        self.ids.bitmode.active = self.channel_cfg.mapping.bit_mode
 
         # Endian
-        self.ids.endian.setFromValue(self.can_channel_cfg.mapping.endian)
+        self.ids.endian.setFromValue(self.channel_cfg.mapping.endian)
 
         self._loaded = True
 
     def update_mapping_spinners(self):
-        bit_mode = self.can_channel_cfg.mapping.bit_mode
+        bit_mode = self.channel_cfg.mapping.bit_mode
         self.set_mapping_choices(bit_mode)
 
     def set_mapping_choices(self, bit_mode):
@@ -306,20 +306,20 @@ class CANValueMappingTab(CANChannelMappingTab):
 
     def on_bit_mode(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.mapping.bit_mode = self.ids.bitmode.active
+            self.channel_cfg.mapping.bit_mode = self.ids.bitmode.active
             self.update_mapping_spinners()
 
     def on_mapping_offset(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.mapping.offset = instance.getValueFromKey(value)
+            self.channel_cfg.mapping.offset = instance.getValueFromKey(value)
 
     def on_mapping_length(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.mapping.length = instance.getValueFromKey(value)
+            self.channel_cfg.mapping.length = instance.getValueFromKey(value)
 
     def on_endian(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.mapping.endian = instance.getValueFromKey(value)
+            self.channel_cfg.mapping.endian = instance.getValueFromKey(value)
 
 class CANFormulaMappingTab(CANChannelMappingTab):
     Builder.load_string("""
@@ -383,43 +383,43 @@ class CANFormulaMappingTab(CANChannelMappingTab):
         super(CANFormulaMappingTab, self).__init__(**kwargs)
         self._loaded = False
 
-    def init_view(self, can_channel_cfg):
-        self.can_channel_cfg = can_channel_cfg
+    def init_view(self, channel_cfg):
+        self.channel_cfg = channel_cfg
 
         # Disable for the initial release
         # self.ids.filters.setValueMap(self.can_filters.filters, self.can_filters.default_value)
 
         # Multiplier
-        self.ids.multiplier.text = str(self.can_channel_cfg.mapping.multiplier)
+        self.ids.multiplier.text = str(self.channel_cfg.mapping.multiplier)
 
         # Divider
-        self.ids.divider.text = str(self.can_channel_cfg.mapping.divider)
+        self.ids.divider.text = str(self.channel_cfg.mapping.divider)
 
         # Adder
-        self.ids.adder.text = str(self.can_channel_cfg.mapping.adder)
+        self.ids.adder.text = str(self.channel_cfg.mapping.adder)
 
         # Conversion Filter ID
         # Disable for initial release
-        # self.ids.filters.setFromValue(self.can_channel_cfg.mapping.conversion_filter_id)
+        # self.ids.filters.setFromValue(self.channel_cfg.mapping.conversion_filter_id)
 
         self._loaded = True
 
 
     def on_multiplier(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.mapping.multiplier = float(value)
+            self.channel_cfg.mapping.multiplier = float(value)
 
     def on_divider(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.mapping.divider = float(value)
+            self.channel_cfg.mapping.divider = float(value)
 
     def on_adder(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.mapping.adder = float(value)
+            self.channel_cfg.mapping.adder = float(value)
 
     def on_filter(self, instance, value):
         if self._loaded:
-            self.can_channel_cfg.mapping.conversion_filter_id = instance.getValueFromKey(value)
+            self.channel_cfg.mapping.conversion_filter_id = instance.getValueFromKey(value)
 
 
 
@@ -440,38 +440,31 @@ class CANChannelConfigView(BoxLayout):
 
     def __init__(self, **kwargs):
         super(CANChannelConfigView, self).__init__(**kwargs)
+        self.can_channel_customization_tab = CANChannelCustomizationTab()
+        self.can_id_tab = CANIDMappingTab()
+        self.can_value_map_tab = CANValueMappingTab()
+        self.can_formula_tab = CANFormulaMappingTab()
         self.init_tabs()
 
     def init_tabs(self):
-        can_channel_customization_tab = CANChannelCustomizationTab()
-        self.ids.tabs.add_widget(can_channel_customization_tab)
-        self.can_channel_customization_tab = can_channel_customization_tab
+        self.ids.tabs.add_widget(self.can_channel_customization_tab)
+        self.ids.tabs.add_widget(self.can_id_tab)
+        self.ids.tabs.add_widget(self.can_value_map_tab)
+        self.ids.tabs.add_widget(self.can_formula_tab)
 
-        can_id_tab = CANIDMappingTab()
-        self.ids.tabs.add_widget(can_id_tab)
-        self.can_id_tab = can_id_tab
-
-        can_value_map_tab = CANValueMappingTab()
-        self.ids.tabs.add_widget(can_value_map_tab)
-        self.can_value_map_tab = can_value_map_tab
-
-        can_formula_tab = CANFormulaMappingTab()
-        self.ids.tabs.add_widget(can_formula_tab)
-        self.can_formula_tab = can_formula_tab
-
-    def init_config(self, index, can_channel_cfg, can_filters, max_sample_rate, channels):
+    def init_config(self, index, channel_cfg, can_filters, max_sample_rate, channels):
         self.channel_index = index
-        self.can_channel_cfg = can_channel_cfg
+        self.channel_cfg = channel_cfg
         self.can_filters = can_filters
         self.max_sample_rate = max_sample_rate
         self.channels = channels
         self.load_tabs()
 
     def load_tabs(self):
-        self.can_channel_customization_tab.init_view(self.can_channel_cfg, self.channels, self.max_sample_rate)
-        self.can_id_tab.init_view(self.can_channel_cfg)
-        self.can_value_map_tab.init_view(self.can_channel_cfg)
-        self.can_formula_tab.init_view(self.can_channel_cfg)
+        self.can_channel_customization_tab.init_view(self.channel_cfg, self.channels, self.max_sample_rate)
+        self.can_id_tab.init_view(self.channel_cfg)
+        self.can_value_map_tab.init_view(self.channel_cfg)
+        self.can_formula_tab.init_view(self.channel_cfg)
 
 class CANFilters(object):
     filters = None
@@ -497,7 +490,6 @@ class CANFilters(object):
 
 CAN_CHANNEL_VIEW_KV = """
 <CANChannelView>:
-    spacing: dp(10)
     size_hint_y: None
     height: dp(30)
     orientation: 'horizontal'
@@ -506,7 +498,7 @@ CAN_CHANNEL_VIEW_KV = """
         size_hint_x: 0.18
     FieldLabel:
         id: sample_rate
-        size_hint_x: 0.18
+        size_hint_x: 0.10
     FieldLabel:
         id: can_id
         size_hint_x: 0.14
@@ -517,11 +509,11 @@ CAN_CHANNEL_VIEW_KV = """
         size_hint_x: 0.30
         id: can_formula
     IconButton:
-        size_hint_x: 0.05        
+        size_hint_x: 0.09        
         text: u'\uf044'
         on_release: root.on_customize()
     IconButton:
-        size_hint_x: 0.05        
+        size_hint_x: 0.09        
         text: u'\uf014'
         on_release: root.on_delete()
 """
@@ -529,10 +521,10 @@ CAN_CHANNEL_VIEW_KV = """
 class CANChannelView(BoxLayout):
     Builder.load_string(CAN_CHANNEL_VIEW_KV)
 
-    def __init__(self, channel_index, can_channel_cfg, max_sample_rate, channels, **kwargs):
+    def __init__(self, channel_index, channel_cfg, max_sample_rate, channels, **kwargs):
         super(CANChannelView, self).__init__(**kwargs)
         self.channel_index = channel_index
-        self.can_channel_cfg = can_channel_cfg
+        self.channel_cfg = channel_cfg
         self.max_sample_rate = max_sample_rate
         self.channels = channels
         self.register_event_type('on_delete_channel')
@@ -557,11 +549,11 @@ class CANChannelView(BoxLayout):
         self.dispatch('on_customize_channel', self.channel_index)
 
     def set_channel(self):
-        self.ids.name.text = self.can_channel_cfg.name
+        self.ids.name.text = self.channel_cfg.name
 
-        self.ids.sample_rate.text = '{} Hz'.format(self.can_channel_cfg.sampleRate)
+        self.ids.sample_rate.text = '{} Hz'.format(self.channel_cfg.sampleRate)
 
-        can_mapping = self.can_channel_cfg.mapping
+        can_mapping = self.channel_cfg.mapping
         self.ids.can_id.text = '{}'.format(can_mapping.can_id)
 
         self.ids.can_offset_len.text = u'{}({})'.format(can_mapping.offset, can_mapping.length)
@@ -612,14 +604,15 @@ CAN_CHANNELS_VIEW_KV = """
         BoxLayout:
             orientation: 'horizontal'
             size_hint_y: 0.1
+            padding: [dp(5), dp(0)]            
             FieldLabel:
                 text: 'Channel'
                 halign: 'left'
                 size_hint_x: 0.18
             FieldLabel:
-                text: 'Sample Rate'
+                text: 'Rate'
                 halign: 'left'
-                size_hint_x: 0.18
+                size_hint_x: 0.10
                 
             FieldLabel:
                 text: 'CAN ID'
@@ -632,7 +625,7 @@ CAN_CHANNELS_VIEW_KV = """
                 size_hint_x: 0.30
             FieldLabel:
                 text: ''
-                size_hint_x: 0.1
+                size_hint_x: 0.18
             
         AnchorLayout:                
             AnchorLayout:
@@ -649,7 +642,8 @@ CAN_CHANNELS_VIEW_KV = """
                     do_scroll_y:True
                     GridLayout:
                         id: can_grid
-                        spacing: [dp(10), dp(10)]
+                        padding: [dp(5), dp(5)]                        
+                        spacing: [dp(0), dp(10)]
                         size_hint_y: None
                         height: max(self.minimum_height, scroller.height)
                         cols: 1
@@ -737,13 +731,13 @@ class CANChannelsView(BaseConfigView):
         self.can_grid.clear_widgets()
         channel_count = len(can_channels_cfg.channels)
         for i in range(channel_count):
-            can_channel_cfg = can_channels_cfg.channels[i]
-            self.append_can_channel(i, can_channel_cfg, max_sample_rate)
+            channel_cfg = can_channels_cfg.channels[i]
+            self.append_can_channel(i, channel_cfg, max_sample_rate)
         self.update_view_enabled()
         self._refresh_can_channel_notice()
 
-    def append_can_channel(self, index, can_channel_cfg, max_sample_rate):
-        channel_view = CANChannelView(index, can_channel_cfg, max_sample_rate, self.channels)
+    def append_can_channel(self, index, channel_cfg, max_sample_rate):
+        channel_view = CANChannelView(index, channel_cfg, max_sample_rate, self.channels)
         channel_view.bind(on_delete_channel=self.on_delete_channel)
         channel_view.bind(on_customize_channel=self.on_customize_channel)
         channel_view.bind(on_modified=self.on_modified)
@@ -801,7 +795,7 @@ class CANChannelsView(BaseConfigView):
             self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
             popup.dismiss()
 
-        popup = editor_popup('Customize CAN mapping', content, _on_answer, size_hint=(0.7, 0.6))
+        popup = editor_popup('Customize CAN mapping', content, _on_answer, size_hint=(0.7, 0.75))
 
     def on_customize_channel(self, instance, channel_index):
         self._customize_channel(channel_index)

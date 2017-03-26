@@ -118,30 +118,32 @@ class PIDConfigTab(CANChannelMappingTab):
 
 class OBD2ChannelConfigView(CANChannelConfigView):
     def __init__(self, **kwargs):
+        self.pid_config_tab = PIDConfigTab()
         super(OBD2ChannelConfigView, self).__init__(**kwargs)
 
     def init_tabs(self):
-        pid_config_tab = PIDConfigTab()
-        self.ids.tabs.add_widget(pid_config_tab)
-        self.pid_config_tab = pid_config_tab
-        super(OBD2ChannelConfigView, self).init_tabs()
+        self.ids.tabs.add_widget(self.can_channel_customization_tab)
+        self.ids.tabs.add_widget(self.pid_config_tab)
+        self.ids.tabs.add_widget(self.can_id_tab)
+        self.ids.tabs.add_widget(self.can_value_map_tab)
+        self.ids.tabs.add_widget(self.can_formula_tab)
 
     def load_tabs(self):
         super(OBD2ChannelConfigView, self).load_tabs()
-        self.pid_config_tab.init_view(self.can_channel_cfg)
+        self.pid_config_tab.init_view(self.channel_cfg)
 
 OBD2_CHANNEL_KV = """
 <OBD2Channel>:
-    spacing: dp(10)
     size_hint_y: None
     height: dp(30)
     orientation: 'horizontal'
-    ChannelNameSelectorView:
+#    padding: [dp(5), dp(0)]    
+    FieldLabel:
         size_hint_x: 0.5
-        id: chan_id
-    SampleRateSpinner:
+        id: name
+    FieldLabel:
         size_hint_x: 0.3
-        id: sr
+        id: sample_rate
     IconButton:
         size_hint_x: 0.1    
         text: u'\uf044'
@@ -168,26 +170,10 @@ class OBD2Channel(BoxLayout):
         self.register_event_type('on_delete_pid')
         self.register_event_type('on_modified')
 
-    def on_channel(self, instance):
-        if self.channel:
-            # copy in the extended PID and CAN mapping
-            obd2_channel = self.obd2_settings.obd2channelInfo.get(self.channel.name)
-            self.channel.pid = obd2_channel.pid
-            self.channel.mode = obd2_channel.mode
-            self.channel.mapping = copy.deepcopy(obd2_channel.mapping)
-            self.channel.stale = True
-            self.ids.sr.setFromValue(obd2_channel.sampleRate)
-            self.dispatch('on_modified')
-
-    def on_modified(self):
+    def on_delete_pid(self, pid):
         pass
 
-    def on_sample_rate(self, instance, value):
-        if self.channel:
-            self.channel.sampleRate = instance.getValueFromKey(value)
-            self.dispatch('on_modified')
-
-    def on_delete_pid(self, pid):
+    def on_modified(self):
         pass
 
     def on_delete(self):
@@ -210,21 +196,12 @@ class OBD2Channel(BoxLayout):
 
         popup = editor_popup('Customize OBDII mapping', content, _on_answer, size_hint=(0.7, 0.75))
 
-        # TODO
-        # remove PID index
     def set_channel(self, pidIndex, channel, channels):
+        self.pidIndex = pidIndex
         self.channel = channel
-        sample_rate_spinner = self.ids.sr
-        sample_rate_spinner.set_max_rate(self.max_sample_rate)
-        sample_rate_spinner.setFromValue(channel.sampleRate)
-        sample_rate_spinner.bind(text=self.on_sample_rate)
+        self.ids.name.text = channel.name
+        self.ids.sample_rate.text = '{} Hz'.format(self.channel.sampleRate)
 
-        channel_editor = self.ids.chan_id
-        channel_names = self.obd2_settings.getChannelNames()
-        channel_editor.filter_list = channel_names
-        channel_editor.on_channels_updated(channels)
-        channel_editor.setValue(channel)
-        channel_editor.bind(on_channel=self.on_channel)
 
 
 OBD2_CHANNELS_VIEW_KV = """
@@ -234,24 +211,25 @@ OBD2_CHANNELS_VIEW_KV = """
     SettingsView:
         id: obd2enable
         label_text: 'OBDII channels'
-        help_text: 'Specify one or more OBDII Channels to enable'
-        size_hint_y: 0.20
+        help_text: ''
+        size_hint_y: 0.15
     BoxLayout:
-        size_hint_y: 0.70
-        #spacing: dp(5)
+        size_hint_y: 0.85
         orientation: 'vertical'        
         HSeparator:
             text: 'OBDII Channels'
         BoxLayout:
             orientation: 'horizontal'
-            size_hint_y: 0.15
-            spacing: dp(5)
-            HSeparatorMinor:
+            padding: [dp(5), dp(0)]
+            size_hint_y: 0.1
+            FieldLabel:
                 text: 'Channel'
-                size_hint_x: 0.3            
-            HSeparatorMinor:
-                text: 'Logging Rate'
+                size_hint_x: 0.5                
+            FieldLabel:
+                text: 'Rate'
                 size_hint_x: 0.3
+            BoxLayout:
+                size_hint_x: 0.2
         AnchorLayout:                
             AnchorLayout:
                 ScrollContainer:
@@ -267,8 +245,8 @@ OBD2_CHANNELS_VIEW_KV = """
                     do_scroll_y:True
                     GridLayout:
                         id: obd2grid
-                        padding: [dp(20), dp(20)]
-                        spacing: [dp(10), dp(10)]
+                        padding: [dp(5), dp(5)]
+                        spacing: [dp(0), dp(10)]
                         size_hint_y: None
                         height: max(self.minimum_height, scrlobd2.height)
                         cols: 1

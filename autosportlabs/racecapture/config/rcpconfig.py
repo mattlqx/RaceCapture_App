@@ -844,7 +844,7 @@ class CANMapping(object):
         self.can_mask = CANMapping.ID_MASK_DISABLED
         self.endian = False
         self.offset = 0
-        self.length = 0
+        self.length = 1
         self.multiplier = 1.0
         self.divider = 1.0
         self.adder = 0.0
