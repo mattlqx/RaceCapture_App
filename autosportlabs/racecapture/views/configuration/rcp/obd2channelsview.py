@@ -361,7 +361,7 @@ class OBD2ChannelsView(BaseConfigView):
             popup.dismiss()
 
         title = 'Add OBDII channel' if is_new else 'Edit OBDII channel'
-        popup = editor_popup(title, content, _on_answer, size=(dp(700), dp(300)))
+        popup = editor_popup(title, content, _on_answer, size=(dp(500), dp(300)))
 
     def add_obd2_channel(self, index, pid_config, max_sample_rate):
         channel = OBD2Channel(obd2_settings=self.obd2_settings, max_sample_rate=max_sample_rate, can_filters=self.can_filters, channels=self.channels)
@@ -386,5 +386,5 @@ class OBD2ChannelsView(BaseConfigView):
         cfg = self.obd2_cfg
         if cfg is not None:
             channel_count = len(cfg.pids)
-            self.ids.list_msg.text = 'No channels defined. Press (+) to add an OBDII channel' if channel_count == 0 else ''
+            self.ids.list_msg.text = 'Press (+) to add an OBDII channel' if channel_count == 0 else ''
 

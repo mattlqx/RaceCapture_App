@@ -744,7 +744,7 @@ class CANChannelsView(BaseConfigView):
         cfg = self.can_channels_cfg
         if cfg is not None:
             channel_count = len(cfg.channels)
-            self.ids.list_msg.text = 'No channels defined. Press (+) to map a CAN channel' if channel_count == 0 else ''
+            self.ids.list_msg.text = 'Press (+) to map a CAN channel' if channel_count == 0 else ''
 
     def reload_can_channel_grid(self, can_channels_cfg, max_sample_rate):
         self.can_grid.clear_widgets()
@@ -815,7 +815,7 @@ class CANChannelsView(BaseConfigView):
             popup.dismiss()
 
         title = 'Add CAN Channel Mapping' if is_new else 'Edit CAN Channel Mapping'
-        popup = editor_popup(title, content, _on_answer, size=(dp(700), dp(300)))
+        popup = editor_popup(title, content, _on_answer, size=(dp(500), dp(300)))
 
     def on_edit_channel(self, instance, channel_index):
         self._edit_channel(channel_index, False)
