@@ -117,9 +117,14 @@ class PIDConfigTab(CANChannelMappingTab):
             self.channel_cfg.passive = instance.active
 
 class OBD2ChannelConfigView(CANChannelConfigView):
-    def __init__(self, **kwargs):
+    def __init__(self, obd2_settings, **kwargs):
         self.pid_config_tab = PIDConfigTab()
         super(OBD2ChannelConfigView, self).__init__(**kwargs)
+        self.can_channel_customization_tab.set_channel_filter_list(obd2_settings.getChannelNames())
+        self.can_channel_customization_tab.bind(on_channel=self.on_channel_selected)
+
+    def on_channel_selected(self, instance, channel_config):
+        print('preset ' + str(channel_config))
 
     def init_tabs(self):
         self.ids.tabs.add_widget(self.can_channel_customization_tab)
@@ -131,6 +136,7 @@ class OBD2ChannelConfigView(CANChannelConfigView):
     def load_tabs(self):
         super(OBD2ChannelConfigView, self).load_tabs()
         self.pid_config_tab.init_view(self.channel_cfg)
+
 
 OBD2_CHANNEL_KV = """
 <OBD2Channel>:
@@ -158,7 +164,7 @@ class OBD2Channel(BoxLayout):
     channel = None
     obd2_settings = None
     max_sample_rate = 0
-    pidIndex = 0
+    channel_index = 0
     Builder.load_string(OBD2_CHANNEL_KV)
 
     def __init__(self, obd2_settings, max_sample_rate, can_filters, channels, **kwargs):
@@ -169,6 +175,7 @@ class OBD2Channel(BoxLayout):
         self.channels = channels
         self.register_event_type('on_delete_pid')
         self.register_event_type('on_modified')
+        self.register_event_type('on_customize_channel')
 
     def on_delete_pid(self, pid):
         pass
@@ -177,29 +184,21 @@ class OBD2Channel(BoxLayout):
         pass
 
     def on_delete(self):
-        self.dispatch('on_delete_pid', self.pidIndex)
+        self.dispatch('on_delete_pid', self.channel_index)
 
-    def _replace_config(self, to_cfg, from_cfg):
-        to_cfg.__dict__.update(from_cfg.__dict__)
+    def on_customize_channel(self, channel_index):
+        pass
 
     def on_customize(self):
-        working_channel_cfg = copy.deepcopy(self.channel)
-        content = OBD2ChannelConfigView()
-        content.init_config(self.pidIndex, working_channel_cfg, self.can_filters, self.max_sample_rate, self.channels)
+        self.dispatch('on_customize_channel', self.channel_index)
 
-        def _on_answer(instance, answer):
-            if answer:
-                self._replace_config(self.channel, working_channel_cfg)
-
-                self.dispatch('on_modified')
-            popup.dismiss()
-
-        popup = editor_popup('Customize OBDII mapping', content, _on_answer, size_hint=(0.7, 0.75))
-
-    def set_channel(self, pidIndex, channel, channels):
-        self.pidIndex = pidIndex
+    def set_channel(self, channel_index, channel):
+        self.channel_index = channel_index
         self.channel = channel
-        self.ids.name.text = channel.name
+        self.refresh()
+
+    def refresh(self):
+        self.ids.name.text = self.channel.name
         self.ids.sample_rate.text = '{} Hz'.format(self.channel.sampleRate)
 
 
@@ -316,28 +315,53 @@ class OBD2ChannelsView(BaseConfigView):
         self.obd2_grid.clear_widgets()
 
         for i in range(len(obd2_cfg.pids)):
-            pidConfig = obd2_cfg.pids[i]
-            self.add_obd2_channel(i, pidConfig, max_sample_rate)
+            pid_config = obd2_cfg.pids[i]
+            self.add_obd2_channel(i, pid_config, max_sample_rate)
 
         self.update_view_enabled()
 
-    def on_delete_pid(self, instance, pidIndex):
-        del self.obd2_cfg.pids[pidIndex]
+    def on_delete_pid(self, instance, channel_index):
+        del self.obd2_cfg.pids[channel_index]
         self.reload_obd2_channel_grid(self.obd2_cfg, self.max_sample_rate)
         self.dispatch('on_modified')
 
-    def add_obd2_channel(self, index, pidConfig, max_sample_rate):
+    def _replace_config(self, to_cfg, from_cfg):
+        to_cfg.__dict__.update(from_cfg.__dict__)
+
+    def _on_customize_channel(self, instance, channel_index):
+        self._customize_channel(channel_index, False)
+
+    def _customize_channel(self, channel_index, is_new):
+        channel = self.obd2_cfg.pids[channel_index]
+        working_channel_cfg = copy.deepcopy(channel)
+        content = OBD2ChannelConfigView(self.obd2_settings)
+        content.init_config(channel_index, working_channel_cfg, self.can_filters, self.max_sample_rate, self.channels)
+
+        def _on_answer(instance, answer):
+            if answer:
+                self._replace_config(channel, working_channel_cfg)
+                self.dispatch('on_modified')
+                self.reload_obd2_channel_grid(self.obd2_cfg, self.max_sample_rate)
+            popup.dismiss()
+
+        title = 'Add OBDII channel' if is_new else 'Customize OBDII channel'
+        popup = editor_popup(title, content, _on_answer, size_hint=(0.7, 0.75))
+
+    def add_obd2_channel(self, index, pid_config, max_sample_rate):
         channel = OBD2Channel(obd2_settings=self.obd2_settings, max_sample_rate=max_sample_rate, can_filters=self.can_filters, channels=self.channels)
         channel.bind(on_delete_pid=self.on_delete_pid)
-        channel.set_channel(index, pidConfig, self.channels)
+        channel.bind(on_customize_channel=self._on_customize_channel)
+        channel.set_channel(index, pid_config)
         channel.bind(on_modified=self.on_modified)
         self.obd2_grid.add_widget(channel)
 
     def on_add_obd2_channel(self):
         if (self.obd2_cfg):
-            pidConfig = PidConfig()
-            pidConfig.sampleRate = self.DEFAULT_OBD2_SAMPLE_RATE
-            self.obd2_cfg.pids.append(pidConfig)
-            self.add_obd2_channel(len(self.obd2_cfg.pids) - 1, pidConfig, self.max_sample_rate)
+            pid_config = PidConfig()
+            pid_config.sampleRate = self.DEFAULT_OBD2_SAMPLE_RATE
+            self.obd2_cfg.pids.append(pid_config)
+            channel_index = len(self.obd2_cfg.pids) - 1
+            self.add_obd2_channel(channel_index, pid_config, self.max_sample_rate)
             self.update_view_enabled()
             self.dispatch('on_modified')
+            self._customize_channel(channel_index, True)

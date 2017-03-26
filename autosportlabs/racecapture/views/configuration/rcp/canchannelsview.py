@@ -95,6 +95,7 @@ class CANChannelCustomizationTab(CANChannelMappingTab):
                 size_hint_x: 0.5
                 ChannelNameSelectorView:
                     id: chan_id
+                    on_channel: root.channel_selected(*args)
             SectionBoxLayout:
                 size_hint_x: 0.5
                 FieldLabel:
@@ -106,7 +107,18 @@ class CANChannelCustomizationTab(CANChannelMappingTab):
 
     def __init__(self, **kwargs):
         super(CANChannelCustomizationTab, self).__init__(**kwargs)
+        self.register_event_type('on_channel')
         self._loaded = False
+
+    def on_channel(self, channel_name):
+        pass
+
+    def channel_selected(self, value):
+        if self._loaded:
+            self.dispatch('on_channel', value.channel_config)
+
+    def set_channel_filter_list(self, filter_list):
+        self.ids.chan_id.filter_list = filter_list
 
     def init_view(self, channel_cfg, channels, max_sample_rate):
         self.channel_cfg = channel_cfg
