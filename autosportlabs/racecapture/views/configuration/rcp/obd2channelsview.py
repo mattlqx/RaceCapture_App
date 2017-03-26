@@ -20,6 +20,7 @@
 
 import kivy
 kivy.require('1.9.1')
+from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.switch import Switch
 from kivy.app import Builder
@@ -154,7 +155,7 @@ OBD2_CHANNEL_KV = """
     IconButton:
         size_hint_x: 0.1    
         text: u'\uf044'
-        on_release: root.on_customize()        
+        on_release: root.on_edit()        
     IconButton:
         size_hint_x: 0.1
         text: '\357\200\224'
@@ -176,7 +177,7 @@ class OBD2Channel(BoxLayout):
         self.channels = channels
         self.register_event_type('on_delete_obd2_channel')
         self.register_event_type('on_modified')
-        self.register_event_type('on_customize_channel')
+        self.register_event_type('on_edit_channel')
 
     def on_delete_obd2_channel(self, pid):
         pass
@@ -187,11 +188,11 @@ class OBD2Channel(BoxLayout):
     def on_delete(self):
         self.dispatch('on_delete_obd2_channel', self.channel_index)
 
-    def on_customize_channel(self, channel_index):
+    def on_edit_channel(self, channel_index):
         pass
 
-    def on_customize(self):
-        self.dispatch('on_customize_channel', self.channel_index)
+    def on_edit(self):
+        self.dispatch('on_edit_channel', self.channel_index)
 
     def set_channel(self, channel_index, channel):
         self.channel_index = channel_index
@@ -343,10 +344,10 @@ class OBD2ChannelsView(BaseConfigView):
     def _replace_config(self, to_cfg, from_cfg):
         to_cfg.__dict__.update(from_cfg.__dict__)
 
-    def _on_customize_channel(self, instance, channel_index):
-        self._customize_channel(channel_index, False)
+    def _on_edit_channel(self, instance, channel_index):
+        self._edit_channel(channel_index, False)
 
-    def _customize_channel(self, channel_index, is_new):
+    def _edit_channel(self, channel_index, is_new):
         channel = self.obd2_cfg.pids[channel_index]
         working_channel_cfg = copy.deepcopy(channel)
         content = OBD2ChannelConfigView(self.obd2_settings)
@@ -359,13 +360,13 @@ class OBD2ChannelsView(BaseConfigView):
                 self.reload_obd2_channel_grid(self.obd2_cfg, self.max_sample_rate)
             popup.dismiss()
 
-        title = 'Add OBDII channel' if is_new else 'Customize OBDII channel'
-        popup = editor_popup(title, content, _on_answer, size_hint=(0.7, 0.75))
+        title = 'Add OBDII channel' if is_new else 'Edit OBDII channel'
+        popup = editor_popup(title, content, _on_answer, size=(dp(700), dp(300)))
 
     def add_obd2_channel(self, index, pid_config, max_sample_rate):
         channel = OBD2Channel(obd2_settings=self.obd2_settings, max_sample_rate=max_sample_rate, can_filters=self.can_filters, channels=self.channels)
         channel.bind(on_delete_obd2_channel=self.on_delete_obd2_channel)
-        channel.bind(on_customize_channel=self._on_customize_channel)
+        channel.bind(on_edit_channel=self._on_edit_channel)
         channel.set_channel(index, pid_config)
         channel.bind(on_modified=self.on_modified)
         self.obd2_grid.add_widget(channel)
@@ -379,7 +380,7 @@ class OBD2ChannelsView(BaseConfigView):
             self.add_obd2_channel(channel_index, pid_config, self.max_sample_rate)
             self.update_view_enabled()
             self.dispatch('on_modified')
-            self._customize_channel(channel_index, True)
+            self._edit_channel(channel_index, True)
 
     def _refresh_channel_list_notice(self):
         cfg = self.obd2_cfg

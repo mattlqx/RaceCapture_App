@@ -451,7 +451,7 @@ class DashboardView(Screen):
             return
 
         content = TrackBuilderView(self._rc_api, self._databus, self._track_manager, current_point=self._gps_sample.geopoint, prompt_track_creation=True)
-        self._popup = editor_popup("Race track setup", content, on_close, hide_ok=True)
+        self._popup = editor_popup("Race track setup", content, on_close, hide_ok=True, size_hint=(0.9, 0.9))
         content.bind(on_track_complete=on_track_complete)
         self._popup.open()
 
@@ -497,7 +497,7 @@ class DashboardView(Screen):
         all_screens = self._dashboard_factory.available_dashboards
         # re-order selected screens based on native order
         return [x for x in all_screens if x in screens]
-        
+
     def on_preferences(self, *args):
         """
         Display the dashboard preferences view 
@@ -649,7 +649,7 @@ class DashboardScreenPreferences(DashboardPreferenceScreen):
         current_screens = self._settings.userPrefs.get_dashboard_screens()
         screen_keys = dashboard_factory.available_dashboards
         for key in screen_keys:
-            [name, image]  = dashboard_factory.get_dashboard_preview_image_path(key)
+            [name, image] = dashboard_factory.get_dashboard_preview_image_path(key)
             checkbox = CheckBox()
             checkbox.active = True if key in current_screens else False
             checkbox.bind(active=lambda i, v, k=key:self._screen_selected(k, v))
