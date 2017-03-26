@@ -532,7 +532,7 @@ class SingleAutoConfigScreen(Screen):
         # use the current location, if available
         current_point = self._gps_sample.geopoint if self._gps_sample.is_locked else None
         content = TrackSelectView(track_manager=self._track_manager, current_location=current_point)
-        popup = editor_popup("Select a track", content, on_track_select_close)
+        popup = editor_popup("Select a track", content, on_track_select_close, size_hint(0.9, 0.9))
         popup.open()
 
 
@@ -606,7 +606,7 @@ class CustomTrackConfigScreen(Screen):
             popup.dismiss()
 
         content = TrackBuilderView(databus=self._databus, rc_api=self._rc_api, track_manager=self._track_manager)
-        popup = editor_popup("Track Builder", content, on_close, hide_ok=True, size_hint=(1.0, 1.0))
+        popup = editor_popup("Track Builder", content, on_close, hide_ok=True, size_hint=(0.9, 0.9))
         content.bind(on_track_complete=on_track_complete)
         popup.open()
 

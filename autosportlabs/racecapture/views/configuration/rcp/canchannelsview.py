@@ -1,7 +1,7 @@
 import kivy
 kivy.require('1.9.0')
 import os
-from kivy.metrics import sp
+from kivy.metrics import dp
 from kivy.app import Builder
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.switch import Switch
@@ -529,7 +529,7 @@ CAN_CHANNEL_VIEW_KV = """
     IconButton:
         size_hint_x: 0.09        
         text: u'\uf044'
-        on_release: root.on_customize()
+        on_release: root.on_edit()
     IconButton:
         size_hint_x: 0.09        
         text: u'\uf014'
@@ -546,7 +546,7 @@ class CANChannelView(BoxLayout):
         self.max_sample_rate = max_sample_rate
         self.channels = channels
         self.register_event_type('on_delete_channel')
-        self.register_event_type('on_customize_channel')
+        self.register_event_type('on_edit_channel')
         self.register_event_type('on_modified')
         self._loaded = False
         self.set_channel()
@@ -557,14 +557,14 @@ class CANChannelView(BoxLayout):
     def on_delete_channel(self, channel_index):
         pass
 
-    def on_customize_channel(self, channel_index):
+    def on_edit_channel(self, channel_index):
         pass
 
     def on_delete(self):
         self.dispatch('on_delete_channel', self.channel_index)
 
-    def on_customize(self):
-        self.dispatch('on_customize_channel', self.channel_index)
+    def on_edit(self):
+        self.dispatch('on_edit_channel', self.channel_index)
 
     def set_channel(self):
         self.ids.name.text = self.channel_cfg.name
@@ -756,7 +756,7 @@ class CANChannelsView(BaseConfigView):
     def append_can_channel(self, index, channel_cfg, max_sample_rate):
         channel_view = CANChannelView(index, channel_cfg, max_sample_rate, self.channels)
         channel_view.bind(on_delete_channel=self.on_delete_channel)
-        channel_view.bind(on_customize_channel=self.on_customize_channel)
+        channel_view.bind(on_edit_channel=self.on_edit_channel)
         channel_view.bind(on_modified=self.on_modified)
         self.can_grid.add_widget(channel_view)
 
@@ -765,7 +765,7 @@ class CANChannelsView(BaseConfigView):
             can_channel = CANChannel()
             can_channel.sampleRate = self.DEFAULT_CAN_SAMPLE_RATE
             new_channel_index = self.add_can_channel(can_channel)
-            self._customize_channel(new_channel_index)
+            self._edit_channel(new_channel_index, True)
 
     def add_can_channel(self, can_channel):
         self.can_channels_cfg.channels.append(can_channel)
@@ -799,7 +799,7 @@ class CANChannelsView(BaseConfigView):
     def popup_dismissed(self, *args):
         self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
 
-    def _customize_channel(self, channel_index):
+    def _edit_channel(self, channel_index, is_new):
         content = CANChannelConfigView()
         working_channel_cfg = copy.deepcopy(self.can_channels_cfg.channels[channel_index])
         content.init_config(channel_index, working_channel_cfg, self.can_filters, self.max_sample_rate, self.channels)
@@ -812,10 +812,11 @@ class CANChannelsView(BaseConfigView):
             self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
             popup.dismiss()
 
-        popup = editor_popup('Customize CAN mapping', content, _on_answer, size_hint=(0.7, 0.75))
+        title = 'Add CAN Channel Mapping' if is_new else 'Edit CAN Channel Mapping'
+        popup = editor_popup(title, content, _on_answer, size=(dp(700), dp(300)))
 
-    def on_customize_channel(self, instance, channel_index):
-        self._customize_channel(channel_index)
+    def on_edit_channel(self, instance, channel_index):
+        self._edit_channel(channel_index, False)
 
     def on_preset_selected(self, instance, preset_id):
         popup = None
