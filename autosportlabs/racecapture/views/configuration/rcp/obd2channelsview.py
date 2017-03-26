@@ -28,7 +28,7 @@ from settingsview import SettingsSwitch
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
 from autosportlabs.racecapture.views.configuration.rcp.canchannelsview import CANChannelConfigView, CANChannelMappingTab, CANFilters
 from autosportlabs.uix.layout.sections import SectionBoxLayout
-from autosportlabs.racecapture.views.util.alertview import editor_popup
+from autosportlabs.racecapture.views.util.alertview import editor_popup, confirmPopup
 from autosportlabs.racecapture.OBD2.obd2settings import OBD2Settings
 from utils import *
 from autosportlabs.racecapture.config.rcpconfig import *
@@ -90,6 +90,7 @@ class PIDConfigTab(CANChannelMappingTab):
         self._loaded = False
 
     def init_view(self, channel_cfg):
+        self._loaded = False
         self.channel_cfg = channel_cfg
 
         pids = {}
@@ -98,7 +99,6 @@ class PIDConfigTab(CANChannelMappingTab):
         self.ids.pid.setValueMap(pids, str(PIDConfigTab.PID_RANGES[0]))
 
         self.ids.mode.setValueMap(PIDConfigTab.SUPPORTED_MODES, PIDConfigTab.DEFAULT_MODE)
-
         self.ids.mode.setFromValue(channel_cfg.mode)
         self.ids.pid.setFromValue(channel_cfg.pid)
         self.ids.passive.active = channel_cfg.passive
@@ -118,13 +118,20 @@ class PIDConfigTab(CANChannelMappingTab):
 
 class OBD2ChannelConfigView(CANChannelConfigView):
     def __init__(self, obd2_settings, **kwargs):
+        self.obd2_settings = obd2_settings
         self.pid_config_tab = PIDConfigTab()
         super(OBD2ChannelConfigView, self).__init__(**kwargs)
         self.can_channel_customization_tab.set_channel_filter_list(obd2_settings.getChannelNames())
         self.can_channel_customization_tab.bind(on_channel=self.on_channel_selected)
 
-    def on_channel_selected(self, instance, channel_config):
-        print('preset ' + str(channel_config))
+    def on_channel_selected(self, instance, channel_cfg):
+        obd2_preset = self.obd2_settings.obd2channelInfo.get(channel_cfg.name)
+        if obd2_preset is None:
+            return
+
+        channel_cfg.__dict__.update(obd2_preset.__dict__)
+
+        self.load_tabs()
 
     def init_tabs(self):
         self.ids.tabs.add_widget(self.can_channel_customization_tab)
@@ -134,9 +141,9 @@ class OBD2ChannelConfigView(CANChannelConfigView):
         self.ids.tabs.add_widget(self.can_formula_tab)
 
     def load_tabs(self):
+        channel_cfg = self.channel_cfg
         super(OBD2ChannelConfigView, self).load_tabs()
         self.pid_config_tab.init_view(self.channel_cfg)
-
 
 OBD2_CHANNEL_KV = """
 <OBD2Channel>:
@@ -173,18 +180,18 @@ class OBD2Channel(BoxLayout):
         self.max_sample_rate = max_sample_rate
         self.can_filters = can_filters
         self.channels = channels
-        self.register_event_type('on_delete_pid')
+        self.register_event_type('on_delete_obd2_channel')
         self.register_event_type('on_modified')
         self.register_event_type('on_customize_channel')
 
-    def on_delete_pid(self, pid):
+    def on_delete_obd2_channel(self, pid):
         pass
 
     def on_modified(self):
         pass
 
     def on_delete(self):
-        self.dispatch('on_delete_pid', self.channel_index)
+        self.dispatch('on_delete_obd2_channel', self.channel_index)
 
     def on_customize_channel(self, channel_index):
         pass
@@ -249,6 +256,10 @@ OBD2_CHANNELS_VIEW_KV = """
                         size_hint_y: None
                         height: max(self.minimum_height, scrlobd2.height)
                         cols: 1
+                FieldLabel:
+                    halign: 'center'
+                    id: list_msg
+                    text: ''                                    
             AnchorLayout:
                 anchor_y: 'bottom'
                 IconButton:
@@ -319,11 +330,21 @@ class OBD2ChannelsView(BaseConfigView):
             self.add_obd2_channel(i, pid_config, max_sample_rate)
 
         self.update_view_enabled()
+        self._refresh_channel_list_notice()
 
-    def on_delete_pid(self, instance, channel_index):
+    def _delete_obdii_channel(self, channel_index):
         del self.obd2_cfg.pids[channel_index]
         self.reload_obd2_channel_grid(self.obd2_cfg, self.max_sample_rate)
         self.dispatch('on_modified')
+
+    def on_delete_obd2_channel(self, instance, channel_index):
+        popup = None
+        def _on_answer(instance, answer):
+            if answer:
+                self._delete_obdii_channel(channel_index)
+            popup.dismiss()
+        popup = confirmPopup('Confirm', 'Delete OBDII Channel?', _on_answer)
+
 
     def _replace_config(self, to_cfg, from_cfg):
         to_cfg.__dict__.update(from_cfg.__dict__)
@@ -349,7 +370,7 @@ class OBD2ChannelsView(BaseConfigView):
 
     def add_obd2_channel(self, index, pid_config, max_sample_rate):
         channel = OBD2Channel(obd2_settings=self.obd2_settings, max_sample_rate=max_sample_rate, can_filters=self.can_filters, channels=self.channels)
-        channel.bind(on_delete_pid=self.on_delete_pid)
+        channel.bind(on_delete_obd2_channel=self.on_delete_obd2_channel)
         channel.bind(on_customize_channel=self._on_customize_channel)
         channel.set_channel(index, pid_config)
         channel.bind(on_modified=self.on_modified)
@@ -365,3 +386,10 @@ class OBD2ChannelsView(BaseConfigView):
             self.update_view_enabled()
             self.dispatch('on_modified')
             self._customize_channel(channel_index, True)
+
+    def _refresh_channel_list_notice(self):
+        cfg = self.obd2_cfg
+        if cfg is not None:
+            channel_count = len(cfg.pids)
+            self.ids.list_msg.text = 'No channels defined. Press (+) to add an OBDII channel' if channel_count == 0 else ''
+

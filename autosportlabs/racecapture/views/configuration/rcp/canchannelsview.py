@@ -121,6 +121,7 @@ class CANChannelCustomizationTab(CANChannelMappingTab):
         self.ids.chan_id.filter_list = filter_list
 
     def init_view(self, channel_cfg, channels, max_sample_rate):
+        self._loaded = False
         self.channel_cfg = channel_cfg
 
         channel_editor = self.ids.chan_id
@@ -193,6 +194,7 @@ class CANIDMappingTab(CANChannelMappingTab):
         self._loaded = False
 
     def init_view(self, channel_cfg):
+        self._loaded = False
         self.channel_cfg = channel_cfg
         self.ids.can_bus_channel.setValueMap({0: '1', 1: '2'}, '1')
 
@@ -204,7 +206,6 @@ class CANIDMappingTab(CANChannelMappingTab):
 
         # CAN mask
         self.ids.mask.text = str(self.channel_cfg.mapping.can_mask)
-
         self._loaded = True
 
     def on_sample_rate(self, instance, value):
@@ -282,6 +283,7 @@ class CANValueMappingTab(CANChannelMappingTab):
         self._loaded = False
 
     def init_view(self, channel_cfg):
+        self._loaded = False
         self.channel_cfg = channel_cfg
         self.ids.endian.setValueMap({0: 'Big (MSB)', 1: 'Little (LSB)'}, 'Big (MSB)')
         self.update_mapping_spinners()
@@ -396,6 +398,7 @@ class CANFormulaMappingTab(CANChannelMappingTab):
         self._loaded = False
 
     def init_view(self, channel_cfg):
+        self._loaded = False
         self.channel_cfg = channel_cfg
 
         # Disable for the initial release
@@ -641,7 +644,7 @@ CAN_CHANNELS_VIEW_KV = """
             
         AnchorLayout:                
             AnchorLayout:
-                ScrollView:
+                ScrollContainer:
                     canvas.before:
                         Color:
                             rgba: 0.05, 0.05, 0.05, 1
@@ -663,7 +666,6 @@ CAN_CHANNELS_VIEW_KV = """
                     halign: 'center'
                     id: list_msg
                     text: ''
-                        
             AnchorLayout:
                 anchor_y: 'bottom'
                 IconButton:
@@ -733,7 +735,7 @@ class CANChannelsView(BaseConfigView):
 
         self.ids.add_can_channel.disabled = add_disabled
 
-    def _refresh_can_channel_notice(self):
+    def _refresh_channel_list_notice(self):
         cfg = self.can_channels_cfg
         if cfg is not None:
             channel_count = len(cfg.channels)
@@ -746,7 +748,7 @@ class CANChannelsView(BaseConfigView):
             channel_cfg = can_channels_cfg.channels[i]
             self.append_can_channel(i, channel_cfg, max_sample_rate)
         self.update_view_enabled()
-        self._refresh_can_channel_notice()
+        self._refresh_channel_list_notice()
 
     def append_can_channel(self, index, channel_cfg, max_sample_rate):
         channel_view = CANChannelView(index, channel_cfg, max_sample_rate, self.channels)
@@ -833,7 +835,7 @@ class CANChannelsView(BaseConfigView):
                 new_channel = CANChannel()
                 new_channel.from_json_dict(channel_json)
                 self.add_can_channel(new_channel)
-        self._refresh_can_channel_notice()
+        self._refresh_channel_list_notice()
 
     def load_preset_view(self):
         content = PresetBrowserView(self.get_resource_cache())
