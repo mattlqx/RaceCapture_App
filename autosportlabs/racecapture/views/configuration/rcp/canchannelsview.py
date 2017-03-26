@@ -87,22 +87,30 @@ class CANChannelCustomizationTab(CANChannelMappingTab):
     Builder.load_string("""
 <CANChannelCustomizationTab>:
     text: 'Channel'
-    AnchorLayout:
-        size_hint_y: 0.33
+    BoxLayout:
         BoxLayout:
+            size_hint_x: 0.1
+        BoxLayout:
+            size_hint_x: 0.6
+            orientation: 'vertical'
             spacing: dp(10)
             SectionBoxLayout:
-                size_hint_x: 0.5
                 ChannelNameSelectorView:
                     id: chan_id
                     on_channel: root.channel_selected(*args)
             SectionBoxLayout:
-                size_hint_x: 0.5
                 FieldLabel:
+                    size_hint_x: 0.4
                     halign: 'right'
-                    text: 'Sample Rate'
+                    text: 'Rate'
                 SampleRateSpinner:
                     id: sr
+                    size_hint_x: 0.45
+                BoxLayout:
+                    size_hint_x: 0.15
+        BoxLayout:
+            size_hint_x: 0.1
+
 """)
 
     def __init__(self, **kwargs):
@@ -148,23 +156,13 @@ class CANIDMappingTab(CANChannelMappingTab):
         BoxLayout:
             orientation: 'horizontal'
             spacing: dp(10)            
-            AnchorLayout:
-                size_hint_x: 0.35
-                SectionBoxLayout:
-                    size_hint_y: 0.33
-                    FieldLabel:
-                        text: 'CAN bus'
-                        halign: 'right'
-                    LargeMappedSpinner:
-                        id: can_bus_channel
-                        on_text: root.on_can_bus(*args)
 
             AnchorLayout:
-                size_hint_x: 0.65
+                size_hint_x: 0.6
                 BoxLayout:
                     size_hint_y: 0.8
-                    spacing: dp(20)
-                    padding: (dp(20), dp(20))
+#                    spacing: dp(20)
+ #s                   padding: (dp(20), dp(20))
                     orientation: 'vertical'
                     SectionBoxLayout:
                         FieldLabel:
@@ -187,6 +185,18 @@ class CANIDMappingTab(CANChannelMappingTab):
                             id: mask
                             size_hint_x: 0.7
                             on_text: root.on_mask(*args)
+                            
+            AnchorLayout:
+                size_hint_x: 0.4
+                SectionBoxLayout:
+                    size_hint_y: 0.5
+                    FieldLabel:
+                        text: 'CAN Bus'
+                        halign: 'right'
+                    LargeMappedSpinner:
+                        id: can_bus_channel
+                        on_text: root.on_can_bus(*args)
+                
 """)
 
     def __init__(self, **kwargs):
@@ -231,37 +241,18 @@ class CANValueMappingTab(CANChannelMappingTab):
     
     BoxLayout:
         orientation: 'horizontal'
-        spacing: dp(20)
-        padding: (dp(20), dp(20))
-        AnchorLayout:
-            size_hint_x: 0.6        
-            BoxLayout:
-                size_hint_y: 0.33
-                orientation: 'horizontal'
-                spacing: dp(5)
-                
-                SectionBoxLayout:
-                    size_hint_x: 0.33
-                    FieldLabel:
-                        text: 'Offset'
-                        halign: 'right'
-                    LargeMappedSpinner:
-                        id: offset
-                        on_text: root.on_mapping_offset(*args)
-                SectionBoxLayout:
-                    size_hint_x: 0.33             
-                    FieldLabel:
-                        halign: 'right'
-                        text: 'Length'
-                    LargeMappedSpinner:
-                        id: length
-                        on_text: root.on_mapping_length(*args)
         BoxLayout:
-            anchor_x: 'right'
+            size_hint_x: 0.5       
             orientation: 'vertical'
-            size_hint_x: 0.4       
-            spacing: dp(10)
-            padding: (dp(10), dp(10))
+            spacing: dp(5)
+            
+            SectionBoxLayout:
+                FieldLabel:
+                    text: 'Offset'
+                    halign: 'right'
+                LargeMappedSpinner:
+                    id: offset
+                    on_text: root.on_mapping_offset(*args)
             SectionBoxLayout:
                 FieldLabel:
                     text: 'Bit Mode'
@@ -269,6 +260,18 @@ class CANValueMappingTab(CANChannelMappingTab):
                 CheckBox:
                     id: bitmode
                     on_active: root.on_bit_mode(*args)
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_x: 0.5
+            spacing: dp(5)
+            #padding: (dp(10), dp(10))
+            SectionBoxLayout:
+                FieldLabel:
+                    halign: 'right'
+                    text: 'Length'
+                LargeMappedSpinner:
+                    id: length
+                    on_text: root.on_mapping_length(*args)
             SectionBoxLayout:
                 FieldLabel:
                     text: 'Endian'

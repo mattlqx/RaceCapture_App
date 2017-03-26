@@ -45,44 +45,38 @@ class PIDConfigTab(CANChannelMappingTab):
     Builder.load_string("""
 <PIDConfigTab>:
     text: 'OBDII PID'
-    AnchorLayout:
-        size_hint_y: 0.33
-        BoxLayout:
-            spacing: dp(10)
-            SectionBoxLayout:
-                size_hint_x: 0.4
-                FieldLabel:
-                    text: 'OBDII PID'
-                    size_hint_x: 0.15
-                    halign: 'right'
-                LargeMappedSpinner:
-                    id: pid
-                    on_text: root.on_pid(*args)
-                    size_hint_x: 0.15
-            
-            SectionBoxLayout:
-                size_hint_x: 0.45
-                FieldLabel:
-                    size_hint_x: 0.6
-                    text: 'Mode'
-                    halign: 'right'
-                    id: mode
-                LargeMappedSpinner:
-                    id: mode
-                    on_text: root.on_mode(*args)
-                    size_hint_x: 0.4
+    BoxLayout:
+        AnchorLayout:
+            BoxLayout:
+                spacing: dp(10)
+                orientation: 'vertical'
+                SectionBoxLayout:
+                    FieldLabel:
+                        text: 'OBDII PID'
+                        halign: 'right'
+                    LargeMappedSpinner:
+                        id: pid
+                        on_text: root.on_pid(*args)
+                
+                SectionBoxLayout:
+                    FieldLabel:
+                        text: 'Mode'
+                        halign: 'right'
+                        id: mode
+                    LargeMappedSpinner:
+                        id: mode
+                        on_text: root.on_mode(*args)
         
-            SectionBoxLayout:
-                orientation: 'horizontal'
-                size_hint_x: 0.45
-                FieldLabel:
-                    text: 'Passive'
-                    halign: 'right'
-                    size_hint_x: 0.5
-                CheckBox:
-                    id: passive
-                    size_hint_x: 0.5
-                    on_active: root.on_passive(*args)
+        SectionBoxLayout:
+            orientation: 'horizontal'
+            FieldLabel:
+                size_hint_x: 0.7
+                text: 'Passive Mode'
+                halign: 'right'
+            CheckBox:
+                id: passive
+                size_hint_x: 0.3                
+                on_active: root.on_passive(*args)
     """)
 
     def __init__(self, **kwargs):
