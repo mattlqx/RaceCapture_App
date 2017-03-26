@@ -42,12 +42,14 @@ class LargeIntegerValueField(IntegerValueField):
     Builder.load_string("""
 <LargeIntegerValueField>:
     font_size: self.height * 0.5
+    input_type: 'number'
 """)
 
 class LargeFloatValueField(FloatValueField):
     Builder.load_string("""
 <LargeFloatValueField>:
     font_size: self.height * 0.5
+    input_type: 'number'
 """)
 
 class SymbolFieldLabel(FieldLabel):
@@ -155,14 +157,12 @@ class CANIDMappingTab(CANChannelMappingTab):
         orientation: 'vertical'
         BoxLayout:
             orientation: 'horizontal'
-            spacing: dp(10)            
+            spacing: dp(5)            
 
             AnchorLayout:
-                size_hint_x: 0.6
+                size_hint_x: 0.55
                 BoxLayout:
                     size_hint_y: 0.8
-#                    spacing: dp(20)
- #s                   padding: (dp(20), dp(20))
                     orientation: 'vertical'
                     SectionBoxLayout:
                         FieldLabel:
@@ -187,14 +187,16 @@ class CANIDMappingTab(CANChannelMappingTab):
                             on_text: root.on_mask(*args)
                             
             AnchorLayout:
-                size_hint_x: 0.4
+                size_hint_x: 0.45
                 SectionBoxLayout:
                     size_hint_y: 0.5
                     FieldLabel:
                         text: 'CAN Bus'
                         halign: 'right'
+                        size_hint_x: 0.55
                     LargeMappedSpinner:
                         id: can_bus_channel
+                        size_hint_x: 0.45
                         on_text: root.on_can_bus(*args)
                 
 """)
