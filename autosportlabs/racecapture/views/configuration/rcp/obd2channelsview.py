@@ -26,7 +26,7 @@ from kivy.app import Builder
 from iconbutton import IconButton
 from settingsview import SettingsSwitch
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
-from autosportlabs.racecapture.views.configuration.rcp.canchannelsview import CANChannelConfigView, CANChannelMappingTab, CANFilters
+from autosportlabs.racecapture.views.configuration.rcp.canmappingview import CANChannelConfigView, CANChannelMappingTab, CANFilters
 from autosportlabs.uix.layout.sections import SectionBoxLayout
 from autosportlabs.racecapture.views.util.alertview import editor_popup, confirmPopup
 from autosportlabs.racecapture.OBD2.obd2settings import OBD2Settings
@@ -291,12 +291,13 @@ class OBD2ChannelsView(BaseConfigView):
 
     def on_config_updated(self, rc_cfg):
         obd2_cfg = rc_cfg.obd2Config
+        self.obd2_cfg = obd2_cfg
+        
         max_sample_rate = rc_cfg.capabilities.sample_rates.sensor
         self.ids.obd2enable.setValue(obd2_cfg.enabled)
 
         self.obd2_grid.clear_widgets()
         self.reload_obd2_channel_grid(obd2_cfg, max_sample_rate)
-        self.obd2_cfg = obd2_cfg
         self.max_sample_rate = max_sample_rate
         self.update_view_enabled()
 
@@ -316,6 +317,7 @@ class OBD2ChannelsView(BaseConfigView):
             self.add_obd2_channel(i, pid_config, max_sample_rate)
 
         self.update_view_enabled()
+        print('read it')
         self._refresh_channel_list_notice()
 
     def _delete_obdii_channel(self, channel_index):
