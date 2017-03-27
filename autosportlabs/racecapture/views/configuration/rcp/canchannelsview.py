@@ -4,21 +4,20 @@ import os
 from kivy.metrics import dp
 from kivy.app import Builder
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.switch import Switch
 from kivy.uix.spinner import SpinnerOption
 from kivy.uix.popup import Popup
 from kivy.uix.image import Image
 from kivy.uix.anchorlayout import AnchorLayout
-from kivy.uix.textinput import TextInput
 from kivy.properties import StringProperty, NumericProperty
 from garden_androidtabs import AndroidTabsBase, AndroidTabs
 from iconbutton import IconButton
 from settingsview import SettingsSwitch
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
 from autosportlabs.racecapture.config.rcpconfig import *
-from autosportlabs.uix.layout.sections import SectionBoxLayout, HeaderSectionBoxLayout
+from autosportlabs.uix.layout.sections import SectionBoxLayout
 from autosportlabs.racecapture.views.util.alertview import confirmPopup, choicePopup, editor_popup
 from autosportlabs.racecapture.resourcecache.resourcemanager import ResourceCache
+from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from fieldlabel import FieldLabel
 from utils import *
 from valuefield import FloatValueField, IntegerValueField
@@ -506,9 +505,10 @@ class CANFilters(object):
                     self.default_value = k
                 self.filters[int(k)] = can_filters[k]
         except Exception as detail:
-            raise Exception('Error loading CAN filters: ' + str(detail))
+            raise Exception('Error loading CAN filters: ' + str(detail)) 
 
-CAN_CHANNEL_VIEW_KV = """
+class CANChannelView(BoxLayout):
+    Builder.load_string("""
 <CANChannelView>:
     size_hint_y: None
     height: dp(30)
@@ -536,10 +536,7 @@ CAN_CHANNEL_VIEW_KV = """
         size_hint_x: 0.09        
         text: u'\uf014'
         on_release: root.on_delete()
-"""
-
-class CANChannelView(BoxLayout):
-    Builder.load_string(CAN_CHANNEL_VIEW_KV)
+""")
 
     def __init__(self, channel_index, channel_cfg, max_sample_rate, channels, **kwargs):
         super(CANChannelView, self).__init__(**kwargs)
@@ -590,7 +587,15 @@ class CANPresetResourceCache(ResourceCache):
         default_preset_dir = os.path.join(base_dir, 'resource', self.preset_name)
         super(CANPresetResourceCache, self).__init__(settings, self.preset_url, self.preset_name, default_preset_dir, **kwargs)
 
-CAN_CHANNELS_VIEW_KV = """
+class CANChannelsView(BaseConfigView):
+    DEFAULT_CAN_SAMPLE_RATE = 1
+    can_channels_cfg = None
+    max_sample_rate = 0
+    can_grid = None
+    can_channels_settings = None
+    can_filters = None
+    _popup = None
+    Builder.load_string("""
 <CANChannelsView>:
     spacing: dp(20)
     orientation: 'vertical'
@@ -681,16 +686,7 @@ CAN_CHANNELS_VIEW_KV = """
                     on_release: root.on_add_can_channel()
                     disabled: True
                     id: add_can_channel
-"""
-class CANChannelsView(BaseConfigView):
-    DEFAULT_CAN_SAMPLE_RATE = 1
-    can_channels_cfg = None
-    max_sample_rate = 0
-    can_grid = None
-    can_channels_settings = None
-    can_filters = None
-    _popup = None
-    Builder.load_string(CAN_CHANNELS_VIEW_KV)
+""")
 
     def __init__(self, **kwargs):
         super(CANChannelsView, self).__init__(**kwargs)
@@ -851,7 +847,8 @@ class CANChannelsView(BaseConfigView):
         popup.bind(on_dismiss=self.popup_dismissed)
         popup.open()
 
-PRESET_ITEM_VIEW_KV = """
+class PresetItemView(BoxLayout):
+    Builder.load_string("""
 <PresetItemView>:
     canvas.before:
         Color:
@@ -903,9 +900,7 @@ PRESET_ITEM_VIEW_KV = """
                 title_font_size: self.height * 0.5
                 icon: u'\uf046'
                 on_press: root.select_preset()
-"""
-class PresetItemView(BoxLayout):
-    Builder.load_string(PRESET_ITEM_VIEW_KV)
+""")
 
     def __init__(self, preset_id, name, notes, image_path, **kwargs):
         super(PresetItemView, self).__init__(**kwargs)
@@ -920,12 +915,14 @@ class PresetItemView(BoxLayout):
 
     def on_preset_selected(self, preset_id):
         pass
-
-PRESET_BROWSER_VIEW_KV = """
+ 
+class PresetBrowserView(BoxLayout):
+    presets = None
+    Builder.load_string("""
 <PresetBrowserView>:
     orientation: 'vertical'
     spacing: dp(10)
-    ScrollView:
+    ScrollContainer:
         size_hint_y: 0.85
         canvas.before:
             Color:
@@ -947,11 +944,7 @@ PRESET_BROWSER_VIEW_KV = """
         size_hint_y: 0.15
         text: u'\uf00d'
         on_press: root.on_close()
-"""
-
-class PresetBrowserView(BoxLayout):
-    presets = None
-    Builder.load_string(PRESET_BROWSER_VIEW_KV)
+""")
 
     def __init__(self, resource_cache, **kwargs):
         super(PresetBrowserView, self).__init__(**kwargs)

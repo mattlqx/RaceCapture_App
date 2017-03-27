@@ -22,7 +22,6 @@ import kivy
 kivy.require('1.9.1')
 from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.switch import Switch
 from kivy.app import Builder
 from iconbutton import IconButton
 from settingsview import SettingsSwitch
@@ -36,7 +35,6 @@ from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 import copy
-
 
 class PIDConfigTab(CANChannelMappingTab):
     PID_RANGES = (0, 256)
@@ -136,16 +134,19 @@ class OBD2ChannelConfigView(CANChannelConfigView):
         self.ids.tabs.add_widget(self.can_formula_tab)
 
     def load_tabs(self):
-        channel_cfg = self.channel_cfg
         super(OBD2ChannelConfigView, self).load_tabs()
-        self.pid_config_tab.init_view(self.channel_cfg)
+        self.pid_config_tab.init_view(self.channel_cfg) 
 
-OBD2_CHANNEL_KV = """
+class OBD2Channel(BoxLayout):
+    channel = None
+    obd2_settings = None
+    max_sample_rate = 0
+    channel_index = 0
+    Builder.load_string("""
 <OBD2Channel>:
     size_hint_y: None
     height: dp(30)
     orientation: 'horizontal'
-#    padding: [dp(5), dp(0)]    
     FieldLabel:
         size_hint_x: 0.5
         id: name
@@ -160,14 +161,7 @@ OBD2_CHANNEL_KV = """
         size_hint_x: 0.1
         text: '\357\200\224'
         on_release: root.on_delete()
-"""
-
-class OBD2Channel(BoxLayout):
-    channel = None
-    obd2_settings = None
-    max_sample_rate = 0
-    channel_index = 0
-    Builder.load_string(OBD2_CHANNEL_KV)
+""")
 
     def __init__(self, obd2_settings, max_sample_rate, can_filters, channels, **kwargs):
         super(OBD2Channel, self).__init__(**kwargs)
@@ -202,10 +196,14 @@ class OBD2Channel(BoxLayout):
     def refresh(self):
         self.ids.name.text = self.channel.name
         self.ids.sample_rate.text = '{} Hz'.format(self.channel.sampleRate)
-
-
-
-OBD2_CHANNELS_VIEW_KV = """
+ 
+class OBD2ChannelsView(BaseConfigView):
+    DEFAULT_OBD2_SAMPLE_RATE = 1
+    obd2_cfg = None
+    max_sample_rate = 0
+    obd2_grid = None
+    obd2_settings = None
+    Builder.load_string("""
 <OBD2ChannelsView>:
     spacing: dp(20)
     orientation: 'vertical'
@@ -264,15 +262,8 @@ OBD2_CHANNELS_VIEW_KV = """
                     color: ColorScheme.get_accent()
                     on_release: root.on_add_obd2_channel()
                     disabled: True
-                    id: addpid"""
-
-class OBD2ChannelsView(BaseConfigView):
-    DEFAULT_OBD2_SAMPLE_RATE = 1
-    obd2_cfg = None
-    max_sample_rate = 0
-    obd2_grid = None
-    obd2_settings = None
-    Builder.load_string(OBD2_CHANNELS_VIEW_KV)
+                    id: addpid
+""")
 
     def __init__(self, **kwargs):
         super(OBD2ChannelsView, self).__init__(**kwargs)
@@ -387,4 +378,3 @@ class OBD2ChannelsView(BaseConfigView):
         if cfg is not None:
             channel_count = len(cfg.pids)
             self.ids.list_msg.text = 'Press (+) to add an OBDII channel' if channel_count == 0 else ''
-
