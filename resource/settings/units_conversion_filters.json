@@ -1,0 +1,23 @@
+{
+    "filters": {
+        "0": {"from":null, "to":null},
+        "6": {"from":"C", "to":"F"},
+        "7": {"from":"F", "to":"C"},
+        "8": {"from":"bar", "to":"psi"},
+        "9": {"from":"psi", "to":"bar"},        
+        "1": {"from":"Kph", "to":"Mph"},
+        "2": {"from":"Mph", "to":"Kph"},
+        "4": {"from":"Km", "to":"mi"},
+        "5": {"from":"mi", "to":"Km"},
+        "10": {"from":"mm", "to":"inch"},
+        "11": {"from":"inch", "to":"mm"},
+        "12": {"from":"L", "to":"gal"},
+        "13": {"from":"gal", "to":"L"},
+        "14": {"from":"Kg", "to":"lb"},
+        "15": {"from":"lb", "to":"Kg"},
+        "18": {"from":"Nm", "to":"lbft"},
+        "19": {"from":"lbft", "to":"Nm"},
+        "16": {"from":"W", "to":"hp"},
+        "17": {"from":"hp", "to":"W"}
+    }
+}
