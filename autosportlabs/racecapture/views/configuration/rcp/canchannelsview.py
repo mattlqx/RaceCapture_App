@@ -290,7 +290,7 @@ class CANValueMappingTab(CANChannelMappingTab):
     def init_view(self, channel_cfg):
         self._loaded = False
         self.channel_cfg = channel_cfg
-        self.ids.endian.setValueMap({0: 'Big (MSB)', 1: 'Little (LSB)'}, 'Big (MSB)')
+        self.ids.endian.setValueMap({1: 'Big (MSB)', 0: 'Little (LSB)'}, 'Big (MSB)')
         self.update_mapping_spinners()
 
         # CAN offset
