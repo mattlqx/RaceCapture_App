@@ -474,43 +474,6 @@ class CANUnitsConversionMappingTab(CANChannelMappingTab):
             if to_units:
                 self.channel_cfg.units = to_units
 
-class CANFilters(object):
-    filters = None
-    filter_labels = None
-    default_key = None
-    def __init__(self, base_dir, **kwargs):
-        super(CANFilters, self).__init__(**kwargs)
-        self.load_CAN_filters(base_dir)
-
-    def load_CAN_filters(self, base_dir):
-        if CANFilters.filters is not None:
-            return
-        try:
-            CANFilters.filters = {}
-            CANFilters.filter_labels = {}
-            filters_json = open(os.path.join(base_dir, 'resource', 'settings', 'units_conversion_filters.json'))
-            can_filters = json.load(filters_json)['filters']
-            for k in sorted(can_filters.iterkeys()):
-                if CANFilters.default_key is None:
-                    self.default_key = k
-                f = can_filters[k]
-                convert_from = f['from']
-                convert_to = f['to']
-                label = 'No Conversion' if not (convert_from and convert_to) else '{} -> {}'.format(convert_from, convert_to)
-                filter_key = int(k)
-                CANFilters.filters[filter_key] = f
-                CANFilters.filter_labels[filter_key] = label
-
-        except Exception as detail:
-            raise Exception('Error loading units conversion filters: ' + str(detail))
-
-    def get_filter(self, filter_id):
-        f = CANFilters.filters.get(filter_id)
-        return (f['from'], f['to']) if f else (None, None)
-
-    def get_filter_label(self, filter_id):
-        return CANFilters.filter_labels.get(filter_id)
-
 class CANChannelConfigView(BoxLayout):
 
     Builder.load_string("""

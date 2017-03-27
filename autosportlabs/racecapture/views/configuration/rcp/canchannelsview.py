@@ -12,7 +12,8 @@ from kivy.properties import StringProperty, NumericProperty
 from garden_androidtabs import AndroidTabsBase, AndroidTabs
 from iconbutton import IconButton
 from settingsview import SettingsSwitch
-from autosportlabs.racecapture.views.configuration.rcp.canmappingview import CANChannelConfigView, CANFilters
+from autosportlabs.racecapture.views.configuration.rcp.canmappingview import CANChannelConfigView
+from autosportlabs.racecapture.data.unitsconversion import UnitsConversionFilters
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.uix.layout.sections import SectionBoxLayout
@@ -216,7 +217,7 @@ class CANChannelsView(BaseConfigView):
         can_channels_enable.bind(on_setting=self.on_can_channels_enabled)
         can_channels_enable.setControl(SettingsSwitch())
         self.update_view_enabled()
-        self.can_filters = CANFilters(self._base_dir)
+        self.can_filters = UnitsConversionFilters(self._base_dir)
         self._resource_cache = None
 
     def get_resource_cache(self):
@@ -430,7 +431,7 @@ class PresetItemView(BoxLayout):
 
     def on_preset_selected(self, preset_id):
         pass
- 
+
 class PresetBrowserView(BoxLayout):
     presets = None
     Builder.load_string("""

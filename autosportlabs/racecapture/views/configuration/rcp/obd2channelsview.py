@@ -26,7 +26,8 @@ from kivy.app import Builder
 from iconbutton import IconButton
 from settingsview import SettingsSwitch
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
-from autosportlabs.racecapture.views.configuration.rcp.canmappingview import CANChannelConfigView, CANChannelMappingTab, CANFilters
+from autosportlabs.racecapture.views.configuration.rcp.canmappingview import CANChannelConfigView, CANChannelMappingTab
+from autosportlabs.racecapture.data.unitsconversion import UnitsConversionFilters
 from autosportlabs.uix.layout.sections import SectionBoxLayout
 from autosportlabs.racecapture.views.util.alertview import editor_popup, confirmPopup
 from autosportlabs.racecapture.OBD2.obd2settings import OBD2Settings
@@ -276,7 +277,7 @@ class OBD2ChannelsView(BaseConfigView):
         base_dir = kwargs.get('base_dir')
 
         self.obd2_settings = OBD2Settings(base_dir=base_dir)
-        self.can_filters = CANFilters(base_dir)
+        self.can_filters = UnitsConversionFilters(base_dir)
 
         self.update_view_enabled()
 
