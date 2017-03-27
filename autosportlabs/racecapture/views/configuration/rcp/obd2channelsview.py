@@ -132,10 +132,11 @@ class OBD2ChannelConfigView(CANChannelConfigView):
         self.ids.tabs.add_widget(self.can_id_tab)
         self.ids.tabs.add_widget(self.can_value_map_tab)
         self.ids.tabs.add_widget(self.can_formula_tab)
+        self.ids.tabs.add_widget(self.can_units_conversion_tab)
 
     def load_tabs(self):
         super(OBD2ChannelConfigView, self).load_tabs()
-        self.pid_config_tab.init_view(self.channel_cfg) 
+        self.pid_config_tab.init_view(self.channel_cfg)
 
 class OBD2Channel(BoxLayout):
     channel = None
@@ -196,7 +197,7 @@ class OBD2Channel(BoxLayout):
     def refresh(self):
         self.ids.name.text = self.channel.name
         self.ids.sample_rate.text = '{} Hz'.format(self.channel.sampleRate)
- 
+
 class OBD2ChannelsView(BaseConfigView):
     DEFAULT_OBD2_SAMPLE_RATE = 1
     obd2_cfg = None
@@ -290,7 +291,7 @@ class OBD2ChannelsView(BaseConfigView):
             self.dispatch('on_modified')
 
     def on_config_updated(self, rc_cfg):
-        obd2_cfg = rc_cfg.obd2Config        
+        obd2_cfg = rc_cfg.obd2Config
         max_sample_rate = rc_cfg.capabilities.sample_rates.sensor
         self.ids.obd2enable.setValue(obd2_cfg.enabled)
 
@@ -299,7 +300,7 @@ class OBD2ChannelsView(BaseConfigView):
         self.max_sample_rate = max_sample_rate
         self.obd2_cfg = obd2_cfg
         self.update_view_enabled()
-        
+
 
     def update_view_enabled(self):
         add_disabled = True

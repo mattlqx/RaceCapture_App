@@ -349,7 +349,7 @@ class CANValueMappingTab(CANChannelMappingTab):
 class CANFormulaMappingTab(CANChannelMappingTab):
     Builder.load_string("""
 <CANFormulaMappingTab>:
-    text: 'Conversion Formula'
+    text: 'Formula'
 
     AnchorLayout:
         size_hint_y: 0.5
@@ -390,18 +390,6 @@ class CANFormulaMappingTab(CANChannelMappingTab):
                     id: adder
                     size_hint_y: 0.7
                     on_text: root._on_adder(*args)
-        
-    #            BoxLayout:
-    #                orientation: 'horizontal'
-    #                spacing: dp(5)
-    #                FieldLabel:
-    #                    halign: 'right'
-    #                    size_hint_x: 0.3
-    #                    text: 'Conversion Filter'
-    #                MappedSpinner:
-    #                    id: filters     
-    #                    size_hint_x: 0.7
-    #                    on_text: root._on_filter(*args)
 """)
 
     def __init__(self, **kwargs):
@@ -412,9 +400,6 @@ class CANFormulaMappingTab(CANChannelMappingTab):
         self._loaded = False
         self.channel_cfg = channel_cfg
 
-        # Disable for the initial release
-        # self.ids.filters.setValueMap(self.can_filters.filters, self.can_filters.default_value)
-
         # Multiplier
         self.ids.multiplier.text = str(self.channel_cfg.mapping.multiplier)
 
@@ -423,10 +408,6 @@ class CANFormulaMappingTab(CANChannelMappingTab):
 
         # Adder
         self.ids.adder.text = str(self.channel_cfg.mapping.adder)
-
-        # Conversion Filter ID
-        # Disable for initial release
-        # self.ids.filters.setFromValue(self.channel_cfg.mapping.conversion_filter_id)
 
         self._loaded = True
 
@@ -443,6 +424,44 @@ class CANFormulaMappingTab(CANChannelMappingTab):
         if self._loaded:
             self.channel_cfg.mapping.adder = float(value)
 
+class CANUnitsConversionMappingTab(CANChannelMappingTab):
+    Builder.load_string("""
+<CANUnitsConversionMappingTab>:
+    text: 'Units Conversion'
+    
+    AnchorLayout:
+        size_hint_y: 0.5
+        BoxLayout:
+            BoxLayout:
+                size_hint_x: 0.1
+            SectionBoxLayout:
+                size_hint_x: 0.8
+                FieldLabel:
+                    halign: 'right'
+                    size_hint_x: 0.6
+                    text: 'Units Conversion'
+                MappedSpinner:
+                    id: filters     
+                    size_hint_x: 0.4
+                    on_text: root._on_filter(*args)
+            BoxLayout:
+                size_hint_x: 0.1                    
+    """)
+    def __init__(self, **kwargs):
+        super(CANUnitsConversionMappingTab, self).__init__(**kwargs)
+        self._loaded = False
+
+    def init_view(self, channel_cfg, units_conversion_filter):
+        self._loaded = False
+        self.channel_cfg = channel_cfg
+
+        self.ids.filters.setValueMap(units_conversion_filter.filters, units_conversion_filter.default_value)
+
+        # Conversion Filter ID
+        self.ids.filters.setFromValue(self.channel_cfg.mapping.conversion_filter_id)
+
+        self._loaded = True
+
     def _on_filter(self, instance, value):
         if self._loaded:
             self.channel_cfg.mapping.conversion_filter_id = instance.getValueFromKey(value)
@@ -454,20 +473,19 @@ class CANFilters(object):
         super(CANFilters, self).__init__(**kwargs)
         self.load_CAN_filters(base_dir)
 
-
     def load_CAN_filters(self, base_dir):
-        if self.filters != None:
+        if CANFilters.filters is not None:
             return
         try:
-            self.filters = {}
+            CANFilters.filters = {}
             can_filters_json = open(os.path.join(base_dir, 'resource', 'settings', 'can_channel_filters.json'))
             can_filters = json.load(can_filters_json)['can_channel_filters']
             for k in sorted(can_filters.iterkeys()):
-                if not self.default_value:
+                if CANFilters.default_value is None:
                     self.default_value = k
                 self.filters[int(k)] = can_filters[k]
         except Exception as detail:
-            raise Exception('Error loading CAN filters: ' + str(detail)) 
+            raise Exception('Error loading units conversion filters: ' + str(detail))
 
 class CANChannelConfigView(BoxLayout):
 
@@ -490,6 +508,7 @@ class CANChannelConfigView(BoxLayout):
         self.can_id_tab = CANIDMappingTab()
         self.can_value_map_tab = CANValueMappingTab()
         self.can_formula_tab = CANFormulaMappingTab()
+        self.can_units_conversion_tab = CANUnitsConversionMappingTab()
         self.init_tabs()
 
     def init_tabs(self):
@@ -497,6 +516,7 @@ class CANChannelConfigView(BoxLayout):
         self.ids.tabs.add_widget(self.can_id_tab)
         self.ids.tabs.add_widget(self.can_value_map_tab)
         self.ids.tabs.add_widget(self.can_formula_tab)
+        self.ids.tabs.add_widget(self.can_units_conversion_tab)
 
     def init_config(self, index, channel_cfg, can_filters, max_sample_rate, channels):
         self.channel_index = index
@@ -511,3 +531,4 @@ class CANChannelConfigView(BoxLayout):
         self.can_id_tab.init_view(self.channel_cfg)
         self.can_value_map_tab.init_view(self.channel_cfg)
         self.can_formula_tab.init_view(self.channel_cfg)
+        self.can_units_conversion_tab.init_view(self.channel_cfg, self.can_filters)
