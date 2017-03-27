@@ -290,16 +290,16 @@ class OBD2ChannelsView(BaseConfigView):
             self.dispatch('on_modified')
 
     def on_config_updated(self, rc_cfg):
-        obd2_cfg = rc_cfg.obd2Config
-        self.obd2_cfg = obd2_cfg
-        
+        obd2_cfg = rc_cfg.obd2Config        
         max_sample_rate = rc_cfg.capabilities.sample_rates.sensor
         self.ids.obd2enable.setValue(obd2_cfg.enabled)
 
         self.obd2_grid.clear_widgets()
         self.reload_obd2_channel_grid(obd2_cfg, max_sample_rate)
         self.max_sample_rate = max_sample_rate
+        self.obd2_cfg = obd2_cfg
         self.update_view_enabled()
+        
 
     def update_view_enabled(self):
         add_disabled = True
@@ -317,8 +317,7 @@ class OBD2ChannelsView(BaseConfigView):
             self.add_obd2_channel(i, pid_config, max_sample_rate)
 
         self.update_view_enabled()
-        print('read it')
-        self._refresh_channel_list_notice()
+        self._refresh_channel_list_notice(obd2_cfg)
 
     def _delete_obdii_channel(self, channel_index):
         del self.obd2_cfg.pids[channel_index]
@@ -375,8 +374,6 @@ class OBD2ChannelsView(BaseConfigView):
             self.dispatch('on_modified')
             self._edit_channel(channel_index, True)
 
-    def _refresh_channel_list_notice(self):
-        cfg = self.obd2_cfg
-        if cfg is not None:
-            channel_count = len(cfg.pids)
-            self.ids.list_msg.text = 'Press (+) to add an OBDII channel' if channel_count == 0 else ''
+    def _refresh_channel_list_notice(self, obd2_cfg):
+        channel_count = len(obd2_cfg.pids)
+        self.ids.list_msg.text = 'Press (+) to add an OBDII channel' if channel_count == 0 else ''

@@ -109,7 +109,7 @@ class CANChannelCustomizationTab(CANChannelMappingTab):
             SectionBoxLayout:
                 ChannelNameSelectorView:
                     id: chan_id
-                    on_channel: root.channel_selected(*args)
+                    on_channel: root._on_channel_selected(*args)
             SectionBoxLayout:
                 FieldLabel:
                     size_hint_x: 0.4
@@ -133,10 +133,6 @@ class CANChannelCustomizationTab(CANChannelMappingTab):
     def on_channel(self, channel_name):
         pass
 
-    def channel_selected(self, value):
-        if self._loaded:
-            self.dispatch('on_channel', value.channel_config)
-
     def set_channel_filter_list(self, filter_list):
         self.ids.chan_id.filter_list = filter_list
 
@@ -151,13 +147,17 @@ class CANChannelCustomizationTab(CANChannelMappingTab):
         sample_rate_spinner = self.ids.sr
         sample_rate_spinner.set_max_rate(max_sample_rate)
         sample_rate_spinner.setFromValue(self.channel_cfg.sampleRate)
-        sample_rate_spinner.bind(text=self.on_sample_rate)
+        sample_rate_spinner.bind(text=self._on_sample_rate)
 
         self._loaded = True
 
-    def on_sample_rate(self, instance, value):
+    def _on_sample_rate(self, instance, value):
         if self._loaded:
             self.channel_cfg.sampleRate = instance.getValueFromKey(value)
+
+    def _on_channel_selected(self, value):
+        if self._loaded:
+            self.dispatch('on_channel', value.channel_config)
 
 class CANIDMappingTab(CANChannelMappingTab):
     Builder.load_string("""
@@ -183,7 +183,7 @@ class CANIDMappingTab(CANChannelMappingTab):
                         LargeIntegerValueField:
                             id: can_id
                             size_hint_x: 0.7
-                            on_text: root.on_can_id(*args)
+                            on_text: root._on_can_id(*args)
     
                     SectionBoxLayout:
                         FieldLabel:
@@ -194,7 +194,7 @@ class CANIDMappingTab(CANChannelMappingTab):
                         LargeIntegerValueField:
                             id: mask
                             size_hint_x: 0.7
-                            on_text: root.on_mask(*args)
+                            on_text: root._on_mask(*args)
                             
             AnchorLayout:
                 size_hint_x: 0.45
@@ -207,7 +207,7 @@ class CANIDMappingTab(CANChannelMappingTab):
                     LargeMappedSpinner:
                         id: can_bus_channel
                         size_hint_x: 0.45
-                        on_text: root.on_can_bus(*args)
+                        on_text: root._on_can_bus(*args)
                 
 """)
 
@@ -220,7 +220,7 @@ class CANIDMappingTab(CANChannelMappingTab):
         self.channel_cfg = channel_cfg
         self.ids.can_bus_channel.setValueMap({0: '1', 1: '2'}, '1')
 
-        # CAN Channel
+        # CAN bus
         self.ids.can_bus_channel.setFromValue(self.channel_cfg.mapping.can_bus)
 
         # CAN ID
@@ -230,19 +230,15 @@ class CANIDMappingTab(CANChannelMappingTab):
         self.ids.mask.text = str(self.channel_cfg.mapping.can_mask)
         self._loaded = True
 
-    def on_sample_rate(self, instance, value):
-        if self._loaded:
-            self.channel_cfg.sampleRate = instance.getValueFromKey(value)
-
-    def on_can_bus(self, instance, value):
+    def _on_can_bus(self, instance, value):
         if self._loaded:
             self.channel_cfg.mapping.can_bus = instance.getValueFromKey(value)
 
-    def on_can_id(self, instance, value):
+    def _on_can_id(self, instance, value):
         if self._loaded:
             self.channel_cfg.mapping.can_id = int(value)
 
-    def on_mask(self, instance, value):
+    def _on_mask(self, instance, value):
         if self._loaded:
             self.channel_cfg.mapping.can_mask = int(value)
 
@@ -264,14 +260,14 @@ class CANValueMappingTab(CANChannelMappingTab):
                     halign: 'right'
                 LargeMappedSpinner:
                     id: offset
-                    on_text: root.on_mapping_offset(*args)
+                    on_text: root._on_mapping_offset(*args)
             SectionBoxLayout:
                 FieldLabel:
                     text: 'Bit Mode'
                     halign: 'right'
                 CheckBox:
                     id: bitmode
-                    on_active: root.on_bit_mode(*args)
+                    on_active: root._on_bit_mode(*args)
         BoxLayout:
             orientation: 'vertical'
             size_hint_x: 0.5
@@ -283,14 +279,14 @@ class CANValueMappingTab(CANChannelMappingTab):
                     text: 'Length'
                 LargeMappedSpinner:
                     id: length
-                    on_text: root.on_mapping_length(*args)
+                    on_text: root._on_mapping_length(*args)
             SectionBoxLayout:
                 FieldLabel:
                     text: 'Endian'
                     halign: 'right'
                 MappedSpinner:
                     id: endian
-                    on_text: root.on_endian(*args)
+                    on_text: root._on_endian(*args)
 """)
 
     def __init__(self, **kwargs):
@@ -333,20 +329,20 @@ class CANValueMappingTab(CANChannelMappingTab):
             bit_choices[i] = str(i)
         return bit_choices
 
-    def on_bit_mode(self, instance, value):
+    def _on_bit_mode(self, instance, value):
         if self._loaded:
             self.channel_cfg.mapping.bit_mode = self.ids.bitmode.active
             self.update_mapping_spinners()
 
-    def on_mapping_offset(self, instance, value):
+    def _on_mapping_offset(self, instance, value):
         if self._loaded:
             self.channel_cfg.mapping.offset = instance.getValueFromKey(value)
 
-    def on_mapping_length(self, instance, value):
+    def _on_mapping_length(self, instance, value):
         if self._loaded:
             self.channel_cfg.mapping.length = instance.getValueFromKey(value)
 
-    def on_endian(self, instance, value):
+    def _on_endian(self, instance, value):
         if self._loaded:
             self.channel_cfg.mapping.endian = instance.getValueFromKey(value)
 
@@ -373,7 +369,7 @@ class CANFormulaMappingTab(CANChannelMappingTab):
                 LargeFloatValueField:
                     id: multiplier
                     size_hint_y: 0.7
-                    on_text: root.on_multiplier(*args)
+                    on_text: root._on_multiplier(*args)
             SymbolFieldLabel:
                 halign: 'center'
                 text: u' \u00F7 '
@@ -383,7 +379,7 @@ class CANFormulaMappingTab(CANChannelMappingTab):
                 LargeFloatValueField:
                     id: divider
                     size_hint_y: 0.7
-                    on_text: root.on_divider(*args)
+                    on_text: root._on_divider(*args)
             SymbolFieldLabel:
                 text: ' + '
                 halign: 'center'
@@ -393,7 +389,7 @@ class CANFormulaMappingTab(CANChannelMappingTab):
                 LargeFloatValueField:
                     id: adder
                     size_hint_y: 0.7
-                    on_text: root.on_adder(*args)
+                    on_text: root._on_adder(*args)
         
     #            BoxLayout:
     #                orientation: 'horizontal'
@@ -405,7 +401,7 @@ class CANFormulaMappingTab(CANChannelMappingTab):
     #                MappedSpinner:
     #                    id: filters     
     #                    size_hint_x: 0.7
-    #                    on_text: root.on_filter(*args)
+    #                    on_text: root._on_filter(*args)
 """)
 
     def __init__(self, **kwargs):
@@ -435,19 +431,19 @@ class CANFormulaMappingTab(CANChannelMappingTab):
         self._loaded = True
 
 
-    def on_multiplier(self, instance, value):
+    def _on_multiplier(self, instance, value):
         if self._loaded:
             self.channel_cfg.mapping.multiplier = float(value)
 
-    def on_divider(self, instance, value):
+    def _on_divider(self, instance, value):
         if self._loaded:
             self.channel_cfg.mapping.divider = float(value)
 
-    def on_adder(self, instance, value):
+    def _on_adder(self, instance, value):
         if self._loaded:
             self.channel_cfg.mapping.adder = float(value)
 
-    def on_filter(self, instance, value):
+    def _on_filter(self, instance, value):
         if self._loaded:
             self.channel_cfg.mapping.conversion_filter_id = instance.getValueFromKey(value)
 

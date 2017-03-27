@@ -236,7 +236,6 @@ class CANChannelsView(BaseConfigView):
 
     def on_config_updated(self, rc_cfg):
         can_channels_cfg = rc_cfg.can_channels
-        self.can_channels_cfg = can_channels_cfg
 
         max_sample_rate = rc_cfg.capabilities.sample_rates.sensor
         max_can_channels = rc_cfg.capabilities.channels.can_channel
@@ -244,6 +243,7 @@ class CANChannelsView(BaseConfigView):
         self.reload_can_channel_grid(can_channels_cfg, max_sample_rate)
         self.max_sample_rate = max_sample_rate
         self.max_can_channels = max_can_channels
+        self.can_channels_cfg = can_channels_cfg
         self.update_view_enabled()
 
     def update_view_enabled(self):
@@ -254,11 +254,9 @@ class CANChannelsView(BaseConfigView):
 
         self.ids.add_can_channel.disabled = add_disabled
 
-    def _refresh_channel_list_notice(self):
-        cfg = self.can_channels_cfg
-        if cfg is not None:
-            channel_count = len(cfg.channels)
-            self.ids.list_msg.text = 'Press (+) to map a CAN channel' if channel_count == 0 else ''
+    def _refresh_channel_list_notice(self, cfg):
+        channel_count = len(cfg.channels)
+        self.ids.list_msg.text = 'Press (+) to map a CAN channel' if channel_count == 0 else ''
 
     def reload_can_channel_grid(self, can_channels_cfg, max_sample_rate):
         self.can_grid.clear_widgets()
@@ -267,7 +265,7 @@ class CANChannelsView(BaseConfigView):
             channel_cfg = can_channels_cfg.channels[i]
             self.append_can_channel(i, channel_cfg, max_sample_rate)
         self.update_view_enabled()
-        self._refresh_channel_list_notice()
+        self._refresh_channel_list_notice(can_channels_cfg)
 
     def append_can_channel(self, index, channel_cfg, max_sample_rate):
         channel_view = CANChannelView(index, channel_cfg, max_sample_rate, self.channels)
@@ -355,7 +353,6 @@ class CANChannelsView(BaseConfigView):
                 new_channel = CANChannel()
                 new_channel.from_json_dict(channel_json)
                 self.add_can_channel(new_channel)
-        self._refresh_channel_list_notice()
 
     def load_preset_view(self):
         content = PresetBrowserView(self.get_resource_cache())

@@ -935,7 +935,7 @@ class CANChannels(object):
         if json_dict:
             self.enabled = json_dict.get('en', self.enabled)
             channels_json = json_dict.get("chans", None)
-            if channels_json:
+            if channels_json is not None:
                 del self.channels[:]
                 for channel_json in channels_json:
                     c = CANChannel()
@@ -987,7 +987,7 @@ class Obd2Config(object):
     def fromJson(self, json_dict):
         self.enabled = json_dict.get('en', self.enabled)
         pidsJson = json_dict.get("pids", None)
-        if pidsJson:
+        if pidsJson is not None:
             del self.pids[:]
             for pidJson in pidsJson:
                 pid = PidConfig()
