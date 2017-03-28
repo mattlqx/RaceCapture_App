@@ -14,13 +14,13 @@
 		"bm": 0,
 		"chan": 0,
 		"id": 2024,
-		"offset": 2,
+		"offset": 3,
 		"len": 1,
 		"mult": 1,
 		"div": 2.55,
 		"add": 0,
-		"endian": 0,
-		"filt_id": 0
+		"bigEndian": true,
+		"filtId": 0
 	}, {
 		"nm": "EngineTemp",
 		"ut": "C",
@@ -36,13 +36,13 @@
 		"bm": 0,
 		"chan": 0,
 		"id": 2024,
-		"offset": 2,
+		"offset": 3,
 		"len": 1,
 		"mult": 1,
 		"div": 1,
 		"add": -40,
-		"endian": 0,
-		"filt_id": 0
+		"bigEndian": true,
+		"filtId": 0
 	}, {
 		"nm": "FuelPress",
 		"ut": "kPa",
@@ -58,13 +58,13 @@
 		"bm": 0,
 		"chan": 0,
 		"id": 2024,
-		"offset": 2,
+		"offset": 3,
 		"len": 1,
 		"mult": 3,
 		"div": 1,
 		"add": 0,
-		"endian": 0,
-		"filt_id": 0
+		"bigEndian": true,
+		"filtId": 0
 	}, {
 		"nm": "MAP",
 		"ut": "kPa",
@@ -80,13 +80,13 @@
 		"bm": 0,
 		"chan": 0,
 		"id": 2024,
-		"offset": 2,
+		"offset": 3,
 		"len": 1,
 		"mult": 1,
 		"div": 1,
 		"add": 0,
-		"endian": 0,
-		"filt_id": 0
+		"bigEndian": true,
+		"filtId": 0
 	}, {
 		"nm": "RPM",
 		"ut": "",
@@ -102,13 +102,13 @@
 		"bm": 0,
 		"chan": 0,
 		"id": 2024,
-		"offset": 2,
+		"offset": 3,
 		"len": 2,
 		"mult": 1,
 		"div": 4,
 		"add": 0,
-		"endian": 0,
-		"filt_id": 0
+		"bigEndian": true,
+		"filtId": 0
 
 	}, {
 		"nm": "WheelSpeed",
@@ -125,13 +125,13 @@
 		"bm": 0,
 		"chan": 0,
 		"id": 2024,
-		"offset": 2,
+		"offset": 3,
 		"len": 1,
 		"mult": 1,
 		"div": 1,
 		"add": 0,
-		"endian": 0,
-		"filt_id": 0
+		"bigEndian": true,
+		"filtId": 0
 	}, {
 		"nm": "IgnitionAdv",	
 		"ut": "deg",
@@ -147,16 +147,16 @@
 		"bm": 0,
 		"chan": 0,
 		"id": 2024,
-		"offset": 2,
+		"offset": 3,
 		"len": 1,
 		"mult": 1,
 		"div": 2,
 		"add": -64,
-		"endian": 0,
-		"filt_id": 0
+		"bigEndian": true,
+		"filtId": 0
 	}, {
 		"nm": "IAT",
-		"ut": "F",
+		"ut": "C",
 		"sys": 1,
 		"type": 1,
 		"prec": 0,
@@ -169,13 +169,13 @@
 		"bm": 0,
 		"chan": 0,
 		"id": 2024,
-		"offset": 2,
+		"offset": 3,
 		"len": 1,
 		"mult": 1,
 		"div": 1,
 		"add": -40,
-		"endian": 0,
-		"filt_id": 0
+		"bigEndian": true,
+		"filtId": 0
 	}, {
 		"nm": "MAF",
 		"ut": "gm/sec",
@@ -191,13 +191,13 @@
 		"bm": 0,
 		"chan": 0,
 		"id": 2024,
-		"offset": 2,
+		"offset": 3,
 		"len": 2,
 		"mult": 1,
 		"div": 100,
 		"add": 0,
-		"endian": 0,
-		"filt_id": 0
+		"bigEndian": true,
+		"filtId": 0
 	}, {
 		"nm": "TPS",
 		"ut": "%",
@@ -213,16 +213,16 @@
 		"bm": 0,
 		"chan": 0,
 		"id": 2024,
-		"offset": 2,
+		"offset": 3,
 		"len": 1,
 		"mult": 1,
 		"div": 2.55,
 		"add": 0,
-		"endian": 0,
-		"filt_id": 0
+		"bigEndian": true,
+		"filtId": 0
 	}, {
 		"nm": "FuelLevel",
-		"ut": "F",
+		"ut": "%",
 		"sys": 1,
 		"type": 1,
 		"prec": 0,
@@ -235,16 +235,16 @@
 		"bm": 0,
 		"chan": 0,
 		"id": 2024,
-		"offset": 2,
+		"offset": 3,
 		"len": 1,
 		"mult": 1,
 		"div": 2.55,
 		"add": 0,
-		"endian": 0,
-		"filt_id": 0
+		"bigEndian": true,
+		"filtId": 0
 	}, {
 		"nm": "OilTemp",
-		"ut": "F",
+		"ut": "C",
 		"sys": 1,
 		"type": 1,
 		"prec": 0,
@@ -257,12 +257,12 @@
 		"bm": 0,
 		"chan": 0,
 		"id": 2024,
-		"offset": 2,
+		"offset": 3,
 		"len": 1,
 		"mult": 1,
 		"div": 1,
 		"add": -40,
-		"endian": 0,
-		"filt_id": 0
+		"bigEndian": true,
+		"filtId": 0
 	}]
 }
