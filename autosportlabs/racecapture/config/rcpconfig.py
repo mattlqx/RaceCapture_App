@@ -856,7 +856,7 @@ class CANMapping(object):
             self.type = json_dict.get('type', self.type)
             self.can_bus = json_dict.get('bus', self.can_bus)
             self.can_id = json_dict.get('id', self.can_id)
-            self.can_mask = json_dict.get('id_mask', self.can_mask)
+            self.can_mask = json_dict.get('idMask', self.can_mask)
             self.offset = json_dict.get('offset', self.offset)
             self.length = json_dict.get('len', self.length)
             self.multiplier = json_dict.get('mult', self.multiplier)
@@ -872,7 +872,7 @@ class CANMapping(object):
         json_dict['type'] = self.type
         json_dict['bus'] = self.can_bus
         json_dict['id'] = self.can_id
-        json_dict['id_mask'] = self.can_mask
+        json_dict['idMask'] = self.can_mask
         json_dict['offset'] = self.offset
         json_dict['len'] = self.length
         json_dict['mult'] = self.multiplier
