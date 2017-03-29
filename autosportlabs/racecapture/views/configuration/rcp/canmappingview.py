@@ -20,6 +20,7 @@
 import kivy
 kivy.require('1.9.1')
 import os
+from kivy.clock import Clock
 from kivy.metrics import dp
 from kivy.app import Builder
 from kivy.uix.boxlayout import BoxLayout
@@ -29,6 +30,7 @@ from kivy.uix.anchorlayout import AnchorLayout
 from kivy.properties import StringProperty, NumericProperty
 from garden_androidtabs import AndroidTabsBase, AndroidTabs
 from autosportlabs.racecapture.config.rcpconfig import *
+from autosportlabs.racecapture.views.util.viewutils import clock_sequencer
 from autosportlabs.uix.layout.sections import SectionBoxLayout
 from fieldlabel import FieldLabel
 from utils import *
@@ -499,11 +501,13 @@ class CANChannelConfigView(BoxLayout):
         self.init_tabs()
 
     def init_tabs(self):
-        self.ids.tabs.add_widget(self.can_channel_customization_tab)
-        self.ids.tabs.add_widget(self.can_id_tab)
-        self.ids.tabs.add_widget(self.can_value_map_tab)
-        self.ids.tabs.add_widget(self.can_formula_tab)
-        self.ids.tabs.add_widget(self.can_units_conversion_tab)
+        clock_sequencer([lambda dt: self.ids.tabs.add_widget(self.can_channel_customization_tab),
+                         lambda dt: self.ids.tabs.add_widget(self.can_id_tab),
+                         lambda dt: self.ids.tabs.add_widget(self.can_value_map_tab),
+                         lambda dt: self.ids.tabs.add_widget(self.can_formula_tab),
+                         lambda dt: self.ids.tabs.add_widget(self.can_units_conversion_tab)
+                         ])
+                
 
     def init_config(self, index, channel_cfg, can_filters, max_sample_rate, channels):
         self.channel_index = index

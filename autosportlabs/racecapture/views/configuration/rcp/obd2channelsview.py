@@ -31,6 +31,7 @@ from autosportlabs.racecapture.data.unitsconversion import UnitsConversionFilter
 from autosportlabs.uix.layout.sections import SectionBoxLayout
 from autosportlabs.racecapture.views.util.alertview import editor_popup, confirmPopup
 from autosportlabs.racecapture.OBD2.obd2settings import OBD2Settings
+from autosportlabs.racecapture.views.util.viewutils import clock_sequencer
 from utils import *
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.racecapture.theme.color import ColorScheme
@@ -128,13 +129,14 @@ class OBD2ChannelConfigView(CANChannelConfigView):
         self.load_tabs()
 
     def init_tabs(self):
-        self.ids.tabs.add_widget(self.can_channel_customization_tab)
-        self.ids.tabs.add_widget(self.pid_config_tab)
-        self.ids.tabs.add_widget(self.can_id_tab)
-        self.ids.tabs.add_widget(self.can_value_map_tab)
-        self.ids.tabs.add_widget(self.can_formula_tab)
-        self.ids.tabs.add_widget(self.can_units_conversion_tab)
-
+        clock_sequencer([lambda dt: self.ids.tabs.add_widget(self.can_channel_customization_tab),
+                         lambda dt: self.ids.tabs.add_widget(self.pid_config_tab),
+                         lambda dt: self.ids.tabs.add_widget(self.can_id_tab),
+                         lambda dt: self.ids.tabs.add_widget(self.can_value_map_tab),
+                         lambda dt: self.ids.tabs.add_widget(self.can_formula_tab),
+                         lambda dt: self.ids.tabs.add_widget(self.can_units_conversion_tab)
+                         ])
+        
     def load_tabs(self):
         super(OBD2ChannelConfigView, self).load_tabs()
         self.pid_config_tab.init_view(self.channel_cfg)
