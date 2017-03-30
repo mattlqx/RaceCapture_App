@@ -27,6 +27,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.spinner import SpinnerOption
 from kivy.uix.image import Image
 from kivy.uix.anchorlayout import AnchorLayout
+from autosportlabs.help.helpmanager import HelpInfo
 from kivy.properties import StringProperty, NumericProperty
 from garden_androidtabs import AndroidTabsBase, AndroidTabs
 from autosportlabs.racecapture.config.rcpconfig import *
@@ -499,6 +500,10 @@ class CANChannelConfigView(BoxLayout):
         self.can_formula_tab = CANFormulaMappingTab()
         self.can_units_conversion_tab = CANUnitsConversionMappingTab()
         self.init_tabs()
+        self.can_channel_customization_tab.bind(on_channel=self.on_channel_selected)
+
+    def on_channel_selected(self, instance, channel_cfg):
+        Clock.schedule_once(lambda dt: HelpInfo.help_popup('can_mapping_help', self, arrow_pos='left_mid'), 1.0)
 
     def init_tabs(self):
         self.ids.tabs.add_widget(self.can_channel_customization_tab)

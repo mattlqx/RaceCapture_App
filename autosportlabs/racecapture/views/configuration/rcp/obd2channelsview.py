@@ -23,8 +23,10 @@ kivy.require('1.9.1')
 from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
 from kivy.app import Builder
+from kivy.clock import Clock
 from iconbutton import IconButton
 from settingsview import SettingsSwitch
+from autosportlabs.help.helpmanager import HelpInfo
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
 from autosportlabs.racecapture.views.configuration.rcp.canmappingview import CANChannelConfigView, CANChannelMappingTab
 from autosportlabs.racecapture.data.unitsconversion import UnitsConversionFilters
@@ -119,7 +121,6 @@ class OBD2ChannelConfigView(CANChannelConfigView):
         self.pid_config_tab = PIDConfigTab()
         super(OBD2ChannelConfigView, self).__init__(**kwargs)
         self.can_channel_customization_tab.set_channel_filter_list(obd2_preset_settings.getChannelNames())
-        self.can_channel_customization_tab.bind(on_channel=self.on_channel_selected)
 
     def on_channel_selected(self, instance, channel_cfg):
         name = channel_cfg.name
@@ -127,14 +128,15 @@ class OBD2ChannelConfigView(CANChannelConfigView):
         if obd2_preset is None:
             return
 
-        matching_existing_preset = self.obd2_preset_settings.obd2channelInfo.get(self._current_channel_config.name)
         # was the existing channel ever customized? this test will determine if the original channel
         # still matches the original preset
+        matching_existing_preset = self.obd2_preset_settings.obd2channelInfo.get(self._current_channel_config.name)
         channel_was_customized = not self._current_channel_config.equals(matching_existing_preset)
         popup = None
 
         def _apply_preset():
             channel_cfg.__dict__.update(obd2_preset.__dict__)
+            Clock.schedule_once(lambda dt: HelpInfo.help_popup('obdii_preset_help', self, arrow_pos='left_mid'), 1.0)
             self.load_tabs()
 
         def _on_answer(instance, answer):
