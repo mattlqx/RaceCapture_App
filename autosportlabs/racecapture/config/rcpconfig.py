@@ -53,6 +53,14 @@ class BaseChannel(object):
         json_dict['prec'] = self.precision
         json_dict['sr'] = self.sampleRate
 
+    def equals(self, other):
+        return other is not None and (
+                    self.name == other.name and
+                    self.units == other.units and
+                    self.min == other.min and
+                    self.max == other.max and
+                    self.sampleRate == other.sampleRate)
+
 SCALING_MAP_POINTS = 5
 SCALING_MAP_MIN_VOLTS = 0
 
@@ -882,6 +890,19 @@ class CANMapping(object):
         json_dict['filtId'] = self.conversion_filter_id
         return json_dict
 
+    def equals(self, other):
+        return other is not None and ( self.bit_mode == other.bit_mode and
+                    self.type == other.type and
+                    self.can_bus == other.can_bus and
+                    self.can_id == other.can_id and
+                    self.can_mask == other.can_mask and
+                    self.endian == other.endian and
+                    self.offset == other.offset and
+                    self.length == other.length and
+                    self.multiplier == other.multiplier and
+                    self.divider == other.divider and
+                    self.adder == other.adder and
+                    self.conversion_filter_id == other.conversion_filter_id)
 class CanConfig(object):
     def __init__(self, **kwargs):
         self.stale = False
@@ -975,6 +996,13 @@ class PidConfig(BaseChannel):
         json_dict.update(self.mapping.to_json_dict())
         return json_dict
 
+    def equals(self, other):
+        return other is not None and (super(PidConfig, self).equals(other) and
+                    self.pid == other.pid and
+                    self.mode == other.mode and
+                    self.passive == other.passive and
+                    self.mapping.equals(other.mapping))
+                
 OBD2_CONFIG_MAX_PIDS = 20
 
 class Obd2Config(object):

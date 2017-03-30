@@ -112,21 +112,41 @@ class PIDConfigTab(CANChannelMappingTab):
             self.channel_cfg.passive = instance.active
 
 class OBD2ChannelConfigView(CANChannelConfigView):
-    def __init__(self, obd2_settings, **kwargs):
-        self.obd2_settings = obd2_settings
+    def __init__(self, obd2_preset_settings, is_new, **kwargs):
+        self._current_channel_config = None
+        self._is_new = is_new
+        self.obd2_preset_settings = obd2_preset_settings
         self.pid_config_tab = PIDConfigTab()
         super(OBD2ChannelConfigView, self).__init__(**kwargs)
-        self.can_channel_customization_tab.set_channel_filter_list(obd2_settings.getChannelNames())
-        self.can_channel_customization_tab.bind(on_channel=self.on_channel_selected)
-
+        self.can_channel_customization_tab.set_channel_filter_list(obd2_preset_settings.getChannelNames())
+        self.can_channel_customization_tab.bind(on_channel=self.on_channel_selected)            
+            
     def on_channel_selected(self, instance, channel_cfg):
-        obd2_preset = self.obd2_settings.obd2channelInfo.get(channel_cfg.name)
+        name = channel_cfg.name
+        obd2_preset = self.obd2_preset_settings.obd2channelInfo.get(name)
         if obd2_preset is None:
             return
 
-        channel_cfg.__dict__.update(obd2_preset.__dict__)
+        matching_existing_preset = self.obd2_preset_settings.obd2channelInfo.get(self._current_channel_config.name)
+        # was the existing channel ever customized? this test will determine if the original channel
+        # still matches the original preset
+        channel_was_customized = not self._current_channel_config.equals(matching_existing_preset) 
+        popup = None
 
-        self.load_tabs()
+        def _apply_preset():
+            channel_cfg.__dict__.update(obd2_preset.__dict__)
+            self.load_tabs()
+            
+        def _on_answer(instance, answer):
+            if answer:
+                _apply_preset()
+            popup.dismiss()
+        
+        if not self._is_new and channel_was_customized:
+            popup = confirmPopup('Confirm', 'Apply pre-set values for {}?\n\nAny customizations made to this channel will be over-written.'.format(name), _on_answer)
+        else:
+            _apply_preset()
+
 
     def init_tabs(self):
         clock_sequencer([lambda dt: self.ids.tabs.add_widget(self.can_channel_customization_tab),
@@ -138,12 +158,13 @@ class OBD2ChannelConfigView(CANChannelConfigView):
                          ])
         
     def load_tabs(self):
+        self._current_channel_config = copy.deepcopy(self.channel_cfg)        
         super(OBD2ChannelConfigView, self).load_tabs()
         self.pid_config_tab.init_view(self.channel_cfg)
 
 class OBD2Channel(BoxLayout):
     channel = None
-    obd2_settings = None
+    obd2_preset_settings = None
     max_sample_rate = 0
     channel_index = 0
     Builder.load_string("""
@@ -167,9 +188,9 @@ class OBD2Channel(BoxLayout):
         on_release: root.on_delete()
 """)
 
-    def __init__(self, obd2_settings, max_sample_rate, can_filters, channels, **kwargs):
+    def __init__(self, obd2_preset_settings, max_sample_rate, can_filters, channels, **kwargs):
         super(OBD2Channel, self).__init__(**kwargs)
-        self.obd2_settings = obd2_settings
+        self.obd2_preset_settings = obd2_preset_settings
         self.max_sample_rate = max_sample_rate
         self.can_filters = can_filters
         self.channels = channels
@@ -206,7 +227,7 @@ class OBD2ChannelsView(BaseConfigView):
     obd2_cfg = None
     max_sample_rate = 0
     obd2_grid = None
-    obd2_settings = None
+    obd2_preset_settings = None
     Builder.load_string("""
 <OBD2ChannelsView>:
     spacing: dp(20)
@@ -278,7 +299,7 @@ class OBD2ChannelsView(BaseConfigView):
         obd2_enable.setControl(SettingsSwitch())
         base_dir = kwargs.get('base_dir')
 
-        self.obd2_settings = OBD2Settings(base_dir=base_dir)
+        self.obd2_preset_settings = OBD2Settings(base_dir=base_dir)
         self.can_filters = UnitsConversionFilters(base_dir)
 
         self.update_view_enabled()
@@ -346,7 +367,7 @@ class OBD2ChannelsView(BaseConfigView):
     def _edit_channel(self, channel_index, is_new):
         channel = self.obd2_cfg.pids[channel_index]
         working_channel_cfg = copy.deepcopy(channel)
-        content = OBD2ChannelConfigView(self.obd2_settings)
+        content = OBD2ChannelConfigView(self.obd2_preset_settings, is_new)
         content.init_config(channel_index, working_channel_cfg, self.can_filters, self.max_sample_rate, self.channels)
 
         def _on_answer(instance, answer):
@@ -360,7 +381,7 @@ class OBD2ChannelsView(BaseConfigView):
         popup = editor_popup(title, content, _on_answer, size=(dp(500), dp(300)))
 
     def add_obd2_channel(self, index, pid_config, max_sample_rate):
-        channel = OBD2Channel(obd2_settings=self.obd2_settings, max_sample_rate=max_sample_rate, can_filters=self.can_filters, channels=self.channels)
+        channel = OBD2Channel(obd2_preset_settings=self.obd2_preset_settings, max_sample_rate=max_sample_rate, can_filters=self.can_filters, channels=self.channels)
         channel.bind(on_delete_obd2_channel=self.on_delete_obd2_channel)
         channel.bind(on_edit_channel=self._on_edit_channel)
         channel.set_channel(index, pid_config)
