@@ -42,7 +42,7 @@ class UnitsConversionFilters(object):
             can_filters = json.load(filters_json)['filters']
             for k in sorted(can_filters.iterkeys()):
                 if UnitsConversionFilters.default_key is None:
-                    self.default_key = k
+                    UnitsConversionFilters.default_key = k
                 f = can_filters[k]
                 convert_from = f['from']
                 convert_to = f['to']
