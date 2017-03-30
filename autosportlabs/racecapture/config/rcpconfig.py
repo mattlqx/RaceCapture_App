@@ -836,7 +836,6 @@ class CANMapping(object):
     CONVERSION_FILTER_DISABLED = 0
 
     def __init__(self, **kwargs):
-        super(CANMapping, self).__init__(**kwargs)
         self.bit_mode = False
         self.type = CANMapping.TYPE_UNSIGNED
         self.can_bus = 0
