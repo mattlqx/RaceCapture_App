@@ -119,8 +119,8 @@ class OBD2ChannelConfigView(CANChannelConfigView):
         self.pid_config_tab = PIDConfigTab()
         super(OBD2ChannelConfigView, self).__init__(**kwargs)
         self.can_channel_customization_tab.set_channel_filter_list(obd2_preset_settings.getChannelNames())
-        self.can_channel_customization_tab.bind(on_channel=self.on_channel_selected)            
-            
+        self.can_channel_customization_tab.bind(on_channel=self.on_channel_selected)
+
     def on_channel_selected(self, instance, channel_cfg):
         name = channel_cfg.name
         obd2_preset = self.obd2_preset_settings.obd2channelInfo.get(name)
@@ -130,18 +130,18 @@ class OBD2ChannelConfigView(CANChannelConfigView):
         matching_existing_preset = self.obd2_preset_settings.obd2channelInfo.get(self._current_channel_config.name)
         # was the existing channel ever customized? this test will determine if the original channel
         # still matches the original preset
-        channel_was_customized = not self._current_channel_config.equals(matching_existing_preset) 
+        channel_was_customized = not self._current_channel_config.equals(matching_existing_preset)
         popup = None
 
         def _apply_preset():
             channel_cfg.__dict__.update(obd2_preset.__dict__)
             self.load_tabs()
-            
+
         def _on_answer(instance, answer):
             if answer:
                 _apply_preset()
             popup.dismiss()
-        
+
         if not self._is_new and channel_was_customized:
             popup = confirmPopup('Confirm', 'Apply pre-set values for {}?\n\nAny customizations made to this channel will be over-written.'.format(name), _on_answer)
         else:
@@ -149,18 +149,22 @@ class OBD2ChannelConfigView(CANChannelConfigView):
 
 
     def init_tabs(self):
-        clock_sequencer([lambda dt: self.ids.tabs.add_widget(self.can_channel_customization_tab),
-                         lambda dt: self.ids.tabs.add_widget(self.pid_config_tab),
-                         lambda dt: self.ids.tabs.add_widget(self.can_id_tab),
-                         lambda dt: self.ids.tabs.add_widget(self.can_value_map_tab),
-                         lambda dt: self.ids.tabs.add_widget(self.can_formula_tab),
-                         lambda dt: self.ids.tabs.add_widget(self.can_units_conversion_tab)
-                         ])
-        
+        self.ids.tabs.add_widget(self.can_channel_customization_tab)
+        self.ids.tabs.add_widget(self.pid_config_tab)
+        self.ids.tabs.add_widget(self.can_id_tab)
+        self.ids.tabs.add_widget(self.can_value_map_tab)
+        self.ids.tabs.add_widget(self.can_formula_tab)
+        self.ids.tabs.add_widget(self.can_units_conversion_tab)
+
     def load_tabs(self):
-        self._current_channel_config = copy.deepcopy(self.channel_cfg)        
-        super(OBD2ChannelConfigView, self).load_tabs()
-        self.pid_config_tab.init_view(self.channel_cfg)
+        self._current_channel_config = copy.deepcopy(self.channel_cfg)
+        clock_sequencer([lambda dt: self.can_channel_customization_tab.init_view(self.channel_cfg, self.channels, self.max_sample_rate),
+                         lambda dt: self.pid_config_tab.init_view(self.channel_cfg),
+                         lambda dt: self.can_id_tab.init_view(self.channel_cfg),
+                         lambda dt: self.can_value_map_tab.init_view(self.channel_cfg),
+                         lambda dt: self.can_formula_tab.init_view(self.channel_cfg),
+                         lambda dt: self.can_units_conversion_tab.init_view(self.channel_cfg, self.can_filters)
+                         ])
 
 class OBD2Channel(BoxLayout):
     channel = None

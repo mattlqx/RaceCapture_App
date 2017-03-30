@@ -501,13 +501,12 @@ class CANChannelConfigView(BoxLayout):
         self.init_tabs()
 
     def init_tabs(self):
-        clock_sequencer([lambda dt: self.ids.tabs.add_widget(self.can_channel_customization_tab),
-                         lambda dt: self.ids.tabs.add_widget(self.can_id_tab),
-                         lambda dt: self.ids.tabs.add_widget(self.can_value_map_tab),
-                         lambda dt: self.ids.tabs.add_widget(self.can_formula_tab),
-                         lambda dt: self.ids.tabs.add_widget(self.can_units_conversion_tab)
-                         ])
-                
+        self.ids.tabs.add_widget(self.can_channel_customization_tab)
+        self.ids.tabs.add_widget(self.can_id_tab)
+        self.ids.tabs.add_widget(self.can_value_map_tab)
+        self.ids.tabs.add_widget(self.can_formula_tab)
+        self.ids.tabs.add_widget(self.can_units_conversion_tab)
+
 
     def init_config(self, index, channel_cfg, can_filters, max_sample_rate, channels):
         self.channel_index = index
@@ -518,8 +517,9 @@ class CANChannelConfigView(BoxLayout):
         self.load_tabs()
 
     def load_tabs(self):
-        self.can_channel_customization_tab.init_view(self.channel_cfg, self.channels, self.max_sample_rate)
-        self.can_id_tab.init_view(self.channel_cfg)
-        self.can_value_map_tab.init_view(self.channel_cfg)
-        self.can_formula_tab.init_view(self.channel_cfg)
-        self.can_units_conversion_tab.init_view(self.channel_cfg, self.can_filters)
+        clock_sequencer([lambda dt: self.can_channel_customization_tab.init_view(self.channel_cfg, self.channels, self.max_sample_rate),
+                         lambda dt: self.can_id_tab.init_view(self.channel_cfg),
+                         lambda dt: self.can_value_map_tab.init_view(self.channel_cfg),
+                         lambda dt: self.can_formula_tab.init_view(self.channel_cfg),
+                         lambda dt: self.can_units_conversion_tab.init_view(self.channel_cfg, self.can_filters)
+                         ])
