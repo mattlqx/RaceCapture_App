@@ -99,7 +99,7 @@ class CANChannelView(BoxLayout):
         self._loaded = True
 
 class CANPresetResourceCache(ResourceCache):
-    preset_url = "http://podium.live/api/v1/can_presets"
+    preset_url = "https://podium.live/api/v1/mappings"
     preset_name = 'can_presets'
 
     def __init__(self, settings, base_dir, **kwargs):
