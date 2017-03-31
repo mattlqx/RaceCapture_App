@@ -21,7 +21,7 @@
 		"mult": 1,
 		"div": 1,
 		"add": 0,
-		"endian": 0,
+		"endian": true,
 		"filt_id": 0
 	}, {
 		"nm": "TPS",
@@ -39,7 +39,7 @@
 		"mult": 0.1,
 		"div": 1,
 		"add": 0,
-		"endian": 0,
+		"endian": true,
 		"filt_id": 0
 	}, {
 		"nm": "MAP",
@@ -57,7 +57,7 @@
 		"mult": 0.1,
 		"div": 1,
 		"add": 0,
-		"endian": 0,
+		"endian": true,
 		"filt_id": 0
 	}, {
 		"nm": "Coolant",
@@ -75,7 +75,7 @@
 		"mult": 0.1,
 		"div": 1,
 		"add": 0,
-		"endian": 0,
+		"endian": true,
 		"filt_id": 0
 	}, {
 		"nm": "AFR",
@@ -93,7 +93,7 @@
 		"mult": 0.1,
 		"div": 1,
 		"add": 0,
-		"endian": 0,
+		"endian": true,
 		"filt_id": 0
 	}]
 }

@@ -22,7 +22,7 @@
         "mult": 1.23,
         "div": 4.56,
         "add": 3,
-        "endian": 0,
+        "endian": false,
         "filt_id": 3
         }}, {
         "nm": "CHAN2",
