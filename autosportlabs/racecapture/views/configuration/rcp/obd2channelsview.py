@@ -171,7 +171,6 @@ class OBD2ChannelConfigView(CANChannelConfigView):
 class OBD2Channel(BoxLayout):
     channel = None
     obd2_preset_settings = None
-    max_sample_rate = 0
     channel_index = 0
     Builder.load_string("""
 <OBD2Channel>:
@@ -194,10 +193,9 @@ class OBD2Channel(BoxLayout):
         on_release: root.on_delete()
 """)
 
-    def __init__(self, obd2_preset_settings, max_sample_rate, can_filters, channels, **kwargs):
+    def __init__(self, obd2_preset_settings, can_filters, channels, **kwargs):
         super(OBD2Channel, self).__init__(**kwargs)
         self.obd2_preset_settings = obd2_preset_settings
-        self.max_sample_rate = max_sample_rate
         self.can_filters = can_filters
         self.channels = channels
         self.register_event_type('on_delete_obd2_channel')
@@ -326,7 +324,7 @@ class OBD2ChannelsView(BaseConfigView):
         self.ids.obd2enable.setValue(obd2_cfg.enabled)
 
         self.obd2_grid.clear_widgets()
-        self.reload_obd2_channel_grid(obd2_cfg, max_sample_rate)
+        self.reload_obd2_channel_grid(obd2_cfg)
         self.max_sample_rate = max_sample_rate
         self.obd2_cfg = obd2_cfg
         self.update_view_enabled()
@@ -340,19 +338,19 @@ class OBD2ChannelsView(BaseConfigView):
 
         self.ids.addpid.disabled = add_disabled
 
-    def reload_obd2_channel_grid(self, obd2_cfg, max_sample_rate):
+    def reload_obd2_channel_grid(self, obd2_cfg):
         self.obd2_grid.clear_widgets()
 
         for i in range(len(obd2_cfg.pids)):
             pid_config = obd2_cfg.pids[i]
-            self.add_obd2_channel(i, pid_config, max_sample_rate)
+            self.add_obd2_channel(i, pid_config)
 
         self.update_view_enabled()
         self._refresh_channel_list_notice(obd2_cfg)
 
     def _delete_obdii_channel(self, channel_index):
         del self.obd2_cfg.pids[channel_index]
-        self.reload_obd2_channel_grid(self.obd2_cfg, self.max_sample_rate)
+        self.reload_obd2_channel_grid(self.obd2_cfg)
         self.dispatch('on_modified')
 
     def on_delete_obd2_channel(self, instance, channel_index):
@@ -374,20 +372,19 @@ class OBD2ChannelsView(BaseConfigView):
         channel = self.obd2_cfg.pids[channel_index]
         working_channel_cfg = copy.deepcopy(channel)
         content = OBD2ChannelConfigView(self.obd2_preset_settings, is_new)
-        content.init_config(channel_index, working_channel_cfg, self.can_filters, self.max_sample_rate, self.channels)
+        content.init_config(working_channel_cfg, self.can_filters, self.max_sample_rate, self.channels)
 
         def _on_answer(instance, answer):
             if answer:
                 self._replace_config(channel, working_channel_cfg)
                 self.dispatch('on_modified')
-                self.reload_obd2_channel_grid(self.obd2_cfg, self.max_sample_rate)
+                self.reload_obd2_channel_grid(self.obd2_cfg)
             popup.dismiss()
 
-        title = 'Add OBDII channel' if is_new else 'Edit OBDII channel'
-        popup = editor_popup(title, content, _on_answer, size=(dp(500), dp(300)))
+        popup = editor_popup('Edit OBDII channel', content, _on_answer, size=(dp(500), dp(300)))
 
-    def add_obd2_channel(self, index, pid_config, max_sample_rate):
-        channel = OBD2Channel(obd2_preset_settings=self.obd2_preset_settings, max_sample_rate=max_sample_rate, can_filters=self.can_filters, channels=self.channels)
+    def add_obd2_channel(self, index, pid_config):
+        channel = OBD2Channel(obd2_preset_settings=self.obd2_preset_settings, can_filters=self.can_filters, channels=self.channels)
         channel.bind(on_delete_obd2_channel=self.on_delete_obd2_channel)
         channel.bind(on_edit_channel=self._on_edit_channel)
         channel.set_channel(index, pid_config)
@@ -395,15 +392,25 @@ class OBD2ChannelsView(BaseConfigView):
         self.obd2_grid.add_widget(channel)
 
     def on_add_obd2_channel(self):
-        if (self.obd2_cfg):
-            pid_config = PidConfig()
-            pid_config.sampleRate = self.DEFAULT_OBD2_SAMPLE_RATE
-            self.obd2_cfg.pids.append(pid_config)
-            channel_index = len(self.obd2_cfg.pids) - 1
-            self.add_obd2_channel(channel_index, pid_config, self.max_sample_rate)
-            self.update_view_enabled()
-            self.dispatch('on_modified')
-            self._edit_channel(channel_index, True)
+        if not self.obd2_cfg:
+            return
+
+        pid_config = PidConfig()
+        pid_config.sampleRate = self.DEFAULT_OBD2_SAMPLE_RATE
+
+        def _on_answer(instance, answer):
+            if answer:
+                self.obd2_cfg.pids.append(pid_config)
+                channel_index = len(self.obd2_cfg.pids) - 1
+                self.add_obd2_channel(channel_index, pid_config)
+                self.dispatch('on_modified')
+                self.reload_obd2_channel_grid(self.obd2_cfg)
+            popup.dismiss()
+        
+        content = OBD2ChannelConfigView(self.obd2_preset_settings, True)
+        content.init_config(pid_config, self.can_filters, self.max_sample_rate, self.channels)
+        popup = editor_popup('Add OBDII channel', content, _on_answer, size=(dp(500), dp(300)))
+        
 
     def _refresh_channel_list_notice(self, obd2_cfg):
         channel_count = len(obd2_cfg.pids)

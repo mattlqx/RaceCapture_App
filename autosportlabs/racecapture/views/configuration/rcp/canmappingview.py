@@ -513,8 +513,7 @@ class CANChannelConfigView(BoxLayout):
         self.ids.tabs.add_widget(self.can_units_conversion_tab)
 
 
-    def init_config(self, index, channel_cfg, can_filters, max_sample_rate, channels):
-        self.channel_index = index
+    def init_config(self, channel_cfg, can_filters, max_sample_rate, channels):
         self.channel_cfg = channel_cfg
         self.can_filters = can_filters
         self.max_sample_rate = max_sample_rate

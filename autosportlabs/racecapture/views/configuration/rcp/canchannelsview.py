@@ -57,11 +57,10 @@ class CANChannelView(BoxLayout):
         on_release: root.on_delete()
 """)
 
-    def __init__(self, channel_index, channel_cfg, max_sample_rate, channels, **kwargs):
+    def __init__(self, channel_index, channel_cfg, channels, **kwargs):
         super(CANChannelView, self).__init__(**kwargs)
         self.channel_index = channel_index
         self.channel_cfg = channel_cfg
-        self.max_sample_rate = max_sample_rate
         self.channels = channels
         self.register_event_type('on_delete_channel')
         self.register_event_type('on_edit_channel')
@@ -241,7 +240,7 @@ class CANChannelsView(BaseConfigView):
         max_sample_rate = rc_cfg.capabilities.sample_rates.sensor
         max_can_channels = rc_cfg.capabilities.channels.can_channel
         self.ids.can_channels_enable.setValue(can_channels_cfg.enabled)
-        self.reload_can_channel_grid(can_channels_cfg, max_sample_rate)
+        self.reload_can_channel_grid(can_channels_cfg)
         self.max_sample_rate = max_sample_rate
         self.max_can_channels = max_can_channels
         self.can_channels_cfg = can_channels_cfg
@@ -259,33 +258,46 @@ class CANChannelsView(BaseConfigView):
         channel_count = len(cfg.channels)
         self.ids.list_msg.text = 'Press (+) to map a CAN channel' if channel_count == 0 else ''
 
-    def reload_can_channel_grid(self, can_channels_cfg, max_sample_rate):
+    def reload_can_channel_grid(self, can_channels_cfg):
         self.can_grid.clear_widgets()
         channel_count = len(can_channels_cfg.channels)
         for i in range(channel_count):
             channel_cfg = can_channels_cfg.channels[i]
-            self.append_can_channel(i, channel_cfg, max_sample_rate)
+            self.append_can_channel(i, channel_cfg)
         self.update_view_enabled()
         self._refresh_channel_list_notice(can_channels_cfg)
 
-    def append_can_channel(self, index, channel_cfg, max_sample_rate):
-        channel_view = CANChannelView(index, channel_cfg, max_sample_rate, self.channels)
+    def append_can_channel(self, index, channel_cfg):
+        channel_view = CANChannelView(index, channel_cfg, self.channels)
         channel_view.bind(on_delete_channel=self.on_delete_channel)
         channel_view.bind(on_edit_channel=self.on_edit_channel)
         channel_view.bind(on_modified=self.on_modified)
         self.can_grid.add_widget(channel_view)
 
     def on_add_can_channel(self):
-        if (self.can_channels_cfg):
-            can_channel = CANChannel()
-            can_channel.sampleRate = self.DEFAULT_CAN_SAMPLE_RATE
-            new_channel_index = self.add_can_channel(can_channel)
-            self._edit_channel(new_channel_index, True)
+        if not self.can_channels_cfg:
+            return
+                
+        can_channel = CANChannel()
+        can_channel.sampleRate = self.DEFAULT_CAN_SAMPLE_RATE
+
+        content = CANChannelConfigView()
+        content.init_config(can_channel, self.can_filters, self.max_sample_rate, self.channels)
+
+        popup = None        
+        def _on_answer(instance, answer):
+            if answer:
+                self.add_can_channel(can_channel)
+                self.dispatch('on_modified')
+                self.reload_can_channel_grid(self.can_channels_cfg)
+            popup.dismiss()
+
+        popup = editor_popup('Add CAN Channel Mapping', content, _on_answer, size=(dp(500), dp(300)))
 
     def add_can_channel(self, can_channel):
         self.can_channels_cfg.channels.append(can_channel)
         new_channel_index = len(self.can_channels_cfg.channels) - 1
-        self.append_can_channel(new_channel_index, can_channel, self.max_sample_rate)
+        self.append_can_channel(new_channel_index, can_channel)
         self.update_view_enabled()
         self.dispatch('on_modified')
         return new_channel_index
@@ -297,7 +309,7 @@ class CANChannelsView(BaseConfigView):
 
     def _delete_can_channel(self, channel_index):
         del self.can_channels_cfg.channels[channel_index]
-        self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
+        self.reload_can_channel_grid(self.can_channels_cfg)
         self.dispatch('on_modified')
 
     def on_delete_channel(self, instance, channel_index):
@@ -314,24 +326,23 @@ class CANChannelsView(BaseConfigView):
     def popup_dismissed(self, *args):
         self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
 
-    def _edit_channel(self, channel_index, is_new):
+    def _edit_channel(self, channel_index):
         content = CANChannelConfigView()
         working_channel_cfg = copy.deepcopy(self.can_channels_cfg.channels[channel_index])
-        content.init_config(channel_index, working_channel_cfg, self.can_filters, self.max_sample_rate, self.channels)
+        content.init_config(working_channel_cfg, self.can_filters, self.max_sample_rate, self.channels)
 
         def _on_answer(instance, answer):
             if answer:
-                self._replace_config(self.can_channels_cfg.channels[content.channel_index], working_channel_cfg)
+                self._replace_config(self.can_channels_cfg.channels[channel_index], working_channel_cfg)
                 self.dispatch('on_modified')
 
-            self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
+            self.reload_can_channel_grid(self.can_channels_cfg)
             popup.dismiss()
 
-        title = 'Add CAN Channel Mapping' if is_new else 'Edit CAN Channel Mapping'
-        popup = editor_popup(title, content, _on_answer, size=(dp(500), dp(300)))
+        popup = editor_popup('Edit CAN Channel Mapping', content, _on_answer, size=(dp(500), dp(300)))
 
     def on_edit_channel(self, instance, channel_index):
-        self._edit_channel(channel_index, False)
+        self._edit_channel(channel_index)
 
     def on_preset_selected(self, instance, preset_id):
         popup = None
