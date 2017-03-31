@@ -277,14 +277,14 @@ class CANChannelsView(BaseConfigView):
     def on_add_can_channel(self):
         if not self.can_channels_cfg:
             return
-                
+
         can_channel = CANChannel()
         can_channel.sampleRate = self.DEFAULT_CAN_SAMPLE_RATE
 
         content = CANChannelConfigView()
         content.init_config(can_channel, self.can_filters, self.max_sample_rate, self.channels)
 
-        popup = None        
+        popup = None
         def _on_answer(instance, answer):
             if answer:
                 self.add_can_channel(can_channel)
@@ -304,7 +304,7 @@ class CANChannelsView(BaseConfigView):
 
     def _delete_all_channels(self):
         del self.can_channels_cfg.channels[:]
-        self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
+        self.reload_can_channel_grid(self.can_channels_cfg)
         self.dispatch('on_modified')
 
     def _delete_can_channel(self, channel_index):
@@ -324,7 +324,7 @@ class CANChannelsView(BaseConfigView):
         to_cfg.__dict__.update(from_cfg.__dict__)
 
     def popup_dismissed(self, *args):
-        self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
+        self.reload_can_channel_grid(self.can_channels_cfg)
 
     def _edit_channel(self, channel_index):
         content = CANChannelConfigView()
