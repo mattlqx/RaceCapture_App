@@ -51,7 +51,7 @@ class PIDConfigTab(CANChannelMappingTab):
     BoxLayout:
         AnchorLayout:
             BoxLayout:
-                spacing: dp(10)
+                spacing: dp(5)
                 orientation: 'vertical'
                 SectionBoxLayout:
                     FieldLabel:

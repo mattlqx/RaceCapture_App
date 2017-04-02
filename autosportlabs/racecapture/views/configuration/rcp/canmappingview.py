@@ -108,7 +108,7 @@ class CANChannelCustomizationTab(CANChannelMappingTab):
         BoxLayout:
             size_hint_x: 0.6
             orientation: 'vertical'
-            spacing: dp(10)
+            spacing: dp(5)
             SectionBoxLayout:
                 ChannelNameSelectorView:
                     id: chan_id
@@ -177,6 +177,7 @@ class CANIDMappingTab(CANChannelMappingTab):
                 BoxLayout:
                     size_hint_y: 0.8
                     orientation: 'vertical'
+                    spacing: dp(5)
                     SectionBoxLayout:
                         FieldLabel:
                             size_hint_x: 0.3
@@ -252,6 +253,7 @@ class CANValueMappingTab(CANChannelMappingTab):
     
     BoxLayout:
         orientation: 'vertical'
+        spacing: dp(5)        
         BoxLayout:
             orientation: 'horizontal'
             spacing: dp(5)
