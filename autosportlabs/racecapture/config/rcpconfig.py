@@ -837,15 +837,15 @@ class TracksDb(object):
         return {"trackDb":{'size':len(tracks), 'tracks': tracksJson}}
 
 class CANMapping(object):
-    TYPE_UNSIGNED = 0
-    TYPE_SIGNED = 1
-    TYPE_FLOAT = 2
+    CAN_MAPPING_TYPE_UNSIGNED = 0
+    CAN_MAPPING_TYPE_SIGNED = 1
+    CAN_MAPPING_TYPE_FLOAT = 2
     ID_MASK_DISABLED = 0
     CONVERSION_FILTER_DISABLED = 0
 
     def __init__(self, **kwargs):
         self.bit_mode = False
-        self.type = CANMapping.TYPE_UNSIGNED
+        self.type = CANMapping.CAN_MAPPING_TYPE_UNSIGNED
         self.can_bus = 0
         self.can_id = 0
         self.can_mask = CANMapping.ID_MASK_DISABLED
@@ -890,7 +890,7 @@ class CANMapping(object):
         return json_dict
 
     def equals(self, other):
-        return other is not None and ( self.bit_mode == other.bit_mode and
+        return other is not None and (self.bit_mode == other.bit_mode and
                     self.type == other.type and
                     self.can_bus == other.can_bus and
                     self.can_id == other.can_id and
@@ -1001,7 +1001,7 @@ class PidConfig(BaseChannel):
                     self.mode == other.mode and
                     self.passive == other.passive and
                     self.mapping.equals(other.mapping))
-                
+
 OBD2_CONFIG_MAX_PIDS = 20
 
 class Obd2Config(object):

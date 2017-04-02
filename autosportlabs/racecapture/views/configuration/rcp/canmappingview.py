@@ -251,10 +251,9 @@ class CANValueMappingTab(CANChannelMappingTab):
     text: 'Raw Value Mapping'
     
     BoxLayout:
-        orientation: 'horizontal'
+        orientation: 'vertical'
         BoxLayout:
-            size_hint_x: 0.5       
-            orientation: 'vertical'
+            orientation: 'horizontal'
             spacing: dp(5)
             
             SectionBoxLayout:
@@ -266,24 +265,35 @@ class CANValueMappingTab(CANChannelMappingTab):
                     on_text: root._on_mapping_offset(*args)
             SectionBoxLayout:
                 FieldLabel:
-                    text: 'Bit Mode'
-                    halign: 'right'
-                CheckBox:
-                    id: bitmode
-                    on_active: root._on_bit_mode(*args)
-        BoxLayout:
-            orientation: 'vertical'
-            size_hint_x: 0.5
-            spacing: dp(5)
-            #padding: (dp(10), dp(10))
-            SectionBoxLayout:
-                FieldLabel:
                     halign: 'right'
                     text: 'Length'
                 LargeMappedSpinner:
                     id: length
-                    on_text: root._on_mapping_length(*args)
+                    on_text: root._on_mapping_length(*args)                    
             SectionBoxLayout:
+                FieldLabel:
+                    text: 'Bit Mode'
+                    halign: 'right'
+                    size_hint_x: 0.7
+                CheckBox:
+                    id: bitmode
+                    on_active: root._on_bit_mode(*args)
+                    size_hint_x: 0.3
+        BoxLayout:
+            orientation: 'horizontal'
+            spacing: dp(5)
+            
+            SectionBoxLayout:
+                size_hint_x: 0.66
+                FieldLabel:
+                    text: 'Source Type'
+                    halign: 'right'
+                MappedSpinner:
+                    id: source_type
+                    on_text: root._on_source_type(*args)
+            
+            SectionBoxLayout:
+                size_hint_x: 0.33
                 FieldLabel:
                     text: 'Endian'
                     halign: 'right'
@@ -299,7 +309,14 @@ class CANValueMappingTab(CANChannelMappingTab):
     def init_view(self, channel_cfg):
         self._loaded = False
         self.channel_cfg = channel_cfg
-        self.ids.endian.setValueMap({1: 'Big (MSB)', 0: 'Little (LSB)'}, 'Big (MSB)')
+
+        self.ids.endian.setValueMap({1: 'Big', 0: 'Little'}, 'Big')
+
+        self.ids.source_type.setValueMap({CANMapping.CAN_MAPPING_TYPE_UNSIGNED: 'Unsigned',
+                                          CANMapping.CAN_MAPPING_TYPE_SIGNED: 'Signed',
+                                          CANMapping.CAN_MAPPING_TYPE_FLOAT: 'Float'},
+                                         'Unsigned')
+
         self.update_mapping_spinners()
 
         # CAN offset
@@ -313,6 +330,9 @@ class CANValueMappingTab(CANChannelMappingTab):
 
         # Endian
         self.ids.endian.setFromValue(self.channel_cfg.mapping.endian)
+
+        # source data type
+        self.ids.source_type.setFromValue(self.channel_cfg.mapping.type)
 
         self._loaded = True
 
@@ -348,6 +368,10 @@ class CANValueMappingTab(CANChannelMappingTab):
     def _on_endian(self, instance, value):
         if self._loaded:
             self.channel_cfg.mapping.endian = instance.getValueFromKey(value)
+
+    def _on_source_type(self, instance, value):
+        if self._loaded:
+            self.channel_cfg.mapping.type = instance.getValueFromKey(value)
 
 class CANFormulaMappingTab(CANChannelMappingTab):
     Builder.load_string("""

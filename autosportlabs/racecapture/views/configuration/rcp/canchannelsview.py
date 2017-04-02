@@ -86,7 +86,7 @@ class CANChannelView(BoxLayout):
     def set_channel(self):
         self.ids.name.text = self.channel_cfg.name
 
-        self.ids.sample_rate.text = '{} Hz'.format(self.channel_cfg.sampleRate)
+        self.ids.sample_rate.text = '{}Hz'.format(self.channel_cfg.sampleRate)
 
         can_mapping = self.channel_cfg.mapping
         self.ids.can_id.text = '{}'.format(can_mapping.can_id)

@@ -224,7 +224,7 @@ class OBD2Channel(BoxLayout):
 
     def refresh(self):
         self.ids.name.text = self.channel.name
-        self.ids.sample_rate.text = '{} Hz'.format(self.channel.sampleRate)
+        self.ids.sample_rate.text = '{}Hz'.format(self.channel.sampleRate)
 
 class OBD2ChannelsView(BaseConfigView):
     DEFAULT_OBD2_SAMPLE_RATE = 1
@@ -406,11 +406,11 @@ class OBD2ChannelsView(BaseConfigView):
                 self.dispatch('on_modified')
                 self.reload_obd2_channel_grid(self.obd2_cfg)
             popup.dismiss()
-        
+
         content = OBD2ChannelConfigView(self.obd2_preset_settings, True)
         content.init_config(pid_config, self.can_filters, self.max_sample_rate, self.channels)
         popup = editor_popup('Add OBDII channel', content, _on_answer, size=(dp(500), dp(300)))
-        
+
 
     def _refresh_channel_list_notice(self, obd2_cfg):
         channel_count = len(obd2_cfg.pids)
