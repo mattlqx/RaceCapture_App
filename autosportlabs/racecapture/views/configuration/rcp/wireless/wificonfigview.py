@@ -113,8 +113,12 @@ Builder.load_string('''
             id: ap_password
             disabled: False
             on_text: root.on_ap_password(*args)
-            on_focused: root.on_ap_password_focused(*args)
             max_chars: 24
+    FieldLabel:
+        id: ap_password_warn
+        height: 0.0
+        halign: 'right'
+        color: ColorScheme.get_alert()
     SettingsView:
         id: ap_encryption
         label_text: 'Encryption'
@@ -169,16 +173,17 @@ class WifiConfigView(GridLayout):
             value = strip_whitespace(value)
             Logger.debug("WirelessConfigView: got new ap password: {}".format(value))
             password_len = len(value)
+            warning = self.ids.ap_password_warn
             if self.wifi_config and password_len == 0 or password_len >= WifiConfig.WIFI_CONFIG_MINIMUM_AP_PASSWORD_LENGTH:
                 self.wifi_config.ap_password = value
                 self.wifi_config.stale = True
                 self._wifi_modified()
                 instance.clear_error()
-
-    def on_ap_password_focused(self, instance, value):
-            password_len = len(instance.text)
-            if value == False and password_len > 0 and password_len < WifiConfig.WIFI_CONFIG_MINIMUM_AP_PASSWORD_LENGTH:
-                instance.set_error('Password must be at least 8 characters')
+                warning.height = 0.0
+                warning.text = ''
+            else:
+                warning.height = 40
+                warning.text = 'Password must be at least 8 characters'
 
     def on_ap_ssid(self, instance, value):
         if self.wifi_config and value != self.wifi_config.ap_ssid:
