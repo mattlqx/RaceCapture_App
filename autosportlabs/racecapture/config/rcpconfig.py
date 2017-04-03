@@ -969,6 +969,7 @@ class TelemetryConfig(object):
 
 class WifiConfig(object):
 
+    WIFI_CONFIG_MINIMUM_AP_PASSWORD_LENGTH = 8
     def __init__(self):
         self.active = False
 
