@@ -221,9 +221,10 @@ class AnalysisView(Screen):
     def on_stream_connected(self, instance, new_session_id):
         self.stream_connecting = False
         self._dismiss_popup()
-        session = self._datastore.get_session_by_id(new_session_id)
-        self.ids.sessions_view.append_session(session)
-        self.check_load_suggested_lap(new_session_id)
+        if new_session_id:
+            session = self._datastore.get_session_by_id(new_session_id)
+            self.ids.sessions_view.append_session(session)
+            self.check_load_suggested_lap(new_session_id)
 
     def _set_suggested_channels(self, channels):
         self._settings.userPrefs.set_pref_list('analysis_preferences', 'selected_analysis_channels', channels)
