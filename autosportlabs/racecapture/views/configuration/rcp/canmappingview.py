@@ -316,7 +316,8 @@ class CANValueMappingTab(CANChannelMappingTab):
 
         self.ids.source_type.setValueMap({CANMapping.CAN_MAPPING_TYPE_UNSIGNED: 'Unsigned',
                                           CANMapping.CAN_MAPPING_TYPE_SIGNED: 'Signed',
-                                          CANMapping.CAN_MAPPING_TYPE_FLOAT: 'Float'},
+                                          CANMapping.CAN_MAPPING_TYPE_FLOAT: 'Float',
+                                          CANMapping.CAN_MAPPING_TYPE_SIGN_MAGNITUDE: 'Sign-Magnitude'},
                                          'Unsigned')
 
         self.update_mapping_spinners()
