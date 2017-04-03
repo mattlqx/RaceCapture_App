@@ -26,11 +26,12 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.metrics import dp
 from kivy.app import Builder
 from kivy.properties import StringProperty
+from kivy.clock import Clock
 
-__all__ = ('format_laptime')
+__all__ = ('format_laptime', 'clock_sequencer')
 
 NULL_LAP_TIME = '--:--.---'
-MIN_LAP_TIME=0
+MIN_LAP_TIME = 0
 
 def format_laptime(time):
     if time == None:
@@ -41,5 +42,10 @@ def format_laptime(time):
     if time == MIN_LAP_TIME:
         return NULL_LAP_TIME
     else:
-        return '{}:{}'.format(int_minute_value,'{0:06.3f}'.format(fraction_minute_value))
-    
+        return '{}:{}'.format(int_minute_value, '{0:06.3f}'.format(fraction_minute_value))
+
+def clock_sequencer(items, start_delay=0.2, spread=0.2):
+    start = start_delay
+    for i in items:
+        Clock.schedule_once(i, start)
+        start += spread

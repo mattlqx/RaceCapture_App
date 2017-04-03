@@ -607,6 +607,6 @@ if __name__ == '__main__':
         if 'sentry_client' in globals():
             ident = sentry_client.captureException()
             Logger.error("Main: crash caught: Reference is %s" % ident)
-            traceback.print_exc()
+            Logger.critical(traceback.format_exc())
         else:
             raise

@@ -222,8 +222,8 @@
             "sys": 1,
             "type": 1,
             "prec": 0,
-            "min": 0,
-            "max": 60
+            "min": -64,
+            "max": 64
         },
         {
             "nm": "InjectorPW",

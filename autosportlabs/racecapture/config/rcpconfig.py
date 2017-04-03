@@ -53,6 +53,14 @@ class BaseChannel(object):
         json_dict['prec'] = self.precision
         json_dict['sr'] = self.sampleRate
 
+    def equals(self, other):
+        return other is not None and (
+                    self.name == other.name and
+                    self.units == other.units and
+                    self.min == other.min and
+                    self.max == other.max and
+                    self.sampleRate == other.sampleRate)
+
 SCALING_MAP_POINTS = 5
 SCALING_MAP_MIN_VOLTS = 0
 
@@ -828,6 +836,72 @@ class TracksDb(object):
             tracksJson.append(track.toJson())
         return {"trackDb":{'size':len(tracks), 'tracks': tracksJson}}
 
+class CANMapping(object):
+    CAN_MAPPING_TYPE_UNSIGNED = 0
+    CAN_MAPPING_TYPE_SIGNED = 1
+    CAN_MAPPING_TYPE_FLOAT = 2
+    ID_MASK_DISABLED = 0
+    CONVERSION_FILTER_DISABLED = 0
+
+    def __init__(self, **kwargs):
+        self.bit_mode = False
+        self.type = CANMapping.CAN_MAPPING_TYPE_UNSIGNED
+        self.can_bus = 0
+        self.can_id = 0
+        self.can_mask = CANMapping.ID_MASK_DISABLED
+        self.endian = False
+        self.offset = 0
+        self.length = 1
+        self.multiplier = 1.0
+        self.divider = 1.0
+        self.adder = 0.0
+        self.conversion_filter_id = CANMapping.CONVERSION_FILTER_DISABLED
+
+    def from_json_dict(self, json_dict):
+        if json_dict:
+            self.bit_mode = bool(json_dict.get('bm', self.bit_mode))
+            self.type = json_dict.get('type', self.type)
+            self.can_bus = json_dict.get('bus', self.can_bus)
+            self.can_id = json_dict.get('id', self.can_id)
+            self.can_mask = json_dict.get('idMask', self.can_mask)
+            self.offset = json_dict.get('offset', self.offset)
+            self.length = json_dict.get('len', self.length)
+            self.multiplier = json_dict.get('mult', self.multiplier)
+            self.divider = json_dict.get('div', self.divider)
+            self.adder = json_dict.get('add', self.adder)
+            self.endian = bool(json_dict.get('bigEndian', self.endian))
+            self.conversion_filter_id = json_dict.get('filtId', self.conversion_filter_id)
+        return self
+
+    def to_json_dict(self):
+        json_dict = {}
+        json_dict['bm'] = bool(self.bit_mode)
+        json_dict['type'] = self.type
+        json_dict['bus'] = self.can_bus
+        json_dict['id'] = self.can_id
+        json_dict['idMask'] = self.can_mask
+        json_dict['offset'] = self.offset
+        json_dict['len'] = self.length
+        json_dict['mult'] = self.multiplier
+        json_dict['div'] = self.divider
+        json_dict['add'] = self.adder
+        json_dict['bigEndian'] = bool(self.endian)
+        json_dict['filtId'] = self.conversion_filter_id
+        return json_dict
+
+    def equals(self, other):
+        return other is not None and (self.bit_mode == other.bit_mode and
+                    self.type == other.type and
+                    self.can_bus == other.can_bus and
+                    self.can_id == other.can_id and
+                    self.can_mask == other.can_mask and
+                    self.endian == other.endian and
+                    self.offset == other.offset and
+                    self.length == other.length and
+                    self.multiplier == other.multiplier and
+                    self.divider == other.divider and
+                    self.adder == other.adder and
+                    self.conversion_filter_id == other.conversion_filter_id)
 class CanConfig(object):
     def __init__(self, **kwargs):
         self.stale = False
@@ -851,21 +925,82 @@ class CanConfig(object):
         canCfgJson['baud'] = bauds
         return {'canCfg':canCfgJson}
 
+class CANChannel(BaseChannel):
+
+    def __init__(self, **kwargs):
+        super(CANChannel, self).__init__(**kwargs)
+        self.mapping = CANMapping()
+
+    def from_json_dict(self, json_dict):
+        if json_dict:
+            super(CANChannel, self).fromJson(json_dict)
+            self.mapping.from_json_dict(json_dict)
+        return self
+
+    def to_json_dict(self):
+        json_dict = {}
+        super(CANChannel, self).appendJson(json_dict)
+        json_dict.update(self.mapping.to_json_dict())
+        return json_dict
+
+class CANChannels(object):
+
+    def __init__(self, **kwargs):
+        self.channels = []
+        self.enabled = False
+        self.stale = False
+        self.enabled = False
+
+    def from_json_dict(self, json_dict):
+        if json_dict:
+            self.enabled = json_dict.get('en', self.enabled)
+            channels_json = json_dict.get("chans", None)
+            if channels_json is not None:
+                del self.channels[:]
+                for channel_json in channels_json:
+                    c = CANChannel()
+                    c.from_json_dict(channel_json)
+                    self.channels.append(c)
+        return self
+
+    def to_json_dict(self):
+        channels_json = []
+        channel_count = len(self.channels)
+        for i in range(channel_count):
+            channels_json.append(self.channels[i].to_json_dict())
+        return {'canChanCfg':{'en': 1 if self.enabled else 0, 'chans':channels_json }}
+
 class PidConfig(BaseChannel):
     def __init__(self, **kwargs):
         super(PidConfig, self).__init__(**kwargs)
-        self.pidId = 0
+        self.pid = 0
+        self.mode = 0
+        self.passive = False
+        self.mapping = CANMapping()
 
     def fromJson(self, json_dict):
         if json_dict:
             super(PidConfig, self).fromJson(json_dict)
-            self.pidId = json_dict.get("pid", self.pidId)
+            self.pid = json_dict.get('pid', self.pid)
+            self.mode = json_dict.get('mode', self.mode)
+            self.passive = bool(json_dict.get('pass', self.passive))
+            self.mapping.from_json_dict(json_dict)
 
     def toJson(self):
         json_dict = {}
         super(PidConfig, self).appendJson(json_dict)
-        json_dict['pid'] = self.pidId
+        json_dict['pid'] = self.pid
+        json_dict['mode'] = self.mode
+        json_dict['pass'] = self.passive
+        json_dict.update(self.mapping.to_json_dict())
         return json_dict
+
+    def equals(self, other):
+        return other is not None and (super(PidConfig, self).equals(other) and
+                    self.pid == other.pid and
+                    self.mode == other.mode and
+                    self.passive == other.passive and
+                    self.mapping.equals(other.mapping))
 
 OBD2_CONFIG_MAX_PIDS = 20
 
@@ -879,7 +1014,7 @@ class Obd2Config(object):
     def fromJson(self, json_dict):
         self.enabled = json_dict.get('en', self.enabled)
         pidsJson = json_dict.get("pids", None)
-        if pidsJson:
+        if pidsJson is not None:
             del self.pids[:]
             for pidJson in pidsJson:
                 pid = PidConfig()
@@ -1107,6 +1242,7 @@ class ChannelCapabilities(object):
         self.timer = 3
         self.pwm = 3
         self.can = 2
+        self.can_channel = 0
 
     def from_json_dict(self, json_dict):
         if json_dict:
@@ -1116,6 +1252,7 @@ class ChannelCapabilities(object):
             self.pwm = int(json_dict.get('pwm', 0))
             self.can = int(json_dict.get('can', 0))
             self.timer = int(json_dict.get('timer', 0))
+            self.can_channel = int(json_dict.get('canChan', 0))
 
     def to_json_dict(self):
         return {
@@ -1124,9 +1261,9 @@ class ChannelCapabilities(object):
             "gpio": self.gpio,
             "pwm": self.pwm,
             "can": self.can,
-            "timer": self.timer
+            "timer": self.timer,
+            "canChan" : self.can_channel
         }
-
 
 class SampleRateCapabilities(object):
 
@@ -1214,10 +1351,6 @@ class Capabilities(object):
         return self.channels.timer > 0
 
     @property
-    def has_pwm(self):
-        return self.channels.pwm > 0
-
-    @property
     def has_cellular(self):
         return self.links.cellular
 
@@ -1228,6 +1361,10 @@ class Capabilities(object):
     @property
     def has_bluetooth(self):
         return self.links.bluetooth
+
+    @property
+    def has_can_channel(self):
+        return self.channels.can_channel > 0
 
     @property
     def has_streaming(self):
@@ -1291,6 +1428,7 @@ class RcpConfig(object):
         self.connectivityConfig = ConnectivityConfig()
         self.wifi_config = WifiConfig()
         self.canConfig = CanConfig()
+        self.can_channels = CANChannels()
         self.obd2Config = Obd2Config()
         self.scriptConfig = LuaScript()
         self.trackDb = TracksDb()
@@ -1308,6 +1446,7 @@ class RcpConfig(object):
                 self.connectivityConfig.stale or
                 self.wifi_config.stale or
                 self.canConfig.stale or
+                self.can_channels.stale or
                 self.obd2Config.stale or
                 self.scriptConfig.stale or
                 self.trackDb.stale)
@@ -1324,6 +1463,7 @@ class RcpConfig(object):
         self.trackConfig.stale = value
         self.connectivityConfig.stale = value
         self.canConfig.stale = value
+        self.can_channels.stale = value
         self.obd2Config.stale = value
         self.scriptConfig.stale = value
         self.trackDb.stale = value
@@ -1384,6 +1524,10 @@ class RcpConfig(object):
                 if canCfgJson:
                     self.canConfig.fromJson(canCfgJson)
 
+                can_chan_json = rcpJson.get('canChanCfg', None)
+                if can_chan_json:
+                    self.can_channels.from_json_dict(can_chan_json)
+
                 obd2CfgJson = rcpJson.get('obd2Cfg', None)
                 if obd2CfgJson:
                     self.obd2Config.fromJson(obd2CfgJson)
@@ -1418,6 +1562,7 @@ class RcpConfig(object):
                              'gpioCfg':self.gpioConfig.toJson().get('gpioCfg'),
                              'pwmCfg':self.pwmConfig.toJson().get('pwmCfg'),
                              'canCfg':self.canConfig.toJson().get('canCfg'),
+                             'canChanCfg':self.can_channels.to_json_dict().get('canChanCfg'),
                              'obd2Cfg':self.obd2Config.toJson().get('obd2Cfg'),
                              'connCfg':self.connectivityConfig.toJson().get('connCfg'),
                              'wifiCfg': self.wifi_config.to_json(),
