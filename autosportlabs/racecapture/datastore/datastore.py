@@ -116,13 +116,17 @@ def _smooth_dataset(dset, smoothing_rate):
 
 def _scrub_sql_value(value):
     """
-    Takes a string and strips it of all non-alphanumeric characters, making it safe for use in a SQL query for things
-    like a column name or table name. Not to be confused with traditional SQL escaping with backslashes or
+    Takes a string and strips it of all non-alphanumeric characters, and prefixes with a '_' if the name starts with a digit.
+    This makes it safe for use in a SQL query for things like a column name or table name. 
+    Not to be confused with traditional SQL escaping with backslashes or
     parameterized queries
     :param value: String
     :return: String
     """
-    return ''.join([char for char in value if char.isalnum()])
+    sql_name = ''.join([char for char in value if char.isalnum()])
+    if sql_name[:1].isdigit():
+        sql_name = '_' + sql_name
+    return sql_name
 
 
 class DataSet(object):
