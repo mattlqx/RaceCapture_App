@@ -116,7 +116,6 @@ Builder.load_string('''
             max_chars: 24
     FieldLabel:
         id: ap_password_warn
-        height: 0.0
         halign: 'right'
         color: ColorScheme.get_alert()
     SettingsView:
@@ -178,11 +177,8 @@ class WifiConfigView(GridLayout):
                 self.wifi_config.ap_password = value
                 self.wifi_config.stale = True
                 self._wifi_modified()
-                instance.clear_error()
-                warning.height = 0.0
                 warning.text = ''
             else:
-                warning.height = 40
                 warning.text = 'Password must be at least 8 characters'
 
     def on_ap_ssid(self, instance, value):
