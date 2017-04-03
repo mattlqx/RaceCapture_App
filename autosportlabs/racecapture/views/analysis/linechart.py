@@ -487,8 +487,8 @@ class LineChart(ChannelAnalysisWidget):
         try:
             self.datastore.get_channel_data(source_ref, ['Interval', 'Distance'] + channels, get_results)
         except Exception as e:
-            alertPopup('Could not load lap', "There was a problem loading the lap due to missing data:\r\n\r\n{}".format(e))
-            raise  e# allow CrashHandler to record the issue
+            Logger.warn('Non existant channel selected, not loading channels {}; {}'.format(channels, e))
+            raise e
         finally:
             ProgressSpinner.decrement_refcount()
 

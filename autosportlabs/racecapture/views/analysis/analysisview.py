@@ -153,7 +153,7 @@ class AnalysisView(Screen):
     def on_pre_enter(self, *args):
         # immediately stop any session recording if we're entering analysis view
         self._session_recorder.stop(stop_now=True)
-        
+
     def on_sessions(self, instance, value):
         self.ids.channelvalues.sessions = value
 
@@ -225,15 +225,9 @@ class AnalysisView(Screen):
         self.ids.sessions_view.append_session(session)
         self.check_load_suggested_lap(new_session_id)
 
-    def _get_suggested_channels(self):
-        suggested_channels = self._settings.userPrefs.get_pref_list('analysis_preferences', 'selected_analysis_channels')
-        if len(suggested_channels) == 0:
-            suggested_channels = UserPrefs.DEFAULT_ANALYSIS_CHANNELS
-        return suggested_channels
-        
     def _set_suggested_channels(self, channels):
         self._settings.userPrefs.set_pref_list('analysis_preferences', 'selected_analysis_channels', channels)
-        
+
     # The following selects a best lap if there are no other laps currently selected
     def check_load_suggested_lap(self, new_session_id):
         sessions_view = self.ids.sessions_view
@@ -243,9 +237,6 @@ class AnalysisView(Screen):
             if best_lap_id:
                 Logger.info('AnalysisView: Convenience selected a suggested session {} / lap {}'.format(new_session_id, best_lap_id))
                 main_chart = self.ids.mainchart
-                suggested_channels = self._get_suggested_channels()
-                main_chart.select_channels(suggested_channels)
-                self.ids.channelvalues.select_channels(suggested_channels)
                 sessions_view.select_lap(new_session_id, best_lap_id, True)
                 HelpInfo.help_popup('suggested_lap', main_chart, arrow_pos='left_mid')
             else:
@@ -275,14 +266,13 @@ class AnalysisView(Screen):
 
     def on_add_session(self, instance, session):
         Logger.info("AnalysisView: on_add_session: {}".format(session))
-        self.check_load_suggested_lap(session.session_id)
         self.ids.sessions_view.append_session(session)
         self.check_load_suggested_lap(session.session_id)
 
     def on_delete_session(self, instance, session):
         self.ids.sessions_view.session_deleted(session)
 
-    
+
     def on_export_session(self, instance, session):
 
         def _export_session(instance):

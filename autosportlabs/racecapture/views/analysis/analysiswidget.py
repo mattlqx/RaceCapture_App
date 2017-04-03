@@ -106,10 +106,12 @@ class AnalysisWidget(AnchorLayout):
 
     def _get_suggested_channels(self):
         suggested_channels = self.settings.userPrefs.get_pref_list('analysis_preferences', 'selected_analysis_channels')
+        available_channels = [c.name for c in self.datastore.channel_list]
+        suggested_channels = [c for c in suggested_channels if c in available_channels]
         if len(suggested_channels) == 0:
             suggested_channels = UserPrefs.DEFAULT_ANALYSIS_CHANNELS
         return suggested_channels
-        
+
     def _set_suggested_channels(self, channels):
         self.settings.userPrefs.set_pref_list('analysis_preferences', 'selected_analysis_channels', channels)
 
