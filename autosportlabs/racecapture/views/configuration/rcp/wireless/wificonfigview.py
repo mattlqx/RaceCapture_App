@@ -26,10 +26,11 @@ from kivy.logger import Logger
 import os, json
 from settingsview import SettingsView, SettingsSwitch, SettingsButton, SettingsMappedSpinner
 from autosportlabs.uix.bettertextinput import BetterTextInput
+from autosportlabs.racecapture.config.rcpconfig import WifiConfig
 from autosportlabs.uix.baselabel import BaseLabel
 from autosportlabs.help.helpmanager import HelpInfo
 from kivy.clock import Clock
-from utils import is_mobile_platform
+from utils import is_mobile_platform, strip_whitespace
 
 Builder.load_string('''
 
@@ -113,12 +114,16 @@ Builder.load_string('''
             disabled: False
             on_text: root.on_ap_password(*args)
             max_chars: 24
-    SettingsView:
-        id: ap_channel
-        label_text: 'Channel'
+    FieldLabel:
+        id: ap_password_warn
+        halign: 'right'
+        color: ColorScheme.get_alert()
     SettingsView:
         id: ap_encryption
         label_text: 'Encryption'
+    SettingsView:
+        id: ap_channel
+        label_text: 'Channel'
 ''')
 
 
@@ -147,6 +152,11 @@ class WifiConfigView(GridLayout):
         Logger.debug("WirelessConfigView: got new AP encryption: {}".format(value))
         if self.wifi_config:
             self.wifi_config.ap_encryption = value
+            if value == 'none':
+                self.ids.ap_password.text = ''
+                self.ids.ap_password.disabled = True
+            else:
+                self.ids.ap_password.disabled = False
             self.wifi_config.stale = True
             self._wifi_modified()
 
@@ -159,13 +169,21 @@ class WifiConfigView(GridLayout):
 
     def on_ap_password(self, instance, value):
         if self.wifi_config and value != self.wifi_config.ap_password:
+            value = strip_whitespace(value)
             Logger.debug("WirelessConfigView: got new ap password: {}".format(value))
-            self.wifi_config.ap_password = value
-            self.wifi_config.stale = True
-            self._wifi_modified()
+            password_len = len(value)
+            warning = self.ids.ap_password_warn
+            if self.wifi_config and password_len == 0 or password_len >= WifiConfig.WIFI_CONFIG_MINIMUM_AP_PASSWORD_LENGTH:
+                self.wifi_config.ap_password = value
+                self.wifi_config.stale = True
+                self._wifi_modified()
+                warning.text = ''
+            else:
+                warning.text = 'Password must be at least 8 characters'
 
     def on_ap_ssid(self, instance, value):
         if self.wifi_config and value != self.wifi_config.ap_ssid:
+            value = strip_whitespace(value)
             Logger.debug("WirelessConfigView: got new ap ssid: {}".format(value))
             self.wifi_config.ap_ssid = value
             self.wifi_config.stale = True
@@ -239,6 +257,8 @@ class WifiConfigView(GridLayout):
         encryption_spinner = SettingsMappedSpinner()
         self.load_ap_encryption_spinner(encryption_spinner, self.wifi_config.ap_encryption)
         ap_encryption.setControl(encryption_spinner)
+
+        self.ids.ap_password.disabled = config.wifi_config.ap_encryption == 'none'
 
         ap_channel = self.ids.ap_channel
         channel_spinner = SettingsMappedSpinner()
