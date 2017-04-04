@@ -1468,6 +1468,7 @@ class RcpConfig(object):
         self.obd2Config.stale = value
         self.scriptConfig.stale = value
         self.trackDb.stale = value
+        self.wifi_config.stale = value
 
     def fromJson(self, rcpJson):
         if rcpJson:
