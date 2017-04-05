@@ -57,8 +57,8 @@ from math import radians
 from kivy.uix.widget import Widget
 from kivy.uix.label import Label
 from kivy.uix.stencilview import StencilView
-from kivy.properties import NumericProperty, BooleanProperty,\
-    BoundedNumericProperty, StringProperty, ListProperty, ObjectProperty,\
+from kivy.properties import NumericProperty, BooleanProperty, \
+    BoundedNumericProperty, StringProperty, ListProperty, ObjectProperty, \
     DictProperty, AliasProperty
 from kivy.clock import Clock
 from kivy.graphics import Mesh, Color, Rectangle, Line
@@ -123,12 +123,12 @@ class Graph(Widget):
     _ticks_majory = ListProperty([])
     _ticks_minory = ListProperty([])
 
-    #manages the marker position on the graph
+    # manages the marker position on the graph
     marker_x = NumericProperty(None)
     '''Position of the marker, in units of % of X axis
     '''
 
-    marker_color = ListProperty([1, 1, 1 ,0.5])
+    marker_color = ListProperty([1, 1, 1 , 0.5])
     '''Color of marker; defauts to white, 50% alpha
     '''
 
@@ -283,7 +283,7 @@ class Graph(Widget):
                             points_minor[k2] = pos_log
                             k2 += 1
                     count_min += 1
-                #n_ticks = len(points)
+                # n_ticks = len(points)
             else:
                 # distance between each tick
                 tick_dist = major / float(minor if minor else 1.0)
@@ -351,7 +351,7 @@ class Graph(Widget):
             ylabels[0].texture_update()
             y1 = ylabels[0].texture_size
             y_start = y_next + (padding + y1[1] if len(xlabels) and xlabel_grid
-                                else 0) +\
+                                else 0) + \
                                 (padding + y1[1] if not y_next else 0)
             yextent = y + height - padding - y1[1] / 2.
             if self.ylog:
@@ -410,7 +410,7 @@ class Graph(Widget):
             ylabel.transform = t.multiply(
                     Matrix().translate(
                         -int(ylabel.center_x),
-                        -int(ylabel.center_y),
+                        - int(ylabel.center_y),
                         0))
         if x_overlap:
             for k in range(len(xlabels)):
@@ -645,7 +645,7 @@ class Graph(Widget):
         plot.unbind(on_clear_plot=self._clear_buffer)
         self.plots.remove(plot)
         self._clear_buffer()
-        
+
     xmin = NumericProperty(0.)
     '''The x-axis minimum value.
 
@@ -854,7 +854,7 @@ class Plot(EventDispatcher):
     ..versionadded:: 0.4
     '''
 
-    __events__ = ('on_clear_plot', )
+    __events__ = ('on_clear_plot',)
 
     # most recent values of the params used to draw the plot
     params = DictProperty({'xlog': False, 'xmin': 0, 'xmax': 100,
@@ -880,7 +880,7 @@ class Plot(EventDispatcher):
         self.ask_draw = Clock.create_trigger(self.draw)
         self.bind(params=self.ask_draw, points=self.ask_draw)
         self._drawings = self.create_drawings()
-        #plot specific y axis min/max
+        # plot specific y axis min/max
         self.ymin = None
         self.ymax = None
 
@@ -934,9 +934,14 @@ class Plot(EventDispatcher):
         ratioy = 1 if yrange == 0 else (size[3] - size[1]) / float(ymax - ymin)
         ratiox = 1 if xrange == 0 else (size[2] - size[0]) / float(xmax - xmin)
         for x, y in self.points:
+            fx = funcx(x)
+            fy = funcy(y)
+            if fy == None:
+                # if there's no Y data, give up
+                return
             yield (
-                (funcx(x) - xmin) * ratiox + size[0],
-                (funcy(y) - ymin) * ratioy + size[1])
+                (fx - xmin) * ratiox + size[0],
+                (fy - ymin) * ratioy + size[1])
 
     def on_clear_plot(self, *largs):
         pass
@@ -1037,14 +1042,14 @@ class MeshStemPlot(MeshLinePlot):
 class LinePlot(Plot):
     '''LinePlot draws using a standard Line object.
     '''
-    
+
     '''Args:
     line_width (float) - the width of the graph line
     '''
     def __init__(self, **kwargs):
         self._line_width = kwargs.get('line_width', 1)
         super(LinePlot, self).__init__(**kwargs)
-    
+
     def create_drawings(self):
         from kivy.graphics import RenderContext
 
@@ -1056,7 +1061,7 @@ class LinePlot(Plot):
             self._gline = Line(points=[], cap='none', width=self._line_width, joint='round')
 
         return [self._grc]
-    
+
     def draw(self, *args):
         super(LinePlot, self).draw(*args)
         # flatten the list
@@ -1064,7 +1069,7 @@ class LinePlot(Plot):
         for x, y in self.iterate_points():
             points += [x, y]
         self._gline.points = points
-    
+
 class SmoothLinePlot(Plot):
     '''Smooth Plot class, see module documentation for more information.
     This plot use a specific Fragment shader for a custom anti aliasing.
