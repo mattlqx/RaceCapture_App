@@ -41,7 +41,8 @@ from autosportlabs.widgets.scrollcontainer import ScrollContainer
 import copy
 
 class PIDConfigTab(CANChannelMappingTab):
-    PID_RANGES = (0, 256)
+    PID_MIN = 0
+    PID_MAX = 65535
     SUPPORTED_MODES = {1:'01h', 9: '09h', 34:'22h'}
     DEFAULT_MODE = '01h'
 
@@ -57,10 +58,9 @@ class PIDConfigTab(CANChannelMappingTab):
                     FieldLabel:
                         text: 'OBDII PID'
                         halign: 'right'
-                    LargeMappedSpinner:
+                    LargeIntegerValueField:
                         id: pid
                         on_text: root.on_pid(*args)
-                
                 SectionBoxLayout:
                     FieldLabel:
                         text: 'Mode'
@@ -90,20 +90,22 @@ class PIDConfigTab(CANChannelMappingTab):
         self._loaded = False
         self.channel_cfg = channel_cfg
 
-        pids = {}
-        for i in range(PIDConfigTab.PID_RANGES[0], PIDConfigTab.PID_RANGES[1]):
-            pids[i] = str(i)
-        self.ids.pid.setValueMap(pids, str(PIDConfigTab.PID_RANGES[0]))
-
         self.ids.mode.setValueMap(PIDConfigTab.SUPPORTED_MODES, PIDConfigTab.DEFAULT_MODE)
         self.ids.mode.setFromValue(channel_cfg.mode)
-        self.ids.pid.setFromValue(channel_cfg.pid)
+        self.ids.pid.text = str(channel_cfg.pid)
         self.ids.passive.active = channel_cfg.passive
         self._loaded = True
 
     def on_pid(self, instance, value):
-        if self._loaded:
-            self.channel_cfg.pid = instance.getValueFromKey(value)
+        if not self._loaded:
+            return
+        try:
+            value = int(value)
+            if value < PIDConfigTab.PID_MIN or value > PIDConfigTab.PID_MAX:
+                raise ValueError
+            self.channel_cfg.pid = int(value)
+        except ValueError:
+            instance.text = str(self.channel_cfg.pid)
 
     def on_mode(self, instance, value):
         if self._loaded:
