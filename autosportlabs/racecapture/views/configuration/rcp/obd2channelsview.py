@@ -116,9 +116,10 @@ class PIDConfigTab(CANChannelMappingTab):
             self.channel_cfg.passive = instance.active
 
 class OBD2ChannelConfigView(CANChannelConfigView):
-    def __init__(self, obd2_preset_settings, is_new, **kwargs):
+    def __init__(self, obd2_preset_settings, is_new, mapping_capable, **kwargs):
         self._current_channel_config = None
         self._is_new = is_new
+        self._mapping_capable = mapping_capable
         self.obd2_preset_settings = obd2_preset_settings
         self.pid_config_tab = PIDConfigTab()
         super(OBD2ChannelConfigView, self).__init__(**kwargs)
@@ -154,21 +155,25 @@ class OBD2ChannelConfigView(CANChannelConfigView):
 
     def init_tabs(self):
         self.ids.tabs.add_widget(self.can_channel_customization_tab)
-        self.ids.tabs.add_widget(self.pid_config_tab)
-        self.ids.tabs.add_widget(self.can_id_tab)
-        self.ids.tabs.add_widget(self.can_value_map_tab)
-        self.ids.tabs.add_widget(self.can_formula_tab)
-        self.ids.tabs.add_widget(self.can_units_conversion_tab)
+        if self._mapping_capable:
+            self.ids.tabs.add_widget(self.pid_config_tab)
+            self.ids.tabs.add_widget(self.can_id_tab)
+            self.ids.tabs.add_widget(self.can_value_map_tab)
+            self.ids.tabs.add_widget(self.can_formula_tab)
+            self.ids.tabs.add_widget(self.can_units_conversion_tab)
 
     def load_tabs(self):
         self._current_channel_config = copy.deepcopy(self.channel_cfg)
-        clock_sequencer([lambda dt: self.can_channel_customization_tab.init_view(self.channel_cfg, self.channels, self.max_sample_rate),
-                         lambda dt: self.pid_config_tab.init_view(self.channel_cfg),
-                         lambda dt: self.can_id_tab.init_view(self.channel_cfg),
-                         lambda dt: self.can_value_map_tab.init_view(self.channel_cfg),
-                         lambda dt: self.can_formula_tab.init_view(self.channel_cfg),
-                         lambda dt: self.can_units_conversion_tab.init_view(self.channel_cfg, self.can_filters)
-                         ])
+        tabs = [lambda dt: self.can_channel_customization_tab.init_view(self.channel_cfg, self.channels, self.max_sample_rate)]
+        if self._mapping_capable:
+            tabs += [lambda dt: self.can_channel_customization_tab.init_view(self.channel_cfg, self.channels, self.max_sample_rate),
+                     lambda dt: self.pid_config_tab.init_view(self.channel_cfg),
+                     lambda dt: self.can_id_tab.init_view(self.channel_cfg),
+                     lambda dt: self.can_value_map_tab.init_view(self.channel_cfg),
+                     lambda dt: self.can_formula_tab.init_view(self.channel_cfg),
+                     lambda dt: self.can_units_conversion_tab.init_view(self.channel_cfg, self.can_filters)
+                     ]
+        clock_sequencer(tabs)
 
 class OBD2Channel(BoxLayout):
     channel = None
@@ -329,6 +334,7 @@ class OBD2ChannelsView(BaseConfigView):
         self.reload_obd2_channel_grid(obd2_cfg)
         self.max_sample_rate = max_sample_rate
         self.obd2_cfg = obd2_cfg
+        self.mapping_capable = rc_cfg.capabilities.has_can_channel
         self.update_view_enabled()
 
 
@@ -373,7 +379,7 @@ class OBD2ChannelsView(BaseConfigView):
     def _edit_channel(self, channel_index, is_new):
         channel = self.obd2_cfg.pids[channel_index]
         working_channel_cfg = copy.deepcopy(channel)
-        content = OBD2ChannelConfigView(self.obd2_preset_settings, is_new)
+        content = OBD2ChannelConfigView(self.obd2_preset_settings, is_new, self.mapping_capable)
         content.init_config(working_channel_cfg, self.can_filters, self.max_sample_rate, self.channels)
 
         def _on_answer(instance, answer):
@@ -409,7 +415,7 @@ class OBD2ChannelsView(BaseConfigView):
                 self.reload_obd2_channel_grid(self.obd2_cfg)
             popup.dismiss()
 
-        content = OBD2ChannelConfigView(self.obd2_preset_settings, True)
+        content = OBD2ChannelConfigView(self.obd2_preset_settings, True, self.mapping_capable)
         content.init_config(pid_config, self.can_filters, self.max_sample_rate, self.channels)
         popup = editor_popup('Add OBDII channel', content, _on_answer, size=(dp(500), dp(300)))
 
