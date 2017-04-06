@@ -24,6 +24,7 @@ from kivy.event import EventDispatcher
 from autosportlabs.util.timeutil import format_date
 from autosportlabs.racecapture.config.rcpconfig import GpsSample
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
+import copy
 
 class SessionRecorder(EventDispatcher) :
     """
@@ -189,13 +190,23 @@ class SessionRecorder(EventDispatcher) :
         self._sample_data.update(sample)
         self._datastore.insert_sample(self._sample_data, self._current_session_id)
 
+    def _channel_metas_same(self, metas):
+        # determine if the provided channel metas have the same channel names as the current
+        current_metas = self._channels
+        if current_metas is None:
+            return False
+        return sorted(current_metas.keys()) == sorted(metas.keys())
+
     def _on_meta(self, metas):
         """
         Event listener for new meta (channel) information
         :param metas:
         :return:
         """
-        self._channels = metas
+        if not self._channel_metas_same(metas):
+            Logger.info("SessionRecorder: ChannelMeta changed - stop recording")
+            self.stop(stop_now=True)
+        self._channels = copy.deepcopy(metas)
         self._check_should_record()
 
     def _on_sample(self, sample):
