@@ -1,4 +1,20 @@
 ==1.9.0==
+* Setup: Add direct CAN channel mapping capabilities (Requires firmware > 2.11.0)
+* Setup: Add OBDII custom mapping capabilities (Requires firmware > 2.11.0)
+* Dasboard: add ability to customize what dashboard screens are visible
+* Dashboard: add new round dashboard gauge variations (2x, 3x, 8x gauge layouts)
+* Setup: Add fractional pulse-per-revolution timer options of 1/4, 1/3 and 1/2
+* Setup: Add RaceCapture/Pro MK3 and RaceCapture/Apex to startup wizard page
+* SessionRecording: Stop session recording if new channels are added in configuration while recording is active
+* Analysis: prevent import errors in some cases where it attempts to add a duplicate datapoint column
+* Analysis: prevent error if remembered channel selection doesn't exist in datastore
+* Analysis: prevent silent failure/hang if analysis fails to import
+* Analysis: pafely handle channel names starting with a digit
+* Analysis: prevent exceptions when a non-existant channel is selected
+* Setup: wifi configuration disables password field if encryption setting is 'none'
+* Setup: imported WiFi configuration is marked as stale so entire configuration is written to RaceCapture
+* Setup: validate wifi AP password is minimum 8 characters
+* Global: Ensure tab key moves to next form field
 
 ==1.8.0==
 * First time startup wizard
