@@ -32,44 +32,83 @@ SELECT_DEVICE_VIEW_KV = """
     info_text: 'Select your device'
     BoxLayout:
         orientation: 'vertical'
+        padding: [0, dp(20)]
+        spacing: [0, dp(10)]
         BoxLayout:
-            size_hint_y: 0.2
-        AnchorLayout:
-            size_hint_y: 0.3
-            Image:
-                allow_stretch: True
-                source: 'resource/setup/device_RCT.png'     
-            AnchorLayout:
-                anchor_x: 'right'
-                padding: (dp(10), dp(10))
-                BetterToggleButton:
-                    id: racecapture
-                    group: 'device'
-                    size_hint: (0.35, 0.5)
-                    text: 'RaceCapture'
-                    on_release: root.select_device('RCT')
-        AnchorLayout:
-            size_hint_y: 0.3        
-            Image:
-                allow_stretch: True
-                source: 'resource/setup/device_RCP_MK2.png'             
-            AnchorLayout:
-                anchor_x: 'right'
-                padding: (dp(10), dp(10))
-                BetterToggleButton:
-                    id: racecapturepro
-                    group: 'device'
-                    size_hint: (0.35, 0.5)
-                    text: 'RaceCapture/Pro'
-                    on_release: root.select_device('RCP_MK2')
+            size_hint_y: 0.10
+        ScrollContainer:
+            size_hint_y: 0.7
+            do_scroll_x: False
+            do_scroll_y: True
+            size_hint_y: 1
+            size_hint_x: 1
+            GridLayout:
+                id: devices
+                spacing: [0, dp(10)]
+                row_default_height: dp(130)
+                size_hint_y: None
+                height: self.minimum_height
+                cols: 1
+                AnchorLayout:
+                    Image:
+                        allow_stretch: True
+                        source: 'resource/setup/device_RCT.png'
+                    AnchorLayout:
+                        anchor_x: 'right'
+                        padding: (dp(10), dp(10))
+                        BetterToggleButton:
+                            group: 'device'
+                            size_hint: (0.5, 0.5)
+                            text: 'RaceCapture'
+                            on_release: root.select_device('RCT')
+
+                AnchorLayout:
+                    Image:
+                        allow_stretch: True
+                        source: 'resource/setup/device_RCP_MK3.png'
+                    AnchorLayout:
+                        anchor_x: 'right'
+                        padding: (dp(10), dp(10))
+                        BetterToggleButton:
+                            group: 'device'
+                            size_hint: (0.5, 0.5)
+                            text: 'RaceCapture/Pro MK3'
+                            on_release: root.select_device('RCP_MK3')
+
+                AnchorLayout:
+                    Image:
+                        allow_stretch: True
+                        source: 'resource/setup/device_RC_Apex.png'
+                    AnchorLayout:
+                        anchor_x: 'right'
+                        padding: (dp(10), dp(10))
+                        BetterToggleButton:
+                            group: 'device'
+                            size_hint: (0.5, 0.5)
+                            text: 'RaceCapture/Apex'
+                            on_release: root.select_device('RC_APEX')
+
+                AnchorLayout:
+                    Image:
+                        allow_stretch: True
+                        source: 'resource/setup/device_RCP_MK2.png'             
+                    AnchorLayout:
+                        anchor_x: 'right'
+                        padding: (dp(10), dp(10))
+                        BetterToggleButton:
+                            id: racecapturepro
+                            group: 'device'
+                            size_hint: (0.5, 0.5)
+                            text: 'RaceCapture/Pro MK2'
+                            on_release: root.select_device('RCP_MK2')
         BoxLayout:
-            size_hint_y: 0.2
+            size_hint_y: 0.15
 """
 
 class SelectDeviceView(InfoView):
     """
     A setup screen that lets users select what device they have.
-    """        
+    """
     Builder.load_string(SELECT_DEVICE_VIEW_KV)
     def __init__(self, **kwargs):
         super(SelectDeviceView, self).__init__(**kwargs)
