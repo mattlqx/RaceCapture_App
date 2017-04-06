@@ -86,7 +86,7 @@ SELECT_DEVICE_VIEW_KV = """
                             group: 'device'
                             size_hint: (0.5, 0.5)
                             text: 'RaceCapture/Apex'
-                            on_release: root.select_device('RC_APEX')
+                            on_release: root.select_device('RC_Apex')
 
                 AnchorLayout:
                     Image:
