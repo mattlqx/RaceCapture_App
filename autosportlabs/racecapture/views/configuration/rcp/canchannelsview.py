@@ -130,14 +130,14 @@ class CANChannelsView(BaseConfigView):
             size_hint_y: 0.4        
             BoxLayout:
                 size_hint_x: 0.8
-            LabelIconButton:
-                size_hint_x: 0.2
-                id: load_preset
-                title: 'Presets'
-                icon_size: self.height * 0.7
-                title_font_size: self.height * 0.5
-                icon: u'\uf150'
-                on_press: root.load_preset_view()
+#            LabelIconButton:
+#                size_hint_x: 0.2
+#                id: load_preset
+#                title: 'Presets'
+#                icon_size: self.height * 0.7
+#                title_font_size: self.height * 0.5
+#                icon: u'\uf150'
+#                on_press: root.load_preset_view()
         
     BoxLayout:
         size_hint_y: 0.70
