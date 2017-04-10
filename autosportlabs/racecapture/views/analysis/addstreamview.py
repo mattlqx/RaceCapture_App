@@ -167,9 +167,14 @@ class FileConnectView(BaseStreamConnectView):
     def import_start(self, *args):
         self.dispatch('on_connect_stream_start')
 
-    def import_complete(self, instance, session_id):
-        self.dispatch('on_connect_stream_complete', session_id)
+    def import_complete(self, instance, session_id, success, message):
+        if success == True:
+            self.dispatch('on_connect_stream_complete', session_id)
+            return
 
+        alertPopup("Import Failed",
+                   "There was a problem importing the datalog. Details:\n\n{}".format(message))
+        self.dispatch('on_connect_stream_complete', None)
 
 class SessionImportView(BaseStreamConnectView):
 
@@ -278,7 +283,7 @@ class LogImportWidget(BoxLayout):
     def on_import_start(self, *args):
         pass
 
-    def on_import_complete(self, session_id):
+    def on_import_complete(self, session_id, success, message):
         pass
 
     def close_log_select(self, *args):
@@ -317,8 +322,15 @@ class LogImportWidget(BoxLayout):
 
     def _loader_thread(self, logpath, session_name, session_notes):
         Clock.schedule_once(lambda dt: self.dispatch('on_import_start'))
-        session_id = self.datastore.import_datalog(logpath, session_name, session_notes, self._update_progress)
-        Clock.schedule_once(lambda dt: self.dispatch('on_import_complete', session_id))
+        success = True
+        message = ''
+        session_id = None
+        try:
+            session_id = self.datastore.import_datalog(logpath, session_name, session_notes, self._update_progress)
+        except Exception as e:
+            success = False
+            message = str(e)
+        Clock.schedule_once(lambda dt: self.dispatch('on_import_complete', session_id, success, message))
 
     def _update_progress(self, percent_complete=0):
         if self.ids.current_status.text != "Loading log records":

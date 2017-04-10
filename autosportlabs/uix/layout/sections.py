@@ -16,7 +16,7 @@ Builder.load_string("""
         Rectangle:
             pos: self.pos
             size: self.size             
-    padding: (dp(5), dp(5))
+    padding: (dp(10), dp(10))
     spacing: dp(5)                    
             """)
 

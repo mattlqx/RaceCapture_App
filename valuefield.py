@@ -28,6 +28,7 @@ VALUE_FIELD_KV = """
 <ValueField>:
     font_size: self.height * 0.5
     multiline: False
+    write_tab: False
 """
 class ValueField(TextInput):
 

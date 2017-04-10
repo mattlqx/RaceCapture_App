@@ -53,7 +53,7 @@ class ChannelValueView(BoxLayout):
         try:
             value = float(value)
             self.value_view.value = value
-        except TypeError:
+        except (TypeError, ValueError):
             self.value_view.value = None
 
     @property

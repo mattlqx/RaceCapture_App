@@ -53,6 +53,14 @@ class BaseChannel(object):
         json_dict['prec'] = self.precision
         json_dict['sr'] = self.sampleRate
 
+    def equals(self, other):
+        return other is not None and (
+                    self.name == other.name and
+                    self.units == other.units and
+                    self.min == other.min and
+                    self.max == other.max and
+                    self.sampleRate == other.sampleRate)
+
 SCALING_MAP_POINTS = 5
 SCALING_MAP_MIN_VOLTS = 0
 
@@ -539,11 +547,26 @@ class TimerConfig(object):
     def __init__(self, **kwargs):
         self.channelCount = TIMER_CHANNEL_COUNT
         self.channels = []
+        self.build_channels()
 
-        for i in range (self.channelCount):
-            self.channels.append(TimerChannel())
 
-    def fromJson(self, json):
+    def build_channels(self):
+        initialized_channel_count = len(self.channels)
+        required_channel_count = self.channelCount
+
+        if initialized_channel_count == required_channel_count:
+            return
+        else:
+            # Probably got a new capabilities, make a new channels array
+            self.channels = []
+            for i in range(required_channel_count):
+                self.channels.append(TimerChannel())
+
+    def fromJson(self, json, capabilities=None):
+        if capabilities:
+            self.channelCount = capabilities.channels.timer
+            self.build_channels()
+
         for i in range (self.channelCount):
             timerChannelJson = json.get(str(i), None)
             if timerChannelJson:
@@ -551,9 +574,10 @@ class TimerConfig(object):
 
     def toJson(self):
         timerCfgJson = {}
-        for i in range(TIMER_CHANNEL_COUNT):
+        for i in range(self.channelCount):
             timerChannel = self.channels[i]
             timerCfgJson[str(i)] = timerChannel.toJson()
+
         return {'timerCfg':timerCfgJson}
 
     @property
@@ -813,22 +837,22 @@ class TracksDb(object):
         return {"trackDb":{'size':len(tracks), 'tracks': tracksJson}}
 
 class CANMapping(object):
-    TYPE_UNSIGNED = 0
-    TYPE_SIGNED = 1
-    TYPE_FLOAT = 2
+    CAN_MAPPING_TYPE_UNSIGNED = 0
+    CAN_MAPPING_TYPE_SIGNED = 1
+    CAN_MAPPING_TYPE_FLOAT = 2
+    CAN_MAPPING_TYPE_SIGN_MAGNITUDE = 3
     ID_MASK_DISABLED = 0
     CONVERSION_FILTER_DISABLED = 0
 
     def __init__(self, **kwargs):
-        super(CANMapping, self).__init__(**kwargs)
         self.bit_mode = False
-        self.type = CANMapping.TYPE_UNSIGNED
-        self.can_channel = 0
+        self.type = CANMapping.CAN_MAPPING_TYPE_UNSIGNED
+        self.can_bus = 0
         self.can_id = 0
         self.can_mask = CANMapping.ID_MASK_DISABLED
-        self.endian = 0
-        self.bit_offset = 0
-        self.bit_length = 0
+        self.endian = False
+        self.offset = 0
+        self.length = 1
         self.multiplier = 1.0
         self.divider = 1.0
         self.adder = 0.0
@@ -836,36 +860,49 @@ class CANMapping(object):
 
     def from_json_dict(self, json_dict):
         if json_dict:
-            self.bit_mode = True if json_dict.get('bm', self.bit_mode) == 1 else False
+            self.bit_mode = bool(json_dict.get('bm', self.bit_mode))
             self.type = json_dict.get('type', self.type)
-            self.can_channel = json_dict.get('chan', self.can_channel)
+            self.can_bus = json_dict.get('bus', self.can_bus)
             self.can_id = json_dict.get('id', self.can_id)
-            self.can_mask = json_dict.get('id_mask', self.can_mask)
-            self.bit_offset = json_dict.get('offset', self.bit_offset)
-            self.bit_length = json_dict.get('len', self.bit_length)
+            self.can_mask = json_dict.get('idMask', self.can_mask)
+            self.offset = json_dict.get('offset', self.offset)
+            self.length = json_dict.get('len', self.length)
             self.multiplier = json_dict.get('mult', self.multiplier)
             self.divider = json_dict.get('div', self.divider)
             self.adder = json_dict.get('add', self.adder)
-            self.endian = json_dict.get('endian', self.endian)
-            self.conversion_filter_id = json_dict.get('filt_id', self.conversion_filter_id)
+            self.endian = bool(json_dict.get('bigEndian', self.endian))
+            self.conversion_filter_id = json_dict.get('filtId', self.conversion_filter_id)
         return self
 
     def to_json_dict(self):
         json_dict = {}
-        json_dict['bm'] = 1 if self.bit_mode == True else 0
+        json_dict['bm'] = bool(self.bit_mode)
         json_dict['type'] = self.type
-        json_dict['chan'] = self.can_channel
+        json_dict['bus'] = self.can_bus
         json_dict['id'] = self.can_id
-        json_dict['id_mask'] = self.can_mask
-        json_dict['offset'] = self.bit_offset
-        json_dict['len'] = self.bit_length
+        json_dict['idMask'] = self.can_mask
+        json_dict['offset'] = self.offset
+        json_dict['len'] = self.length
         json_dict['mult'] = self.multiplier
         json_dict['div'] = self.divider
         json_dict['add'] = self.adder
-        json_dict['endian'] = self.endian
-        json_dict['filt_id'] = self.conversion_filter_id
+        json_dict['bigEndian'] = bool(self.endian)
+        json_dict['filtId'] = self.conversion_filter_id
         return json_dict
 
+    def equals(self, other):
+        return other is not None and (self.bit_mode == other.bit_mode and
+                    self.type == other.type and
+                    self.can_bus == other.can_bus and
+                    self.can_id == other.can_id and
+                    self.can_mask == other.can_mask and
+                    self.endian == other.endian and
+                    self.offset == other.offset and
+                    self.length == other.length and
+                    self.multiplier == other.multiplier and
+                    self.divider == other.divider and
+                    self.adder == other.adder and
+                    self.conversion_filter_id == other.conversion_filter_id)
 class CanConfig(object):
     def __init__(self, **kwargs):
         self.stale = False
@@ -898,13 +935,13 @@ class CANChannel(BaseChannel):
     def from_json_dict(self, json_dict):
         if json_dict:
             super(CANChannel, self).fromJson(json_dict)
-            self.mapping.from_json_dict(json_dict.get('map'))
+            self.mapping.from_json_dict(json_dict)
         return self
 
     def to_json_dict(self):
         json_dict = {}
         super(CANChannel, self).appendJson(json_dict)
-        json_dict['map'] = self.mapping.to_json_dict()
+        json_dict.update(self.mapping.to_json_dict())
         return json_dict
 
 class CANChannels(object):
@@ -919,7 +956,7 @@ class CANChannels(object):
         if json_dict:
             self.enabled = json_dict.get('en', self.enabled)
             channels_json = json_dict.get("chans", None)
-            if channels_json:
+            if channels_json is not None:
                 del self.channels[:]
                 for channel_json in channels_json:
                     c = CANChannel()
@@ -947,17 +984,24 @@ class PidConfig(BaseChannel):
             super(PidConfig, self).fromJson(json_dict)
             self.pid = json_dict.get('pid', self.pid)
             self.mode = json_dict.get('mode', self.mode)
-            self.passive = json_dict.get('passive', self.passive)
-            self.mapping.from_json_dict(json_dict.get('map'))
+            self.passive = bool(json_dict.get('pass', self.passive))
+            self.mapping.from_json_dict(json_dict)
 
     def toJson(self):
         json_dict = {}
         super(PidConfig, self).appendJson(json_dict)
         json_dict['pid'] = self.pid
         json_dict['mode'] = self.mode
-        json_dict['passive'] = 1 if self.passive else 0
-        json_dict['map'] = self.mapping.to_json_dict()
+        json_dict['pass'] = self.passive
+        json_dict.update(self.mapping.to_json_dict())
         return json_dict
+
+    def equals(self, other):
+        return other is not None and (super(PidConfig, self).equals(other) and
+                    self.pid == other.pid and
+                    self.mode == other.mode and
+                    self.passive == other.passive and
+                    self.mapping.equals(other.mapping))
 
 OBD2_CONFIG_MAX_PIDS = 20
 
@@ -971,7 +1015,7 @@ class Obd2Config(object):
     def fromJson(self, json_dict):
         self.enabled = json_dict.get('en', self.enabled)
         pidsJson = json_dict.get("pids", None)
-        if pidsJson:
+        if pidsJson is not None:
             del self.pids[:]
             for pidJson in pidsJson:
                 pid = PidConfig()
@@ -1061,6 +1105,7 @@ class TelemetryConfig(object):
 
 class WifiConfig(object):
 
+    WIFI_CONFIG_MINIMUM_AP_PASSWORD_LENGTH = 8
     def __init__(self):
         self.active = False
 
@@ -1209,7 +1254,7 @@ class ChannelCapabilities(object):
             self.pwm = int(json_dict.get('pwm', 0))
             self.can = int(json_dict.get('can', 0))
             self.timer = int(json_dict.get('timer', 0))
-            self.can_channel = int(json_dict.get('can_chan', 0))
+            self.can_channel = int(json_dict.get('canChan', 0))
 
     def to_json_dict(self):
         return {
@@ -1219,7 +1264,7 @@ class ChannelCapabilities(object):
             "pwm": self.pwm,
             "can": self.can,
             "timer": self.timer,
-            "can_chan" : self.can_channel
+            "canChan" : self.can_channel
         }
 
 class SampleRateCapabilities(object):
@@ -1424,6 +1469,7 @@ class RcpConfig(object):
         self.obd2Config.stale = value
         self.scriptConfig.stale = value
         self.trackDb.stale = value
+        self.wifi_config.stale = value
 
     def fromJson(self, rcpJson):
         if rcpJson:
@@ -1443,7 +1489,7 @@ class RcpConfig(object):
 
                 timerCfgJson = rcpJson.get('timerCfg', None)
                 if timerCfgJson:
-                    self.timerConfig.fromJson(timerCfgJson)
+                    self.timerConfig.fromJson(timerCfgJson, capabilities=self.capabilities)
 
                 imuCfgJson = rcpJson.get('imuCfg', None)
                 if imuCfgJson:

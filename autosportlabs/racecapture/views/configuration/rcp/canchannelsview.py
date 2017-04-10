@@ -1,409 +1,43 @@
 import kivy
-kivy.require('1.9.0')
+kivy.require('1.9.1')
 import os
-from kivy.metrics import sp
+from kivy.metrics import dp
 from kivy.app import Builder
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.switch import Switch
 from kivy.uix.spinner import SpinnerOption
 from kivy.uix.popup import Popup
 from kivy.uix.image import Image
-from kivy.uix.textinput import TextInput
+from kivy.uix.anchorlayout import AnchorLayout
+from kivy.properties import StringProperty, NumericProperty
+from garden_androidtabs import AndroidTabsBase, AndroidTabs
 from iconbutton import IconButton
 from settingsview import SettingsSwitch
+from autosportlabs.racecapture.views.configuration.rcp.canmappingview import CANChannelConfigView
+from autosportlabs.racecapture.data.unitsconversion import UnitsConversionFilters
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
 from autosportlabs.racecapture.config.rcpconfig import *
-from autosportlabs.uix.layout.sections import SectionBoxLayout, HeaderSectionBoxLayout
+from autosportlabs.uix.layout.sections import SectionBoxLayout
 from autosportlabs.racecapture.views.util.alertview import confirmPopup, choicePopup, editor_popup
 from autosportlabs.racecapture.resourcecache.resourcemanager import ResourceCache
+from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from fieldlabel import FieldLabel
 from utils import *
 from valuefield import FloatValueField, IntegerValueField
 from mappedspinner import MappedSpinner
 import copy
 
-class LargeSpinnerOption(SpinnerOption):
+class CANChannelView(BoxLayout):
     Builder.load_string("""
-<LargeSpinnerOption>:
-    font_size: self.height * 0.5
-""")
-
-class LargeMappedSpinner(MappedSpinner):
-    Builder.load_string("""
-<LargeMappedSpinner>:
-    font_size: self.height * 0.4
-    option_cls: 'LargeSpinnerOption'
-""")
-
-class LargeIntegerValueField(IntegerValueField):
-    Builder.load_string("""
-<LargeIntegerValueField>:
-    font_size: self.height * 0.5
-""")
-
-class LargeFloatValueField(FloatValueField):
-    Builder.load_string("""
-<LargeFloatValueField>:
-    font_size: self.height * 0.5
-""")
-
-class SymbolFieldLabel(FieldLabel):
-    Builder.load_string("""
-<SymbolFieldLabel>:
-    font_size: self.height * 0.6
-    font_name: 'resource/fonts/Roboto-Bold.ttf'    
-""")
-
-
-CAN_CHANNEL_CONFIG_VIEW_KV = """
-<CANChannelConfigView>:
-    spacing: dp(10)
-    BoxLayout:
-        orientation: 'vertical'
-        BoxLayout:
-            size_hint_y: 0.9
-            spacing: dp(10)
-            orientation: 'vertical'
-            
-            BoxLayout:
-                orientation: 'horizontal'
-                spacing: dp(5)
-                HeaderSectionBoxLayout:
-                    size_hint_x: 0.15
-                    FieldLabel:
-                        halign: 'right'
-                        text: 'CAN'
-
-                BoxLayout:
-                    spacing: dp(5)
-                    size_hint_x: 0.85
-                    orientation: 'horizontal'
-                    
-                    SectionBoxLayout:
-                        size_hint_x: 0.4
-                        FieldLabel:
-                            text: 'Channel'
-                            size_hint_x: 0.15
-                            halign: 'right'
-                        LargeMappedSpinner:
-                            id: can_bus_channel
-                            size_hint_x: 0.15
-                            on_text: root.on_can_bus_channel(*args)
-
-                    SectionBoxLayout:
-                        size_hint_x: 0.45
-                        FieldLabel:
-                            size_hint_x: 0.3
-                            text: 'ID'
-                            halign: 'right'
-
-                        LargeIntegerValueField:
-                            id: can_id
-                            size_hint_x: 0.7
-                            on_text: root.on_can_id(*args)
-
-                    SectionBoxLayout:
-                        size_hint_x: 0.45
-                        FieldLabel:
-                            size_hint_x: 0.3
-                            text: 'Mask'
-                            halign: 'right'
-
-                        LargeIntegerValueField:
-                            id: mask
-                            size_hint_x: 0.7
-                            on_text: root.on_mask(*args)
-    
-            HLineSeparator:
-                        
-            BoxLayout:
-                orientation: 'horizontal'
-                spacing: dp(5)
-                HeaderSectionBoxLayout:
-                    size_hint_x: 0.15
-                    orientation: 'horizontal'
-                    FieldLabel:
-                        halign: 'right'
-                        text: 'Mapping'
-                        size_hint_x: 0.1
-
-                BoxLayout:
-                    size_hint_x: 0.85
-                    orientation: 'horizontal'
-                    spacing: dp(5)
-                    
-                    SectionBoxLayout:
-                        size_hint_x: 0.4
-                        FieldLabel:
-                            text: 'Offset'
-                            size_hint_x: 0.15
-                            halign: 'right'
-                        LargeMappedSpinner:
-                            id: offset
-                            size_hint_x: 0.15
-                            on_text: root.on_bit_offset(*args)
-
-                    SectionBoxLayout:
-                        size_hint_x: 0.45             
-                        FieldLabel:
-                            halign: 'right'
-                            text: 'Length'
-                            size_hint_x: 0.6
-                        LargeMappedSpinner:
-                            id: length
-                            size_hint_x: 0.4
-                            on_text: root.on_bit_length(*args)
-                    SectionBoxLayout:
-                        size_hint_x: 0.45                  
-                        BoxLayout:
-                            orientation: 'vertical'
-                            size_hint_x: 0.3
-                            spacing: dp(5)
-                            BoxLayout:
-                                spacing: dp(5)
-                                orientation: 'horizontal'
-                                FieldLabel:
-                                    text: 'Bit Mode'
-                                    halign: 'right'
-                                CheckBox:
-                                    id: bitmode
-                                    on_active: root.on_bit_mode(*args)
-                            BoxLayout:
-                                spacing: dp(5)
-                                orientation: 'horizontal'
-                                FieldLabel:
-                                    text: 'Endian'
-                                    halign: 'right'
-                                MappedSpinner:
-                                    id: endian
-                                    on_text: root.on_endian(*args)
-
-            HLineSeparator
-                    
-            BoxLayout:
-                orientation: 'horizontal'
-                spacing: dp(5)
-
-                HeaderSectionBoxLayout:
-                    size_hint_x: 0.15
-                    spacing: dp(5)
-                    orientation: 'horizontal'
-                    FieldLabel:
-                        halign: 'right'
-                        text: 'Formula'
-                        size_hint_x: 0.1
-                
-                SectionBoxLayout:
-                    orientation: 'horizontal'
-                    size_hint_x: 0.85
-                    spacing: dp(5)
-                    FieldLabel:
-                        size_hint_x: 0.1
-                        halign: 'right'
-                        text: 'Raw'
-                    SymbolFieldLabel:
-                        size_hint_x: 0.1
-                        halign: 'center'
-                        text: u' \u00D7 '
-                    LargeFloatValueField:
-                        id: multiplier
-                        size_hint_x: 0.2
-                        on_text: root.on_multiplier(*args)
-                    SymbolFieldLabel:
-                        halign: 'center'
-                        text: u' \u00F7 '
-                        size_hint_x: 0.1
-                    LargeFloatValueField:
-                        id: divider
-                        size_hint_x: 0.2
-                        on_text: root.on_divider(*args)
-                    SymbolFieldLabel:
-                        text: ' + '
-                        halign: 'center'
-                        size_hint_x: 0.1
-                    LargeFloatValueField:
-                        id: adder
-                        size_hint_x: 0.2
-                        on_text: root.on_adder(*args)
-                
-#            BoxLayout:
-#                orientation: 'horizontal'
-#                spacing: dp(5)
-#                FieldLabel:
-#                    halign: 'right'
-#                    size_hint_x: 0.3
-#                    text: 'Conversion Filter'
-#                MappedSpinner:
-#                    id: filters     
-#                    size_hint_x: 0.7
-#                    on_text: root.on_filter(*args)
-"""
-
-class CANChannelConfigView(BoxLayout):
-
-    Builder.load_string(CAN_CHANNEL_CONFIG_VIEW_KV)
-
-    def __init__(self, **kwargs):
-        super(CANChannelConfigView, self).__init__(**kwargs)
-        self._loaded = False
-
-    def init_config(self, index, can_channel_cfg, can_filters):
-        self.channel_index = index
-        self.can_channel_cfg = can_channel_cfg
-        self.can_filters = can_filters
-        self.init_view()
-        self._loaded = True
-
-    def on_bit_mode(self, instance, value):
-        if self._loaded:
-            self.can_channel_cfg.mapping.bit_mode = self.ids.bitmode.active
-            self.update_mapping_spinners()
-
-    def on_sample_rate(self, instance, value):
-        if self._loaded:
-            self.can_channel_cfg.sampleRate = instance.getValueFromKey(value)
-
-    def on_can_bus_channel(self, instance, value):
-        if self._loaded:
-            self.can_channel_cfg.mapping.can_channel = instance.getValueFromKey(value)
-
-    def on_can_id(self, instance, value):
-        if self._loaded:
-            self.can_channel_cfg.mapping.can_id = int(value)
-
-    def on_mask(self, instance, value):
-        if self._loaded:
-            self.can_channel_cfg.mapping.mask = int(value)
-
-    def on_bit_offset(self, instance, value):
-        if self._loaded:
-            self.can_channel_cfg.mapping.bit_offset = instance.getValueFromKey(value)
-
-    def on_bit_length(self, instance, value):
-        if self._loaded:
-            self.can_channel_cfg.mapping.bit_length = instance.getValueFromKey(value)
-
-    def on_endian(self, instance, value):
-        if self._loaded:
-            self.can_channel_cfg.mapping.endian = instance.getValueFromKey(value)
-
-    def on_multiplier(self, instance, value):
-        if self._loaded:
-            self.can_channel_cfg.mapping.multiplier = float(value)
-
-    def on_divider(self, instance, value):
-        if self._loaded:
-            self.can_channel_cfg.mapping.divider = float(value)
-
-    def on_adder(self, instance, value):
-        if self._loaded:
-            self.can_channel_cfg.mapping.adder = float(value)
-
-    def on_filter(self, instance, value):
-        if self._loaded:
-            self.can_channel_cfg.mapping.conversion_filter_id = instance.getValueFromKey(value)
-
-    def init_view(self):
-        self.ids.can_bus_channel.setValueMap({0: '1', 1: '2'}, '1')
-
-        self.ids.endian.setValueMap({0: 'Big (MSB)', 1: 'Little (LSB)'}, 'Big (MSB)')
-
-        # Disable for the initial release
-        # self.ids.filters.setValueMap(self.can_filters.filters, self.can_filters.default_value)
-
-        self.update_mapping_spinners()
-        self.load_values()
-
-    def load_values(self):
-
-        # CAN Channel
-        self.ids.can_bus_channel.setFromValue(self.can_channel_cfg.mapping.can_channel)
-
-        # CAN ID
-        self.ids.can_id.text = str(self.can_channel_cfg.mapping.can_id)
-
-        # CAN mask
-        self.ids.mask.text = str(self.can_channel_cfg.mapping.can_mask)
-
-        # CAN offset
-        self.ids.offset.setFromValue(self.can_channel_cfg.mapping.bit_offset)
-
-        # CAN length
-        self.ids.length.setFromValue(self.can_channel_cfg.mapping.bit_length)
-
-        # Bit Mode
-        self.ids.bitmode.active = self.can_channel_cfg.mapping.bit_mode
-
-        # Endian
-        self.ids.endian.setFromValue(self.can_channel_cfg.mapping.endian)
-
-        # Multiplier
-        self.ids.multiplier.text = str(self.can_channel_cfg.mapping.multiplier)
-
-        # Divider
-        self.ids.divider.text = str(self.can_channel_cfg.mapping.divider)
-
-        # Adder
-        self.ids.adder.text = str(self.can_channel_cfg.mapping.adder)
-
-        # Conversion Filter ID
-        # Disable for initial release
-        # self.ids.filters.setFromValue(self.can_channel_cfg.mapping.conversion_filter_id)
-
-    def update_mapping_spinners(self):
-        bit_mode = self.can_channel_cfg.mapping.bit_mode
-        self.set_mapping_choices(bit_mode)
-
-    def set_mapping_choices(self, bit_mode):
-        offset_choices = 63 if bit_mode else 7
-        length_choices = 32 if bit_mode else 4
-        self.ids.offset.setValueMap(self.create_bit_choices(0, offset_choices), '0')
-        self.ids.length.setValueMap(self.create_bit_choices(1, length_choices), '1')
-
-    def create_bit_choices(self, starting, max_choices):
-        bit_choices = {}
-        for i in range(starting, max_choices + 1):
-            bit_choices[i] = str(i)
-        return bit_choices
-
-class CANFilters(object):
-    filters = None
-    default_value = None
-    def __init__(self, base_dir, **kwargs):
-        super(CANFilters, self).__init__(**kwargs)
-        self.load_CAN_filters(base_dir)
-
-
-    def load_CAN_filters(self, base_dir):
-        if self.filters != None:
-            return
-        try:
-            self.filters = {}
-            can_filters_json = open(os.path.join(base_dir, 'resource', 'settings', 'can_channel_filters.json'))
-            can_filters = json.load(can_filters_json)['can_channel_filters']
-            for k in sorted(can_filters.iterkeys()):
-                if not self.default_value:
-                    self.default_value = k
-                self.filters[int(k)] = can_filters[k]
-        except Exception as detail:
-            raise Exception('Error loading CAN filters: ' + str(detail))
-
-CAN_CHANNEL_VIEW_KV = """
 <CANChannelView>:
-    spacing: dp(10)
     size_hint_y: None
     height: dp(30)
     orientation: 'horizontal'
-    ChannelNameSelectorView:
-        id: chan_id
+    FieldLabel:
+        id: name
         size_hint_x: 0.18
-        compact: True
-    BoxLayout:
-        size_hint_x: 0.18
-        SampleRateSpinner:
-            id: sr
-            size_hint_x: 0.9
-            on_text: root.on_sample_rate(*args)
+    FieldLabel:
+        id: sample_rate
+        size_hint_x: 0.10
     FieldLabel:
         id: can_id
         size_hint_x: 0.14
@@ -414,78 +48,72 @@ CAN_CHANNEL_VIEW_KV = """
         size_hint_x: 0.30
         id: can_formula
     IconButton:
-        size_hint_x: 0.05        
+        size_hint_x: 0.09        
         text: u'\uf044'
-        on_release: root.on_customize()
+        on_release: root.on_edit()
     IconButton:
-        size_hint_x: 0.05        
+        size_hint_x: 0.09        
         text: u'\uf014'
         on_release: root.on_delete()
-"""
+""")
 
-class CANChannelView(BoxLayout):
-    Builder.load_string(CAN_CHANNEL_VIEW_KV)
-    channels = None
-    can_channel_cfg = None
-    max_sample_rate = 0
-    channel_index = 0
-
-    def __init__(self, channel_index, can_channel_cfg, max_sample_rate, channels, **kwargs):
+    def __init__(self, channel_index, channel_cfg, channels, **kwargs):
         super(CANChannelView, self).__init__(**kwargs)
         self.channel_index = channel_index
-        self.can_channel_cfg = can_channel_cfg
-        self.max_sample_rate = max_sample_rate
+        self.channel_cfg = channel_cfg
         self.channels = channels
         self.register_event_type('on_delete_channel')
-        self.register_event_type('on_customize_channel')
+        self.register_event_type('on_edit_channel')
         self.register_event_type('on_modified')
+        self._loaded = False
         self.set_channel()
 
     def on_modified(self):
         pass
 
-    def on_sample_rate(self, instance, value):
-        self.can_channel_cfg.sampleRate = instance.getValueFromKey(value)
-        self.dispatch('on_modified')
-
     def on_delete_channel(self, channel_index):
         pass
 
-    def on_customize_channel(self, channel_index):
+    def on_edit_channel(self, channel_index):
         pass
 
     def on_delete(self):
         self.dispatch('on_delete_channel', self.channel_index)
 
-    def on_customize(self):
-        self.dispatch('on_customize_channel', self.channel_index)
+    def on_edit(self):
+        self.dispatch('on_edit_channel', self.channel_index)
 
     def set_channel(self):
-        channel_editor = self.ids.chan_id
-        channel_editor.on_channels_updated(self.channels)
-        channel_editor.setValue(self.can_channel_cfg)
+        self.ids.name.text = self.channel_cfg.name
 
-        sample_rate_spinner = self.ids.sr
-        sample_rate_spinner.set_max_rate(self.max_sample_rate)
-        sample_rate_spinner.setFromValue(self.can_channel_cfg.sampleRate)
+        self.ids.sample_rate.text = '{}Hz'.format(self.channel_cfg.sampleRate)
 
-        can_mapping = self.can_channel_cfg.mapping
+        can_mapping = self.channel_cfg.mapping
         self.ids.can_id.text = '{}'.format(can_mapping.can_id)
 
-        self.ids.can_offset_len.text = u'{}({})'.format(can_mapping.bit_offset, can_mapping.bit_length)
+        self.ids.can_offset_len.text = u'{}({})'.format(can_mapping.offset, can_mapping.length)
 
         sign = '-' if can_mapping.adder < 0 else '+'
         self.ids.can_formula.text = u'\u00D7 {} \u00F7 {} {} {}'.format(can_mapping.multiplier, can_mapping.divider, sign, abs(can_mapping.adder))
+        self._loaded = True
 
 class CANPresetResourceCache(ResourceCache):
-    preset_url = "http://podium.live/api/v1/can_presets"
+    preset_url = "https://podium.live/api/v1/mappings"
     preset_name = 'can_presets'
 
     def __init__(self, settings, base_dir, **kwargs):
         default_preset_dir = os.path.join(base_dir, 'resource', self.preset_name)
         super(CANPresetResourceCache, self).__init__(settings, self.preset_url, self.preset_name, default_preset_dir, **kwargs)
 
-CAN_CHANNELS_VIEW_KV = """
+class CANChannelsView(BaseConfigView):
+    DEFAULT_CAN_SAMPLE_RATE = 1
+    can_channels_cfg = None
+    max_sample_rate = 0
+    can_grid = None
+    can_channels_settings = None
+    can_filters = None
+    _popup = None
+    Builder.load_string("""
 <CANChannelsView>:
     spacing: dp(20)
     orientation: 'vertical'
@@ -496,20 +124,20 @@ CAN_CHANNELS_VIEW_KV = """
             size_hint_y: 0.6
             id: can_channels_enable
             label_text: 'CAN channels'
-            help_text: 'Enable CAN data mappings'
+            help_text: ''
         BoxLayout:
             orientation: 'horizontal'
             size_hint_y: 0.4        
             BoxLayout:
                 size_hint_x: 0.8
-            LabelIconButton:
-                size_hint_x: 0.2
-                id: load_preset
-                title: 'Presets'
-                icon_size: self.height * 0.7
-                title_font_size: self.height * 0.5
-                icon: u'\uf150'
-                on_press: root.load_preset_view()
+#            LabelIconButton:
+#                size_hint_x: 0.2
+#                id: load_preset
+#                title: 'Presets'
+#                icon_size: self.height * 0.7
+#                title_font_size: self.height * 0.5
+#                icon: u'\uf150'
+#                on_press: root.load_preset_view()
         
     BoxLayout:
         size_hint_y: 0.70
@@ -519,14 +147,15 @@ CAN_CHANNELS_VIEW_KV = """
         BoxLayout:
             orientation: 'horizontal'
             size_hint_y: 0.1
+            padding: [dp(5), dp(0)]            
             FieldLabel:
                 text: 'Channel'
-                halign: 'center'
+                halign: 'left'
                 size_hint_x: 0.18
             FieldLabel:
-                text: 'Sample Rate'
-                halign: 'center'
-                size_hint_x: 0.18
+                text: 'Rate'
+                halign: 'left'
+                size_hint_x: 0.10
                 
             FieldLabel:
                 text: 'CAN ID'
@@ -539,11 +168,11 @@ CAN_CHANNELS_VIEW_KV = """
                 size_hint_x: 0.30
             FieldLabel:
                 text: ''
-                size_hint_x: 0.1
+                size_hint_x: 0.18
             
         AnchorLayout:                
             AnchorLayout:
-                ScrollView:
+                ScrollContainer:
                     canvas.before:
                         Color:
                             rgba: 0.05, 0.05, 0.05, 1
@@ -556,7 +185,8 @@ CAN_CHANNELS_VIEW_KV = """
                     do_scroll_y:True
                     GridLayout:
                         id: can_grid
-                        spacing: [dp(10), dp(10)]
+                        padding: [dp(5), dp(5)]                        
+                        spacing: [dp(0), dp(10)]
                         size_hint_y: None
                         height: max(self.minimum_height, scroller.height)
                         cols: 1
@@ -564,7 +194,6 @@ CAN_CHANNELS_VIEW_KV = """
                     halign: 'center'
                     id: list_msg
                     text: ''
-                        
             AnchorLayout:
                 anchor_y: 'bottom'
                 IconButton:
@@ -575,16 +204,7 @@ CAN_CHANNELS_VIEW_KV = """
                     on_release: root.on_add_can_channel()
                     disabled: True
                     id: add_can_channel
-"""
-class CANChannelsView(BaseConfigView):
-    DEFAULT_CAN_SAMPLE_RATE = 1
-    can_channels_cfg = None
-    max_sample_rate = 0
-    can_grid = None
-    can_channels_settings = None
-    can_filters = None
-    _popup = None
-    Builder.load_string(CAN_CHANNELS_VIEW_KV)
+""")
 
     def __init__(self, **kwargs):
         super(CANChannelsView, self).__init__(**kwargs)
@@ -596,7 +216,7 @@ class CANChannelsView(BaseConfigView):
         can_channels_enable.bind(on_setting=self.on_can_channels_enabled)
         can_channels_enable.setControl(SettingsSwitch())
         self.update_view_enabled()
-        self.can_filters = CANFilters(self._base_dir)
+        self.can_filters = UnitsConversionFilters(self._base_dir)
         self._resource_cache = None
 
     def get_resource_cache(self):
@@ -616,14 +236,14 @@ class CANChannelsView(BaseConfigView):
 
     def on_config_updated(self, rc_cfg):
         can_channels_cfg = rc_cfg.can_channels
+
         max_sample_rate = rc_cfg.capabilities.sample_rates.sensor
         max_can_channels = rc_cfg.capabilities.channels.can_channel
         self.ids.can_channels_enable.setValue(can_channels_cfg.enabled)
-
-        self.reload_can_channel_grid(can_channels_cfg, max_sample_rate)
-        self.can_channels_cfg = can_channels_cfg
+        self.reload_can_channel_grid(can_channels_cfg)
         self.max_sample_rate = max_sample_rate
         self.max_can_channels = max_can_channels
+        self.can_channels_cfg = can_channels_cfg
         self.update_view_enabled()
 
     def update_view_enabled(self):
@@ -634,51 +254,62 @@ class CANChannelsView(BaseConfigView):
 
         self.ids.add_can_channel.disabled = add_disabled
 
-    def _refresh_can_channel_notice(self):
-        cfg = self.can_channels_cfg
-        if cfg is not None:
-            channel_count = len(cfg.channels)
-            self.ids.list_msg.text = 'No channels defined. Press (+) to map a CAN channel' if channel_count == 0 else ''
+    def _refresh_channel_list_notice(self, cfg):
+        channel_count = len(cfg.channels)
+        self.ids.list_msg.text = 'Press (+) to map a CAN channel' if channel_count == 0 else ''
 
-    def reload_can_channel_grid(self, can_channels_cfg, max_sample_rate):
+    def reload_can_channel_grid(self, can_channels_cfg):
         self.can_grid.clear_widgets()
         channel_count = len(can_channels_cfg.channels)
         for i in range(channel_count):
-            can_channel_cfg = can_channels_cfg.channels[i]
-            self.append_can_channel(i, can_channel_cfg, max_sample_rate)
+            channel_cfg = can_channels_cfg.channels[i]
+            self.append_can_channel(i, channel_cfg)
         self.update_view_enabled()
-        self._refresh_can_channel_notice()
+        self._refresh_channel_list_notice(can_channels_cfg)
 
-    def append_can_channel(self, index, can_channel_cfg, max_sample_rate):
-        channel_view = CANChannelView(index, can_channel_cfg, max_sample_rate, self.channels)
+    def append_can_channel(self, index, channel_cfg):
+        channel_view = CANChannelView(index, channel_cfg, self.channels)
         channel_view.bind(on_delete_channel=self.on_delete_channel)
-        channel_view.bind(on_customize_channel=self.on_customize_channel)
+        channel_view.bind(on_edit_channel=self.on_edit_channel)
         channel_view.bind(on_modified=self.on_modified)
         self.can_grid.add_widget(channel_view)
 
     def on_add_can_channel(self):
-        if (self.can_channels_cfg):
-            can_channel = CANChannel()
-            can_channel.sampleRate = self.DEFAULT_CAN_SAMPLE_RATE
-            new_channel_index = self.add_can_channel(can_channel)
-            self._customize_channel(new_channel_index)
+        if not self.can_channels_cfg:
+            return
+
+        can_channel = CANChannel()
+        can_channel.sampleRate = self.DEFAULT_CAN_SAMPLE_RATE
+
+        content = CANChannelConfigView()
+        content.init_config(can_channel, self.can_filters, self.max_sample_rate, self.channels)
+
+        popup = None
+        def _on_answer(instance, answer):
+            if answer:
+                self.add_can_channel(can_channel)
+                self.dispatch('on_modified')
+                self.reload_can_channel_grid(self.can_channels_cfg)
+            popup.dismiss()
+
+        popup = editor_popup('Add CAN Channel Mapping', content, _on_answer, size=(dp(500), dp(300)))
 
     def add_can_channel(self, can_channel):
         self.can_channels_cfg.channels.append(can_channel)
         new_channel_index = len(self.can_channels_cfg.channels) - 1
-        self.append_can_channel(new_channel_index, can_channel, self.max_sample_rate)
+        self.append_can_channel(new_channel_index, can_channel)
         self.update_view_enabled()
         self.dispatch('on_modified')
         return new_channel_index
 
     def _delete_all_channels(self):
         del self.can_channels_cfg.channels[:]
-        self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
+        self.reload_can_channel_grid(self.can_channels_cfg)
         self.dispatch('on_modified')
 
     def _delete_can_channel(self, channel_index):
         del self.can_channels_cfg.channels[channel_index]
-        self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
+        self.reload_can_channel_grid(self.can_channels_cfg)
         self.dispatch('on_modified')
 
     def on_delete_channel(self, instance, channel_index):
@@ -693,25 +324,25 @@ class CANChannelsView(BaseConfigView):
         to_cfg.__dict__.update(from_cfg.__dict__)
 
     def popup_dismissed(self, *args):
-        self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
+        self.reload_can_channel_grid(self.can_channels_cfg)
 
-    def _customize_channel(self, channel_index):
+    def _edit_channel(self, channel_index):
         content = CANChannelConfigView()
         working_channel_cfg = copy.deepcopy(self.can_channels_cfg.channels[channel_index])
-        content.init_config(channel_index, working_channel_cfg, self.can_filters)
+        content.init_config(working_channel_cfg, self.can_filters, self.max_sample_rate, self.channels)
 
         def _on_answer(instance, answer):
             if answer:
-                self._replace_config(self.can_channels_cfg.channels[content.channel_index], working_channel_cfg)
+                self._replace_config(self.can_channels_cfg.channels[channel_index], working_channel_cfg)
                 self.dispatch('on_modified')
 
-            self.reload_can_channel_grid(self.can_channels_cfg, self.max_sample_rate)
+            self.reload_can_channel_grid(self.can_channels_cfg)
             popup.dismiss()
 
-        popup = editor_popup('Customize CAN mapping', content, _on_answer, size_hint=(0.7, 0.6))
+        popup = editor_popup('Edit CAN Channel Mapping', content, _on_answer, size=(dp(500), dp(300)))
 
-    def on_customize_channel(self, instance, channel_index):
-        self._customize_channel(channel_index)
+    def on_edit_channel(self, instance, channel_index):
+        self._edit_channel(channel_index)
 
     def on_preset_selected(self, instance, preset_id):
         popup = None
@@ -734,7 +365,6 @@ class CANChannelsView(BaseConfigView):
                 new_channel = CANChannel()
                 new_channel.from_json_dict(channel_json)
                 self.add_can_channel(new_channel)
-        self._refresh_can_channel_notice()
 
     def load_preset_view(self):
         content = PresetBrowserView(self.get_resource_cache())
@@ -744,7 +374,8 @@ class CANChannelsView(BaseConfigView):
         popup.bind(on_dismiss=self.popup_dismissed)
         popup.open()
 
-PRESET_ITEM_VIEW_KV = """
+class PresetItemView(BoxLayout):
+    Builder.load_string("""
 <PresetItemView>:
     canvas.before:
         Color:
@@ -796,9 +427,7 @@ PRESET_ITEM_VIEW_KV = """
                 title_font_size: self.height * 0.5
                 icon: u'\uf046'
                 on_press: root.select_preset()
-"""
-class PresetItemView(BoxLayout):
-    Builder.load_string(PRESET_ITEM_VIEW_KV)
+""")
 
     def __init__(self, preset_id, name, notes, image_path, **kwargs):
         super(PresetItemView, self).__init__(**kwargs)
@@ -814,11 +443,13 @@ class PresetItemView(BoxLayout):
     def on_preset_selected(self, preset_id):
         pass
 
-PRESET_BROWSER_VIEW_KV = """
+class PresetBrowserView(BoxLayout):
+    presets = None
+    Builder.load_string("""
 <PresetBrowserView>:
     orientation: 'vertical'
     spacing: dp(10)
-    ScrollView:
+    ScrollContainer:
         size_hint_y: 0.85
         canvas.before:
             Color:
@@ -840,11 +471,7 @@ PRESET_BROWSER_VIEW_KV = """
         size_hint_y: 0.15
         text: u'\uf00d'
         on_press: root.on_close()
-"""
-
-class PresetBrowserView(BoxLayout):
-    presets = None
-    Builder.load_string(PRESET_BROWSER_VIEW_KV)
+""")
 
     def __init__(self, resource_cache, **kwargs):
         super(PresetBrowserView, self).__init__(**kwargs)

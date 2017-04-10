@@ -55,12 +55,13 @@ class RcpCmd:
     payload = None
     index = None
     option = None
-    def __init__(self, name, cmd, payload=None, index=None, option=None):
+    def __init__(self, name, cmd, payload=None, index=None, option=None, last=None):
         self.name = name
         self.cmd = cmd
         self.payload = payload
         self.index = index
         self.option = option
+        self.last = last
 
 class CommandSequence():
     command_list = None
@@ -329,6 +330,7 @@ class RcpApi:
                         payload = rcpCmd.payload
                         index = rcpCmd.index
                         option = rcpCmd.option
+                        last = rcpCmd.last
 
                         level2Retry = 0
                         name = rcpCmd.name
@@ -336,15 +338,16 @@ class RcpApi:
 
                         self.addListener(name, self.rcpCmdComplete)
                         while not result and level2Retry <= self.level_2_retries:
-                            if not payload == None and not index == None and not option == None:
-                                rcpCmd.cmd(payload, index, option)
-                            elif not payload == None and not index == None:
-                                rcpCmd.cmd(payload, index)
-                            elif not payload == None:
-                                rcpCmd.cmd(payload)
-                            else:
-                                rcpCmd.cmd()
-
+                            args = []
+                            if payload is not None:
+                                args.append(payload)
+                            if index is not None:
+                                args.append(index)
+                            if option is not None:
+                                args.append(option)
+                            if last is not None:
+                                args.append(last)
+                            rcpCmd.cmd(*args)
                             retry = 0
                             while not result and retry < DEFAULT_READ_RETRIES:
                                 try:
@@ -521,31 +524,31 @@ class RcpApi:
             cmdSequence.append(RcpCmd('setLapCfg', self.setLapCfg, lapCfg.toJson()))
 
         imuCfg = cfg.imuConfig
-        for i in range(IMU_CHANNEL_COUNT):
+        for i in range(imuCfg.channelCount):
             imuChannel = imuCfg.channels[i]
             if imuChannel.stale:
                 cmdSequence.append(RcpCmd('setImuCfg', self.setImuCfg, imuChannel.toJson(), i))
 
         analogCfg = cfg.analogConfig
-        for i in range(cfg.analogConfig.channelCount):
+        for i in range(analogCfg.channelCount):
             analogChannel = analogCfg.channels[i]
             if analogChannel.stale:
                 cmdSequence.append(RcpCmd('setAnalogCfg', self.setAnalogCfg, analogChannel.toJson(), i))
 
         timerCfg = cfg.timerConfig
-        for i in range(TIMER_CHANNEL_COUNT):
+        for i in range(timerCfg.channelCount):
             timerChannel = timerCfg.channels[i]
             if timerChannel.stale:
                 cmdSequence.append(RcpCmd('setTimerCfg', self.setTimerCfg, timerChannel.toJson(), i))
 
         gpioCfg = cfg.gpioConfig
-        for i in range(GPIO_CHANNEL_COUNT):
+        for i in range(gpioCfg.channelCount):
             gpioChannel = gpioCfg.channels[i]
             if gpioChannel.stale:
                 cmdSequence.append(RcpCmd('setGpioCfg', self.setGpioCfg, gpioChannel.toJson(), i))
 
         pwmCfg = cfg.pwmConfig
-        for i in range(PWM_CHANNEL_COUNT):
+        for i in range(pwmCfg.channelCount):
             pwmChannel = pwmCfg.channels[i]
             if pwmChannel.stale:
                 cmdSequence.append(RcpCmd('setPwmCfg', self.setPwmCfg, pwmChannel.toJson(), i))
@@ -658,42 +661,54 @@ class RcpApi:
         queue writing of all OBD2 channels
         """
         channels = obd2_channels_json_dict['obd2Cfg']['pids']
-        if channels:
+        enabled = obd2_channels_json_dict['obd2Cfg']['en']
+        channels_len = len(channels)
+        if channels is not None:
             index = 0
-            for c in channels:
-                cmd_sequence.append(RcpCmd('setObd2Cfg', self.set_obd2_channel_config, c, index))
-                index += 1
+            if channels_len > 0:
+                for c in channels:
+                    cmd_sequence.append(RcpCmd('setObd2Cfg', self.set_obd2_channel_config, [c], index, enabled, index == channels_len - 1))
+                    index += 1
+            else:
+                # if we've removed all channels, send message with empty channel array
+                cmd_sequence.append(RcpCmd('setObd2Cfg', self.set_obd2_channel_config, [], index, enabled, True))
 
-    def set_obd2_channel_config(self, obd2_channel, index):
+    def set_obd2_channel_config(self, obd2_channels, index, enabled, last):
         """
         Write a single OBD2 channel configuration by index
         """
-        return self.sendCommand({'setObd2Cfg':
-                                 {'index':index,
-                                  'pid': obd2_channel
-                                  }
-                                 })
+        payload = {'en': enabled, 'index':index, 'pids': obd2_channels}
+        if last == True:
+            payload['last'] = True
+        msg = {'setObd2Cfg': payload}
+        return self.sendCommand(msg)
 
     def sequence_write_can_channels(self, can_channels_json_dict, cmd_sequence):
         """
         queue writing of all can channels
         """
         channels = can_channels_json_dict['canChanCfg']['chans']
-        if channels:
+        enabled = can_channels_json_dict['canChanCfg']['en']
+        channels_len = len(channels)
+        if channels is not None:
             index = 0
-            for c in channels:
-                cmd_sequence.append(RcpCmd('setCanChanCfg', self.set_can_channel_config, c, index))
-                index += 1
+            if channels_len > 0:
+                for c in channels:
+                    cmd_sequence.append(RcpCmd('setCanChanCfg', self.set_can_channel_config, [c], index, enabled, index == channels_len - 1))
+                    index += 1
+            else:
+                # if we've removed all channels, send message with empty channel array
+                cmd_sequence.append(RcpCmd('setCanChanCfg', self.set_can_channel_config, [], index, enabled, True))
 
-    def set_can_channel_config(self, can_channel, index):
+    def set_can_channel_config(self, can_channels, index, enabled, last):
         """
         Write a single CAN channel configuration by index
         """
-        return self.sendCommand({'setCanChanCfg':
-                                 {'index':index,
-                                  'chan': can_channel
-                                  }
-                                 })
+        payload = {'en': enabled, 'index':index, 'chans': can_channels}
+        if last == True:
+            payload['last'] = True
+        msg = {'setCanChanCfg': payload}
+        return self.sendCommand(msg)
 
     def get_can_channels_config(self):
         self.sendGet('getCanChanCfg', None)

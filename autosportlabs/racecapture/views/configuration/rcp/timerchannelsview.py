@@ -67,6 +67,10 @@ class PulsePerRevSpinner(MappedSpinner):
     def __init__(self, **kwargs):
         super(PulsePerRevSpinner, self).__init__(**kwargs)
         valueMap = {}
+        
+        valueMap[0.25]= '1/4'
+        valueMap[0.33333] = '1/3'
+        valueMap[0.5] = '1/2'
         for i in range (1, 64):
             valueMap[i] = str(i)
         self.setValueMap(valueMap, '1');
@@ -77,7 +81,7 @@ class PulseChannel(BaseChannelView):
                 
     def on_pulse_per_rev(self, instance, value):
         if self.channelConfig:
-            self.channelConfig.pulsePerRev = int(value)
+            self.channelConfig.pulsePerRev = float(instance.getValueFromKey(value))
             self.channelConfig.stale = True
             self.dispatch('on_modified', self.channelConfig)
                         

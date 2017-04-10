@@ -202,7 +202,7 @@ class ConfigView(Screen):
         if self.rc_config.capabilities.has_analog:
             attach_node('Analog Sensors', None, lambda: AnalogChannelsView(channels=runtime_channels))
 
-        if self.rc_config.capabilities.has_pwm:
+        if self.rc_config.capabilities.has_timer:
             attach_node('Pulse/RPM Sensors', None, lambda: PulseChannelsView(channels=runtime_channels))
 
         if self.rc_config.capabilities.has_gpio:
@@ -214,8 +214,12 @@ class ConfigView(Screen):
             attach_node('Pulse/Analog Out', None, lambda: AnalogPulseOutputChannelsView(channels=runtime_channels))
 
         attach_node('CAN Bus', None, lambda: CANConfigView())
-        attach_node('CAN Mapping', None, lambda: CANChannelsView(settings=self._settings, channels=runtime_channels, base_dir=self.base_dir))
+
+        if self.rc_config.capabilities.has_can_channel:
+            attach_node('CAN Mapping', None, lambda: CANChannelsView(settings=self._settings, channels=runtime_channels, base_dir=self.base_dir))
+
         attach_node('OBDII', None, lambda: OBD2ChannelsView(channels=runtime_channels, base_dir=self.base_dir))
+
         attach_node('Wireless', None, lambda: WirelessConfigView(self.base_dir, self.rc_config, self.rc_config.capabilities))
 
         attach_node('Telemetry', None, lambda: TelemetryConfigView(self.rc_config.capabilities))

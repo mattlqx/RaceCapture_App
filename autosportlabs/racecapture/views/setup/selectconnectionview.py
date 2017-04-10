@@ -100,7 +100,7 @@ SELECT_CONNECTION_VIEW_KV = """
 class SelectConnectionView(InfoView):
     """
     A setup screen that lets users select the connection they want to use for RaceCapture
-    """        
+    """
     Builder.load_string(SELECT_CONNECTION_VIEW_KV)
     CONNECTION_CHECK_INTERVAL = 0.5
 
@@ -136,7 +136,7 @@ class SelectConnectionView(InfoView):
         if not self.rc_api.is_wireless_connection:
             supported_connections.append('USB')
         else:
-            if is_android() and device == 'RCP_MK2':
+            if is_android() and (device == 'RCP_MK2' or device == 'RCP_MK3' or device == 'RC_Apex'):
                 supported_connections.append('Bluetooth')
             supported_connections.append('WiFi')
 
@@ -175,8 +175,8 @@ class SelectConnectionView(InfoView):
         self.ids.connection_status_note.text = 'Connected' if connected else 'Waiting for connection'
 
     def _update_connection_type(self, connection_type):
-        #convert display connection type to internal connection type code
-        connection_type_code = SelectConnectionView.CONNECTION_TYPES[connection_type] 
+        # convert display connection type to internal connection type code
+        connection_type_code = SelectConnectionView.CONNECTION_TYPES[connection_type]
         Clock.schedule_once(lambda dt: self.settings.userPrefs.set_pref('preferences', 'conn_type', connection_type_code), SelectConnectionView.CHANGE_CONNECTION_DELAY)
 
     def on_connection_type(self, connection_type):
