@@ -20,7 +20,7 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "1.9.0"
+__version__ = "1.9.1"
 import sys
 import os
 
