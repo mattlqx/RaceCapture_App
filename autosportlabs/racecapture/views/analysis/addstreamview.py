@@ -19,6 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import traceback
 from datetime import datetime
 from threading import Thread
 import kivy
@@ -330,6 +331,7 @@ class LogImportWidget(BoxLayout):
         except Exception as e:
             success = False
             message = str(e)
+        Logger.error('LogImportWidget: error importing log file: {}'.format(traceback.format_exc()))
         Clock.schedule_once(lambda dt: self.dispatch('on_import_complete', session_id, success, message))
 
     def _update_progress(self, percent_complete=0):

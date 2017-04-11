@@ -111,13 +111,15 @@ class ChannelValuesView(ChannelAnalysisWidget):
         self._channel_stat_widgets.clear()
         for source_key, channels in self.channel_stats.iteritems():
             for channel, channel_data in channels.iteritems():
-                key = channel + source_key
-                view = ChannelValueView()
-                view.channel = channel
-                view.color = self.color_sequence.get_color(key)
-                view.lap = str(channel_data.source.lap)
                 session_id = channel_data.source.session
                 session = self.datastore.get_session_by_id(session_id, self.sessions)
+                if session is None:
+                    continue
+                view = ChannelValueView()
+                view.channel = channel
+                key = channel + source_key
+                view.color = self.color_sequence.get_color(key)
+                view.lap = str(channel_data.source.lap)
                 view.session = session.name
                 view.minval = channel_data.min
                 view.maxval = channel_data.max
