@@ -19,7 +19,6 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import traceback
 from datetime import datetime
 from threading import Thread
 import kivy
