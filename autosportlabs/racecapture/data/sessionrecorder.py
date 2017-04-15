@@ -206,7 +206,7 @@ class SessionRecorder(EventDispatcher) :
         if not self._channel_metas_same(metas):
             Logger.info("SessionRecorder: ChannelMeta changed - stop recording")
             self.stop(stop_now=True)
-        self._channels = copy.deepcopy(metas)
+        self._channels = copy.deepcopy(dict(metas))
         self._check_should_record()
 
     def _on_sample(self, sample):
