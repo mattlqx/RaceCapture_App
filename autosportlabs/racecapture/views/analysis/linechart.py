@@ -456,7 +456,7 @@ class LineChart(ChannelAnalysisWidget):
         # calculate the ratio of total distance / time
         total_time_ms = interval_values[-1] - interval_values[0]
         total_distance = distance_values[-1]
-        distance_ratio = total_distance / total_time_ms
+        distance_ratio = total_distance / total_time_ms if total_time_ms > 0 else 0
 
         Logger.debug('Checking distance threshold. Time: {} Distance: {} Ratio: {}'.format(total_time_ms, total_distance, distance_ratio))
         return distance_ratio > LineChart.MEANINGFUL_DISTANCE_RATIO_THRESHOLD
