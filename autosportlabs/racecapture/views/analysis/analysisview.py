@@ -263,7 +263,8 @@ class AnalysisView(Screen):
         self._popup = popup
 
     def close_popup(self, *args):
-        self._popup.dismiss()
+        if self._popup:
+            self._popup.dismiss()
 
     def on_add_session(self, instance, session):
         Logger.info("AnalysisView: on_add_session: {}".format(session))
