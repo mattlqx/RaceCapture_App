@@ -34,6 +34,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.listview import ListView, ListItemButton
 from kivy.uix.screenmanager import Screen
+from kivy.base import ExceptionManager
 from utils import kvFind
 from kivy.adapters.listadapter import ListAdapter
 from autosportlabs.uix.button.featurebutton import FeatureButton
@@ -330,6 +331,7 @@ class LogImportWidget(BoxLayout):
         except Exception as e:
             success = False
             message = str(e)
+            ExceptionManager.handle_exception(e)
         Clock.schedule_once(lambda dt: self.dispatch('on_import_complete', session_id, success, message))
 
     def _update_progress(self, percent_complete=0):

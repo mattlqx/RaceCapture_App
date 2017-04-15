@@ -438,7 +438,7 @@ class DataStore(object):
             existing_columns.append(row[1])
 
         for channel in channels:
-            name = channel.name
+            name = _scrub_sql_value(channel.name)
             if name in existing_columns:
                 continue
             # Extend the datapoint table to include the channel as a
