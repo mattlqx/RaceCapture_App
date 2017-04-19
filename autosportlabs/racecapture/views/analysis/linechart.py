@@ -335,10 +335,13 @@ class LineChart(ChannelAnalysisWidget):
         for plot in self._channel_plots.itervalues():
             # Find the largest chart_x for all of the active plots
             chart_x_index = plot.chart_x_index
-            last = next(reversed(chart_x_index))
-            chart_x = last
-            if chart_x and chart_x > max_chart_x:
-                max_chart_x = chart_x
+            try:
+                last = next(reversed(chart_x_index))
+                chart_x = last
+                if chart_x and chart_x > max_chart_x:
+                    max_chart_x = chart_x
+            except StopIteration:  # iterator is empty so just continue
+                pass
 
         # update chart zoom range
         self.current_offset = 0
