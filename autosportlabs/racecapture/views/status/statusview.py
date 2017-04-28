@@ -119,6 +119,12 @@ class StatusView(Screen):
                 'Error initializing'
             ]
         },
+        'wifi': {
+            'init': [
+                'Not initialized',
+                'Initialized'
+            ]
+        },
         'logging': {
             'status': [
                 'Not logging',
@@ -278,7 +284,9 @@ class StatusView(Screen):
 
     def render_wifi(self):
         status = self.status['wifi']
+        initialized = status['initialized']
         ap_enabled = status['ap']['active']
+        self._add_item('Status', self._get_enum_definition('wifi', 'init', int(status['initialized'])))
         self._add_item('Access Point', 'Enabled' if ap_enabled else 'Disabled')
         client_enabled = status['client']['active']
         client_connected = status['client']['connected']

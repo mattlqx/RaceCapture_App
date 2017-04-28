@@ -26,5 +26,13 @@
     "rc_write_config":{
         "title": "Write Changes",
         "text": "When done, write your changes back to RaceCapture to apply your settings."    
-    }    
+    },
+    "obdii_preset_help":{
+        "title": "OBDII Preset Selected",
+        "text": "We've automatically configured this OBDII mapping for the SAE standard channel you selected.\n\nYou can also customize the parameters to read OEM specific PIDs." 
+    },
+    "can_mapping_help":{
+        "title": "CAN Channel Mapping",
+        "text": "We've set the typical min, max and units for this channel.\n\nYou can now complete the mapping match the CAN protocol you're working with." 
+    }   
 }

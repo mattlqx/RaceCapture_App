@@ -20,6 +20,7 @@
 
 import os
 import json
+from autosportlabs.racecapture.config.rcpconfig import PidConfig
 
 class OBD2Settings(object):
     obd2channelInfo = {}
@@ -28,25 +29,15 @@ class OBD2Settings(object):
         super(OBD2Settings, self).__init__(**kwargs)
         self.base_dir = base_dir
         self.loadOBD2Channels()
-        
-        
-    def getPidForChannelName(self, name):
-        pid = 0
-        obd2Channel = self.obd2channelInfo.get(name)
-        if obd2Channel:
-            pid = int(obd2Channel['pid'])
-        return pid
-    
+            
     def getChannelNames(self):
         return self.obd2channelInfo.keys()
     
     def loadOBD2Channels(self):
-        try:
-            obd2_json = open(os.path.join(self.base_dir, 'resource', 'settings', 'obd2_channels.json'))
-            obd2channels = json.load(obd2_json)
-            obd2channels = obd2channels['obd2Channels']
-            
-            for name in obd2channels:
-                self.obd2channelInfo[name] = obd2channels[name]
-        except Exception as detail:
-            print('Error loading obd2 channel info ' + str(detail))
+        obd2_json = open(os.path.join(self.base_dir, 'resource', 'settings', 'obd2_channels.json'))
+        obd2channels = json.load(obd2_json)
+        obd2channels = obd2channels['obd2Channels']
+        for c in obd2channels:
+            obd2channel = PidConfig()
+            obd2channel.fromJson(c)
+            self.obd2channelInfo[obd2channel.name] = obd2channel

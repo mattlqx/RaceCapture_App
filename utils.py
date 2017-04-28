@@ -24,7 +24,7 @@ Utils
 
 '''
 
-__all__ = ('is_mobile_platform', 'is_android', 'is_ios', 'intersection', 'difference', 'curry', 'strtotuple',
+__all__ = ('spct', 'is_mobile_platform', 'is_android', 'is_ios', 'intersection', 'difference', 'curry', 'strtotuple',
            'get_color_from_hex', 'get_random_color',
            'is_color_transparent', 'boundary', 'dist',
            'deprecated', 'SafeList',
@@ -38,6 +38,12 @@ from UserDict import DictMixin
 from kivy.core.window import Window
 from kivy import platform
 from kivy.core.clipboard import Clipboard
+from kivy.metrics import sp
+
+def spct(pct):
+    scale = sp(1)
+    scale = scale * 0.9 if scale > 1 else scale
+    return (pct * scale)
 
 def strip_whitespace(value):
     return value.replace('\n', '').replace('\r', '').strip()

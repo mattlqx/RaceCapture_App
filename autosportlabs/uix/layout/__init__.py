@@ -18,26 +18,3 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
-#:kivy 1.9.1
-#:import ColorScheme autosportlabs.racecapture.theme.color.ColorScheme
-
-<ChannelNameSelectorView>:
-    BoxLayout:
-        orientation: 'horizontal'
-        spacing: sp(5)
-        FieldLabel:
-            size_hint_x: 0.4
-            text: 'Channel'
-            halign: 'right'
-            id: channel_label
-        ChannelNameSpinner:
-            size_hint_x: 0.45
-            id: channel_name
-            on_text: root.on_channel_selected(*args)
-        BoxLayout:
-            size_hint_x: 0.15
-#            padding: (dp(2), dp(2))
-            IconButton:
-                color: ColorScheme.get_accent()        
-                text: u'\uf013'
-                on_release: root.on_customize(*args)

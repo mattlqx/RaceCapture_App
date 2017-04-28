@@ -116,13 +116,17 @@ def _smooth_dataset(dset, smoothing_rate):
 
 def _scrub_sql_value(value):
     """
-    Takes a string and strips it of all non-alphanumeric characters, making it safe for use in a SQL query for things
-    like a column name or table name. Not to be confused with traditional SQL escaping with backslashes or
+    Takes a string and strips it of all non-alphanumeric characters, and prefixes with a '_' if the name starts with a digit.
+    This makes it safe for use in a SQL query for things like a column name or table name. 
+    Not to be confused with traditional SQL escaping with backslashes or
     parameterized queries
     :param value: String
     :return: String
     """
-    return ''.join([char for char in value if char.isalnum()])
+    sql_name = ''.join([char for char in value if char.isalnum()])
+    if sql_name[:1].isdigit():
+        sql_name = '_' + sql_name
+    return sql_name
 
 
 class DataSet(object):
@@ -407,22 +411,40 @@ class DataStore(object):
         tool.engine.dispose()
 
     def _add_extra_indexes(self, channels):
+        existing_indexes = []
+        c = self._conn.cursor()
+        for row in c.execute('PRAGMA index_list(datapoint)'):
+            existing_indexes.append(row[1])
+
         extra_indexes = []
         for c in channels:
-            c = str(c)
-            if c in self.EXTRA_INDEX_CHANNELS:
-                extra_indexes.append(_scrub_sql_value(c))
+            name = c.name
+            if name in self.EXTRA_INDEX_CHANNELS:
+                extra_indexes.append(_scrub_sql_value(name))
 
         for index_channel in extra_indexes:
-            self._conn.execute("""CREATE INDEX {}_index_id on datapoint({})""".format(index_channel, index_channel))
+            index_name = '{}_index_id'.format(index_channel)
+            if index_name in existing_indexes:
+                continue
+            self._conn.execute("""CREATE INDEX {} on datapoint({})""".format(index_name, index_channel))
 
     def _extend_datalog_channels(self, channels):
+        """
+        Add new columns as needed
+        """
+        existing_columns = []
+        c = self._conn.cursor()
+        for row in c.execute('PRAGMA table_info(datapoint)'):
+            existing_columns.append(row[1])
+
         for channel in channels:
+            name = channel.name
+            if name in existing_columns:
+                continue
             # Extend the datapoint table to include the channel as a
             # new field
             self._conn.execute("""ALTER TABLE datapoint
-            ADD {} REAL""".format(_scrub_sql_value(channel.name)))
-
+            ADD {} REAL""".format(_scrub_sql_value(name)))
         self._add_extra_indexes(channels)
         self._conn.commit()
 
@@ -431,14 +453,10 @@ class DataStore(object):
         channels = []
 
         try:
-            new_channels = []
             for i in range(1, len(raw_channels) + 1):
                 name, units, min, max, samplerate = raw_channels[i - 1].replace('"', '').split('|')
                 channel = DatalogChannel(name, units, float(min), float(max), int(samplerate), 0)
                 channels.append(channel)
-                if not name in [x.name for x in self._channels]:
-                    new_channels.append(channel)
-            self._extend_datalog_channels(new_channels)
         except:
             import sys, traceback
             print "Exception in user code:"
@@ -920,6 +938,7 @@ class DataStore(object):
 
         header = dl.readline()
         channels = self._parse_datalog_headers(header)
+        self._extend_datalog_channels(channels)
 
         # Create an event to be tagged to these records
         session_id = self.create_session(name, notes)

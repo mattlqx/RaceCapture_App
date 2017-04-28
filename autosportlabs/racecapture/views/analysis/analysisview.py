@@ -252,9 +252,11 @@ class AnalysisView(Screen):
     def on_stream_connected(self, instance, new_session_id):
         self.stream_connecting = False
         self._dismiss_popup()
-        session = self._datastore.get_session_by_id(new_session_id)
-        self.ids.sessions_view.append_session(session)
-        self.check_load_suggested_lap(new_session_id)
+
+        if new_session_id:
+            session = self._datastore.get_session_by_id(new_session_id)
+            self.ids.sessions_view.append_session(session)
+            self.check_load_suggested_lap(new_session_id)
 
     def _get_suggested_channels(self):
         suggested_channels = self._settings.userPrefs.get_pref_list('analysis_preferences', 'selected_analysis_channels')
@@ -273,13 +275,12 @@ class AnalysisView(Screen):
             best_lap_id = best_lap[1]
             if best_lap_id:
                 Logger.info('AnalysisView: Convenience selected a suggested session {} / lap {}'.format(new_session_id, best_lap_id))
-                main_chart = self.ids.mainchart
+
                 suggested_channels = self._get_suggested_channels()
-                main_chart.select_channels(suggested_channels)
-                self.ids.channelvalues.select_channels(suggested_channels)
                 self._screens.set_selected_channels(suggested_channels)
+
                 sessions_view.select_lap(new_session_id, best_lap_id, True)
-                HelpInfo.help_popup('suggested_lap', main_chart, arrow_pos='left_mid')
+                HelpInfo.help_popup('suggested_lap', self.ids.main_chart, arrow_pos='left_mid')
             else:
                 Logger.info('AnalysisView: No best lap could be determined; selecting first lap by default for session {}'.format(new_session_id))
                 sessions_view.select_lap(new_session_id, 0, True)
@@ -307,7 +308,6 @@ class AnalysisView(Screen):
 
     def on_add_session(self, instance, session):
         Logger.info("AnalysisView: on_add_session: {}".format(session))
-        self.check_load_suggested_lap(session.session_id)
         self.ids.sessions_view.append_session(session)
         self.check_load_suggested_lap(session.session_id)
 
