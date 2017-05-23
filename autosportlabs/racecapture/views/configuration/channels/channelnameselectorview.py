@@ -29,31 +29,54 @@ from utils import *
 from autosportlabs.racecapture.views.configuration.channels.channelsview import ChannelEditor
 from autosportlabs.racecapture.data.channels import *
 
-Builder.load_file('channelnameselectorview.kv')
 
 class ChannelNameSelectorView(BoxLayout):
+
+    Builder.load_string("""
+<ChannelNameSelectorView>:
+    BoxLayout:
+        orientation: 'horizontal'
+        spacing: sp(5)
+        FieldLabel:
+            size_hint_x: 0.4
+            text: 'Channel'
+            halign: 'right'
+            id: channel_label
+        ChannelNameSpinner:
+            size_hint_x: 0.45
+            id: channel_name
+            on_text: root.on_channel_selected(*args)
+        BoxLayout:
+            size_hint_x: 0.15
+#            padding: (dp(2), dp(2))
+            IconButton:
+                color: ColorScheme.get_accent()        
+                text: u'\uf013'
+                on_release: root.on_customize(*args)    
+    """)
+
     channel_type = NumericProperty(CHANNEL_TYPE_UNKNOWN)
     filter_list = ListProperty([])
-    channel_config = None
-    runtime_channels = None
     compact = BooleanProperty(False)
-    
+
     def __init__(self, **kwargs):
         super(ChannelNameSelectorView, self).__init__(**kwargs)
-        self.register_event_type('on_channels_updated')        
+        self.channel_config = None
+        self._runtime_channels = None
+        self.register_event_type('on_channels_updated')
         self.register_event_type('on_channel')
-        self.bind(channel_type = self.on_channel_type)
+        self.bind(channel_type=self.on_channel_type)
 
     def on_filter_list(self, instance, value):
         self.ids.channel_name.filterList = value
-        
+
     def on_channels_updated(self, runtime_channels):
-        self.runtime_channels = runtime_channels
-        self.ids.channel_name.dispatch('on_channels_updated', runtime_channels)        
-    
+        self._runtime_channels = runtime_channels
+        self.ids.channel_name.dispatch('on_channels_updated', runtime_channels)
+
     def on_channel_type(self, instance, value):
         self.ids.channel_name.channelType = value
-    
+
     def on_compact(self, instance, value):
         if value:
             label = self.ids.channel_label
@@ -65,9 +88,9 @@ class ChannelNameSelectorView(BoxLayout):
 
     def set_channel_name(self, name):
         self.ids.channel_name.text = str(name)
-        
+
     def on_channel_selected(self, instance, value):
-        channel_meta = self.runtime_channels.findChannelMeta(value, None)
+        channel_meta = self._runtime_channels.findChannelMeta(value, None)
         if channel_meta is not None:
             self.channel_config.name = channel_meta.name
             self.channel_config.units = channel_meta.units
@@ -75,24 +98,24 @@ class ChannelNameSelectorView(BoxLayout):
             self.channel_config.max = channel_meta.max
             self.channel_config.precision = channel_meta.precision
             self.dispatch('on_channel')
-    
+
     def _dismiss_editor(self):
         self._popup.dismiss()
-        
+
     def on_customize(self, *args):
-        
-        content = ChannelEditor(channel = self.channel_config)
-        popup = Popup(title = 'Customize Channel',
-                      content = content, 
-                      size_hint=(None, None), size = (dp(500), dp(220)))
+
+        content = ChannelEditor(channel=self.channel_config)
+        popup = Popup(title='Customize Channel',
+                      content=content,
+                      size_hint=(None, None), size=(dp(500), dp(220)))
         popup.bind(on_dismiss=self.on_edited)
-        content.bind(on_channel_edited=lambda *args:popup.dismiss())                     
+        content.bind(on_channel_edited=lambda *args:popup.dismiss())
         popup.open()
-    
+
     def on_edited(self, *args):
         self.set_channel_name(self.channel_config.name)
         self.dispatch('on_channel')
-        
+
     def on_channel(self):
         pass
-        
+

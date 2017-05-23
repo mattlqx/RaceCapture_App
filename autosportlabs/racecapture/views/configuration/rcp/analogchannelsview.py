@@ -30,7 +30,7 @@ from kivy.app import Builder
 from kivy.clock import Clock
 from valuefield import *
 from utils import *
-from channelnameselectorview import ChannelNameSelectorView
+from autosportlabs.racecapture.views.configuration.channels.channelnameselectorview import ChannelNameSelectorView
 from channelnamespinner import ChannelNameSpinner
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseMultiChannelConfigView, BaseChannelView
 from autosportlabs.racecapture.config.rcpconfig import *
@@ -48,18 +48,18 @@ class AnalogChannelsView(BaseMultiChannelConfigView):
         super(AnalogChannelsView, self).__init__(**kwargs)
         self.channel_title = 'Analog '
         self.accordion_item_height = sp(300)
-        
-            
+
+
     def channel_builder(self, index, max_sample_rate):
         editor = AnalogChannel(id='analog' + str(index), channels=self.channels)
         editor.bind(on_modified=self.on_modified)
         if self.config:
             editor.on_config_updated(self.config.channels[index], max_sample_rate)
         return editor
-            
+
     def get_specific_config(self, rcp_cfg):
         return rcp_cfg.analogConfig
-        
+
 class AnalogChannel(BaseChannelView):
     def __init__(self, **kwargs):
         super(AnalogChannel, self).__init__(**kwargs)
@@ -72,26 +72,26 @@ class AnalogChannel(BaseChannelView):
                 self.dispatch('on_modified', self.channelConfig)
         except:
             pass
-            
-                    
+
+
     def on_scaling_type_raw(self, instance, value):
         if self.channelConfig and value:
             self.channelConfig.scalingMode = ANALOG_SCALING_MODE_RAW
             self.channelConfig.stale = True
             self.dispatch('on_modified', self.channelConfig)
-                        
+
     def on_scaling_type_linear(self, instance, value):
         if self.channelConfig and value:
             self.channelConfig.scalingMode = ANALOG_SCALING_MODE_LINEAR
             self.channelConfig.stale = True
             self.dispatch('on_modified', self.channelConfig)
-                        
+
     def on_scaling_type_map(self, instance, value):
         if self.channelConfig and value:
             self.channelConfig.scalingMode = ANALOG_SCALING_MODE_MAP
             self.channelConfig.stale = True
             self.dispatch('on_modified', self.channelConfig)
-                    
+
     def on_config_updated(self, channelConfig, max_sample_rate):
         self.ids.chan_id.setValue(channelConfig)
         self.ids.sr.setValue(channelConfig.sampleRate, max_sample_rate)
@@ -113,18 +113,18 @@ class AnalogChannel(BaseChannelView):
             check_raw.active = False
             check_linear.active = False
             check_mapped.active = True
-        
+
         self.ids.linearscaling.text = str(channelConfig.linearScaling)
         map_editor = self.ids.map_editor
         map_editor.on_config_changed(channelConfig.scalingMap)
         map_editor.bind(on_map_updated=self.on_map_updated)
 
         self.channelConfig = channelConfig
-        
+
     def on_map_updated(self, *args):
         self.channelConfig.stale = True
-        self.dispatch('on_modified', self.channelConfig)        
-        
+        self.dispatch('on_modified', self.channelConfig)
+
 
 class AnalogScaler(Graph):
     def __init__(self, **kwargs):
@@ -155,10 +155,10 @@ class AnalogScalingMapEditor(BoxLayout):
 
     def set_volts_cell(self, cell_field, value):
         cell_field.text = '{:.3g}'.format(value)
-        
+
     def set_scaled_cell(self, scaled_field, value):
         scaled_field.text = '{:.3g}'.format(value)
-        
+
     def on_config_changed(self, scaling_map):
         map_size = self.map_size
         self.setTabStops(map_size)
@@ -168,24 +168,24 @@ class AnalogScalingMapEditor(BoxLayout):
             volts_cell = kvFind(self, 'rcid', 'v_' + str(i))
             scaled_cell = kvFind(self, 'rcid', 's_' + str(i))
             self.set_volts_cell(volts_cell, volts)
-            self.set_scaled_cell(scaled_cell, scaled)            
+            self.set_scaled_cell(scaled_cell, scaled)
         self.scaling_map = scaling_map
         self.regen_plot()
 
-    #TODO make regen_plot2 the actual routine; we should'nt have to delete and re-add the plot to change the points
+    # TODO make regen_plot2 the actual routine; we should'nt have to delete and re-add the plot to change the points
     def regen_plot(self):
         scalingMap = self.scaling_map
-        
+
         graphContainer = self.ids.graphcontainer
         graphContainer.clear_widgets()
-        
+
         graph = AnalogScaler()
         graphContainer.add_widget(graph)
-        
+
         plot = LinePlot(color=rgb('00FF00'), line_width=1.25)
         graph.add_plot(plot)
         self.plot = plot
-                
+
         points = []
         map_size = self.map_size
         max_scaled = None
@@ -198,19 +198,19 @@ class AnalogScalingMapEditor(BoxLayout):
                 max_scaled = scaled
             if min_scaled == None or scaled < min_scaled:
                 min_scaled = scaled
-            
+
         graph.ymin = min_scaled
         graph.ymax = max_scaled
         graph.xmin = 0
         graph.xmax = 5
         plot.points = points
-            
+
     def on_map_updated(self):
         pass
-    
+
     def _refocus(self, widget):
         widget.focus = True
-        
+
     def on_volts(self, mapBin, instance):
         value = instance.text.strip()
         if value == '' or value == "." or value == "-":
@@ -228,7 +228,7 @@ class AnalogScalingMapEditor(BoxLayout):
             warn.auto_dismiss_timeout(WARN_DISMISS_TIMEOUT)
             warn.background_color = (1, 0, 0, 1.0)
             warn.size = (sp(200), sp(50))
-            warn.size_hint = (None,None)
+            warn.size_hint = (None, None)
             self.get_root_window().add_widget(warn)
             warn.center_above(instance)
             original_value = self.scaling_map.getVolts(mapBin)
@@ -253,6 +253,6 @@ class AnalogScalingMapEditor(BoxLayout):
                 self.regen_plot()
         except Exception as e:
             print("Error updating chart with scaled value: " + str(e))
-            
-        
+
+
 
