@@ -377,10 +377,15 @@ class TrackMapView(Widget):
 
                     try:
                         line_points.extend([path_points[i], path_points[i + 1]])
-                        current_heat_pct = int(((heat_path[value_index] - heat_min) / heat_range) * 100.0)
+                        current_heat_pct = 0
+                        if heat_range > 0:
+                            current_heat_pct = int(((heat_path[value_index] - heat_min) / heat_range) * 100.0)
+
                         while i < point_count - 2:
                             heat_value = heat_path[value_index]
-                            heat_pct = int(((heat_value - heat_min) / heat_range) * 100.0)
+                            heat_pct = 0
+                            if heat_range > 0:
+                                heat_pct = int(((heat_value - heat_min) / heat_range) * 100.0)
                             if heat_pct != current_heat_pct:
                                 heat_color = color_gradient.get_color_value(heat_pct / 100.0)
                                 Color(*heat_color)
