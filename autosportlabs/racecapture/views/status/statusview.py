@@ -149,7 +149,7 @@ class StatusView(Screen):
                 'Data connection failed. SIM card is valid, either no data plan is associated or the plan has expired.',
                 'Failed to connect to server',
                 'Data connection failed. APN settings possibly wrong.',
-                'Unable to join cellular network. Bad or missing SIM card.'
+                'Unable to join network'
             ]
         }
     }
