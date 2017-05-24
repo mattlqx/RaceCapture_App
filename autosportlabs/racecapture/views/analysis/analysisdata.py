@@ -187,10 +187,9 @@ class CachingAnalysisDatastore(DataStore):
         '''
         session = source_ref.session
         lap = source_ref.lap
+        f = Filter().neq('Latitude', 0).and_().neq('Longitude', 0)
         if self.session_has_laps(session):
-            f = Filter().neq('Latitude', 0).and_().neq('Longitude', 0).eq("CurrentLap", lap)
-        else:
-            f = Filter().neq('Latitude', 0).and_().neq('Longitude', 0)
+            f.eq("CurrentLap", lap)
         dataset = self.query(sessions=[session],
                                         channels=["Latitude", "Longitude"],
                                         data_filter=f)

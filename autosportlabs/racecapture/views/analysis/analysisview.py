@@ -233,7 +233,7 @@ class AnalysisView(Screen):
     def check_load_suggested_lap(self, new_session_id):
         sessions_view = self.ids.sessions_view
         if len(sessions_view.selected_laps) == 0:
-            try:
+            if self._datastore.session_has_laps(new_session_id):
                 best_lap = self._datastore.get_channel_min('LapTime', [new_session_id], ['LapCount'])
                 best_lap_id = best_lap[1]
                 if best_lap_id:
@@ -244,7 +244,7 @@ class AnalysisView(Screen):
                 else:
                     Logger.info('AnalysisView: No best lap could be determined; selecting first lap by default for session {}'.format(new_session_id))
                     sessions_view.select_lap(new_session_id, 1, True)
-            except InvalidChannelException:  # just select the default channel
+            else:
                 sessions_view.select_lap(new_session_id, 1, True)
 
 

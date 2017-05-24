@@ -1054,7 +1054,7 @@ class DataStore(object):
         :param session_id the session id
         :type session_id int
         :returns True if the session has lap information
-        :type Booolean
+        :type Boolean
         '''
         if not (self.channel_exists('CurrentLap') and self.channel_exists('LapCount')):
             return False
@@ -1063,7 +1063,7 @@ class DataStore(object):
         for row in c.execute('''SELECT s.session_id, d.LapCount, d.CurrentLap FROM sample s, 
                              datapoint d WHERE s.session_id = ? AND d.sample_id = s.id LIMIT 1;''',
                                 (session_id,)):
-            return row[1] != None and row[2] != None
+            return row[1] is not None and row[2] is not None
         return False
 
     def get_laps(self, session_id):
