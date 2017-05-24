@@ -24,6 +24,7 @@ from kivy.app import Builder
 from kivy.uix.gridlayout import GridLayout
 from kivy.properties import ObjectProperty
 from kivy.logger import Logger
+from kivy.metrics import dp
 from settingsview import SettingsView, SettingsSwitch, SettingsButton
 from autosportlabs.widgets.separator import HLineSeparator
 from autosportlabs.racecapture.views.util.alertview import editor_popup
@@ -88,7 +89,8 @@ class BluetoothConfigView(GridLayout):
         if not self._bt_popup:
             content = AdvancedBluetoothConfigView(self.config.connectivityConfig)
             popup = editor_popup(title="Configure Bluetooth", content=content,
-                                 answerCallback=self.on_bluetooth_popup_answer)
+                                 answerCallback=self.on_bluetooth_popup_answer,
+                                 size=(dp(600), dp(300)))
             self._bt_popup = popup
             self._bt_config_view = content
 
