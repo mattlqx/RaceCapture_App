@@ -26,24 +26,53 @@ from kivy.uix.boxlayout import BoxLayout
 kivy.require('1.9.1')
 from kivy.app import Builder
 
-Builder.load_file('autosportlabs/racecapture/views/analysis/sessioneditorview.kv')
-
 class SessionEditorView(BoxLayout):
+    Builder.load_string("""
+<SessionEditorView>:
+    BoxLayout:
+        spacing: dp(10)
+        padding: (sp(5), sp(5), sp(5), sp(5))
+        orientation: 'vertical'
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: sp(5)            
+            size_hint_y: 0.7
+            
+            BoxLayout:
+                size_hint_y: 0.25
+                orientation: 'horizontal'
+                FieldLabel: 
+                    text: 'Session Name'
+                FieldInput:
+                    id: session_name
+                    
+            BoxLayout:
+                size_hint_y: 0.75
+                orientation: 'vertical'
+                spacing: sp(5)
+                FieldLabel:
+                    size_hint_y: 0.1
+                    size_hint_x: 1.0
+                    text: 'Log book'
+                TextInput:
+                    id: session_notes
+                    size_hint_y: 0.9    
+    """)
     def __init__(self, **kwargs):
         super(SessionEditorView, self).__init__(**kwargs)
 
     @property
     def session_name(self):
         return self.ids.session_name.text.strip()
-    
+
     @session_name.setter
     def session_name(self, value):
         self.ids.session_name.text = value
-    
+
     @property
     def session_notes(self):
         return self.ids.session_notes.text.strip()
-    
+
     @session_notes.setter
     def session_notes(self, value):
         self.ids.session_notes.text = value
