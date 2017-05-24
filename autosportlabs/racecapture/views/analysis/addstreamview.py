@@ -292,15 +292,16 @@ class LogImportWidget(BoxLayout):
         self._log_select = None
 
     def set_log_path(self, instance):
-        path = instance.selection[0]
-        self._log_path = path
-        base_name = self._extract_base_logfile_name(path)
-        self.ids.session_name.text = base_name
-        self.ids.log_path.text = base_name
-        self.ids.import_button.disabled = False
-
-        self._log_select.dismiss()
-        self.set_import_file_path(instance.path)
+        if len(instance.selection):
+            path = instance.selection[0]
+            self._log_path = path
+            base_name = self._extract_base_logfile_name(path)
+            self.ids.session_name.text = base_name
+            self.ids.log_path.text = base_name
+            self.ids.import_button.disabled = False
+    
+            self._log_select.dismiss()
+            self.set_import_file_path(instance.path)
 
     def _extract_base_logfile_name(self, path):
         session_name, file_extension = os.path.splitext(os.path.basename(path))
