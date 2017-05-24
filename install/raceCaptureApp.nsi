@@ -1,4 +1,4 @@
-;MJLJ Installation Script
+;RaceCapture App Nullsoft Installation Script
 
 
 ;--------------------------------
@@ -66,7 +66,7 @@
 
   !insertmacro MUI_LANGUAGE "English"
 
-  RequestExecutionLevel admin
+  RequestExecutionLevel user
 
 ;--------------------------------
 ;Installer Sections
