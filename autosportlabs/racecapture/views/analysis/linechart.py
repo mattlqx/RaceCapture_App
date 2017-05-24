@@ -491,7 +491,6 @@ class LineChart(ChannelAnalysisWidget):
             self.datastore.get_channel_data(source_ref, ['Interval', 'Distance'] + channels, get_results)
         except Exception as e:
             Logger.warn('Non existant channel selected, not loading channels {}; {}'.format(channels, e))
-            raise e
         finally:
             ProgressSpinner.decrement_refcount()
 

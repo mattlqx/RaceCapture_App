@@ -70,7 +70,7 @@ class CachingAnalysisDatastore(DataStore):
         Logger.info('CachingAnalysisDatastore: querying {} {}'.format(source_ref, channels))
         lap = source_ref.lap
         session = source_ref.session
-        f = Filter().eq('CurrentLap', lap)
+        f = Filter().eq('CurrentLap', lap) if self.session_has_laps(session) else None
         dataset = self.query(sessions=[session], channels=channels, data_filter=f)
         records = dataset.fetch_records()
 
@@ -187,7 +187,10 @@ class CachingAnalysisDatastore(DataStore):
         '''
         session = source_ref.session
         lap = source_ref.lap
-        f = Filter().neq('Latitude', 0).and_().neq('Longitude', 0).eq("CurrentLap", lap)
+        if self.session_has_laps(session):
+            f = Filter().neq('Latitude', 0).and_().neq('Longitude', 0).eq("CurrentLap", lap)
+        else:
+            f = Filter().neq('Latitude', 0).and_().neq('Longitude', 0)
         dataset = self.query(sessions=[session],
                                         channels=["Latitude", "Longitude"],
                                         data_filter=f)
