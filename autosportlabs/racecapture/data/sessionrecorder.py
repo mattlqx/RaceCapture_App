@@ -72,13 +72,16 @@ class SessionRecorder(EventDispatcher) :
         self.register_event_type('on_recording')
 
     def status_updated(self, status):
-        status = status['status']['GPS']
-        quality = status['qual']
-        latitude = status['lat']
-        longitude = status['lon']
-        self._gps_sample.gps_qual = quality
-        self._gps_sample.latitude = latitude
-        self._gps_sample.longitude = longitude
+        try:
+            status = status['status']['GPS']
+            quality = status['qual']
+            latitude = status['lat']
+            longitude = status['lon']
+            self._gps_sample.gps_qual = quality
+            self._gps_sample.latitude = latitude
+            self._gps_sample.longitude = longitude
+        except KeyError:
+            pass
 
     def on_recording(self, recording):
         pass
