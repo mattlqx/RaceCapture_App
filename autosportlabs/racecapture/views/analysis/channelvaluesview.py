@@ -162,7 +162,8 @@ class ChannelValuesView(ChannelAnalysisWidget):
     def remove_channel(self, channel, source_ref):
         source_key = str(source_ref)
         channels = self.channel_stats.get(source_key)
-        channels.pop(channel, None)
+        if channels:
+            channels.pop(channel, None)
 
 
     def on_touch_down(self, touch):
