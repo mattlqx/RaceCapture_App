@@ -1117,7 +1117,6 @@ class DataStore(object):
         for lap in laps:
             laps_dict[lap.lap] = lap
 
-        print('laps dict ' + str(laps_dict))
         return laps_dict
 
     def update_session(self, session):
