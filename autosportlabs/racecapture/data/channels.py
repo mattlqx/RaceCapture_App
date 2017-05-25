@@ -52,6 +52,10 @@ class ChannelMeta(object):
         self.sampleRate = kwargs.get('sampleRate', ChannelMeta.DEFAULT_SAMPLE_RATE)
         self.type = kwargs.get('type', ChannelMeta.DEFAULT_TYPE)
 
+    @staticmethod
+    def filter_name(name):
+        return ''.join([char for char in name if char.isalnum() or char == ' '])
+
     def fromJson(self, json):
         self.name = json.get('nm', self.name)
         self.units = json.get('ut', self.units)

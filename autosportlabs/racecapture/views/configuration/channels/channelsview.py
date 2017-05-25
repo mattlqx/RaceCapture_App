@@ -41,7 +41,7 @@ from autosportlabs.widgets.scrollcontainer import ScrollContainer
 class ChannelNameField(TextValueField):
 
     def insert_text(self, s, from_undo=False):
-        s = ''.join([char for char in s if char.isalnum() or char == ' '])
+        s = ChannelMeta.filter_name(s)
         return super(ChannelNameField, self).insert_text(s, from_undo=from_undo)
 
 
@@ -228,6 +228,8 @@ class ChannelEditor(BoxLayout):
         self.channel.name = value
 
     def on_units(self, instance, value):
+        value = value.strip()
+        instance.text = value
         self.channel.units = value
 
     def on_precision(self, instance, value):
