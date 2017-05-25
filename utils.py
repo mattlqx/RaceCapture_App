@@ -479,7 +479,6 @@ Tries to find the first appropriate generic text clipboard and pastes to that.
 def paste_clipboard(text):
     # convert to appropriate format
     text = unicode(text)
-    # text.encode('ascii')
 
     clipboard_types = Clipboard.get_types()
     for cb_type in clipboard_types:
