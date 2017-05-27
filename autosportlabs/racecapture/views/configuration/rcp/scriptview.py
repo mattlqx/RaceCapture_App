@@ -23,7 +23,7 @@ kivy.require('1.9.1')
 from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.stacklayout import StackLayout
-from pygments.formatters.bbcode import BBCodeFormatter #explicit import to make pyinstaller work. do not remove
+from pygments.formatters.bbcode import BBCodeFormatter  # explicit import to make pyinstaller work. do not remove
 from kivy.uix.codeinput import CodeInput
 from kivy.uix.textinput import TextInput
 from pygments.lexers import PythonLexer
@@ -40,17 +40,16 @@ from autosportlabs.uix.button.widgetbuttons import LabelButton
 
 from utils import paste_clipboard, is_mobile_platform
 
-SCRIPT_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/scriptview.kv'
 
 LOGFILE_POLL_INTERVAL = 1
 LOGWINDOW_MAX_LENGTH_MOBILE = 1000
 LOGWINDOW_MAX_LENGTH_DESKTOP = 10000
-        
+
 class LogLevelSpinner(SettingsMappedSpinner):
     '''
     A customized SettingsMappedSpinner to set the value for log levels
     '''
-    def __init__(self, **kwargs):    
+    def __init__(self, **kwargs):
         super(LogLevelSpinner, self).__init__(**kwargs)
         self.setValueMap({3: 'Error', 6: 'Info', 7:'Debug', 8:'Trace'}, 'Info')
         self.text = 'Info'
@@ -59,8 +58,91 @@ class LuaScriptingView(BaseConfigView):
     '''
     Script configuration and logfile view
     '''
-    Builder.load_file(SCRIPT_VIEW_KV)
-    
+    Builder.load_string("""
+<LuaScriptingView>:
+    BoxLayout:
+        spacing: dp(10)
+        padding: (dp(10), dp(10))
+        orientation: 'vertical'
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: 0.9
+            id: lua_log_wrapper
+            LuaCodeInput:
+                id: lua_script
+                size_hint_y: 0.75
+                font_name: 'resource/fonts/RobotoMono-Regular.ttf'
+                font_size: sp(16)
+                on_text: root.on_script_changed(*args)
+            Splitter:
+                horizontal: False
+                sizable_from: 'top'
+                id: splitter
+                ScrollContainer:
+                    size_hint_y: 0.25
+                    id: logfile_sv
+                    do_scroll_x:False
+                    TextInput:
+                        id: logfile
+                        font_name: 'resource/fonts/RobotoMono-Regular.ttf'
+                        foreground_color: ColorScheme.get_light_primary_text()
+                        background_color: ColorScheme.get_dark_background()
+                        size_hint_y: None
+                        height: max(self.minimum_height, logfile_sv.height)
+        BoxLayout:
+            height: dp(30)
+            size_hint_y: None
+            orientation: 'horizontal'
+            id: buttons
+            BoxLayout:
+                size_hint_x: 0.3
+                orientation: 'horizontal'
+                CheckBox:
+                    id: poll_log
+                    size_hint_x: 0.25
+                    on_active: root.enable_polling(*args)
+                LabelButton:
+                    size_hint_x: 0.75
+                    halign: 'left'
+                    text: 'Poll log'
+                    on_press: root.toggle_polling()
+
+            BoxLayout:
+                size_hint_x: 0.25
+                spacing: dp(5)
+                orientation: 'horizontal'
+                LogLevelSpinner:
+                    size_hint_x: 0.5
+                    size_hint_y: 1.0
+                    id: log_level
+                    on_control: root.set_logfile_level(*args)
+            Label:
+                size_hint_x: 0.1
+            LabelIconButton:
+                size_hint_x: None
+                width: dp(90)
+                title: "Copy"
+                icon: u'\uf0c5'
+                on_press: root.copy_log()
+            BoxLayout:
+                size_hint_x: 0.03
+            LabelIconButton:
+                size_hint_x: None
+                width: dp(90)
+                title: "Clear"
+                icon: "\357\200\215"
+                on_press: root.clear_log()
+            BoxLayout:
+                size_hint_x: 0.03                                                   
+            LabelIconButton:
+                id: run_script
+                size_hint_x: None
+                width: dp(90)
+                title: "Run"
+                icon: "\357\200\241"
+                on_press: root.run_script()    
+    """)
+
     def __init__(self, capabilities, **kwargs):
         super(LuaScriptingView, self).__init__(**kwargs)
         self.script_cfg = None
@@ -89,7 +171,7 @@ class LuaScriptingView(BaseConfigView):
         if self._capabilities.has_script:
             self.ids.lua_script.text = cfg.script
             self.script_cfg = cfg
-   
+
     def on_script_changed(self, instance, value):
         '''
         Callback when the script text changes
@@ -102,7 +184,7 @@ class LuaScriptingView(BaseConfigView):
             self.script_cfg.script = value
             self.script_cfg.stale = True
             self.dispatch('on_modified')
-                        
+
     def copy_log(self):
         '''
         Copies the current logfile text to the system clipboard
@@ -113,7 +195,7 @@ class LuaScriptingView(BaseConfigView):
         except Exception as e:
             Logger.error("ApplicationLogView: Error copying RaceCapture log to clipboard: " + str(e))
             toast('Unable to copy to clipboard\n' + str(e), True)
-            #Allow crash handler to report on exception
+            # Allow crash handler to report on exception
             raise e
 
     def on_logfile(self, logfile_rsp):
@@ -122,7 +204,7 @@ class LuaScriptingView(BaseConfigView):
         :param logfile_rsp the API response with the logfile response
         :type dict
         '''
-        value = logfile_rsp.get('logfile').replace('\r','').replace('\0','')
+        value = logfile_rsp.get('logfile').replace('\r', '').replace('\0', '')
 
         logfile_view = self.ids.logfile
         current_text = logfile_view.text
@@ -132,7 +214,7 @@ class LuaScriptingView(BaseConfigView):
             current_text = current_text[overflow:]
         logfile_view.text = current_text
         self.ids.logfile_sv.scroll_y = 0.0
-    
+
     def clear_log(self):
         '''
         Clears the log file window
@@ -145,7 +227,7 @@ class LuaScriptingView(BaseConfigView):
         '''
         checkbox = self.ids.poll_log
         checkbox.active = True if checkbox.active == False else False
-               
+
     def enable_polling(self, instance, value):
         '''
         Enables or disables logfile polling
@@ -204,13 +286,13 @@ class LuaScriptingView(BaseConfigView):
         :type detail string
         '''
         toast('Error Running Script:\n\n{}'.format(str(detail)), length_long=True)
-        
+
 class LuaCodeInput(CodeInput):
     '''
     Wrapper class for CodeInput that sets the Lua Lexer
     '''
     def __init__(self, **kwargs):
         super(LuaCodeInput, self).__init__(**kwargs)
-        self.lexer= lexers.get_lexer_by_name('lua')
-        
-                
+        self.lexer = lexers.get_lexer_by_name('lua')
+
+

@@ -42,11 +42,24 @@ GPS_CHANNELS_VIEW_KV = """
         orientation: 'vertical'
         SampleRateSelectorView:
             id: sr
-    FieldLabel:
-        id: warning
+    BoxLayout:
+        orientation: 'horizontal'
+        id: warning_pane
         size_hint_y: 0.0
-        halign: 'center'
-        color: ColorScheme.get_alert()            
+        AnchorLayout:
+            size_hint_x: 0.15
+            IconButton:
+                id: warning_icon
+                text: u'\uf071'
+                size_hint_y: 1.0
+                color: ColorScheme.get_alert()
+        AnchorLayout:
+            size_hint_x: 0.85
+            FieldLabel:
+                id: warning
+                halign: 'left'
+                shorten: False
+                    
     HSeparator:
         size_hint_y: 0.1
         text: 'Channels'
@@ -107,7 +120,7 @@ GPS_CHANNELS_VIEW_KV = """
                 id: dop
                 on_active: root.onGpsDOPActive(*args)
 """
-            
+
 class GPSChannelsView(BaseConfigView):
     SAMPLE_RATE_WARNING_THRESHOLD = 25
     GPS_WARNING_DELAY = 1.0
@@ -118,46 +131,49 @@ class GPSChannelsView(BaseConfigView):
     def __init__(self, **kwargs):
         super(GPSChannelsView, self).__init__(**kwargs)
         self.register_event_type('on_config_updated')
-        self.ids.sr.bind(on_sample_rate = self.on_sample_rate)
-                
+        self.ids.sr.bind(on_sample_rate=self.on_sample_rate)
+
     def onPosActive(self, instance, value):
         if self.gpsConfig:
             self.gpsConfig.positionEnabled = 1 if value else 0
             self.gpsConfig.stale = True
             self.dispatch('on_modified')
-                    
+            self._update_warning_msg()
+
     def onSpeedActive(self, instance, value):
-        if self.gpsConfig:        
+        if self.gpsConfig:
             self.gpsConfig.speedEnabled = 1 if value else 0
             self.gpsConfig.stale = True
             self.dispatch('on_modified')
-                        
+            self._update_warning_msg()
+
     def onDistActive(self, instance, value):
-        if self.gpsConfig:        
+        if self.gpsConfig:
             self.gpsConfig.distanceEnabled = 1 if value else 0
             self.gpsConfig.stale = True
             self.dispatch('on_modified')
-                                                
+            self._update_warning_msg()
+
     def onAltitudeActive(self, instance, value):
-        if self.gpsConfig:        
+        if self.gpsConfig:
             self.gpsConfig.altitudeEnabled = 1 if value else 0
             self.gpsConfig.stale = True
             self.dispatch('on_modified')
 
     def onSatsActive(self, instance, value):
-        if self.gpsConfig:        
+        if self.gpsConfig:
             self.gpsConfig.satellitesEnabled = 1 if value else 0
             self.gpsConfig.stale = True
             self.dispatch('on_modified')
-                
+
     def onGpsQualityActive(self, instance, value):
-        if self.gpsConfig:        
+        if self.gpsConfig:
             self.gpsConfig.qualityEnabled = 1 if value else 0
             self.gpsConfig.stale = True
             self.dispatch('on_modified')
 
     def onGpsDOPActive(self, instance, value):
-        if self.gpsConfig:        
+        if self.gpsConfig:
             self.gpsConfig.DOPEnabled = 1 if value else 0
             self.gpsConfig.stale = True
             self.dispatch('on_modified')
@@ -169,19 +185,41 @@ class GPSChannelsView(BaseConfigView):
             self.dispatch('on_modified')
             if self.lap_config.primary_stats_enabled():
                 self.lap_config.set_primary_stats(value)
-        self._update_sample_rate_warning(value)
-                
-    def _update_sample_rate_warning(self, sample_rate):
+            self._update_warning_msg()
+
+    def _update_warning_msg(self):
+        gps_cfg = self.gpsConfig
+        if not gps_cfg:
+            return
+
+        warning_messages = []
+        if gps_cfg.sampleRate >= GPSChannelsView.SAMPLE_RATE_WARNING_THRESHOLD:
+            warning_messages.append('- High sample rates requires optimal GPS conditions')
+
+        if not (gps_cfg.positionEnabled and gps_cfg.distanceEnabled and gps_cfg.speedEnabled) or gps_cfg.sampleRate == 0:
+            warning_messages.append('- Disabling these channels will also disable lap timing')
+
+        warning_msg = ''
         warning = self.ids.warning
-        if sample_rate >= GPSChannelsView.SAMPLE_RATE_WARNING_THRESHOLD:
-            warning.size_hint_y = 0.1
-            warning.text = 'Warning: optimal GPS conditions required for high sample rates'
-            Clock.schedule_once(lambda dt: HelpInfo.help_popup('gps_warning', self, arrow_pos='top_mid'), 
-                                GPSChannelsView.GPS_WARNING_DELAY)            
+        warning_pane = self.ids.warning_pane
+        warning_icon = self.ids.warning_icon
+        if len(warning_messages) > 0:
+            warning_msg = ''
+            for msg in warning_messages:
+                warning_msg += msg + '\n'
+
+            warning_pane.size_hint_y = float(len(warning_messages) * 0.1)
+            warning_icon.size_hint_y = 1.0 / len(warning_messages)
+            warning.text = warning_msg
+            Clock.schedule_once(lambda dt: HelpInfo.help_popup('gps_warning', self, arrow_pos='top_mid'),
+                                GPSChannelsView.GPS_WARNING_DELAY)
         else:
-            warning.size_hint_y = 0.0
+            warning_pane.size_hint_y = 0.0
+            warning_icon.size_hint_y = 1.0
             warning.text = ''
-                    
+
+
+
     def on_config_updated(self, rc_cfg):
         gpsConfig = rc_cfg.gpsConfig
         self.ids.sr.setValue(gpsConfig.sampleRate, rc_cfg.capabilities.sample_rates.gps)
@@ -194,3 +232,4 @@ class GPSChannelsView(BaseConfigView):
         self.ids.dop.active = gpsConfig.DOPEnabled
         self.gpsConfig = gpsConfig
         self.lap_config = rc_cfg.lapConfig
+        self._update_warning_msg()
