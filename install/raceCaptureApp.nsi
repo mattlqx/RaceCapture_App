@@ -77,11 +77,7 @@
 
   !insertmacro MUI_LANGUAGE "English"
 
-<<<<<<< HEAD
   ;RequestExecutionLevel user
-=======
-  RequestExecutionLevel admin
->>>>>>> ec8546d0597071b020d48cc73f48c2f395740c71
 
 ;--------------------------------
 ;Installer Sections
