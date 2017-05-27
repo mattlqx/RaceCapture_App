@@ -35,6 +35,7 @@ from kivy.uix.screenmanager import Screen
 from kivy.properties import ObjectProperty
 from kivy.core.window import Window
 from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
+from autosportlabs.racecapture.datastore.datastore import InvalidChannelException
 from autosportlabs.racecapture.views.analysis.analysismap import AnalysisMap
 from autosportlabs.racecapture.views.analysis.channelvaluesview import ChannelValuesView
 from autosportlabs.racecapture.views.analysis.addstreamview import AddStreamView
@@ -49,7 +50,6 @@ from autosportlabs.uix.color.colorsequence import ColorSequence
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.racecapture.settings.prefs import UserPrefs
 from autosportlabs.help.helpmanager import HelpInfo
-from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
 from kivy.core.window import Window
 
 
@@ -233,16 +233,20 @@ class AnalysisView(Screen):
     def check_load_suggested_lap(self, new_session_id):
         sessions_view = self.ids.sessions_view
         if len(sessions_view.selected_laps) == 0:
-            best_lap = self._datastore.get_channel_min('LapTime', [new_session_id], ['LapCount'])
-            best_lap_id = best_lap[1]
-            if best_lap_id:
-                Logger.info('AnalysisView: Convenience selected a suggested session {} / lap {}'.format(new_session_id, best_lap_id))
-                main_chart = self.ids.mainchart
-                sessions_view.select_lap(new_session_id, best_lap_id, True)
-                HelpInfo.help_popup('suggested_lap', main_chart, arrow_pos='left_mid')
+            if self._datastore.session_has_laps(new_session_id):
+                best_lap = self._datastore.get_channel_min('LapTime', [new_session_id], ['LapCount'])
+                best_lap_id = best_lap[1]
+                if best_lap_id:
+                    Logger.info('AnalysisView: Convenience selected a suggested session {} / lap {}'.format(new_session_id, best_lap_id))
+                    main_chart = self.ids.mainchart
+                    sessions_view.select_lap(new_session_id, best_lap_id, True)
+                    HelpInfo.help_popup('suggested_lap', main_chart, arrow_pos='left_mid')
+                else:
+                    Logger.info('AnalysisView: No best lap could be determined; selecting first lap by default for session {}'.format(new_session_id))
+                    sessions_view.select_lap(new_session_id, 1, True)
             else:
-                Logger.info('AnalysisView: No best lap could be determined; selecting first lap by default for session {}'.format(new_session_id))
-                sessions_view.select_lap(new_session_id, 0, True)
+                sessions_view.select_lap(new_session_id, 1, True)
+
 
     def on_stream_connecting(self, *args):
         self.stream_connecting = True
