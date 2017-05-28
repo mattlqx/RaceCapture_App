@@ -209,14 +209,14 @@ class SessionRecorder(EventDispatcher) :
             index = 0
             qsize = 0
             sample_queue = self._sample_queue
-            while self.recording or qsize > 0:
+            while self.recording or qsize > 0: #will drain the queue before exiting thread
                 try:
                     sample = sample_queue.get(True, 0.5)
                     # Merging previous sample with new data to desparsify the data
                     sample_data.update(sample)
                     self._datastore.insert_sample(sample_data, self._current_session_id)
                     qsize = sample_queue.qsize()
-                    if index % 100 == 0:
+                    if index % 100 == 0 and qsize > 0:
                         Logger.info('SessionRecorder: queue backlog: {}'.format(qsize))
                     index +=1
                 except Empty:
