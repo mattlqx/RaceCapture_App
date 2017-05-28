@@ -18,13 +18,18 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
+from threading import Thread
 from kivy.clock import Clock
 from kivy.logger import Logger
 from kivy.event import EventDispatcher
 from autosportlabs.util.timeutil import format_date
 from autosportlabs.racecapture.config.rcpconfig import GpsSample
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
+from autosportlabs.util.threadutil import safe_thread_exit
 import copy
+import Queue
+from Queue import Empty
+
 
 class SessionRecorder(EventDispatcher) :
     """
@@ -42,6 +47,9 @@ class SessionRecorder(EventDispatcher) :
         :param rcpapi: RcpApi object for listening for connect/disconnect events
         :return:
         """
+        self._sample_queue = Queue.Queue()
+        self._recorder_thread = None
+        
         self._datastore = datastore
         self._databus = databus
         self._rcapi = rcpapi
@@ -61,7 +69,6 @@ class SessionRecorder(EventDispatcher) :
         self._rcapi.add_disconnect_listener(self._on_rc_disconnected)
         self._databus.addMetaListener(self._on_meta)
         self._databus.addSampleListener(self._on_sample)
-        self._sample_data = {}
         self._gps_sample = GpsSample()
         metas = self._databus.getMeta()
         if metas:
@@ -102,6 +109,11 @@ class SessionRecorder(EventDispatcher) :
             self._current_session_id = self._datastore.init_session(self._create_session_name(), self._channels)
             self.dispatch('on_recording', True)
             self.recording = True
+            
+            t = Thread(target=self._session_recorder_worker)
+            t.start()
+            self._recorder_thread = t
+            
 
     def stop(self, stop_now=False):
         """
@@ -123,11 +135,15 @@ class SessionRecorder(EventDispatcher) :
         """
         Stops recording the current session, does any additional post-processing necessary
         :return: None
-        """
+        """        
         if self.recording:
             Logger.info("SessionRecorder: stopping session")
             self.recording = False
-            self._current_session_id = None
+            if self._recorder_thread is not None:
+                self._recorder_thread.join()
+            self._recorder_thread = None
+            
+            self._current_session_id = None            
             self.dispatch('on_recording', False)
 
     @property
@@ -185,14 +201,33 @@ class SessionRecorder(EventDispatcher) :
         self._current_view = view_name
         self._check_should_record()
 
-    def _save_sample(self, sample):
-        if not self.recording:
-            return
-
-        # Merging previous sample with new data to desparsify the data
-        self._sample_data.update(sample)
-        self._datastore.insert_sample(self._sample_data, self._current_session_id)
-
+    def _session_recorder_worker(self):
+        Logger.info('SessionRecorder: session recorder worker starting')
+        try:
+            #reset our sample data dict
+            sample_data = {}
+            index = 0
+            qsize = 0
+            sample_queue = self._sample_queue
+            while self.recording or qsize > 0:
+                try:
+                    sample = sample_queue.get(True, 0.5)
+                    # Merging previous sample with new data to desparsify the data
+                    sample_data.update(sample)
+                    self._datastore.insert_sample(sample_data, self._current_session_id)
+                    qsize = sample_queue.qsize()
+                    if index % 100 == 0:
+                        Logger.info('SessionRecorder: queue backlog: {}'.format(qsize))
+                    index +=1
+                except Empty:
+                    pass
+        except Exception as e:
+            Logger.error('SessionRecorder: Exception in session recorder worker ' + str(e))
+        finally:
+            safe_thread_exit()
+            
+        Logger.info('SessionRecorder: session recorder worker ending')            
+            
     def _channel_metas_same(self, metas):
         # determine if the provided channel metas have the same channel names as the current
         current_metas = self._channels
@@ -218,8 +253,11 @@ class SessionRecorder(EventDispatcher) :
         :param sample:
         :return:
         """
-        if self.recording:
-            self._save_sample(sample)
+        if not self.recording:
+            return
+        
+        self._sample_queue.put(copy.deepcopy(sample))
+            
 
     def _on_rc_connected(self):
         """
