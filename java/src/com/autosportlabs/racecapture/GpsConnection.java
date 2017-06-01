@@ -6,8 +6,7 @@ import android.content.Context;
 import android.util.Log;
 import android.os.Bundle;
 import android.location.Location;
-import org.renpy.android.PythonActivity;
-
+import org.kivy.android.PythonActivity;
 /**
  * GPS connection bridge for RaceCature app
  * @author brent
