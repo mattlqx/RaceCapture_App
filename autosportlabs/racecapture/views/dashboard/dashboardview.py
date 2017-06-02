@@ -39,7 +39,6 @@ from kivy.uix.stacklayout import StackLayout
 from kivy.uix.button import Button
 from kivy.uix.checkbox import CheckBox
 from kivy.uix.image import Image
-from autosportlabs.util.timeutil import epoch_to_time, time_to_epoch
 from autosportlabs.racecapture.views.dashboard.widgets.digitalgauge import DigitalGauge
 from autosportlabs.racecapture.views.dashboard.widgets.stopwatch import PitstopTimerView
 from autosportlabs.racecapture.settings.systemsettings import SettingsListener

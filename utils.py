@@ -477,8 +477,8 @@ Pastes a string to the system clipboard.
 Tries to find the first appropriate generic text clipboard and pastes to that.
 '''
 def paste_clipboard(text):
-    # convert to generic
-    text = text.encode('ascii')
+    # convert to appropriate format
+    text = unicode(text)
 
     clipboard_types = Clipboard.get_types()
     for cb_type in clipboard_types:
