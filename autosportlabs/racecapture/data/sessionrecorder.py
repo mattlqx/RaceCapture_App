@@ -28,16 +28,20 @@ from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.util.threadutil import safe_thread_exit
 import copy
 import Queue
-from Queue import Empty
+from Queue import Empty, Full
 
 
-class SessionRecorder(EventDispatcher) :
+class SessionRecorder(EventDispatcher):
     """
     Handles starting/stopping session recording and other related tasks
     """
 
-    # Main app views that the SessionRecorder should start recording when displayed
+    # Main app views that the SessionRecorder should start recording when
+    # displayed
     RECORDING_VIEWS = ['dash']
+    SAMPLE_QUEUE_GET_TIMEOUT = 0.5
+    SAMPLE_QUEUE_MAX_SIZE = 500
+    SAMPLE_QUEUE_BACKLOG_LOG_INTERVAL = 100
 
     def __init__(self, datastore, databus, rcpapi, settings, track_manager=None, status_pump=None, stop_delay=60):
         """
@@ -47,9 +51,11 @@ class SessionRecorder(EventDispatcher) :
         :param rcpapi: RcpApi object for listening for connect/disconnect events
         :return:
         """
-        self._sample_queue = Queue.Queue()
+        self._sample_queue = Queue.Queue(
+            maxsize=SessionRecorder.SAMPLE_QUEUE_MAX_SIZE)
         self._recorder_thread = None
-        
+        self._sample_queue_full = False
+
         self._datastore = datastore
         self._databus = databus
         self._rcapi = rcpapi
@@ -63,7 +69,8 @@ class SessionRecorder(EventDispatcher) :
         self._current_view = None
         status_pump.add_listener(self.status_updated)
         self._stop_delay = stop_delay
-        self._stop_timer = Clock.create_trigger(self._actual_stop, self._stop_delay)
+        self._stop_timer = Clock.create_trigger(
+            self._actual_stop, self._stop_delay)
 
         self._rcapi.add_connect_listener(self._on_rc_connected)
         self._rcapi.add_disconnect_listener(self._on_rc_disconnected)
@@ -106,14 +113,15 @@ class SessionRecorder(EventDispatcher) :
 
         if not self.recording:
             Logger.info("SessionRecorder: starting new session")
-            self._current_session_id = self._datastore.init_session(self._create_session_name(), self._channels)
+            self._current_session_id = self._datastore.init_session(
+                self._create_session_name(), self._channels)
             self.dispatch('on_recording', True)
             self.recording = True
-            
+
             t = Thread(target=self._session_recorder_worker)
+            t.daemon = True
             t.start()
             self._recorder_thread = t
-            
 
     def stop(self, stop_now=False):
         """
@@ -135,15 +143,15 @@ class SessionRecorder(EventDispatcher) :
         """
         Stops recording the current session, does any additional post-processing necessary
         :return: None
-        """        
+        """
         if self.recording:
             Logger.info("SessionRecorder: stopping session")
             self.recording = False
             if self._recorder_thread is not None:
                 self._recorder_thread.join()
             self._recorder_thread = None
-            
-            self._current_session_id = None            
+
+            self._current_session_id = None
             self.dispatch('on_recording', False)
 
     @property
@@ -175,7 +183,8 @@ class SessionRecorder(EventDispatcher) :
         then falling to a date stamp
         :return: String name
         """
-        nearby_venues = self._track_manager.find_nearby_tracks(GeoPoint.fromPoint(self._gps_sample.latitude, self._gps_sample.longitude))
+        nearby_venues = self._track_manager.find_nearby_tracks(
+            GeoPoint.fromPoint(self._gps_sample.latitude, self._gps_sample.longitude))
         session_names = [c.name for c in self._datastore.get_sessions()]
 
         # use the venue name if found nearby, otherwise use a date
@@ -204,32 +213,39 @@ class SessionRecorder(EventDispatcher) :
     def _session_recorder_worker(self):
         Logger.info('SessionRecorder: session recorder worker starting')
         try:
-            #reset our sample data dict
+            # reset our sample data dict
             sample_data = {}
             index = 0
             qsize = 0
             sample_queue = self._sample_queue
-            while self.recording or qsize > 0: #will drain the queue before exiting thread
+            # will drain the queue before exiting thread
+            while self.recording or qsize > 0:
                 try:
-                    sample = sample_queue.get(True, 0.5)
-                    # Merging previous sample with new data to desparsify the data
+                    sample = sample_queue.get(
+                        True, SessionRecorder.SAMPLE_QUEUE_GET_TIMEOUT)
+                    # Merging previous sample with new data to desparsify the
+                    # data
                     sample_data.update(sample)
-                    self._datastore.insert_sample(sample_data, self._current_session_id)
+                    self._datastore.insert_sample(
+                        sample_data, self._current_session_id)
                     qsize = sample_queue.qsize()
-                    if index % 100 == 0 and qsize > 0:
-                        Logger.info('SessionRecorder: queue backlog: {}'.format(qsize))
-                    index +=1
+                    if index % SessionRecorder.SAMPLE_QUEUE_BACKLOG_LOG_INTERVAL == 0 and qsize > 0:
+                        Logger.info(
+                            'SessionRecorder: queue backlog: {}'.format(qsize))
+                    index += 1
                 except Empty:
                     pass
         except Exception as e:
-            Logger.error('SessionRecorder: Exception in session recorder worker ' + str(e))
+            Logger.error(
+                'SessionRecorder: Exception in session recorder worker ' + str(e))
         finally:
             safe_thread_exit()
-            
-        Logger.info('SessionRecorder: session recorder worker ending')            
-            
+
+        Logger.info('SessionRecorder: session recorder worker ending')
+
     def _channel_metas_same(self, metas):
-        # determine if the provided channel metas have the same channel names as the current
+        # determine if the provided channel metas have the same channel names
+        # as the current
         current_metas = self._channels
         if current_metas is None:
             return False
@@ -242,7 +258,8 @@ class SessionRecorder(EventDispatcher) :
         :return:
         """
         if not self._channel_metas_same(metas):
-            Logger.info("SessionRecorder: ChannelMeta changed - stop recording")
+            Logger.info(
+                "SessionRecorder: ChannelMeta changed - stop recording")
             self.stop(stop_now=True)
         self._channels = copy.deepcopy(dict(metas))
         self._check_should_record()
@@ -255,9 +272,14 @@ class SessionRecorder(EventDispatcher) :
         """
         if not self.recording:
             return
-        
-        self._sample_queue.put(copy.deepcopy(sample))
-            
+        try:
+            self._sample_queue.put_nowait(copy.deepcopy(sample))
+            self._sample_queue_full = False
+        except Full:
+            if not self._sample_queue_full:
+                # latch to prevent the log from filling up with warnings
+                Logger.warn('SessionRecorder: dropping sample; queue full')
+            self._sample_queue_full = True
 
     def _on_rc_connected(self):
         """
