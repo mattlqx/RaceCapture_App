@@ -38,7 +38,7 @@ HELP_INFO_LAYOUT = '''
 <HelpInfo>:
     canvas.before:
         Color:
-            rgba: ColorScheme.get_shadow()
+            rgba: ColorScheme.get_accent()
         Rectangle:
             pos: self.pos
             size: self.size
@@ -47,7 +47,7 @@ HELP_INFO_LAYOUT = '''
         orientation: 'vertical'
         canvas.before:
             Color:
-                rgba: ColorScheme.get_dark_background()
+                rgba: ColorScheme.get_medium_background()
             Rectangle:
                 pos: self.pos
                 size: self.size
@@ -79,23 +79,25 @@ HELP_INFO_LAYOUT = '''
     arrow_image: 'autosportlabs/help/help_arrow.png'
 '''
 
+
 class HelpBubble(CenteredBubble):
     pass
+
 
 class HelpInfo(BoxLayout):
     '''
     Displays a help popup message with a title and description
-    
+
     Description:
     The help popup is designed to be a 'show once only / first time user's help'. The help function can be repeatedly called;
     the caller does not need to manage if the help has been shown already.
 
     The HelpInfo system pulls messages from a central help resource file (resource/help/help_text.json).
     Each help message is referenced by it's respective key, identified in the file.
-    
+
     A popup help bubble can be requested with the specified message key. The bubble is centered on the specified widget. 
     An arrow can be specified to point towards something of interest.
-    
+
     Usage:
     * Create an entry in the resource/help/help_text.json file
     * To display the help message, call help_popup(<help_key>, <widget_to_center_on>, <arrow_position>):
@@ -117,20 +119,22 @@ class HelpInfo(BoxLayout):
     @staticmethod
     def get_helptext(key):
         if HelpInfo.loaded == False:
-            help_json = open(os.path.join(HelpInfo.settings.base_dir, 'resource', 'help', 'help_text.json'))
+            help_json = open(
+                os.path.join(HelpInfo.settings.base_dir, 'resource', 'help', 'help_text.json'))
             HelpInfo.help_info = json.load(help_json)
             Logger.info('HelpInfo: Loaded help text')
 
         helptext = HelpInfo.help_info.get(key, None)
         if not helptext:
-            Logger.error('HelpInfo: Could not load help for key {}'.format(key))
+            Logger.error(
+                'HelpInfo: Could not load help for key {}'.format(key))
         return helptext
 
     @staticmethod
     def help_popup(key, widget, arrow_pos='bottom_mid'):
         '''
         Display a help popup message. This message will only show once (first time help for users) 
-        
+
         Args:
             key: the key representing the help text
             widget: the widget to center on
@@ -142,16 +146,19 @@ class HelpInfo(BoxLayout):
             if show_help == True:
                 helptext = HelpInfo.get_helptext(key)
                 if helptext:
-                    content = HelpInfo(key, title_text=helptext['title'], help_text=helptext['text'])
+                    content = HelpInfo(
+                        key, title_text=helptext['title'], help_text=helptext['text'])
                     help_popup = HelpBubble(arrow_pos=arrow_pos,
                                             size=HelpInfo.HELP_POPUP_SIZE,
                                             size_hint=(None, None))
                     help_popup.add_widget(content)
-                    help_popup.auto_dismiss_timeout(HelpInfo.HELP_POPUP_TIMEOUT)
+                    help_popup.auto_dismiss_timeout(
+                        HelpInfo.HELP_POPUP_TIMEOUT)
                     widget.get_root_window().add_widget(help_popup)
                     help_popup.center_on(widget)
         except Exception as e:
-            Logger.critical('HelpInfo: Failed to show help popup: {} {}'.format(e, traceback.format_exc()))
+            Logger.critical(
+                'HelpInfo: Failed to show help popup: {} {}'.format(e, traceback.format_exc()))
 
     def on_ok(self):
         HelpInfo.settings.userPrefs.set_pref('help', self._key, False)
