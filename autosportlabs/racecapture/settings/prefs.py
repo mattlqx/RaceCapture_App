@@ -272,6 +272,15 @@ class UserPrefs(EventDispatcher):
         except Exception:
             pass
 
+    def init_pref_section(self, section):
+        '''
+        Initializes a preferences section with the specified name. 
+        if the section already exists, there is no effect. 
+        :param section the name of the preference section
+        :type string
+        '''
+        self.config.adddefaultsection(section)
+                
     def get_pref_bool(self, section, option, default=None):
         '''
         Retrieve a preferences value as a bool. 
