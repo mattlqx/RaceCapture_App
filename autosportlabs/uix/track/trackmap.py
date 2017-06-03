@@ -348,6 +348,13 @@ class TrackMapView(Widget):
         self._draw_current_map()
 
     def _draw_current_map(self):
+
+        def _calc_heat_pct(heat_value, heat_min, heat_range):
+            if heat_value is not None and heat_range > 0:
+                return int(((heat_value - heat_min) / heat_range) * 100.0)
+            else:
+                return 0
+
         left = self.pos[0]
         bottom = self.pos[1]
         self.canvas.clear()
@@ -377,10 +384,11 @@ class TrackMapView(Widget):
 
                     try:
                         line_points.extend([path_points[i], path_points[i + 1]])
-                        current_heat_pct = int(((heat_path[value_index] - heat_min) / heat_range) * 100.0)
+                        current_heat_pct = _calc_heat_pct(heat_path[value_index], heat_min, heat_range)
+
                         while i < point_count - 2:
-                            heat_value = heat_path[value_index]
-                            heat_pct = int(((heat_value - heat_min) / heat_range) * 100.0)
+                            heat_pct = _calc_heat_pct(heat_path[value_index], heat_min, heat_range)
+
                             if heat_pct != current_heat_pct:
                                 heat_color = color_gradient.get_color_value(heat_pct / 100.0)
                                 Color(*heat_color)

@@ -61,7 +61,7 @@ class SystemSettings(object):
     def get_default_data_dir(self):
         if platform == 'android':
             from jnius import autoclass
-            PythonActivity = autoclass('org.renpy.android.PythonActivity')
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
             activity = PythonActivity.mActivity
             return activity.getExternalFilesDir(None).getPath()
         else:

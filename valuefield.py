@@ -71,6 +71,7 @@ class NumericValueField(ValueField):
     def __init__(self, *args, **kwargs):
         super(NumericValueField, self).__init__(*args, **kwargs)
         self.bind(on_text_validate=self.validate_minmax)
+        self.input_type = 'number'
 
     def validate_minmax(self, *args):
         try:

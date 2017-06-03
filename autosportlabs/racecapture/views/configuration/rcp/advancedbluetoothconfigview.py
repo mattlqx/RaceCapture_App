@@ -33,7 +33,7 @@ from autosportlabs.uix.bettertextinput import BetterTextInput
 CONFIG_VIEW = '''
 <AdvancedBluetoothConfigView>
     Label:
-        text: "NOTE: current values not shown. Enter new values to change settings. Changes will take affect after restarting RaceCapture."
+        text: "NOTE: current values not shown. Enter new values to change settings. Changes will take effect after restarting RaceCapture."
         text_size: root.width, None
         size_hint_y: None
         height: self.texture_size[1]

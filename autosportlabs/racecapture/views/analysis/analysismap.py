@@ -381,9 +381,13 @@ class AnalysisMap(AnalysisWidget):
             # multi-color heatmap for a single lap selection
             heatmap_channel = self.heatmap_channel
             source_key = str(source_ref)
+            session_info = self.datastore.get_session_by_id(source_ref.session)
+            if session_info is None:
+                continue
             if heatmap_channel:
-                session_info = self.datastore.get_session_by_id(source_ref.session)
                 channel_info = self.datastore.get_channel(heatmap_channel)
+                if channel_info is None:
+                    continue
                 self.heatmap_channel_units = channel_info.units
                 lap_legend = GradientLapLegend(session=session_info.name,
                                                lap=str(source_ref.lap),
@@ -393,7 +397,6 @@ class AnalysisMap(AnalysisWidget):
                                                height_pct=height_pct
                                                )
             else:
-                session_info = self.datastore.get_session_by_id(source_ref.session)
                 lap = self.datastore.get_cached_lap_info(source_ref)
                 path_color = self.ids.track.get_path(source_key).color
                 lap_legend = LapLegend(color=path_color,

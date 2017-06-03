@@ -6,7 +6,7 @@ rem Add the version string to the actual binary
 set str=%1
 set str=%str:.=,%
 powershell -inputformat none -Command "(gc win_versioninfo.txt) -replace '!REALVER!', '%str%' | Out-File -encoding ASCII temp_win_versioninfo.txt"
-pyinstaller -y racecapture.spec
+pyinstaller --clean --win-private-assemblies -y racecapture.spec
 
 
 "C:\Program Files (x86)\NSIS\makensis.exe" -DVERSION_STRING="%1" raceCaptureApp.nsi

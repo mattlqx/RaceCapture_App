@@ -78,7 +78,7 @@ def epoch_to_time(epoch):
     :type epoch int
     :return returns the formatted string
     """    
-    dt = datetime.utcfromtimestamp(epoch)
+    dt = datetime.utcfromtimestamp(float(epoch))
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
