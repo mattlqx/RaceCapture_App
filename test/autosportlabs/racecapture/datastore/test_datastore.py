@@ -25,7 +25,7 @@ import unittest
 import os, os.path
 from collections import namedtuple
 from autosportlabs.racecapture.datastore.datastore import DataStore, Filter, \
-    DataSet, _interp_dpoints, _smooth_dataset
+    DataSet, _interp_dpoints, _smooth_dataset, _scrub_sql_value
 
 
 fqp = os.path.dirname(os.path.realpath(__file__))
@@ -415,11 +415,12 @@ class DataStoreTest(unittest.TestCase):
 
             self.ds.delete_session(import_export_id)
 
-
-
-
-
-
-
-
+    def test_scrub_sql_value(self):
+        ds = self.ds
+        self.assertEqual(_scrub_sql_value('ABCD1234'), 'ABCD1234')
+        self.assertEqual(_scrub_sql_value('1234ABCD'), '_1234ABCD')
+        self.assertEqual(_scrub_sql_value('ABCD 1234'), 'ABCD_1234')
+        self.assertEqual(_scrub_sql_value(' 1234ABCD'), '_1234ABCD')
+        self.assertEqual(_scrub_sql_value('1234ABCD '), '_1234ABCD')
+        self.assertEqual(_scrub_sql_value('!!@@##ABCD%%1234%%**'), 'ABCD1234')
 

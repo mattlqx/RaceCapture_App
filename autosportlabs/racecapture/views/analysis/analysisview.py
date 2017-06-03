@@ -37,6 +37,7 @@ from kivy.properties import ObjectProperty
 from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager
 from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
+from autosportlabs.racecapture.datastore.datastore import InvalidChannelException
 from autosportlabs.racecapture.views.analysis.analysismap import AnalysisMap
 from autosportlabs.racecapture.views.analysis.channelstats import ChannelStats
 from autosportlabs.racecapture.views.analysis.channelvaluesview import ChannelValuesView
@@ -53,7 +54,6 @@ from autosportlabs.uix.color.colorsequence import ColorSequence
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.racecapture.settings.prefs import UserPrefs
 from autosportlabs.help.helpmanager import HelpInfo
-from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
 from kivy.core.window import Window
 
 RC_LOG_FILE_EXTENSION = '.log'
@@ -128,6 +128,7 @@ ANALYSIS_VIEW_KV = '''
                 size_hint_y: 0.05
 '''
 
+
 class AnalysisView(Screen):
     SUGGESTED_CHART_CHANNELS = ['Speed']
     INIT_DATASTORE_TIMEOUT = 10.0
@@ -179,7 +180,8 @@ class AnalysisView(Screen):
         return False
 
     def on_pre_enter(self, *args):
-        # immediately stop any session recording if we're entering analysis view
+        # immediately stop any session recording if we're entering analysis
+        # view
         self._session_recorder.stop(stop_now=True)
 
     def on_sessions(self, instance, value):
@@ -202,7 +204,8 @@ class AnalysisView(Screen):
             map_path_color = self._color_sequence.get_color(source_key)
             self._screens.add_reference_mark(source_key, map_path_color)
             self._sync_analysis_map(source_ref.session)
-            self._datastore.get_location_data(source_ref, lambda x: self._screens.add_map_path(source_ref, x, map_path_color))
+            self._datastore.get_location_data(
+                source_ref, lambda x: self._screens.add_map_path(source_ref, x, map_path_color))
 
         else:
             self.ids.mainchart.remove_lap(source_ref)
@@ -259,38 +262,49 @@ class AnalysisView(Screen):
             self.check_load_suggested_lap(new_session_id)
 
     def _get_suggested_channels(self):
-        suggested_channels = self._settings.userPrefs.get_pref_list('analysis_preferences', 'selected_analysis_channels')
+        suggested_channels = self._settings.userPrefs.get_pref_list(
+            'analysis_preferences', 'selected_analysis_channels')
         if len(suggested_channels) == 0:
             suggested_channels = UserPrefs.DEFAULT_ANALYSIS_CHANNELS
         return suggested_channels
 
     def _set_suggested_channels(self, channels):
-        self._settings.userPrefs.set_pref_list('analysis_preferences', 'selected_analysis_channels', channels)
+        self._settings.userPrefs.set_pref_list(
+            'analysis_preferences', 'selected_analysis_channels', channels)
 
-    # The following selects a best lap if there are no other laps currently selected
+    # The following selects a best lap if there are no other laps currently
+    # selected
     def check_load_suggested_lap(self, new_session_id):
         sessions_view = self.ids.sessions_view
         if len(sessions_view.selected_laps) == 0:
-            best_lap = self._datastore.get_channel_min('LapTime', [new_session_id], ['LapCount'])
-            best_lap_id = best_lap[1]
-            if best_lap_id:
-                Logger.info('AnalysisView: Convenience selected a suggested session {} / lap {}'.format(new_session_id, best_lap_id))
+            if self._datastore.session_has_laps(new_session_id):
+                best_lap = self._datastore.get_channel_min(
+                    'LapTime', [new_session_id], ['LapCount'])
+                best_lap_id = best_lap[1]
+                if best_lap_id:
+                    Logger.info(
+                        'AnalysisView: Convenience selected a suggested session {} / lap {}'.format(new_session_id, best_lap_id))
+                    suggested_channels = self._get_suggested_channels()
+                    self._screens.set_selected_channels(suggested_channels)
 
-                suggested_channels = self._get_suggested_channels()
-                self._screens.set_selected_channels(suggested_channels)
-
-                sessions_view.select_lap(new_session_id, best_lap_id, True)
-                HelpInfo.help_popup('suggested_lap', self.ids.main_chart, arrow_pos='left_mid')
+                    main_chart = self.ids.mainchart
+                    sessions_view.select_lap(new_session_id, best_lap_id, True)
+                    HelpInfo.help_popup(
+                        'suggested_lap', main_chart, arrow_pos='left_mid')
+                else:
+                    Logger.info('AnalysisView: No best lap could be determined; selecting first lap by default for session {}'.format(
+                        new_session_id))
+                    sessions_view.select_lap(new_session_id, 1, True)
             else:
-                Logger.info('AnalysisView: No best lap could be determined; selecting first lap by default for session {}'.format(new_session_id))
-                sessions_view.select_lap(new_session_id, 0, True)
+                sessions_view.select_lap(new_session_id, 1, True)
 
     def on_stream_connecting(self, *args):
         self.stream_connecting = True
 
     def show_add_stream_dialog(self):
         self.stream_connecting = False
-        content = AddStreamView(settings=self._settings, datastore=self._datastore)
+        content = AddStreamView(
+            settings=self._settings, datastore=self._datastore)
         content.bind(on_connect_stream_start=self.on_stream_connecting)
         content.bind(on_connect_stream_complete=self.on_stream_connected)
         content.bind(on_add_session=self.on_add_session)
@@ -298,13 +312,15 @@ class AnalysisView(Screen):
         content.bind(on_export_session=self.on_export_session)
         content.bind(on_close=self.close_popup)
 
-        popup = Popup(title="Add Session", content=content, size_hint=(0.95, 0.7))
+        popup = Popup(
+            title="Add Session", content=content, size_hint=(0.95, 0.7))
         popup.bind(on_dismiss=self.popup_dismissed)
         popup.open()
         self._popup = popup
 
     def close_popup(self, *args):
-        self._popup.dismiss()
+        if self._popup:
+            self._popup.dismiss()
 
     def on_add_session(self, instance, session):
         Logger.info("AnalysisView: on_add_session: {}".format(session))
@@ -313,7 +329,6 @@ class AnalysisView(Screen):
 
     def on_delete_session(self, instance, session):
         self.ids.sessions_view.session_deleted(session)
-
 
     def on_export_session(self, instance, session):
 
@@ -326,12 +341,14 @@ class AnalysisView(Screen):
                 def _progress_cb(pct):
                     if _do_export_session.cancelled == True:
                         return True
-                    Clock.schedule_once(lambda dt: prog_popup.content.update_progress(pct))
+                    Clock.schedule_once(
+                        lambda dt: prog_popup.content.update_progress(pct))
                     return False
 
                 def _progress_ok_cancel(instance, answer):
                     _do_export_session.cancelled = True
-                    Clock.schedule_once(lambda dt: prog_popup.dismiss(), 2.0 if instance.progress < 100 else 0.0)
+                    Clock.schedule_once(
+                        lambda dt: prog_popup.dismiss(), 2.0 if instance.progress < 100 else 0.0)
 
                 def _export_complete(title, text):
                     progress = prog_popup.content
@@ -343,40 +360,50 @@ class AnalysisView(Screen):
                     try:
                         export_file = open(filename, 'w')
                         with export_file:
-                            records = self._datastore.export_session(session_id, export_file, progress_cb)
-                            Clock.schedule_once(lambda dt: _export_complete('Export complete', '{} samples exported'.format(records)))
-                            Clock.schedule_once(lambda dt: self._settings.userPrefs.set_pref('preferences', 'export_file_dir', os.path.dirname(filename)))
+                            records = self._datastore.export_session(
+                                session_id, export_file, progress_cb)
+                            Clock.schedule_once(lambda dt: _export_complete(
+                                'Export complete', '{} samples exported'.format(records)))
+                            Clock.schedule_once(lambda dt: self._settings.userPrefs.set_pref(
+                                'preferences', 'export_file_dir', os.path.dirname(filename)))
                     except Exception as e:
-                        Logger.error('AnalysisView: Error exporting: {}'.format(e))
+                        Logger.error(
+                            'AnalysisView: Error exporting: {}'.format(e))
                         Logger.error(traceback.format_exc())
                         Clock.schedule_once(lambda dt: _export_complete('Error Exporting',
-                            "There was an error exporting the session. Please check the destination and file name\n\n{}".format(e)))
+                                                                        "There was an error exporting the session. Please check the destination and file name\n\n{}".format(e)))
 
                 export_popup.dismiss()
 
-                prog_popup = progress_popup('Exporting session', 'Exporting Session', _progress_ok_cancel)
-                t = Thread(target=_export_session_worker, args=(filename, session.session_id, _progress_cb))
+                prog_popup = progress_popup(
+                    'Exporting session', 'Exporting Session', _progress_ok_cancel)
+                t = Thread(target=_export_session_worker, args=(
+                    filename, session.session_id, _progress_cb))
                 t.daemon = True
                 t.start()
 
             filename = os.path.join(instance.path, instance.filename)
-            if not filename.endswith(RC_LOG_FILE_EXTENSION): filename += RC_LOG_FILE_EXTENSION
+            if not filename.endswith(RC_LOG_FILE_EXTENSION):
+                filename += RC_LOG_FILE_EXTENSION
             if os.path.isfile(filename):
                 def _on_overwrite_answer(instance, answer):
                     if answer:
                         _do_export_session(filename)
                     ow_popup.dismiss()
-                ow_popup = confirmPopup('Confirm', 'File Exists - overwrite?', _on_overwrite_answer)
+                ow_popup = confirmPopup(
+                    'Confirm', 'File Exists - overwrite?', _on_overwrite_answer)
             else:
                 _do_export_session(filename)
 
-        export_dir = self._settings.userPrefs.get_pref('preferences', 'export_file_dir')
+        export_dir = self._settings.userPrefs.get_pref(
+            'preferences', 'export_file_dir')
         content = SaveDialog(ok=_export_session,
                              cancel=lambda *args: export_popup.dismiss(),
                              filters=['*' + RC_LOG_FILE_EXTENSION],
                              user_path=export_dir)
 
-        export_popup = Popup(title="Export Session", content=content, size_hint=(0.9, 0.9))
+        export_popup = Popup(
+            title="Export Session", content=content, size_hint=(0.9, 0.9))
         export_popup.open()
 
     def init_view(self):
@@ -394,7 +421,8 @@ class AnalysisView(Screen):
         self.ids.sessions_view.datastore = self._datastore
         self.ids.sessions_view.settings = self._settings
         self.ids.sessions_view.init_view()
-        Clock.schedule_once(lambda dt: HelpInfo.help_popup('analysis_welcome', self, arrow_pos='right_mid'), 0.5)
+        Clock.schedule_once(lambda dt: HelpInfo.help_popup(
+            'analysis_welcome', self, arrow_pos='right_mid'), 0.5)
 
     def do_layout(self, *largs):
         super(AnalysisView, self).do_layout(largs)
@@ -417,4 +445,3 @@ class AnalysisView(Screen):
 
     def on_nav_right(self):
         self.ids.screen_manager.current = self.ids.screen_manager.next()
-

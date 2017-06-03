@@ -122,12 +122,13 @@ class CenteredBubble(Bubble):
         y = y - half_height
         
         window = widget.get_root_window()
-        if x < 0: x = 0
-        if x > window.width: x = window.width - bubble_width
-        if y < 0: y = 0
-        if y > window.height: y = window.height - bubble_height
+        if window is not None:
+            if x < 0: x = 0
+            if x > window.width: x = window.width - bubble_width
+            if y < 0: y = 0
+            if y > window.height: y = window.height - bubble_height
         
-        self.limit_to = BubblePos(x=x,y=y,top=y + bubble_height, right=x + bubble_width)
+            self.limit_to = BubblePos(x=x,y=y,top=y + bubble_height, right=x + bubble_width)            
         
     def dismiss(self):
         try:

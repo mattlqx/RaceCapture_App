@@ -34,6 +34,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.listview import ListView, ListItemButton
 from kivy.uix.screenmanager import Screen
+from kivy.base import ExceptionManager
 from utils import kvFind
 from kivy.adapters.listadapter import ListAdapter
 from autosportlabs.uix.button.featurebutton import FeatureButton
@@ -291,15 +292,16 @@ class LogImportWidget(BoxLayout):
         self._log_select = None
 
     def set_log_path(self, instance):
-        path = instance.selection[0]
-        self._log_path = path
-        base_name = self._extract_base_logfile_name(path)
-        self.ids.session_name.text = base_name
-        self.ids.log_path.text = base_name
-        self.ids.import_button.disabled = False
-
-        self._log_select.dismiss()
-        self.set_import_file_path(instance.path)
+        if len(instance.selection):
+            path = instance.selection[0]
+            self._log_path = path
+            base_name = self._extract_base_logfile_name(path)
+            self.ids.session_name.text = base_name
+            self.ids.log_path.text = base_name
+            self.ids.import_button.disabled = False
+    
+            self._log_select.dismiss()
+            self.set_import_file_path(instance.path)
 
     def _extract_base_logfile_name(self, path):
         session_name, file_extension = os.path.splitext(os.path.basename(path))
@@ -330,6 +332,7 @@ class LogImportWidget(BoxLayout):
         except Exception as e:
             success = False
             message = str(e)
+            ExceptionManager.handle_exception(e)
         Clock.schedule_once(lambda dt: self.dispatch('on_import_complete', session_id, success, message))
 
     def _update_progress(self, percent_complete=0):
