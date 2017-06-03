@@ -1,6 +1,16 @@
-;MJLJ Installation Script
+;RaceCapture App Nullsoft Installation Script
 
 
+ !define MULTIUSER_EXECUTIONLEVEL Highest
+  !define MULTIUSER_MUI
+  !define MULTIUSER_INSTALLMODE_COMMANDLINE
+  !define MULTIUSER_INSTALLMODE_DEFAULT_REGISTRY_KEY "Software\RaceCapture_v${VERSION_STRING}"
+  !define MULTIUSER_INSTALLMODE_DEFAULT_REGISTRY_VALUENAME ""
+  !define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_KEY "Software\RaceCapture_v${VERSION_STRING}"
+  !define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_VALUENAME ""
+  !define MULTIUSER_INSTALLMODE_INSTDIR "RaceCapture_v${VERSION_STRING}"
+  !include "MultiUser.nsh"
+  
 ;--------------------------------
 ;Include Modern UI
 
@@ -54,6 +64,7 @@
 
   !insertmacro MUI_PAGE_LICENSE "${RA_DIR}\LICENSE"
   !insertmacro MUI_PAGE_COMPONENTS
+  !insertmacro MULTIUSER_PAGE_INSTALLMODE
   !insertmacro MUI_PAGE_STARTMENU "Application" $APP_SM
   !insertmacro MUI_PAGE_DIRECTORY
   !insertmacro MUI_PAGE_INSTFILES
@@ -66,7 +77,7 @@
 
   !insertmacro MUI_LANGUAGE "English"
 
-  RequestExecutionLevel admin
+  ;RequestExecutionLevel user
 
 ;--------------------------------
 ;Installer Sections
@@ -110,6 +121,15 @@ SectionEnd
   ;  !insertmacro MUI_DESCRIPTION_TEXT ${SecDummy} $(DESC_SecDummy)
  ; !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
+ ;--------------------------------
+;Installer Functions
+ 
+Function .onInit
+ 
+  !insertmacro MULTIUSER_INIT
+  !insertmacro MUI_LANGDLL_DISPLAY
+ 
+FunctionEnd
 ;--------------------------------
 ;Uninstaller Section
 
@@ -135,3 +155,13 @@ DeleteRegKey /ifempty HKCU "Software\${APP_REG_NAME}"
 DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_REG_NAME}"
 
 SectionEnd
+
+;--------------------------------
+;Uninstaller Functions
+ 
+Function un.onInit
+ 
+  !insertmacro MULTIUSER_UNINIT
+  !insertmacro MUI_UNGETLANGUAGE
+ 
+FunctionEnd

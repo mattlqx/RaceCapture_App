@@ -28,6 +28,9 @@ import datetime
 from kivy.logger import Logger
 from collections import OrderedDict
 
+class InvalidChannelException(Exception):
+    pass
+
 class DatastoreException(Exception):
     pass
 
@@ -116,14 +119,18 @@ def _smooth_dataset(dset, smoothing_rate):
 
 def _scrub_sql_value(value):
     """
-    Takes a string and strips it of all non-alphanumeric characters, and prefixes with a '_' if the name starts with a digit.
+    Takes a string and strips it of all non-alphanumeric characters, 
+    replaces embedded spaces with underscores and prefixes with a '_' 
+    if the name starts with a digit.
     This makes it safe for use in a SQL query for things like a column name or table name. 
     Not to be confused with traditional SQL escaping with backslashes or
     parameterized queries
     :param value: String
     :return: String
     """
-    sql_name = ''.join([char for char in value if char.isalnum()])
+    value = value.strip()
+    sql_name = ''.join([char for char in value if char.isalnum() or char == ' '])
+    sql_name = sql_name.replace(' ', '_')
     if sql_name[:1].isdigit():
         sql_name = '_' + sql_name
     return sql_name
@@ -298,7 +305,6 @@ class DataStore(object):
     def __init__(self, databus=None):
         self._channels = []
         self._isopen = False
-        self.datalog_channels = {}
         self.datalogchanneltypes = {}
         self._ending_datalog_id = 0
         self._conn = None
@@ -353,6 +359,9 @@ class DataStore(object):
     @property
     def is_open(self):
         return self._isopen
+
+    def channel_exists(self, channel):
+        return channel in [x.name for x in self._channels]
 
     @property
     def channel_list(self):
@@ -438,7 +447,7 @@ class DataStore(object):
             existing_columns.append(row[1])
 
         for channel in channels:
-            name = channel.name
+            name = _scrub_sql_value(channel.name)
             if name in existing_columns:
                 continue
             # Extend the datapoint table to include the channel as a
@@ -870,6 +879,9 @@ class DataStore(object):
         if sessions is not None:
             params = params + sessions
 
+        if not self.channel_exists(channel):
+            raise InvalidChannelException()
+
         base_sql = "SELECT {}({}) {} from datapoint {} {};".format(aggregate, _scrub_sql_value(channel),
                                                                  self._extra_channels(extra_channels),
                                                                  self._session_select_clause(sessions),
@@ -1040,6 +1052,24 @@ class DataStore(object):
 
         return sessions
 
+    def session_has_laps(self, session_id):
+        '''
+        Indicates if the specified session includes any lap data. 
+        :param session_id the session id
+        :type session_id int
+        :returns True if the session has lap information
+        :type Boolean
+        '''
+        if not (self.channel_exists('CurrentLap') and self.channel_exists('LapCount')):
+            return False
+
+        c = self._conn.cursor()
+        for row in c.execute('''SELECT s.session_id, d.LapCount, d.CurrentLap FROM sample s, 
+                             datapoint d WHERE s.session_id = ? AND d.sample_id = s.id LIMIT 1;''',
+                                (session_id,)):
+            return row[1] is not None and row[2] is not None
+        return False
+
     def get_laps(self, session_id):
         '''
         Fetches a list of lap information for the specified session id
@@ -1048,6 +1078,13 @@ class DataStore(object):
         :returns list of Lap objects
         :type list 
         '''
+
+        # if there is no lap information then just return a default single lap.
+        if not self.session_has_laps(session_id):
+            laps_dict = OrderedDict()
+            laps_dict[1] = Lap(session_id=session_id, lap=1, lap_time=None)
+            return laps_dict
+
         laps = []
         c = self._conn.cursor()
         for row in c.execute('''SELECT DISTINCT sample.session_id AS session_id, 
@@ -1060,7 +1097,7 @@ class DataStore(object):
                                 ORDER BY datapoint.LapCount ASC;''',
                                 (session_id,)):
             lap = row[1]
-            lap = 0 if lap is None else lap
+            lap = 1 if lap is None else lap
             laps.append(Lap(session_id=row[0], lap=lap - 1, lap_time=row[2]))
 
         # Figure out if there are samples beyond the last lap

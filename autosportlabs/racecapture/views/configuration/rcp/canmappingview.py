@@ -32,6 +32,7 @@ from kivy.properties import StringProperty, NumericProperty
 from garden_androidtabs import AndroidTabsBase, AndroidTabs
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.racecapture.views.util.viewutils import clock_sequencer
+from autosportlabs.racecapture.views.configuration.channels.channelnameselectorview import ChannelNameSelectorView
 from autosportlabs.uix.layout.sections import SectionBoxLayout
 from fieldlabel import FieldLabel
 from utils import *

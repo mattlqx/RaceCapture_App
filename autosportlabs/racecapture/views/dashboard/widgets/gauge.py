@@ -367,8 +367,8 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
                 bubble_height = dp(150)
                 bubble_width = dp(200)
                 bubble.size = (bubble_width, bubble_height)
-                bubble.center_on_limited(self)
                 bubble.auto_dismiss_timeout(POPUP_DISMISS_TIMEOUT_SHORT)
                 self._customizeGaugeBubble = bubble
                 self.add_widget(bubble)
+                bubble.center_on_limited(self)
 

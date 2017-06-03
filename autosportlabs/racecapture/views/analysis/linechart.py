@@ -334,10 +334,13 @@ class LineChart(ChannelAnalysisWidget):
         for plot in self._channel_plots.itervalues():
             # Find the largest chart_x for all of the active plots
             chart_x_index = plot.chart_x_index
-            last = next(reversed(chart_x_index))
-            chart_x = last
-            if chart_x and chart_x > max_chart_x:
-                max_chart_x = chart_x
+            try:
+                last = next(reversed(chart_x_index))
+                chart_x = last
+                if chart_x and chart_x > max_chart_x:
+                    max_chart_x = chart_x
+            except StopIteration:  # iterator is empty so just continue
+                pass
 
         # update chart zoom range
         self.current_offset = 0
@@ -455,7 +458,7 @@ class LineChart(ChannelAnalysisWidget):
         # calculate the ratio of total distance / time
         total_time_ms = interval_values[-1] - interval_values[0]
         total_distance = distance_values[-1]
-        distance_ratio = total_distance / total_time_ms
+        distance_ratio = total_distance / total_time_ms if total_time_ms > 0 else 0
 
         Logger.debug('Checking distance threshold. Time: {} Distance: {} Ratio: {}'.format(total_time_ms, total_distance, distance_ratio))
         return distance_ratio > LineChart.MEANINGFUL_DISTANCE_RATIO_THRESHOLD
@@ -487,7 +490,6 @@ class LineChart(ChannelAnalysisWidget):
             self.datastore.get_channel_data(source_ref, ['Interval', 'Distance'] + channels, get_results)
         except Exception as e:
             Logger.warn('Non existant channel selected, not loading channels {}; {}'.format(channels, e))
-            raise e
         finally:
             ProgressSpinner.decrement_refcount()
 

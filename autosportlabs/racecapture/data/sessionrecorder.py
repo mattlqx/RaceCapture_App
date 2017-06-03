@@ -72,13 +72,16 @@ class SessionRecorder(EventDispatcher) :
         self.register_event_type('on_recording')
 
     def status_updated(self, status):
-        status = status['status']['GPS']
-        quality = status['qual']
-        latitude = status['lat']
-        longitude = status['lon']
-        self._gps_sample.gps_qual = quality
-        self._gps_sample.latitude = latitude
-        self._gps_sample.longitude = longitude
+        try:
+            status = status['status']['GPS']
+            quality = status['qual']
+            latitude = status['lat']
+            longitude = status['lon']
+            self._gps_sample.gps_qual = quality
+            self._gps_sample.latitude = latitude
+            self._gps_sample.longitude = longitude
+        except KeyError:
+            pass
 
     def on_recording(self, recording):
         pass
@@ -206,7 +209,7 @@ class SessionRecorder(EventDispatcher) :
         if not self._channel_metas_same(metas):
             Logger.info("SessionRecorder: ChannelMeta changed - stop recording")
             self.stop(stop_now=True)
-        self._channels = copy.deepcopy(metas)
+        self._channels = copy.deepcopy(dict(metas))
         self._check_should_record()
 
     def _on_sample(self, sample):

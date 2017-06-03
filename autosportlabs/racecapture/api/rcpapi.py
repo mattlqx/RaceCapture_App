@@ -941,7 +941,7 @@ class RcpApi:
                         finally:
                             pass
 
-                if version_result.version_json != None:
+                if testVer.is_valid:
                     Logger.debug("RCPAPI: Found device version " + str(testVer) + " on port: " + str(comms.device))
                     self.detect_win(testVer)
                     self._auto_detect_event.clear()

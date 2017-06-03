@@ -1,3 +1,8 @@
+==1.9.2==
+
+==1.9.1==
+* Update OpenSSL to conform with Google Play requirements
+
 ==1.9.0==
 * Setup: Add direct CAN channel mapping capabilities (Requires firmware > 2.11.0)
 * Setup: Add OBDII custom mapping capabilities (Requires firmware > 2.11.0)

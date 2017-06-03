@@ -40,7 +40,10 @@ class SerialConnection():
         Logger.debug("SerialConnection: getting available devices")
         devices = [x[0] for x in list_ports.comports()]
         devices.sort()
-        filtered_devices = filter(lambda device: not device.startswith('/dev/ttyUSB') and not device.startswith('/dev/ttyS') and not device.startswith('/dev/cu.Bluetooth-Incoming-Port'), devices)
+        filtered_devices = filter(lambda device: not device.startswith('/dev/ttyUSB') 
+                                  and not device.startswith('/dev/ttyS') 
+                                  and not device.startswith('/dev/cu.Bluetooth-Incoming-Port')
+                                  and not device.startswith('/dev/ttyAMA0'), devices)
         return filtered_devices
 
     def isOpen(self):

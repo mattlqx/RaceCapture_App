@@ -32,6 +32,7 @@ from kivy.uix.anchorlayout import AnchorLayout
 from kivy.adapters.listadapter import ListAdapter
 from kivy.logger import Logger
 from kivy.clock import Clock
+from kivy.metrics import dp
 from kivy.properties import ObjectProperty
 from autosportlabs.racecapture.datastore import DatastoreException, Filter
 from autosportlabs.racecapture.views.util.viewutils import format_laptime
@@ -43,12 +44,16 @@ from autosportlabs.racecapture.views.util.alertview import confirmPopup, alertPo
 from autosportlabs.racecapture.views.util.viewutils import format_laptime
 from fieldlabel import FieldLabel
 
-Builder.load_file('autosportlabs/racecapture/views/analysis/sessionlistview.kv')
-
 class NoSessionsAlert(FieldLabel):
     pass
 
 class LapItemButton(ToggleButton):
+    Builder.load_string("""
+<LapItemButton>:
+    #background_down: ''
+    font_size: self.height * 0.5
+    font_name: 'resource/fonts/ASL_light.ttf'    
+    """)
     background_color_normal = ColorScheme.get_dark_background()
     background_color_down = ColorScheme.get_primary()
 
@@ -65,6 +70,24 @@ class LapItemButton(ToggleButton):
         self.background_color = self.background_color_down if value == 'down' else self.background_color_normal
 
 class Session(BoxLayout):
+    Builder.load_string("""
+<Session>:
+    orientation: 'vertical'
+    BoxLayout:
+        orientation: 'horizontal'
+        height: sp(40)
+        size_hint_y: None
+        IconButton: #Edit button
+            text: u'\uf044'
+            on_press: root.edit_session()
+        IconButton: #Delete button
+            text: u'\uf00d'
+            color: ColorScheme.get_primary()
+            on_press: root.remove_session()
+    BoxLayout:
+        orientation: 'vertical'
+        id: lap_list    
+    """)
     data_items = ListProperty()
 
     def __init__(self, session, accordion, **kwargs):
@@ -129,6 +152,14 @@ class SessionAccordionItem(AccordionItem):
 
 
 class SessionListView(AnchorLayout):
+    Builder.load_string("""
+<SessionListView>:
+    FieldLabel:
+        id: session_alert
+        halign: 'center'
+        shorten: False
+    """)
+
     ITEM_HEIGHT = sp(40)
     SESSION_TITLE_HEIGHT = sp(45)
 
@@ -198,8 +229,12 @@ class SessionListView(AnchorLayout):
         else:
             self._session_load_complete()
 
+    def _update_sessions_alert(self):
+        self.ids.session_alert.text = '' if len(self.sessions) else 'Press (+) to\nadd a session'
+        
     def _session_load_complete(self):
         self.dispatch('on_sessions_loaded')
+        self._update_sessions_alert()
 
     def _save_settings(self):
         selection_settings = {"sessions": {}}
@@ -263,6 +298,8 @@ class SessionListView(AnchorLayout):
         accordion.add_widget(item)
         self._save()
 
+        self._update_sessions_alert()
+        
         return session_view
 
     def _find_session_accordion_item(self, session):
@@ -304,7 +341,7 @@ class SessionListView(AnchorLayout):
         session_editor = SessionEditorView()
         session_editor.session_name = session.name
         session_editor.session_notes = session.notes
-        popup = editor_popup('Edit Session', session_editor, _on_answer)
+        popup = editor_popup('Edit Session', session_editor, _on_answer, size=(dp(600), dp(300)))
 
     def remove_session(self, instance, accordion):
         self._accordion.remove_widget(accordion)
@@ -313,6 +350,8 @@ class SessionListView(AnchorLayout):
             self.sessions.remove(instance.session)
         except ValueError:
             pass
+        
+        self._update_sessions_alert()        
         self._save()
 
     def append_lap(self, session_view, lap, laptime):

@@ -1,7 +1,7 @@
 {
     "cellProviders": {
         "T-Mobile (USA)": {
-            "apn_host": "epc.tmobile.com",
+            "apn_host": "fast.t-mobile.com",
             "apn_user": "",
             "apn_pass": ""
         },
