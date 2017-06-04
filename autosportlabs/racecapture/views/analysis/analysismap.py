@@ -218,6 +218,9 @@ class AnalysisMap(AnalysisWidget):
         
         nearby_tracks = self.track_manager.find_nearby_tracks(track.centerpoint)
         
+        # we only want one selected track map set in a nearby area'. 
+        # if we find any previously saved tracks in the list of nearby tracks,
+        # remove it.
         for nearby_track in nearby_tracks:
             if nearby_track.track_id in saved_tracks:
                 # cull any other nearby tracks; 
