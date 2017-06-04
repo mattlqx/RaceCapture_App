@@ -748,7 +748,6 @@ class DataStore(object):
 
     def init_session(self, name, channel_metas=None, notes=''):
         session_id = self.create_session(name, notes)
-        Logger.info("Datastore: init_session. channels: {}".format(channel_metas))
 
         if channel_metas:
             session_channels = []
