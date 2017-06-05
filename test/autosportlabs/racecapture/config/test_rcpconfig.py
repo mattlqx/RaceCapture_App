@@ -38,4 +38,4 @@ class CANChannelsTest(BaseConfigTest):
     def test_CAN_channels(self):
         json_CAN_channels = self.from_json_string(CAN_CHANNELS)
         json_CAN_channels_test = CANChannels().from_json_dict(json_CAN_channels).to_json_dict()
-        self.assert_dicts_equal(json_CAN_channels_test, json_CAN_channels)
+        self.assert_dicts_equal({'canChanCfg': json_CAN_channels}, json_CAN_channels_test)
