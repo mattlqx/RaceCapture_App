@@ -35,6 +35,7 @@ from autosportlabs.racecapture.views.util.viewutils import format_laptime
 from iconbutton import IconButton, LabelIconButton
 from autosportlabs.uix.legends.laplegends import GradientLapLegend, LapLegend
 from autosportlabs.uix.options.optionsview import OptionsView, BaseOptionsScreen
+from autosportlabs.racecapture.views.channels.channelselectview import ChannelSelectView
 
 # The scaling we use while we zoom
 ANALYSIS_MAP_ZOOM_SCALE = 1.1
@@ -494,33 +495,26 @@ class CustomizeHeatmapView(BaseOptionsScreen):
 <CustomizeHeatmapView>:
     BoxLayout:
         orientation: 'vertical'
-        ChannelSelectorView:
-            multi_select: False
+        ChannelSelectView:
             id: heatmap_channel
-            size_hint_y: 0.9    
+            size_hint_y: 0.9
+            on_channel_selected: root.channel_selected(*args)
     ''')
-
-    available_channels = ListProperty()
 
     def __init__(self, params, values, **kwargs):
         super(CustomizeHeatmapView, self).__init__(params, values, **kwargs)
-        self.ids.heatmap_channel.bind(on_channel_selected=self.channel_selected)
 
     def on_enter(self):
         if self.initialized == False:
             channels = self._get_available_channel_names()
-            self.available_channels = channels
-            self.ids.heatmap_channel.select_channel(self.values.heatmap_channel)
+            self.ids.heatmap_channel.selected_channel = self.values.heatmap_channel
+            self.ids.heatmap_channel.available_channels = channels
 
     def _get_available_channel_names(self):
         available_channels = self.params.datastore.channel_list
         return [str(c) for c in available_channels]
 
-    def on_available_channels(self, instance, value):
-        self.ids.heatmap_channel.channels = value
-
     def channel_selected(self, instance, value):
-        value = None if len(value) == 0 else value[0]
         modified = self.values.heatmap_channel != value
         self.values.heatmap_channel = value
         if modified:

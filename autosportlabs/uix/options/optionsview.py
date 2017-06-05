@@ -21,7 +21,7 @@
 from kivy.app import Builder
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
-from kivy.uix.screenmanager import Screen, SwapTransition
+from kivy.uix.screenmanager import Screen, SlideTransition
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.racecapture.theme.color import ColorScheme
 from iconbutton import IconButton
@@ -79,7 +79,7 @@ class BaseOptionsScreen(Screen):
 
     def on_screen_modified(self, *args):
         pass
-    
+
 class OptionsView(BoxLayout):
     '''
     The main customization view which manages the various customization screens
@@ -127,7 +127,7 @@ class OptionsView(BoxLayout):
         self.register_event_type('on_customized')
         self.register_event_type('on_close')
         screen_manager = self.ids.screens
-        screen_manager.transition = SwapTransition()
+        screen_manager.transition = SlideTransition()
         self.values = values
         self.buttons = {}
 
@@ -138,7 +138,7 @@ class OptionsView(BoxLayout):
         self.ids.options.add_widget(button)
         button.tile_color = ColorScheme.get_dark_accent() \
             if len(self.buttons.values()) > 0 else \
-            ColorScheme.get_accent() 
+            ColorScheme.get_accent()
         self.buttons[screen.name] = button
 
     def on_customized(self, values):
@@ -165,4 +165,4 @@ class OptionsView(BoxLayout):
                 button.tile_color = ColorScheme.get_accent()
             else:
                 button.tile_color = ColorScheme.get_dark_accent()
-            
+
