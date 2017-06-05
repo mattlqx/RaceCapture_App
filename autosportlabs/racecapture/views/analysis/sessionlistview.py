@@ -156,7 +156,8 @@ class SessionListView(AnchorLayout):
 <SessionListView>:
     FieldLabel:
         id: session_alert
-        halign: 'center'    
+        halign: 'center'
+        shorten: False
     """)
 
     ITEM_HEIGHT = sp(40)
@@ -228,8 +229,12 @@ class SessionListView(AnchorLayout):
         else:
             self._session_load_complete()
 
+    def _update_sessions_alert(self):
+        self.ids.session_alert.text = '' if len(self.sessions) else 'Press (+) to\nadd a session'
+        
     def _session_load_complete(self):
         self.dispatch('on_sessions_loaded')
+        self._update_sessions_alert()
 
     def _save_settings(self):
         selection_settings = {"sessions": {}}
@@ -243,7 +248,7 @@ class SessionListView(AnchorLayout):
         selection_json = json.dumps(selection_settings)
 
         self.settings.userPrefs.set_pref('analysis_preferences', 'selected_sessions_laps', selection_json)
-        Logger.info("SessionListView: saved selection: {}".format(selection_json))
+        Logger.debug("SessionListView: saved selection: {}".format(selection_json))
 
     @property
     def selected_count(self):
@@ -293,6 +298,8 @@ class SessionListView(AnchorLayout):
         accordion.add_widget(item)
         self._save()
 
+        self._update_sessions_alert()
+        
         return session_view
 
     def _find_session_accordion_item(self, session):
@@ -343,6 +350,8 @@ class SessionListView(AnchorLayout):
             self.sessions.remove(instance.session)
         except ValueError:
             pass
+        
+        self._update_sessions_alert()        
         self._save()
 
     def append_lap(self, session_view, lap, laptime):
