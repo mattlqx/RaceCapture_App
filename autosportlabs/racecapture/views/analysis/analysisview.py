@@ -353,6 +353,7 @@ class AnalysisView(Screen):
         channelvalues.settings = self._settings
         self.ids.analysismap.track_manager = self._track_manager
         self.ids.analysismap.datastore = self._datastore
+        self.ids.analysismap.settings = self._settings
         self.ids.sessions_view.datastore = self._datastore
         self.ids.sessions_view.settings = self._settings
         self.ids.sessions_view.init_view()
