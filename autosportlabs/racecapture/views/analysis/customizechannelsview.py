@@ -63,18 +63,18 @@ KV_FILE = """
         Rectangle:
             pos: self.pos
             size: self.size
-    LabelButton:
-        halign: 'center'
-        id: name
-        size_hint_x: 0.9
-        font_size: self.height * 0.6
-        on_press: root.on_label_add()
     IconButton:
         size_hint_x: 0.1
         size_hint_y: 0.9
         text: ''
         id: action_button
         on_release: root.on_action()
+    LabelButton:
+        halign: 'center'
+        id: name
+        size_hint_x: 0.9
+        font_size: self.height * 0.6
+        on_press: root.on_label_add()
 """
 
 
