@@ -503,7 +503,6 @@ class CustomizeHeatmapView(BaseOptionsScreen):
 
     def __init__(self, params, values, **kwargs):
         super(CustomizeHeatmapView, self).__init__(params, values, **kwargs)
-        self.ids.heatmap_channel.bind(on_selected_channel=self.channel_selected)
 
     def on_enter(self):
         if self.initialized == False:
