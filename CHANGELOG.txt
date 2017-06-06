@@ -39,7 +39,7 @@
 * Analysis: Fix periodic error where popup fails to dismiss #1363
 * Analysis: Fix importing of log file with channel name containing spaces #1358
 * Analysis: Fix errors rendering channel values after removing a session #1357
-* Analysis: fix errors when rending analysis lap legends after deleting a session #1356
+* Analysis: fix errors when rendering analysis lap legends after deleting a session #1356
 * Analysis: Fix ellipsis on time field for session list
 * Analysis: Show advisory message if there are no sessions in the dropdown #1232
 * Analysis: Fix cramped import log file screen (phone form factor)
