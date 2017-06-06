@@ -1,11 +1,15 @@
 ==1.10.0==
+* Core: Kivy 1.10.0 support
+* Core: Improve touch and scroll responsiveness
+* Core: Improve startup speed
+* Status: Improve WiFi status message
 
 ==1.9.2==
 * Core: Improve contrast for help popup #1403
 * Core: Add scrollbars throughout app where possible #1402
-* Core: allow Windows non-administrative install (install per user or all users) #1391
+* Core: Allow Windows non-administrative install (install per user or all users) #1391
 * Core: Prevent invalid version data from halting connection attempts #1390
-* Core: all numeric input fields now shows a numeric-only soft keyboard on mobile devices #1360
+* Core: All numeric input fields now show a numeric-only soft keyboard on mobile devices #1360
 * Core: Make icon file chooser available for file browsing #1309
 * Core: Fix erroneous 0.0.0 version error message #869
 * Core: Fix periodic popup bubble error #743
@@ -13,7 +17,7 @@
 * Setup: Fixed incorrect layout for Bluetooth settings #1379
 * Setup: Adjust geo fence for Australia region #1373
 * Setup: Limit channel names to alphanumerical characters #1370
-* Setup: fix window rendering issue on track selection #1361
+* Setup: Fix window rendering issue on track selection #1361
 * Setup: Lua Script window auto-scrolls to match the current cursor position #1325
 * Setup: Show warning message if distance or speed is disabled in GPS channels #1306
 * Setup: add new T-mobile APN
@@ -30,9 +34,9 @@
 * Analysis: Fix cases where timestamp in session list is truncated #1375
 * Analysis: Fixed case where trackmap heatmap percentage fails to calculate #1374
 * Analysis: Fix race condition where session dropdown fails to load, requested to show before it's ready #1371
-* Analysis: handle case where there are no X chart values #1368
-* Analysis: fix zero division in line chart #1364
-* Analysis: fix periodic error where popup fails to dismiss #1363
+* Analysis: Handle case where there are no X chart values #1368
+* Analysis: Fix zero division in line chart #1364
+* Analysis: Fix periodic error where popup fails to dismiss #1363
 * Analysis: Fix importing of log file with channel name containing spaces #1358
 * Analysis: Fix errors rendering channel values after removing a session #1357
 * Analysis: fix errors when rending analysis lap legends after deleting a session #1356
