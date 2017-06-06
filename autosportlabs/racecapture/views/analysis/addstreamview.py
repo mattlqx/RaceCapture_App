@@ -42,7 +42,7 @@ from autosportlabs.uix.textwidget import FieldInput
 from autosportlabs.racecapture.views.util.alertview import alertPopup, confirmPopup
 from autosportlabs.racecapture.views.file.loaddialogview import LoadDialog
 from autosportlabs.racecapture.views.file.savedialogview import SaveDialog
-from autosportlabs.util.timeutil import format_time
+from autosportlabs.util.timeutil import friendly_format_time_ago
 from iconbutton import IconButton
 from fieldlabel import FieldLabel
 from iconbutton import LabelIconButton
@@ -196,7 +196,7 @@ class SessionImportView(BaseStreamConnectView):
         for session in sessions:
             session_view = SessionListItem(session)
             session_view.ids.name.text = session.name
-            session_view.ids.date.text = format_time(datetime.fromtimestamp(session.date))
+            session_view.ids.date.text = friendly_format_time_ago(datetime.utcfromtimestamp(session.date))
             session_view.bind(on_delete=self.delete_session)
             session_view.bind(on_add=self.add_session)
             session_view.bind(on_export=self.export_session)
