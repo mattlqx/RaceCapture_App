@@ -49,12 +49,13 @@ class ChannelMeta(object):
         self.min = kwargs.get('min', ChannelMeta.DEFAULT_MIN)
         self.max = kwargs.get('max', ChannelMeta.DEFAULT_MAX)
         self.precision = kwargs.get('prec', ChannelMeta.DEFAULT_PRECISION)
-        self.sampleRate = kwargs.get('sampleRate', ChannelMeta.DEFAULT_SAMPLE_RATE)
+        self.sampleRate = kwargs.get(
+            'sampleRate', ChannelMeta.DEFAULT_SAMPLE_RATE)
         self.type = kwargs.get('type', ChannelMeta.DEFAULT_TYPE)
 
     @staticmethod
     def filter_name(name):
-        return ''.join([char for char in name if char.isalnum() or char == ' '])
+        return ''.join([char for char in name if char.isalnum() or char == ' ' or char == '_'])
 
     def fromJson(self, json):
         self.name = json.get('nm', self.name)
@@ -65,8 +66,10 @@ class ChannelMeta(object):
         self.sampleRate = int(json.get('sr', self.sampleRate))
         self.type = int(json.get('type', self.type))
 
+
 class ChannelMetaCollection(object):
     channel_metas = []
+
     def fromJson(self, metaJson):
         channel_metas = self.channel_metas
         del channel_metas[:]
@@ -76,6 +79,7 @@ class ChannelMetaCollection(object):
             channel_metas.append(channel_meta)
 
 UNKNOWN_CHANNEL = ChannelMeta(name='Unknown')
+
 
 class RuntimeChannels(EventDispatcher):
     data_bus = ObjectProperty(None, allownone=True)
@@ -90,7 +94,8 @@ class RuntimeChannels(EventDispatcher):
 
     def findChannelMeta(self, channel, default=UNKNOWN_CHANNEL):
         channelMeta = self.channels.get(channel)
-        if not channelMeta: channelMeta = default
+        if not channelMeta:
+            channelMeta = default
         return channelMeta
 
     def on_data_bus(self, instance, value):
@@ -137,6 +142,7 @@ class RuntimeChannels(EventDispatcher):
         else:
             return self.channels.copy()
 
+
 class SystemChannels(EventDispatcher):
     channels = ObjectProperty(None)
     channel_names = []
@@ -147,7 +153,8 @@ class SystemChannels(EventDispatcher):
         try:
             base_dir = kwargs.get('base_dir')
             base_dir = '.' if base_dir is None else base_dir
-            system_channels_path = open(os.path.join(base_dir, 'resource', 'channel_meta', 'system_channels.json'))
+            system_channels_path = open(
+                os.path.join(base_dir, 'resource', 'channel_meta', 'system_channels.json'))
             systemChannelsJson = json.load(system_channels_path)
             channelsJson = systemChannelsJson.get('channels')
             channels = OrderedDict()
@@ -165,6 +172,6 @@ class SystemChannels(EventDispatcher):
 
     def findChannelMeta(self, channel, default=UNKNOWN_CHANNEL):
         channelMeta = self.channels.get(channel)
-        if not channelMeta: channelMeta = default
+        if not channelMeta:
+            channelMeta = default
         return channelMeta
-
