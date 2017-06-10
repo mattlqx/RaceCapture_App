@@ -128,9 +128,8 @@ def _smooth_dataset(dset, smoothing_rate):
 
 def _scrub_sql_value(value):
     """
-    Takes a string and strips it of all non-alphanumeric characters, 
-    replaces embedded spaces with underscores and prefixes with a '_' 
-    if the name starts with a digit.
+    Takes a string and strips it of all non-alphanumeric characters, spaces and underscores
+    and wraps it in double quotes.
     This makes it safe for use in a SQL query for things like a column name or table name. 
     Not to be confused with traditional SQL escaping with backslashes or
     parameterized queries
