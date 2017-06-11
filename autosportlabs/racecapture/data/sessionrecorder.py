@@ -43,7 +43,7 @@ class SessionRecorder(EventDispatcher):
     SAMPLE_QUEUE_MAX_SIZE = 500
     SAMPLE_QUEUE_BACKLOG_LOG_INTERVAL = 100
 
-    def __init__(self, datastore, databus, rcpapi, settings, track_manager=None, status_pump=None, stop_delay=60):
+    def __init__(self, datastore, databus, rcpapi, settings, track_manager=None, status_pump=None, stop_delay=120):
         """
         Initializer.
         :param datastore: Datastore for saving data
@@ -295,4 +295,4 @@ class SessionRecorder(EventDispatcher):
         :return:
         """
         self._rc_connected = False
-        self._actual_stop(0)
+        self.stop()
