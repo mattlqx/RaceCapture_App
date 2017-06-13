@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 
+if [[ $# -eq 0 ]] ; then
+    echo 'Please specify version number. usage: build-osx.sh x.y.z'
+    exit 1
+fi
+
 #Cleanup possible previous builds
 rm -rf RaceCapture.app
 rm -rf Kivy.App
-rm RaceCapture.dmg
+rm RaceCapture*.dmg
 
 DIR=$( cd ../.. && pwd )
 
@@ -47,4 +52,6 @@ cp Info.plist RaceCapture.app/Contents/
 
 ./create-osx-dmg.sh RaceCapture.app
 
-
+#Rename the file to include the version
+echo "-- Rename dmg to include provided version number"
+mv RaceCapture.dmg RaceCapture_${1}.dmg
