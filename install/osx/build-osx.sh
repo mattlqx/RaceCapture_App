@@ -20,6 +20,10 @@ fi
 #Cleanup SDL2
 find RaceCapture.app/Contents/Frameworks  -name "Current" | xargs rm -rf
 
+#Cleanup source files
+echo "-- Remove all py/pyc"
+find -E RaceCapture.app -regex ".*pyc?$" -exec rm {} \;
+
 #Customizations and file size savings
 rm -rf RaceCapture.app/Contents/Frameworks/GStreamer.framework
 rm -rf RaceCapture.app/Contents/Resources/kivy/examples
@@ -28,6 +32,8 @@ rm -rf RaceCapture.app/Contents/Resources/kivy/.git
 rm -rf RaceCapture.app/Contents/Resources/yourapp/.buildozer
 rm -rf RaceCapture.app/Contents/Resources/yourapp/bin
 rm -rf RaceCapture.app/Contents/Resources/kivy_stable
+rm -rf RaceCapture.app/Contents/Resources/venv/lib/python2.7/site-packages/kivy
+rm -rf RaceCapture.app//Contents/Resources/venv/share
 
 #We have to customize their theme so checkboxes show up
 cp ../../data/images/defaulttheme-0.png RaceCapture.app/Contents/Resources/kivy/kivy/data/images/

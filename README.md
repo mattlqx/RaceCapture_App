@@ -8,11 +8,10 @@ App for the RaceCapture series of motorsport telemetry systems.
 1. Install latest of python 2.x
 1. Confirm you have the latest version of homebrew, setuptools and pip installed
 1. Install kivy 1.10.0 
-- > Follow the "Homebrew with pip" approach https://kivy.org/docs/installation/installation-osx.html
-- > sudo brew install pkg-config sdl2 sdl2_image sdl2_ttf sdl2_mixer gstreamer
-- > sudo pip install -U cython
-- > sudo pip install kivy==1.10.0
-
+- > Follow the "Install with Kivy.app" approach https://kivy.org/docs/installation/installation-osx.html
+1. Activate virtual environment
+- > `cd /Applications/Kivy.app/Contents/Resources/venv/bin` && `source activate`
+1. Navigate to the RaceCapture_App source directory
 1. Install dependencies: `pip install -r requirements.txt`
 1. Run the RaceCapture app: `python main.py`
 
