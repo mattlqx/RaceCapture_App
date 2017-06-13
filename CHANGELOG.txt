@@ -1,3 +1,12 @@
+==1.10.1==
+* Setup: Allow spaces and underscores in channel names, filter all other characters. #1416
+* Setup: Expand pulse per revolution setting in UI to 100. #1413
+* Core: fixed thread collision between updating dashboard and receiving data #1414
+* Core: fixed error resizing / positioning Toast popup #1412
+* Analysis: Handle interruption / reset of Interval channel when displaying line charts by time #1418
+* Analysis: Prevent session recording from immediately stopping if disconnect occurs #1415
+* Analysis: Extend session recorder schedule stop from 1 to 2 minutes #1419
+
 ==1.10.0==
 * Core: Kivy 1.10.0 support
 * Core: Improve touch and scroll responsiveness

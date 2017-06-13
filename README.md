@@ -3,37 +3,18 @@ RaceCapture App
 
 App for the RaceCapture series of motorsport telemetry systems.
 
-## Dependencies
-See requirements.txt for full list of requirements
-
 ## dev installation (OS X)
 
-1. Install kivy 1.9.1 via pip 
-- > Instructions: https://kivy.org/docs/installation/installation-osx.html
-1. install [virtualenv](http://www.virtualenv.org)
-1. create a virtual environment (perhaps in this directory): `virtualenv _ve`
-1. activate the virtualenv: `. _ve/bin/activate`
-1. install pip requirements: `pip install -r requirements.txt` (you may be required to upgrade your version of setuptools via the provided command)
-1. install asl_f4_loader in dependencies folder: pip install asl_f4_loader-X.X.X.tar.gz
-1. install pygame (http://www.pygame.org/download.shtml - use correct package for your OSX+Python version)
+1. Install latest of python 2.x
+1. Confirm you have the latest version of homebrew, setuptools and pip installed
+1. Install kivy 1.10.0 
+- > Follow the "Homebrew with pip" approach https://kivy.org/docs/installation/installation-osx.html
+- > sudo brew install pkg-config sdl2 sdl2_image sdl2_ttf sdl2_mixer gstreamer
+- > sudo pip install -U cython
+- > sudo pip install kivy==1.10.0
 
-## Simplified dev install (OS X)
-1. Install kivy 1.9.1 via pip 
-- > Instructions: https://kivy.org/docs/installation/installation-osx.html
-1. install Kivy into Applications and run symlink script
-1. install [virtualenv](http://www.virtualenv.org)
-1. re-enable setup tools for Kivy virtualenv: `sudo virtualenv /Applications/Kivy.app/Contents/Resources/venv/`
-1. install pip requirements: `/Applications/Kivy.app/Contents/Resources/venv/bin/pip install -r requirements.txt`
-1. run app: `kivy main.py`
-
-## running (OS X)
-
-    /Applications/Kivy.app/Contents/Resources/script main.py
-
-
-## Building releases (all platforms)
-1. Add a .sentry file with the app's platform-specific DSN for Sentry
-1. Follow the platform-specific build instructions
+1. Install dependencies: `pip install -r requirements.txt`
+1. Run the RaceCapture app: `python main.py`
 
 ## Preparing to build installers (OSX)
 
