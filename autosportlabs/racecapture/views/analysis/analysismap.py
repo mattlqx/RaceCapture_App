@@ -149,15 +149,15 @@ class AnalysisMap(AnalysisWidget):
 
 
     def on_settings(self, instance, value):
-        #initialize our preferences
+        # initialize our preferences
         value.userPrefs.init_pref_section('analysis_map')
-        
+
     def get_pref_track_selections(self):
         return self.settings.userPrefs.get_pref_list('analysis_map', 'track_selections')
-        
+
     def set_pref_track_selections(self, selections):
         self.settings.userPrefs.set_pref_list('analysis_map', 'track_selections', selections)
-        
+
     def refresh_view(self):
         """
         Refresh the current view
@@ -213,26 +213,26 @@ class AnalysisMap(AnalysisWidget):
             self.ids.heat_channel_name.text = ''
 
     def _save_selected_trackmap(self, track):
-        # save the selected track in preferences so it is remembered 
+        # save the selected track in preferences so it is remembered
         # for next time a track is selected in the nearby area.
         saved_tracks = self.get_pref_track_selections()
-        
+
         nearby_tracks = self.track_manager.find_nearby_tracks(track.centerpoint)
-        
-        # we only want one selected track map set in a nearby area'. 
+
+        # we only want one selected track map set in a nearby area'.
         # if we find any previously saved tracks in the list of nearby tracks,
         # remove it.
         for nearby_track in nearby_tracks:
             if nearby_track.track_id in saved_tracks:
-                # cull any other nearby tracks; 
+                # cull any other nearby tracks;
                 # we will replace it with our selected track
                 saved_tracks.remove(nearby_track.track_id)
-                
+
         # ok, now add our selection
         saved_tracks.append(track.track_id)
-                
+
         self.set_pref_track_selections(saved_tracks)
-    
+
     def _update_trackmap(self, track_id):
         track = self.track_manager.get_track_by_id(track_id)
         self._save_selected_trackmap(track)
@@ -310,21 +310,21 @@ class AnalysisMap(AnalysisWidget):
         :returns the selected track, or None if there are no nearby tracks
         :type Track 
         """
-        
+
         if not latitude or not longitude:
             return None
-                
+
         point = GeoPoint.fromPoint(latitude, longitude)
         nearby_tracks = self.track_manager.find_nearby_tracks(point)
-        
+
         saved_tracks = self.get_pref_track_selections()
-                
+
         saved_nearby_tracks = [t for t in nearby_tracks if t.track_id in saved_tracks]
-        
+
         # select the saved nearby track or just a nearby track
         track = next(iter(saved_nearby_tracks), None)
         track = next(iter(nearby_tracks), None) if track is None else track
-                        
+
         if self.track != track:
             # only update the trackmap if it's changing
             self._select_track(track)
@@ -443,6 +443,8 @@ class AnalysisMap(AnalysisWidget):
                                                )
             else:
                 lap = self.datastore.get_cached_lap_info(source_ref)
+                if lap is None:
+                    continue
                 path_color = self.ids.track.get_path(source_key).color
                 lap_legend = LapLegend(color=path_color,
                                        session=session_info.name,
