@@ -3,6 +3,7 @@
 #Cleanup possible previous builds
 rm -rf RaceCapture.app
 rm -rf Kivy.App
+rm RaceCapture.dmg
 
 DIR=$( cd ../.. && pwd )
 
@@ -12,6 +13,12 @@ if [ ! -f "./Kivy.App" ]; then
 fi
 
 ./package-app.sh "$DIR/"
+
+#Use Kivy's 'cleanup app' script
+./cleanup_app.sh RaceCapture.app
+
+#Cleanup SDL2
+find RaceCapture.app/Contents/Frameworks  -name "Current" | xargs rm -rf
 
 #Customizations and file size savings
 rm -rf RaceCapture.app/Contents/Frameworks/GStreamer.framework
