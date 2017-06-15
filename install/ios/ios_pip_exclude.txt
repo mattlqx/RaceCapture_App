@@ -2,3 +2,4 @@ kivy
 cython
 mock
 raven
+pyserial
