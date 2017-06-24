@@ -38,5 +38,3 @@ echo "-- Optimize all python files"
 source ${APPPATH}/Contents/Resources/venv/bin/activate
 python -OO -m compileall ${APPPATH}
 
-echo "-- Remove all py/pyc"
-find -E ${APPPATH} -regex ".*pyc?$" -exec rm {} \;

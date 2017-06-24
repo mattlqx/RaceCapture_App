@@ -5,3 +5,5 @@ java
 test
 .git
 .buildozer
+*.sh
+*.spec
