@@ -1,3 +1,8 @@
+==1.10.2==
+* Core: ensure MK1 compatibility by checking on friendlyName instead of serial #
+* Core: Improve BetterButton text scaling
+* Analysis: Gracefully handle missing lap info when selecting a 'lap'
+
 ==1.10.1==
 * Setup: Allow spaces and underscores in channel names, filter all other characters. #1416
 * Setup: Expand pulse per revolution setting in UI to 100. #1413
