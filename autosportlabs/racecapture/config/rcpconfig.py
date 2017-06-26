@@ -1232,7 +1232,7 @@ class VersionConfig(object):
         Indicates if version data represents valid version data
         :returns True if version data is valid
         '''
-        return self.major > 0 and len(self.name) > 0 and len(self.serial) > 0
+        return self.major > 0 and len(self.name) > 0 and len(self.friendlyName) > 0
 
 
 class ChannelCapabilities(object):
