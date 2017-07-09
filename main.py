@@ -423,7 +423,7 @@ class RaceCaptureApp(App):
         # WipeTransition
         # FallOutTransition
         # RiseInTransition
-        screenMgr.transition = RiseInTransition()  # FallOutTransition()  # NoTransition()
+        screenMgr.transition = NoTransition()  # FallOutTransition()  # NoTransition()
 
         self.screenMgr = screenMgr
         self.icon = ('resource/images/app_icon_128x128.ico' if sys.platform == 'win32' else 'resource/images/app_icon_128x128.png')
