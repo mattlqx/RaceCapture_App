@@ -66,6 +66,7 @@ SELECT_DEVICE_VIEW_KV = """
                     Image:
                         allow_stretch: True
                         source: 'resource/setup/device_RCP_MK3.png'
+                        nocache: True
                     AnchorLayout:
                         anchor_x: 'right'
                         padding: (dp(10), dp(10))
@@ -79,6 +80,7 @@ SELECT_DEVICE_VIEW_KV = """
                     Image:
                         allow_stretch: True
                         source: 'resource/setup/device_RC_Apex.png'
+                        nocache: True
                     AnchorLayout:
                         anchor_x: 'right'
                         padding: (dp(10), dp(10))
@@ -91,7 +93,8 @@ SELECT_DEVICE_VIEW_KV = """
                 AnchorLayout:
                     Image:
                         allow_stretch: True
-                        source: 'resource/setup/device_RCP_MK2.png'             
+                        source: 'resource/setup/device_RCP_MK2.png'
+                        nocache: True             
                     AnchorLayout:
                         anchor_x: 'right'
                         padding: (dp(10), dp(10))
