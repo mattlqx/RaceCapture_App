@@ -586,30 +586,12 @@ class RaceCaptureApp(App):
     def _on_session_recording(self, instance, is_recording):
         toast('Session recording started' if is_recording else 'Session recording stopped', length_long=True)
 
-def _dump_all_threads():
-    code = []
-    code.append('\n=== STACKTRACE - START ===\n')
-
-    for threadId, stack in sys._current_frames().items():
-        code.append("\n# ThreadID: %s\n" % threadId)
-        for filename, lineno, name, line in traceback.extract_stack(stack):
-            code.append('File: "%s", line %d, in %s\n' % (filename,
-                                                    lineno, name))
-            if line:
-                code.append("  %s\n" % (line.strip()))
-
-    for line in code:
-        print >> sys.stderr, line
-    code.append('\n=== STACKTRACE - END ===\n')
-    Logger.error(''.join(code))
-
 if __name__ == '__main__':
 
     class CrashHandler(ExceptionHandler):
         def handle_exception(self, exception_info):
             if type(exception_info) == KeyboardInterrupt:
                 Logger.info("CrashHander: KeyboardInterrupt")
-                _dump_all_threads()
                 App.get_running_app().stop()
             Logger.critical("CrashHandler: Caught exception in Kivy loop: " + str(exception_info))
             Logger.critical(traceback.format_exc())
