@@ -25,14 +25,12 @@ mkdir -p ~/.config/racecapture
 # check for ar1100 resistive touch screen controller
 if lsusb | grep -q 04d8:0c02
 then
-  echo 'Configuring for  ar1100 resistive touch controller'
   cp -n ar1100_kivy_config.ini ~/.kivy/config.ini
 fi
 
 # check for ft5406 capacitive touch screen controller
 if lsmod | grep -q rpi_ft5406
 then
-  echo 'Configuring for ft5406 capacitive touch controller'
   cp -n ft5406_kivy_config.ini ~/.kivy/config.ini
 fi
 
@@ -40,11 +38,16 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
 while
-  ./racecapture > $LOGFILE 2>&1
+  if [ -f $LOGFILE ]; then
+    mv $LOGFILE ${LOGFILE}_last
+  fi
+
+  ./racecapture >> $LOGFILE 2>&1
+
   if [[ $WATCHDOG -ne 1 ]]; then
     break
   fi
-  echo "racecapture crashed with code $?. Restarting..." >&2
+  echo "racecapture crashed with code $?. Restarting..." >> $LOGFILE
 do
   :
 done
