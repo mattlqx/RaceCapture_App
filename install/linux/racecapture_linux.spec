@@ -14,6 +14,11 @@ def addDataFiles():
         if file[0].endswith('.kv') | file[0].endswith('.ttf') | file[0].startswith('resource/') | file[0].startswith('resource\\') | (file[0] == 'LICENSE') | (file[0] == 'CHANGELOG.txt'):
             print "Adding datafile: " + file[0]
             extraDatas.append(file)
+
+    startup_files = Tree('startup/')
+    for f in startup_files:
+        extraDatas.append(f)
+
     return extraDatas
 
 a = Analysis(['../..//main.py'],
