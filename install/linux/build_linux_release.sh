@@ -15,7 +15,7 @@ if [ $# -eq 0 ] ; then
         fi
 fi
 
-rm -rf dist build racecapture_linux_*.tgz
+rm -rf dist build racecapture_linux_*.tar.bz2
 
 pyinstaller --clean -y racecapture_linux.spec
 
@@ -24,5 +24,5 @@ pyinstaller --clean -y racecapture_linux.spec
 rm -rf ./dist/racecapture/share
 
 #package into tar file
-tar czvfC racecapture_linux_${RELEASE_VERSION}.tgz dist racecapture
+tar cjvfC racecapture_linux_${RELEASE_VERSION}.tar.bz2 dist racecapture
 
