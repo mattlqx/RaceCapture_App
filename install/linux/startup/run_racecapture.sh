@@ -10,8 +10,10 @@ while getopts ":w:" opt; do
     esac
 done
 
-#create the configuration directory if needed
+#create the configuration directories as needed
+mkdir -p ~/.kivy
 mkdir -p ~/.config/racecapture
+
 
 #check for ar1100 resistive touch screen controller
 if lsusb | grep -q 04d8:0c02
@@ -28,9 +30,10 @@ then
 fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR
 
 while
-  $DIR/racecapture
+  ./racecapture
   if [[ $WATCHDOG -ne 1 ]]; then
     break
   fi
