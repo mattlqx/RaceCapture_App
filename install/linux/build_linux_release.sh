@@ -1,6 +1,20 @@
 #!/bin/bash
 
 RELEASE_VERSION=${1}
+
+
+PLATFORM=""
+# figure out platform name
+if uname -mrs | grep -q x86_64
+then
+  PLATFORM="x86_64"
+fi
+
+if uname -mrs | grep -q armv7l
+then
+  PLATFORM="raspberrypi"
+fi
+
 if [ $# -eq 0 ] ; then
         MAJOR=$(git describe | cut -d \- -f 1 | cut -d . -f 1)
         MINOR=$(git describe | cut -d \- -f 1 | cut -d . -f 2)
@@ -24,5 +38,5 @@ pyinstaller --clean -y racecapture_linux.spec
 rm -rf ./dist/racecapture/share
 
 #package into tar file
-tar cjvfC racecapture_linux_${RELEASE_VERSION}.tar.bz2 dist racecapture
+tar cjvfC racecapture_linux_${PLATFORM}_${RELEASE_VERSION}.tar.bz2 dist racecapture
 
