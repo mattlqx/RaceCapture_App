@@ -22,16 +22,17 @@ Latest releases:
 * Raspberry Pi: http://podium.live/software (Setup guide: https://wiki.autosportlabs.com/RaceCapture_on_Raspberry_Pi)
 
 ## Video demos
+Click the following for a tour of the RaceCapture App:
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/V3cO3CyOD5E/0.jpg)](http://www.youtube.com/watch?v=V3cO3CyOD5E "RaceCapture first time setup and tour")
+[![IMAGE ALT TEXT](demo_screenshots/RaceCapture_first_time_setup_and_tour_thumbnail.jpg)](http://www.youtube.com/watch?v=V3cO3CyOD5E "RaceCapture first time setup and tour")
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/i3vy7cS1zgU/0.jpg)](http://www.youtube.com/watch?v=i3vy7cS1zgU "RaceCapture dashboard")
+[![IMAGE ALT TEXT](demo_screenshots/RaceCapture_dashboard_screens_thumbnail.jpg)](http://www.youtube.com/watch?v=i3vy7cS1zgU "Dashboard Screens")
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/T24ndKBUS3Y/0.jpg)](http://www.youtube.com/watch?v=T24ndKBUS3Y "Advanced visualizations") 
+[![IMAGE ALT TEXT](demo_screenshots/RaceCapture_advanced_visualizations_thumbnail.jpg)](http://www.youtube.com/watch?v=T24ndKBUS3Y "Advanced visualizations") 
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/Hi9nA2N87RY/0.jpg)](http://www.youtube.com/watch?v=Hi9nA2N87RY "In-app analysis features")
+[![IMAGE ALT TEXT](demo_screenshots/RaceCapture_in_app_analysis_thumbnail.jpg)](http://www.youtube.com/watch?v=Hi9nA2N87RY "In-app analysis")
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/ekTP0x-aCHs/0.jpg)](http://www.youtube.com/watch?v=ekTP0x-aCHs "Create your own track maps")
+[![IMAGE ALT TEXT](demo_screenshots/RaceCapture_create_your_own_track_maps_thumbnail.jpg)](http://www.youtube.com/watch?v=ekTP0x-aCHs "Create your own track maps")
 
 CAN bus mapping presets
 ![alt text](demo_screenshots/CAN_mapping_presets.png?raw=true)
