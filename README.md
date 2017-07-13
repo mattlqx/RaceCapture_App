@@ -1,8 +1,51 @@
 RaceCapture App
 ===============
 
-App for the RaceCapture series of motorsport telemetry systems.
+RaceCapture is the companion app to the RaceCapture motorsports telemetry system.
 
+It includes:
+
+* A powerful, configurable dashboard;
+* Full configuration for the RaceCapture hardware;
+* Built-in analysis features;
+* The ability to live-stream to http://podium.live
+
+## Multi Platform Support
+We actively support 6 platforms, including the Raspberry Pi.
+
+Latest releases:
+* OS X: http://podium.live/software
+* Windows: http://podium.live/software
+* iOS: https://itunes.apple.com/us/app/racecapture/id1162797255
+* Android: https://play.google.com/store/apps/details?id=com.autosportlabs.racecapture&hl=en
+* Amazon App Store: https://www.amazon.com/Autosport-Labs-Race-Capture/dp/B016ZJM7GE
+* Raspberry Pi: http://podium.live/software (Setup guide: https://wiki.autosportlabs.com/RaceCapture_on_Raspberry_Pi)
+
+## Video demos
+Click the following for a tour of the RaceCapture App:
+
+[![IMAGE ALT TEXT](demo_screenshots/RaceCapture_first_time_setup_and_tour_thumbnail.jpg)](http://www.youtube.com/watch?v=V3cO3CyOD5E "RaceCapture first time setup and tour")
+
+[![IMAGE ALT TEXT](demo_screenshots/RaceCapture_dashboard_screens_thumbnail.jpg)](http://www.youtube.com/watch?v=i3vy7cS1zgU "Dashboard Screens")
+
+[![IMAGE ALT TEXT](demo_screenshots/RaceCapture_advanced_visualizations_thumbnail.jpg)](http://www.youtube.com/watch?v=T24ndKBUS3Y "Advanced visualizations") 
+
+[![IMAGE ALT TEXT](demo_screenshots/RaceCapture_in_app_analysis_thumbnail.jpg)](http://www.youtube.com/watch?v=Hi9nA2N87RY "In-app analysis")
+
+[![IMAGE ALT TEXT](demo_screenshots/RaceCapture_create_your_own_track_maps_thumbnail.jpg)](http://www.youtube.com/watch?v=ekTP0x-aCHs "Create your own track maps")
+
+CAN bus mapping presets
+![alt text](demo_screenshots/CAN_mapping_presets.png?raw=true)
+
+Analog sensor channel configuration
+![alt text](demo_screenshots/analog_channel_config.png?raw=true)
+
+Track Map Library
+![alt text](demo_screenshots/track_map_library.gif?raw=true)
+
+Lua Scripting Editor
+![alt text](demo_screenshots/lua_scripting_editor.png?raw=true)
+ 
 ## dev installation (OS X)
 
 1. Install latest of python 2.x
