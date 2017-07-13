@@ -22,6 +22,9 @@ done
 mkdir -p ~/.kivy
 mkdir -p ~/.config/racecapture
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR
+
 # check for ar1100 resistive touch screen controller
 if lsusb | grep -q 04d8:0c02
 then
@@ -34,8 +37,6 @@ then
   cp -n ft5406_kivy_config.ini ~/.kivy/config.ini
 fi
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd $DIR
 
 while
   if [ -f $LOGFILE ]; then
