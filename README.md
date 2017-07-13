@@ -1,7 +1,7 @@
 RaceCapture App
 ===============
 
-RaceCapture is the companion app to the RaceCapture motorsports telemetry system.
+RaceCapture is the companion app for the [RaceCapture family of motorsport telemetry systems](https://github.com/autosportlabs/RaceCapture_App). 
 
 It includes:
 
