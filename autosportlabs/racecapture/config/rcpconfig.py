@@ -908,23 +908,38 @@ class CanConfig(object):
         self.stale = False
         self.enabled = False
         self.baudRate = [0, 0]
+        self.termination_enabled = [0, 0]
 
-    def fromJson(self, canCfgJson):
-        self.enabled = True if canCfgJson.get('en', self.enabled) == 1 else False
-        bauds = canCfgJson.get('baud')
+    def fromJson(self, can_cfg_json):
+        self.enabled = True if can_cfg_json.get('en', self.enabled) == 1 else False
+
+        bauds = can_cfg_json.get('baud')
         self.baudRate = []
         for baud in bauds:
             self.baudRate.append(int(baud))
+
+        terms = can_cfg_json.get('term')
+        if terms is not None:
+            self.termination_enabled = []
+            for t in terms:
+                self.termination_enabled.append(int(t))
+
         self.stale = False
 
     def toJson(self):
-        canCfgJson = {}
-        canCfgJson['en'] = 1 if self.enabled else 0
+        can_cfg_json = {}
+        can_cfg_json['en'] = 1 if self.enabled else 0
         bauds = []
         for baud in self.baudRate:
             bauds.append(baud)
-        canCfgJson['baud'] = bauds
-        return {'canCfg':canCfgJson}
+        can_cfg_json['baud'] = bauds
+
+        terms = []
+        for term in self.termination_enabled:
+            terms.append(term)
+        can_cfg_json['term'] = terms
+
+        return {'canCfg':can_cfg_json}
 
 class CANChannel(BaseChannel):
 
@@ -1367,6 +1382,10 @@ class Capabilities(object):
     @property
     def has_can_channel(self):
         return self.channels.can_channel > 0
+
+    @property
+    def has_can_term(self):
+        return 'can_term' in self.flags
 
     @property
     def has_streaming(self):
