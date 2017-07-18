@@ -7,3 +7,4 @@ test
 .buildozer
 *.sh
 *.spec
+demo_screenshots

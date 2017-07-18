@@ -1,14 +1,31 @@
 #!/usr/bin/env bash
 
-if [[ $# -eq 0 ]] ; then
-    echo 'Please specify version number. usage: build-osx.sh x.y.z'
-    exit 1
+RELEASE_VERSION=${1}
+
+if [ $# -eq 0 ] ; then
+        MAJOR=$(git describe | cut -d \- -f 1 | cut -d . -f 1)
+        MINOR=$(git describe | cut -d \- -f 1 | cut -d . -f 2)
+        BUGFIX=$(git describe | cut -d \- -f 1 | cut -d . -f 3)
+        VERSION=$(git describe --exact-match HEAD 2>/dev/null)
+        HASH=$(git rev-parse --short HEAD)
+
+        if [ ! -z "$VERSION" ]; then
+                RELEASE_VERSION=${VERSION}
+        else
+                RELEASE_VERSION=${MAJOR}.${MINOR}.${BUGFIX}_${HASH}
+        fi
 fi
+
 
 #Cleanup possible previous builds
 rm -rf RaceCapture.app
 rm -rf Kivy.App
 rm RaceCapture*.dmg
+
+#Update latest tracks
+cd ../.. 
+kivy -m build_tools.build_default_tracks
+cd -
 
 DIR=$( cd ../.. && pwd )
 
