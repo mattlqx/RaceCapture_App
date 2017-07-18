@@ -47,19 +47,21 @@ CAN_CONFIG_VIEW_KV = """
 <CANConfigView>:
     spacing: dp(20)
     orientation: 'vertical'
-    row_default_height: dp(40)
+    #row_default_height: dp(40)
     id: cansettings
     HSeparator:
         text: 'CAN bus Configuration'
         halign: 'left'
+        size_hint_y: 0.10
         
     SettingsView:
         id: can_enabled
         label_text: 'CAN bus'
         help_text: 'CAN interface for OBDII and custom CAN channels'
+        size_hint_y: 0.27
         
     HLineSeparator:
-        size_hint_y: 0.05
+        size_hint_y: 0.01
         
     GridLayout:
         size_hint_y: 0.05
@@ -76,14 +78,21 @@ CAN_CONFIG_VIEW_KV = """
             text: 'Termination'
             
         
-    GridLayout:
-        cols: 3
-        id: can_settings
-        orientation: 'vertical'
-        row_default_height: dp(50)
-        row_force_default: True
-        spacing: dp(20)
-        padding: [dp(20), 0]
+    ScrollContainer:
+        size_hint_y: 0.57
+        do_scroll_x: False
+        do_scroll_y: True
+        size_hint_y: 1
+        size_hint_x: 1
+        GridLayout:
+            cols: 3
+            id: can_settings
+            row_force_default: True
+            padding: [0, dp(20)]
+            spacing: [0, dp(10)]
+            row_default_height: dp(50)
+            size_hint_y: None
+            height: self.minimum_height
             
 """
 class CANConfigView(BaseConfigView):
