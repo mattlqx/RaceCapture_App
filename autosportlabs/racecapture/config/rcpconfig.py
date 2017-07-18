@@ -904,11 +904,13 @@ class CANMapping(object):
                     self.adder == other.adder and
                     self.conversion_filter_id == other.conversion_filter_id)
 class CanConfig(object):
+    DEFAULT_BAUD_RATE = [0, 0]
+    DEFAULT_TERMINATION_ENABED = [0, 0]
     def __init__(self, **kwargs):
         self.stale = False
         self.enabled = False
-        self.baudRate = [0, 0]
-        self.termination_enabled = [0, 0]
+        self.baudRate = CanConfig.DEFAULT_BAUD_RATE
+        self.termination_enabled = CanConfig.DEFAULT_TERMINATION_ENABED
 
     def fromJson(self, can_cfg_json):
         self.enabled = True if can_cfg_json.get('en', self.enabled) == 1 else False
@@ -918,7 +920,7 @@ class CanConfig(object):
         for baud in bauds:
             self.baudRate.append(int(baud))
 
-        terms = can_cfg_json.get('term')
+        terms = can_cfg_json.get('term', CanConfig.DEFAULT_TERMINATION_ENABED)
         if terms is not None:
             self.termination_enabled = []
             for t in terms:
