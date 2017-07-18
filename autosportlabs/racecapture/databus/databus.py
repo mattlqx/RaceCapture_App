@@ -344,8 +344,6 @@ class DataBusPump(object):
             self._start_polling_telemetry()
             self._poll.set()
 
-            raise Exception("DataBusPump: Failed to get capabilities for streaming API support")
-
         self._rc_api.get_capabilities(handle_capabilities, handle_capabilities_fail)
         self._starting = True
 
