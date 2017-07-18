@@ -864,6 +864,10 @@ class DataStore(object):
             raise
 
     def get_location_center(self, sessions=None):
+
+        if not (self.channel_exists('Latitude') and self.channel_exists('Longitude')):
+            return (0, 0)
+
         c = self._conn.cursor()
 
         base_sql = 'SELECT AVG(Latitude), AVG(Longitude) from datapoint'
