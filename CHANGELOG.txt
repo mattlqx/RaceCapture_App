@@ -1,3 +1,18 @@
+==1.11.0==
+* Setup: Add CAN termination control options
+* Setup: Ensure iOS and OSX builds include a default set of trackmaps
+* Setup: Prevent error when calibrating IMU if screen is not fully loaded with configuration data. #1434
+* Setup: Prevent error when Lua scripting window is added a 2nd time. #1449
+* Setup: Resolve error loading log window when RaceCapture/Track is connected #1443
+* Analysis: Prevent error when getting track center point if Latitude or Longitude aren't present in datastore. #1438
+* Analysis: Prevent error when remembering trackmap selection if trackmap no longer exists. #1425
+* Analysis: Prevent duplicate column name error #1444
+* Dashboard: Prevent race setup screen errors when dashboard screens are not ready #1454
+* Dashboard: Prevent error dismissing popup when popup not present #1445
+* Status: Prevent error when status API doesn't have cellular connection status
+* Core: Prevent throwing an exception if we can't read capabilities from device #1439
+* Installer: Create Linux / Raspberry Pi packager
+
 ==1.10.2==
 * Core: ensure MK1 compatibility by checking on friendlyName instead of serial #
 * Core: Improve BetterButton text scaling
