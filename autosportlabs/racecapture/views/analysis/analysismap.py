@@ -235,6 +235,9 @@ class AnalysisMap(AnalysisWidget):
 
     def _update_trackmap(self, track_id):
         track = self.track_manager.get_track_by_id(track_id)
+        if track is None:
+            return
+
         self._save_selected_trackmap(track)
         self._select_track(track)
 
