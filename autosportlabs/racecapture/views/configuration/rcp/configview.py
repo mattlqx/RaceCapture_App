@@ -252,7 +252,9 @@ class ConfigView(Screen):
                     view.dispatch('on_config_updated', self.rc_config)
                 if self.track_manager:
                     view.dispatch('on_tracks_updated', self.track_manager)
-        Clock.schedule_once(lambda dt: self.ids.content.add_widget(view))
+
+        if view.get_parent_window() is None:
+            Clock.schedule_once(lambda dt: self.ids.content.add_widget(view))
 
     def on_select_node(self, instance, value):
         if not value:
