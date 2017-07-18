@@ -1,6 +1,6 @@
 ==1.11.0==
 * Setup: Add CAN termination control options
-* Setup: Ensure iOS and OSX builds include a default set of trackmaps
+* Setup: Ensure iOS, OSX and Windows builds include a default set of trackmaps
 * Setup: Prevent error when calibrating IMU if screen is not fully loaded with configuration data. #1434
 * Setup: Prevent error when Lua scripting window is added a 2nd time. #1449
 * Setup: Resolve error loading log window when RaceCapture/Track is connected #1443
