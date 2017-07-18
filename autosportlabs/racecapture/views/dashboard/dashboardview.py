@@ -356,7 +356,7 @@ class DashboardView(Screen):
         automatic configuration
         """
         # skip if this screen is not active
-        if self.manager.current_screen != self:
+        if self.manager is not None and self.manager.current_screen != self:
             return
 
         # skip if we're not connected

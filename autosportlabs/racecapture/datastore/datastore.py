@@ -477,10 +477,8 @@ class DataStore(object):
                 continue
             # Extend the datapoint table to include the channel as a
             # new field
-            sql = """ALTER TABLE datapoint
-            ADD {} REAL""".format(_scrub_sql_value(name))
-            print('alter : {}'.format(sql))
-            self._conn.execute(sql)
+            self._conn.execute("""ALTER TABLE datapoint
+            ADD {} REAL""".format(_scrub_sql_value(name)))
         self._add_extra_indexes(channels)
         self._conn.commit()
 
