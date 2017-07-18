@@ -128,8 +128,7 @@ def _smooth_dataset(dset, smoothing_rate):
 
 def _scrub_sql_value(value):
     """
-    Takes a string and strips it of all non-alphanumeric characters, spaces and underscores
-    and wraps it in double quotes.
+    Takes a string and makes it safe for a sql parameter, and wraps it in double quotes.
     This makes it safe for use in a SQL query for things like a column name or table name. 
     Not to be confused with traditional SQL escaping with backslashes or
     parameterized queries
@@ -138,7 +137,7 @@ def _scrub_sql_value(value):
     """
     value = value.strip()
     sql_name = ''.join(
-        [char for char in value if char.isalnum() or char == ' ' or char == '_'])
+        [char for char in value if char is not '"'])
     return '"{}"'.format(sql_name)
 
 
@@ -478,8 +477,10 @@ class DataStore(object):
                 continue
             # Extend the datapoint table to include the channel as a
             # new field
-            self._conn.execute("""ALTER TABLE datapoint
-            ADD {} REAL""".format(_scrub_sql_value(name)))
+            sql = """ALTER TABLE datapoint
+            ADD {} REAL""".format(_scrub_sql_value(name))
+            print('alter : {}'.format(sql))
+            self._conn.execute(sql)
         self._add_extra_indexes(channels)
         self._conn.commit()
 
