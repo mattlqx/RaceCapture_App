@@ -44,6 +44,9 @@ class ChannelNameField(TextValueField):
         s = ChannelMeta.filter_name(s)
         return super(ChannelNameField, self).insert_text(s, from_undo=from_undo)
 
+    def on_text(self, instance, value):
+        self.text = value.strip()
+
 
 class ChannelLabel(Label):
     Builder.load_string("""
@@ -223,8 +226,6 @@ class ChannelEditor(BoxLayout):
             maxField.text = str(channel.max)
 
     def on_name(self, instance, value):
-        value = value.strip()
-        instance.text = value
         self.channel.name = value
 
     def on_units(self, instance, value):

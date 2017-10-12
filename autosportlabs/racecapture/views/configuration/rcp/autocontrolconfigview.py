@@ -21,7 +21,7 @@
 import kivy
 kivy.require('1.9.1')
 from kivy.metrics import dp
-from settingsview import SettingsSwitch
+from settingsview import SettingsSwitch, SettingsMappedSpinner
 from mappedspinner import MappedSpinner
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.switch import Switch
@@ -31,10 +31,12 @@ from kivy.app import Builder
 from utils import *
 from settingsview import SettingsView
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
-from autosportlabs.widgets.separator import HSeparator, HSeparatorMinor
+from autosportlabs.widgets.separator import HSeparator, HSeparatorMinor, HLineSeparator
+from autosportlabs.racecapture.views.configuration.channels.channelsview import ChannelNameField
 from fieldlabel import FieldLabel
+from valuefield import FloatValueField
 
-class CameraMakeModelSpinner(MappedSpinner):
+class CameraMakeModelSpinner(SettingsMappedSpinner):
     channel_id = NumericProperty(0)
 
     def __init__(self, **kwargs):
@@ -50,17 +52,14 @@ class LtGtSpinner(MappedSpinner):
 
 AUTOLOGGING_VIEW_KV = """
 <AutologgingView>:
-    HSeparatorMinor:
-        text: 'Automatic SD Logging'
-        halign: 'left'
-        size_hint_y: 0.10
-
-    BoxLayout:
-        orientation: 'horizontal'
-        FieldLabel:
-            text: 'Enabled'
-        Switch:
-            id: enabled
+    spacing: dp(15)
+    HLineSeparator:
+        size_hint_y: 0.01    
+    SettingsView:
+        id: enabled
+        label_text: 'SD Logging'
+        help_text: 'Enable SD logging control'
+        size_hint_y: 0.15
 """
 
 class AutologgingView(BaseConfigView):
@@ -68,38 +67,57 @@ class AutologgingView(BaseConfigView):
 
     def __init__(self, **kwargs):
         super(AutologgingView, self).__init__(**kwargs)
+        self.register_event_type('on_config_updated')
+        settings = self.ids.enabled
+        settings.bind(on_setting=self.on_enabled)
+        settings.setControl(SettingsSwitch())
+
+    def on_enabled(self, instance, value):
+        print('enabled')
+
+    def on_config_updated(self, cfg):
+        pass
+
 
 CAMERACONTROL_VIEW_KV = """
 <CameraControlView>:
-    spacing: (dp(10))
-    HSeparatorMinor:
-        text: 'CameraControl'
-        halign: 'left'
-        size_hint_y: 0.10
+    spacing: dp(15)
+    HLineSeparator:
+        size_hint_y: 0.01
+    SettingsView:
+        id: enabled
+        label_text: 'Camera Control'
+        help_text: 'Enable Camera Control (Experimental)'
             
-    BoxLayout:
-        orientation: 'horizontal'
-        FieldLabel:
-            text: 'Enabled'
-        Switch:
-            id: enabled
-
-    BoxLayout:
-        orientation: 'horizontal'
-        FieldLabel:
-            text: 'Camera'
-        CameraMakeModelSpinner:
-            id: makemodel
+    SettingsView:
+        id: makemodel
+        label_text: 'Camera Type'
+        help_text: 'Ensure WiFi is connected to the camera\\'s access point'
 """
+
 class CameraControlView(BaseConfigView):
     Builder.load_string(CAMERACONTROL_VIEW_KV)
 
     def __init__(self, **kwargs):
         super(CameraControlView, self).__init__(**kwargs)
+        settings = self.ids.enabled
+        settings.bind(on_setting=self.on_enabled)
+        settings.setControl(SettingsSwitch())
+
+        camera_type = self.ids.makemodel
+        camera_type.bind(on_setting=self.on_makemodel)
+        camera_type.setControl(CameraMakeModelSpinner())
+
+    def on_enabled(self, instance, value):
+        print('enabled {}'.format(value))
+
+    def on_makemodel(self, instance, value):
+        print('on makemodel {}'.format(value))
 
 AUTOCONTROL_CONFIG_VIEW_KV = """
 <AutoControlConfigView>:
     spacing: dp(10)
+    padding: (dp(10), dp(10))
     orientation: 'vertical'
 
     HSeparator:
@@ -109,29 +127,51 @@ AUTOCONTROL_CONFIG_VIEW_KV = """
         
     BoxLayout:
         orientation: 'horizontal'
-        size_hint_y: 0.15
+        spacing: dp(10)
+        size_hint_y: None
+        height: dp(30)
         FieldLabel:
             text: 'Channel'
-        TextValueField:
+            halign: 'right'
+        BoxLayout:
+            size_hint_x: None
+            width: dp(100)
+        ChannelNameField:
             id: channel
+            size_hint_x: None
+            width: dp(200)
             
     BoxLayout:
-        size_hint_y: 0.15
+        spacing: dp(10)
+        size_hint_y: None
+        height: dp(30)
         FieldLabel:
             text: 'Start Trigger'
+            halign: 'right'
         LtGtSpinner:
             id: ltgt_start
-        TextValueField:
+            size_hint_x: None
+            width: dp(100)
+        FloatValueField:
+            size_hint_x: None
+            width: dp(200)
             id: threshold_start
         
     BoxLayout:
-        size_hint_y: 0.15
+        spacing: dp(10)
+        size_hint_y: None
+        height: dp(30)
         FieldLabel:
             text: 'Stop Trigger'
+            halign: 'right'
         LtGtSpinner:
             id: ltgt_stop
-        TextValueField:
+            size_hint_x: None
+            width: dp(100)
+        FloatValueField:
             id: threshold_stop
+            size_hint_x: None
+            width: dp(200)
         
     ScrollContainer:
         do_scroll_x: False
@@ -144,11 +184,9 @@ AUTOCONTROL_CONFIG_VIEW_KV = """
             row_force_default: True
             padding: [0, dp(20)]
             spacing: [0, dp(10)]
-            row_default_height: dp(120)
+            row_default_height: dp(150)
             size_hint_y: None
             height: self.minimum_height
-            AutologgingView:
-            CameraControlView:
                         
             
 """
@@ -164,8 +202,12 @@ class AutoControlConfigView(BaseConfigView):
     def on_config_updated(self, cfg):
         try:
             self.view_loaded = False
-            #do the loading thing
+            self._load_settings(cfg)
+            # do the loading thing
         finally:
             self.view_loaded = True
 
+    def _load_settings(self, cfg):
+        self.ids.autocontrol_settings.add_widget(AutologgingView())
+        self.ids.autocontrol_settings.add_widget(CameraControlView())
 
