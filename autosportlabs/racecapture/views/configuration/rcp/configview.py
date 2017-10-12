@@ -33,6 +33,7 @@ from kivy import platform
 from kivy.logger import Logger
 from autosportlabs.help.helpmanager import HelpInfo
 
+from autosportlabs.racecapture.views.configuration.rcp.autocontrolconfigview import AutoControlConfigView
 from autosportlabs.racecapture.views.configuration.rcp.analogchannelsview import *
 from autosportlabs.racecapture.views.configuration.rcp.imuchannelsview import *
 from autosportlabs.racecapture.views.configuration.rcp.gpschannelsview import *
@@ -220,6 +221,8 @@ class ConfigView(Screen):
 
         attach_node('OBDII', None, lambda: OBD2ChannelsView(channels=runtime_channels, base_dir=self.base_dir))
 
+        attach_node('Automatic', None, lambda: AutoControlConfigView())
+                    
         attach_node('Wireless', None, lambda: WirelessConfigView(self.base_dir, self.rc_config, self.rc_config.capabilities))
 
         attach_node('Telemetry', None, lambda: TelemetryConfigView(self.rc_config.capabilities))

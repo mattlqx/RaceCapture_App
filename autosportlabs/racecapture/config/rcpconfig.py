@@ -1205,6 +1205,68 @@ class ConnectivityConfig(object):
 
         return {'connCfg':connCfgJson}
 
+class AutoControlConfig(object):
+    def __init__(self, **kwargs):
+        self.stale = False
+
+        self.channel = 'Speed'
+        self.enabled = False
+        
+        self.start_threshold = 15
+        self.start_greater_than = True
+        self.start_time = 5
+        
+        self.stop_threshold = 10
+        self.stop_greater_than = False
+        self.stop_time = 10        
+    
+    def from_json_dict(self, json_dict):
+        if json_dict:
+            self.enabled = json_dict.get('en', self.enabled)
+            self.channel = json_dict.get('channel', self.channel)
+            
+            start = json_dict.get('start')
+            if start:
+                self.start_threshold = start.get('thresh', self.start_threshold)
+                self.start_time = start.get('time', self.start_time)
+                self.start_greater_than = start.get('gt', self.start_greater_than)
+                
+            stop = json_dict.get('stop')
+            if stop:
+                self.stop_threshold = stop.get('thresh', self.stop_threshold)
+                self.stop_time = stop.get('time', self.stop_time)
+                self.stop_greater_than = stop.get('gt', self.stop_greater_than)
+
+    def to_json_dict(self):
+        json_dict = {'channel':self.channel, 
+                     'en':self.enabled,
+                     'start':{'thresh': self.start_threshold,
+                              'gt': self.start_greater_than,
+                              'time': self.start_time
+                              },
+                     'stop':{'thresh': self.stop_threshold,
+                             'gt': self.stop_greater_than,
+                             'time': self.stop_time }
+                     }
+        return json_dict
+    
+class CameraControlConfig(AutoControlConfig):
+    def __init__(self, **kwargs):
+        super(CameraControlConfig, self).__init__(**kwargs)        
+        self.camera_make_model = 0
+
+    def from_json_dict(self, json_dict):
+        super(CameraControlConfig, self).from_json_dict(json_dict)
+        self.camera_make_model = json_dict.get('makeModel', self.camera_make_model)
+
+    def to_json_dict(self):
+        json_dict = super(CameraControlConfig, self).to_json_dict()
+        json_dict['makeModel'] = self.camera_make_model
+        return json_dict
+        
+class AutoLoggingConfig(AutoControlConfig):
+    def __init__(self, **kwargs):
+        super(AutoLoggingConfig, self).__init__(**kwargs)        
 
 class VersionConfig(object):
     def __init__(self, **kwargs):
