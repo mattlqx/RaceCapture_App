@@ -378,10 +378,17 @@ class LineChart(ChannelAnalysisWidget):
                 sample_count = len(time_data)
                 interval = max(1, int(sample_count / self.MAX_SAMPLES_TO_DISPLAY))
                 Logger.info('LineChart: plot interval {}'.format(interval))
-                start_time = time_data[0]
+                last_time = None
+                time = 0
+                last_time = time_data[0]
                 while sample_index < sample_count:
+                    current_time = time_data[sample_index]
+                    if last_time > current_time:
+                        Logger.warn('LineChart: interruption in interval channel, possible reset in data stream ({}->{})'.format(last_time, current_time))
+                        last_time = current_time
                     sample = channel_data[sample_index]
-                    time = time_data[sample_index] - start_time
+                    time += current_time - last_time
+                    last_time = current_time
                     points.append((time, sample))
                     time_index[time] = sample_index
                     sample_index += interval

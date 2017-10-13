@@ -21,7 +21,7 @@
 from kivy.clock import Clock
 from time import sleep
 from kivy.logger import Logger
-from threading import Thread, Event
+from threading import Thread, Event, Lock
 from autosportlabs.racecapture.data.channels import ChannelMeta
 from autosportlabs.racecapture.data.sampledata import Sample, SampleMetaException, ChannelMetaCollection
 from autosportlabs.racecapture.databus.filter.bestlapfilter import BestLapFilter
@@ -64,6 +64,7 @@ class DataBus(object):
 
     def __init__(self, **kwargs):
         super(DataBus, self).__init__(**kwargs)
+        self.update_lock = Lock()
 
     def start_update(self, interval=DEFAULT_DATABUS_UPDATE_INTERVAL):
         if self._polling:
@@ -87,24 +88,28 @@ class DataBus(object):
         """update channel metadata information
         This should be called when the channel information has changed
         """
-        # update channel metadata
-        cd = self.channel_data
-        cm = self.channel_metas
-        # clear our list of channel data values, in case channels
-        # were removed on this metadata update
-        cd.clear()
+        try:
+            self.update_lock.acquire()
+            # update channel metadata
+            cd = self.channel_data
+            cm = self.channel_metas
+            # clear our list of channel data values, in case channels
+            # were removed on this metadata update
+            cd.clear()
 
-        # clear and reload our channel metas
-        cm.clear()
-        for meta in metas.channel_metas:
-            cm[meta.name] = meta
+            # clear and reload our channel metas
+            cm.clear()
+            for meta in metas.channel_metas:
+                cm[meta.name] = meta
 
-        # add channel meta for existing filters
-        for f in self.data_filters:
-            self._update_datafilter_meta(f)
+            # add channel meta for existing filters
+            for f in self.data_filters:
+                self._update_datafilter_meta(f)
 
-        self.meta_updated = True
-        self.rcp_meta_read = True
+            self.meta_updated = True
+            self.rcp_meta_read = True
+        finally:
+            self.update_lock.release()
 
     def addSampleListener(self, callback):
         self.sample_listeners.append(callback)
@@ -112,29 +117,37 @@ class DataBus(object):
     def update_samples(self, sample):
         """Update channel data with new samples
         """
-        cd = self.channel_data
-        for sample_item in sample.samples:
-            channel = sample_item.channelMeta.name
-            value = sample_item.value
-            cd[channel] = value
+        try:
+            self.update_lock.acquire()
+            cd = self.channel_data
+            for sample_item in sample.samples:
+                channel = sample_item.channelMeta.name
+                value = sample_item.value
+                cd[channel] = value
 
-        # apply filters to updated data
-        for f in self.data_filters:
-            f.filter(cd)
+            # apply filters to updated data
+            for f in self.data_filters:
+                f.filter(cd)
+        finally:
+            self.update_lock.release()
 
     def notify_listeners(self, dt):
 
-        if self.meta_updated:
-            cm = self.channel_metas
-            self.notify_meta_listeners(cm)
-            self.meta_updated = False
+        try:
+            self.update_lock.acquire()
+            if self.meta_updated:
+                cm = self.channel_metas
+                self.notify_meta_listeners(cm)
+                self.meta_updated = False
 
-        cd = self.channel_data
-        for channel, value in cd.iteritems():
-            self.notify_channel_listeners(channel, value)
+            cd = self.channel_data
+            for channel, value in cd.iteritems():
+                self.notify_channel_listeners(channel, value)
 
-        for listener in self.sample_listeners:
-            listener(cd)
+            for listener in self.sample_listeners:
+                listener(cd)
+        finally:
+            self.update_lock.release()
 
     def notify_channel_listeners(self, channel, value):
         listeners = self.channel_listeners.get(str(channel))
@@ -330,8 +343,6 @@ class DataBusPump(object):
             Logger.error("DataBusPump: Failed to get capabilities, can't determine if device supports streaming API. Assuming polling")
             self._start_polling_telemetry()
             self._poll.set()
-
-            raise Exception("DataBusPump: Failed to get capabilities for streaming API support")
 
         self._rc_api.get_capabilities(handle_capabilities, handle_capabilities_fail)
         self._starting = True

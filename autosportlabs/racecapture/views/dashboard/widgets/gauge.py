@@ -34,7 +34,7 @@ from functools import partial
 from kivy.app import Builder
 from kivy.logger import Logger
 from autosportlabs.racecapture.settings.prefs import Range
-from autosportlabs.racecapture.views.channels.channelselectview import ChannelSelectView
+from autosportlabs.racecapture.views.channels.channelselectview import ChannelSelectDialog
 from autosportlabs.racecapture.views.channels.channelcustomizationview import ChannelCustomizationView
 from autosportlabs.racecapture.views.popup.centeredbubble import CenteredBubble
 from autosportlabs.racecapture.data.channels import *
@@ -305,7 +305,7 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
             view.color = self.select_alert_color()
 
     def showChannelSelectDialog(self):
-        content = ChannelSelectView(settings=self.settings, channel=self.channel)
+        content = ChannelSelectDialog(settings=self.settings, channel=self.channel)
         content.bind(on_channel_selected=self.channel_selected)
         content.bind(on_channel_cancel=self._dismiss_popup)
 

@@ -1,7 +1,87 @@
-==1.9.2==
+==1.12.0==
 
+==1.11.0==
+* Setup: Add CAN termination control options
+* Setup: Ensure iOS, OSX and Windows builds include a default set of trackmaps
+* Setup: Prevent error when calibrating IMU if screen is not fully loaded with configuration data. #1434
+* Setup: Prevent error when Lua scripting window is added a 2nd time. #1449
+* Setup: Resolve error loading log window when RaceCapture/Track is connected #1443
+* Analysis: Prevent error when getting track center point if Latitude or Longitude aren't present in datastore. #1438
+* Analysis: Prevent error when remembering trackmap selection if trackmap no longer exists. #1425
+* Analysis: Prevent duplicate column name error #1444
+* Dashboard: Prevent race setup screen errors when dashboard screens are not ready #1454
+* Dashboard: Prevent error dismissing popup when popup not present #1445
+* Status: Prevent error when status API doesn't have cellular connection status
+* Core: Prevent throwing an exception if we can't read capabilities from device #1439
+* Installer: Create Linux / Raspberry Pi packager
+
+==1.10.2==
+* Core: ensure MK1 compatibility by checking on friendlyName instead of serial #
+* Core: Improve BetterButton text scaling
+* Analysis: Gracefully handle missing lap info when selecting a 'lap'
+
+==1.10.1==
+* Setup: Allow spaces and underscores in channel names, filter all other characters. #1416
+* Setup: Expand pulse per revolution setting in UI to 100. #1413
+* Core: fixed thread collision between updating dashboard and receiving data #1414
+* Core: fixed error resizing / positioning Toast popup #1412
+* Analysis: Handle interruption / reset of Interval channel when displaying line charts by time #1418
+* Analysis: Prevent session recording from immediately stopping if disconnect occurs #1415
+* Analysis: Extend session recorder schedule stop from 1 to 2 minutes #1419
+
+==1.10.0==
+* Core: Kivy 1.10.0 support
+* Core: Improve touch and scroll responsiveness
+* Core: Improve startup speed
+* Status: Improve WiFi status message
+
+==1.9.2==
+* Core: Improve contrast for help popup #1403
+* Core: Add scrollbars throughout app where possible #1402
+* Core: Allow Windows non-administrative install (install per user or all users) #1391
+* Core: Prevent invalid version data from halting connection attempts #1390
+* Core: All numeric input fields now show a numeric-only soft keyboard on mobile devices #1360
+* Core: Make icon file chooser available for file browsing #1309
+* Core: Fix erroneous 0.0.0 version error message #869
+* Core: Fix periodic popup bubble error #743
+* Setup: Fix problem copying text in RaceCapture with garbage characters in windows platform #1393
+* Setup: Fixed incorrect layout for Bluetooth settings #1379
+* Setup: Adjust geo fence for Australia region #1373
+* Setup: Limit channel names to alphanumerical characters #1370
+* Setup: Fix window rendering issue on track selection #1361
+* Setup: Lua Script window auto-scrolls to match the current cursor position #1325
+* Setup: Show warning message if distance or speed is disabled in GPS channels #1306
+* Setup: add new T-mobile APN
+* Setup: Fix duplicate characters when soft keyboard is used in Lua scripting view #1120
+* Status: Fix error when status reader doesn't receive GPS status #1386
+* Status: Improve misleading status message 'Bad or Missing SIM card' #1382
+* Session Recording: fix issue with internal data collision #1362
+* Session Recording: Record session in background thread to keep UI performant #1094
+* Analysis: Allow analysis mode when lap timing is disabled #1397
+* Analysis: Fix session edit dialog proportion #1393
+* Analysis: Fix error when LapTime column is missing #1388
+* Analysis: Fix divide by zero issue in some cases when drawing a track map #1385
+* Analysis: Fix issue parsing date / time for Trackmap display #1376
+* Analysis: Fix cases where timestamp in session list is truncated #1375
+* Analysis: Fixed case where trackmap heatmap percentage fails to calculate #1374
+* Analysis: Fix race condition where session dropdown fails to load, requested to show before it's ready #1371
+* Analysis: Handle case where there are no X chart values #1368
+* Analysis: Fix zero division in line chart #1364
+* Analysis: Fix periodic error where popup fails to dismiss #1363
+* Analysis: Fix importing of log file with channel name containing spaces #1358
+* Analysis: Fix errors rendering channel values after removing a session #1357
+* Analysis: fix errors when rendering analysis lap legends after deleting a session #1356
+* Analysis: Fix ellipsis on time field for session list
+* Analysis: Show advisory message if there are no sessions in the dropdown #1232
+* Analysis: Fix cramped import log file screen (phone form factor)
+* Analysis: Enhance readability of timestamp in saved sessions #1092
+* Analysis: Remember trackmap selection for a particular location #1002
+* Analysis: Prevent error if no file is selected during datastore import #938
+* Analysis: Prevent error if already removed channel is removed again #937
+ 
 ==1.9.1==
 * Update OpenSSL to conform with Google Play requirements
+
 
 ==1.9.0==
 * Setup: Add direct CAN channel mapping capabilities (Requires firmware > 2.11.0)

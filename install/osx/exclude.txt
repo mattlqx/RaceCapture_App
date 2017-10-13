@@ -5,3 +5,6 @@ java
 test
 .git
 .buildozer
+*.sh
+*.spec
+demo_screenshots

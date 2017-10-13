@@ -1,3 +1,6 @@
+install/linux/racecapture/
+*.bz2
+*.tgz
 release_apk.sh
 *.zip
 .buildozer

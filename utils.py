@@ -480,10 +480,4 @@ def paste_clipboard(text):
     # convert to appropriate format
     text = unicode(text)
 
-    clipboard_types = Clipboard.get_types()
-    for cb_type in clipboard_types:
-        if str(cb_type).lower().strip().startswith('text'):
-            Clipboard.put(text, cb_type)
-            return
-
-    raise Exception('Could not find plain text clipboard in ' + str(clipboard_types))
+    Clipboard.copy(text)

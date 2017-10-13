@@ -248,7 +248,7 @@ class SessionListView(AnchorLayout):
         selection_json = json.dumps(selection_settings)
 
         self.settings.userPrefs.set_pref('analysis_preferences', 'selected_sessions_laps', selection_json)
-        Logger.info("SessionListView: saved selection: {}".format(selection_json))
+        Logger.debug("SessionListView: saved selection: {}".format(selection_json))
 
     @property
     def selected_count(self):

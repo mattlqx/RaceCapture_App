@@ -51,6 +51,7 @@ HOMPAGE_VIEW_KV = """
             Image:
                 size_hint: (0.7, 0.7)
                 source: 'resource/images/app_icon_512x512.png'
+                nocache: True
         BoxLayout:
             orientation: 'vertical'
             padding: [self.height * 0.05, self.height * 0.05]

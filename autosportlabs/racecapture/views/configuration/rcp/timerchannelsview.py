@@ -72,7 +72,7 @@ class PulsePerRevSpinner(MappedSpinner):
         valueMap[0.25] = '1/4'
         valueMap[0.33333] = '1/3'
         valueMap[0.5] = '1/2'
-        for i in range (1, 64):
+        for i in range (1, 101):
             valueMap[i] = str(i)
         self.setValueMap(valueMap, '1');
 
