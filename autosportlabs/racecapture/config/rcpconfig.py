@@ -1228,26 +1228,26 @@ class AutoControlConfig(object):
 
             start = json_dict.get('start')
             if start:
-                self.start_threshold = start.get('thresh', self.start_threshold)
-                self.start_time = start.get('time', self.start_time)
-                self.start_greater_than = start.get('gt', self.start_greater_than)
+                self.start_threshold = start.get('thresh', float(self.start_threshold))
+                self.start_time = start.get('time', int(self.start_time))
+                self.start_greater_than = start.get('gt', bool(self.start_greater_than))
 
             stop = json_dict.get('stop')
             if stop:
-                self.stop_threshold = stop.get('thresh', self.stop_threshold)
-                self.stop_time = stop.get('time', self.stop_time)
-                self.stop_greater_than = stop.get('gt', self.stop_greater_than)
+                self.stop_threshold = stop.get('thresh', float(self.stop_threshold))
+                self.stop_time = stop.get('time', int(self.stop_time))
+                self.stop_greater_than = stop.get('gt', bool(self.stop_greater_than))
 
     def to_json_dict(self):
         json_dict = {'channel':self.channel,
                      'en':self.enabled,
-                     'start':{'thresh': self.start_threshold,
-                              'gt': self.start_greater_than,
-                              'time': self.start_time
+                     'start':{'thresh': float(self.start_threshold),
+                              'gt': bool(self.start_greater_than),
+                              'time': int(self.start_time)
                               },
-                     'stop':{'thresh': self.stop_threshold,
-                             'gt': self.stop_greater_than,
-                             'time': self.stop_time }
+                     'stop':{'thresh': float(self.stop_threshold),
+                             'gt': bool(self.stop_greater_than),
+                             'time': int(self.stop_time) }
                      }
         return json_dict
 

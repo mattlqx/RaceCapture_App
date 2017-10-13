@@ -184,12 +184,12 @@ AUTOCONTROL_CONFIG_VIEW_KV = """
             id: start_greater_than
             size_hint_x: None
             width: dp(100)
-            on_value: root._on_value_changed('start_greater_than', *args) 
+            on_value: root._on_ltgt_changed('start_greater_than', *args) 
         FloatValueField:
             size_hint_x: None
             width: dp(65)
             id: start_threshold
-            on_text: root._on_value_changed('start_threshold', *args)
+            on_text: root._on_threshold_changed('start_threshold', *args)
         FieldLabel:
             text: 'after'
             size_hint_x: None
@@ -199,7 +199,7 @@ AUTOCONTROL_CONFIG_VIEW_KV = """
             size_hint_x: None
             width: dp(50)
             id: start_time
-            on_text: root._on_value_changed('start_time', *args)
+            on_text: root._on_time_changed('start_time', *args)
         FieldLabel:
             text: 'sec.'
             size_hint_x: None
@@ -217,12 +217,12 @@ AUTOCONTROL_CONFIG_VIEW_KV = """
             id: stop_greater_than
             size_hint_x: None
             width: dp(100)
-            on_value: root._on_value_changed('stop_greater_than', *args)
+            on_value: root._on_ltgt_changed('stop_greater_than', *args)
         FloatValueField:
             size_hint_x: None
             width: dp(65)
             id: stop_threshold
-            on_text: root._on_value_changed('stop_threshold', *args)
+            on_text: root._on_threshold_changed('stop_threshold', *args)
         FieldLabel:
             text: 'after'
             size_hint_x: None
@@ -232,7 +232,7 @@ AUTOCONTROL_CONFIG_VIEW_KV = """
             size_hint_x: None
             width: dp(50)
             id: stop_time
-            on_text: root._on_value_changed('stop_time', *args)
+            on_text: root._on_time_changed('stop_time', *args)
         FieldLabel:
             text: 'sec.'
             size_hint_x: None
@@ -322,6 +322,21 @@ class AutoControlConfigView(BaseConfigView):
             self.ids.stop_threshold.text = str(primary_config.stop_threshold)
             self.ids.stop_greater_than.setFromValue(primary_config.stop_greater_than)
             self.ids.stop_time.text = str(primary_config.stop_time)
+
+    def _on_threshold_changed(self, attr, instance, value):
+        try:
+            self._on_value_changed(attr, instance, float(value))
+        except ValueError:
+            pass
+
+    def _on_time_changed(self, attr, instance, value):
+        try:
+            self._on_value_changed(attr, instance, int(value))
+        except ValueError:
+            pass
+
+    def _on_ltgt_changed(self, attr, instance, value):
+        self._on_value_changed(attr, instance, bool(value))
 
     def _on_channel_name(self, instance, value):
         self._on_value_changed('channel', instance, value.name)
