@@ -34,7 +34,7 @@ class ImuView(BoxLayout):
     ZOOM_SCALING = 0.2
     TOUCHWHEEL_ZOOM_MULTIPLIER = 1
     ROTATION_SCALING = 0.2
-    
+
     position_x = NumericProperty(0)
     position_y = NumericProperty(-0.15)
     position_z = NumericProperty(-5.0)
@@ -45,41 +45,41 @@ class ImuView(BoxLayout):
     accel_x = NumericProperty(0)
     accel_y = NumericProperty(0)
     accel_z = NumericProperty(0)
-    
+
     accel = ReferenceListProperty(accel_x, accel_y, accel_z)
     imu_obj = ObjectProperty()
-    
+
     gyro_yaw = NumericProperty(0)
     gyro_pitch = NumericProperty(0)
     gyro_roll = NumericProperty(0)
     gyro = ReferenceListProperty(gyro_yaw, gyro_pitch, gyro_roll)
-    
+
     def __init__(self, **kwargs):
         super(ImuView, self).__init__(**kwargs)
         self._touches = []
         self.imu_obj = None
         self.size_scaling = 1
         self.init_view()
-        
+
     def init_view(self):
-        Window.bind(on_motion=self.on_motion)        
+        Window.bind(on_motion=self.on_motion)
         self._setup_object()
-    
+
     def cleanup_view(self):
         Window.unbind(on_motion=self.on_motion)
-        
+
     def _setup_object(self):
         if self.imu_obj is not None:
-            return 
-        
+            return
+
         shader_file = resource_find('resource/models/shaders.glsl')
-        #self.scene = ObjFileLoader(resource_find("resource/models/car-kart-white.obj"))
+        # self.scene = ObjFileLoader(resource_find("resource/models/car-kart-white.obj"))
         obj_path = resource_find('resource/models/car-formula-white.obj')
  #       obj_path = resource_find('resource/models/car-kart-white.obj')
 #        obj_path = resource_find('resource/models/car-parsche-sport-white.obj')
-        #TODO: the following needs work
-        #"resource/models/car-groupc-2-white.obj"
-        #"resource/models/car-groupc-1-white.obj"
+        # TODO: the following needs work
+        # "resource/models/car-groupc-2-white.obj"
+        # "resource/models/car-groupc-1-white.obj"
 
         self.renderer = Renderer(shader_file=shader_file)
         scene = Scene()
@@ -101,30 +101,30 @@ class ImuView(BoxLayout):
             obj.material.transparency = 1.0
             obj.material.intensity = 0.5
             self.imu_obj = obj
-            #obj.material.shininess = 1.0
+            # obj.material.shininess = 1.0
 
         self.renderer.render(scene, camera)
         self.add_widget(self.renderer)
         self.renderer.bind(size=self._adjust_aspect)
-        
+
     def _adjust_aspect(self, instance, value):
         rsize = self.renderer.size
         width = rsize[0]
         height = rsize[1]
-        if height == 0: 
+        if height == 0:
             return
         self.renderer.camera.aspect = width / float(height)
-        self.size_scaling =  1 / float(dp(1)) #width /  (width * height) / (Window.size[0] * Window.size[1])
-                        
+        self.size_scaling = 1 / float(dp(1))  # width /  (width * height) / (Window.size[0] * Window.size[1])
+
     @property
     def _zoom_scaling(self):
         return self.size_scaling * ImuView.ZOOM_SCALING
-        
+
     def define_rotate_angle(self, touch):
-        x_angle = (touch.dx/self.width)*360
-        y_angle = -1*(touch.dy/self.height)*360
+        x_angle = (touch.dx / self.width) * 360
+        y_angle = -1 * (touch.dy / self.height) * 360
         return x_angle, y_angle
-    
+
     def on_touch_down(self, touch):
         x, y = touch.x, touch.y
         if self.collide_point(x, y):
@@ -136,7 +136,7 @@ class ImuView(BoxLayout):
         else:
             super(ImuView, self).on_touch_down(touch)
             return False
-        
+
     def on_touch_up(self, touch):
         x, y = touch.x, touch.y
 
@@ -144,69 +144,69 @@ class ImuView(BoxLayout):
         if touch in self._touches:  # and touch.grab_state:
             touch.ungrab(self)
             self._touches.remove(touch)
-            
+
         # stop propagating if its within our bounds
         if self.collide_point(x, y):
             return True
-      
-    def on_touch_move(self, touch): 
+
+    def on_touch_move(self, touch):
         Logger.debug("dx: %s, dy: %s. Widget: (%s, %s)" % (touch.dx, touch.dy, self.width, self.height))
         if touch in self._touches and touch.grab_current == self:
             if len(self._touches) == 1:
-                # here do just rotation        
+                # here do just rotation
                 ax, ay = self.define_rotate_angle(touch)
-                
+
                 self.rotation_x -= (ay * ImuView.ROTATION_SCALING)
                 self.rotation_y += (ax * ImuView.ROTATION_SCALING)
-                
-                #ax, ay = math.radians(ax), math.radians(ay)
-                
 
-            elif len(self._touches) == 2: # scaling here
-                #use two touches to determine do we need scal
-                touch1, touch2 = self._touches 
+                # ax, ay = math.radians(ax), math.radians(ay)
+
+
+            elif len(self._touches) == 2:  # scaling here
+                # use two touches to determine do we need scal
+                touch1, touch2 = self._touches
                 old_pos1 = (touch1.x - touch1.dx, touch1.y - touch1.dy)
                 old_pos2 = (touch2.x - touch2.dx, touch2.y - touch2.dy)
-                
+
                 old_dx = old_pos1[0] - old_pos2[0]
                 old_dy = old_pos1[1] - old_pos2[1]
-                
-                old_distance = (old_dx*old_dx + old_dy*old_dy)
+
+                old_distance = (old_dx * old_dx + old_dy * old_dy)
                 Logger.debug('Old distance: %s' % old_distance)
-                
+
                 new_dx = touch1.x - touch2.x
                 new_dy = touch1.y - touch2.y
-                
-                new_distance = (new_dx*new_dx + new_dy*new_dy)
-                
+
+                new_distance = (new_dx * new_dx + new_dy * new_dy)
+
                 Logger.debug('New distance: %s' % new_distance)
-                                
-                if new_distance > old_distance: 
+
+                if new_distance > old_distance:
                     scale = 1 * self._zoom_scaling
                 elif new_distance == old_distance:
                     scale = 0
                 else:
                     scale = -1 * self._zoom_scaling
-                
+
                 if scale:
                     self.position_z += scale
 
     def on_motion(self, instance, event, motion_event):
         if motion_event.x > 0 and motion_event.y > 0 and self.collide_point(motion_event.x, motion_event.y):
             try:
-                button = motion_event.button                
+                button = motion_event.button
                 SCALE_FACTOR = 0.1
                 if button == 'scrollup':
                     self.position_z += self._zoom_scaling * ImuView.TOUCHWHEEL_ZOOM_MULTIPLIER
                 else:
                     if button == 'scrolldown':
-                        self.position_z -= self._zoom_scaling * ImuView.TOUCHWHEEL_ZOOM_MULTIPLIER 
+                        self.position_z -= self._zoom_scaling * ImuView.TOUCHWHEEL_ZOOM_MULTIPLIER
             except:
                 pass  # no scrollwheel support
 
     def on_position_x(self, instance, value):
         self.imu_obj.pos.x = value
-        
+
     def on_position_y(self, instance, value):
         self.imu_obj.pos.y = value
 
@@ -215,7 +215,7 @@ class ImuView(BoxLayout):
 
     def on_rotation_x(self, instance, value):
         self.imu_obj.rotation.x = value
-        
+
     def on_rotation_y(self, instance, value):
         self.imu_obj.rotation.y = value
 
@@ -224,20 +224,20 @@ class ImuView(BoxLayout):
 
     def on_accel_x(self, instance, value):
         self.imu_obj.pos.z = self.position_z + (value * ImuView.ACCEL_SCALING)
-    
+
     def on_accel_y(self, instance, value):
         self.imu_obj.pos.x = self.position_x - (value * ImuView.ACCEL_SCALING)
-    
-    def on_accel_z(self, instance, value):        
+
+    def on_accel_z(self, instance, value):
         # subtract 1.0 to compensate for gravity
-        self.imu_obj.pos.y = self.position_y + ((value - 1.0) * ImuView.ACCEL_SCALING) 
-    
+        self.imu_obj.pos.y = self.position_y + ((value - 1.0) * ImuView.ACCEL_SCALING)
+
     def on_gyro_yaw(self, instance, value):
-        self.imu_obj.rotation.y = self.rotation_y - (value * ImuView.GYRO_SCALING)        
-    
+        self.imu_obj.rotation.y = self.rotation_y - (value * ImuView.GYRO_SCALING)
+
     def on_gyro_pitch(self, instance, value):
-        self.imu_obj.rotation.x =self.rotation_x - (value * ImuView.GYRO_SCALING)
-    
+        self.imu_obj.rotation.x = self.rotation_x - (value * ImuView.GYRO_SCALING)
+
     def on_gyro_roll(self, instance, value):
         self.imu_obj.rotation.z = self.rotation_z + (value * ImuView.GYRO_SCALING)
-    
+
