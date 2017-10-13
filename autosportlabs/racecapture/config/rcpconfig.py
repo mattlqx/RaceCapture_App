@@ -23,7 +23,6 @@ from copy import copy
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from kivy.logger import Logger
 from distutils.version import StrictVersion
-from _ast import Or
 
 RCP_COMPATIBLE_MAJOR_VERSION = 2
 RCP_MINIMUM_MINOR_VERSION = 8
