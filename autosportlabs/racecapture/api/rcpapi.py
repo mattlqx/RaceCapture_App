@@ -500,7 +500,7 @@ class RcpApi:
                 cmdSequence.append(RcpCmd('wifiCfg', self.get_wifi_config))
 
             if capabilities.has_sd_logging:
-                cmdSequence.append(RcpCmd('autoLoggerCfg', self.get_sdlog_control_config))
+                cmdSequence.append(RcpCmd('sdLogCtrlCfg', self.get_sdlog_control_config))
 
             if capabilities.has_camera_control:
                 cmdSequence.append(RcpCmd('camCtrlCfg', self.get_camera_control_config))
@@ -589,7 +589,7 @@ class RcpApi:
 
         sdlog_control_config = cfg.sd_logging_control_config
         if sdlog_control_config.stale:
-            cmdSequence.append(RcpCmd('setAutoLoggerCfg', self.set_sdlog_control_config, sdlog_control_config.to_json_dict()))
+            cmdSequence.append(RcpCmd('setSdLogCtrlCfg', self.set_sdlog_control_config, sdlog_control_config.to_json_dict()))
 
         camera_control_config = cfg.camera_control_config
         if camera_control_config.stale:
@@ -737,7 +737,7 @@ class RcpApi:
         self.sendGet('getWifiCfg', None)
 
     def get_sdlog_control_config(self):
-        self.sendGet('getAutoLoggerCfg', None)
+        self.sendGet('getSdLogCtrlCfg', None)
 
     def get_camera_control_config(self):
         self.sendGet('getCamCtrlCfg', None)
@@ -746,7 +746,7 @@ class RcpApi:
         self.sendSet('setWifiCfg', wifi_config)
 
     def set_sdlog_control_config(self, sdlog_control_config):
-        self.sendSet('setAutoLoggerCfg', sdlog_control_config)
+        self.sendSet('setSdLogCtrlCfg', sdlog_control_config)
 
     def set_camera_control_config(self, camera_control_config):
         self.sendSet('setCamCtrlCfg', camera_control_config)
