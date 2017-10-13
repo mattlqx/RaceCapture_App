@@ -23,6 +23,7 @@ from copy import copy
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from kivy.logger import Logger
 from distutils.version import StrictVersion
+from _ast import Or
 
 RCP_COMPATIBLE_MAJOR_VERSION = 2
 RCP_MINIMUM_MINOR_VERSION = 8
@@ -1211,26 +1212,26 @@ class AutoControlConfig(object):
 
         self.channel = 'Speed'
         self.enabled = False
-        
+
         self.start_threshold = 15
         self.start_greater_than = True
         self.start_time = 5
-        
+
         self.stop_threshold = 10
         self.stop_greater_than = False
-        self.stop_time = 10        
-    
+        self.stop_time = 10
+
     def from_json_dict(self, json_dict):
         if json_dict:
             self.enabled = json_dict.get('en', self.enabled)
             self.channel = json_dict.get('channel', self.channel)
-            
+
             start = json_dict.get('start')
             if start:
                 self.start_threshold = start.get('thresh', self.start_threshold)
                 self.start_time = start.get('time', self.start_time)
                 self.start_greater_than = start.get('gt', self.start_greater_than)
-                
+
             stop = json_dict.get('stop')
             if stop:
                 self.stop_threshold = stop.get('thresh', self.stop_threshold)
@@ -1238,7 +1239,7 @@ class AutoControlConfig(object):
                 self.stop_greater_than = stop.get('gt', self.stop_greater_than)
 
     def to_json_dict(self):
-        json_dict = {'channel':self.channel, 
+        json_dict = {'channel':self.channel,
                      'en':self.enabled,
                      'start':{'thresh': self.start_threshold,
                               'gt': self.start_greater_than,
@@ -1249,24 +1250,28 @@ class AutoControlConfig(object):
                              'time': self.stop_time }
                      }
         return json_dict
-    
+
 class CameraControlConfig(AutoControlConfig):
     def __init__(self, **kwargs):
-        super(CameraControlConfig, self).__init__(**kwargs)        
-        self.camera_make_model = 0
+        super(CameraControlConfig, self).__init__(**kwargs)
+        self.make_model = 0
 
     def from_json_dict(self, json_dict):
         super(CameraControlConfig, self).from_json_dict(json_dict)
-        self.camera_make_model = json_dict.get('makeModel', self.camera_make_model)
+        self.make_model = json_dict.get('makeModel', self.make_model)
 
     def to_json_dict(self):
         json_dict = super(CameraControlConfig, self).to_json_dict()
-        json_dict['makeModel'] = self.camera_make_model
-        return json_dict
-        
-class AutoLoggingConfig(AutoControlConfig):
+        json_dict['makeModel'] = self.make_model
+        return {'camCtrlCfg':json_dict}
+
+class SDLoggingControlConfig(AutoControlConfig):
     def __init__(self, **kwargs):
-        super(AutoLoggingConfig, self).__init__(**kwargs)        
+        super(SDLoggingControlConfig, self).__init__(**kwargs)
+
+    def to_json_dict(self):
+        json_dict = super(SDLoggingControlConfig, self).to_json_dict()
+        return {'autoLoggerCfg':json_dict}
 
 class VersionConfig(object):
     def __init__(self, **kwargs):
@@ -1455,6 +1460,14 @@ class Capabilities(object):
     def has_streaming(self):
         return 'telemstream' in self.flags
 
+    @property
+    def has_camera_control(self):
+        return 'camctl' in self.flags
+
+    @property
+    def has_sd_logging(self):
+        return 'sd' in self.flags
+
     def from_json_dict(self, json_dict, version_config=None):
         if json_dict:
             Logger.debug("RCPConfig: Capabilities: {}".format(json_dict))
@@ -1515,6 +1528,8 @@ class RcpConfig(object):
         self.canConfig = CanConfig()
         self.can_channels = CANChannels()
         self.obd2Config = Obd2Config()
+        self.camera_control_config = CameraControlConfig()
+        self.sd_logging_control_config = SDLoggingControlConfig()
         self.scriptConfig = LuaScript()
         self.trackDb = TracksDb()
 
@@ -1534,6 +1549,8 @@ class RcpConfig(object):
                 self.can_channels.stale or
                 self.obd2Config.stale or
                 self.scriptConfig.stale or
+                self.camera_control_config.stale or
+                self.sd_logging_control_config.stale or
                 self.trackDb.stale)
 
     @stale.setter
@@ -1547,12 +1564,14 @@ class RcpConfig(object):
         self.pwmConfig.stale = value
         self.trackConfig.stale = value
         self.connectivityConfig.stale = value
+        self.wifi_config.stale = value
         self.canConfig.stale = value
         self.can_channels.stale = value
         self.obd2Config.stale = value
         self.scriptConfig.stale = value
+        self.camera_control_config.stale = value
+        self.sd_logging_control_config.stale = value
         self.trackDb.stale = value
-        self.wifi_config.stale = value
 
     def fromJson(self, rcpJson):
         if rcpJson:
@@ -1622,6 +1641,14 @@ class RcpConfig(object):
                 if scriptJson:
                     self.scriptConfig.fromJson(scriptJson)
 
+                camera_ctrl_cfg_json = rcpJson.get('camCtrlCfg')
+                if camera_ctrl_cfg_json:
+                    self.camera_control_config.from_json_dict(camera_ctrl_cfg_json)
+
+                sd_logging_ctrl_cfg = rcpJson.get('autoLoggerCfg')
+                if sd_logging_ctrl_cfg:
+                    self.sd_logging_control_config.from_json_dict(sd_logging_ctrl_cfg)
+
                 trackDbJson = rcpJson.get('trackDb', None)
                 if trackDbJson:
                     self.trackDb.fromJson(trackDbJson)
@@ -1652,6 +1679,8 @@ class RcpConfig(object):
                              'obd2Cfg':self.obd2Config.toJson().get('obd2Cfg'),
                              'connCfg':self.connectivityConfig.toJson().get('connCfg'),
                              'wifiCfg': self.wifi_config.to_json(),
+                             'autoLoggerCfg': self.sd_logging_control_config.to_json_dict().get('autoLoggerCfg'),
+                             'camCtrlCfg': self.camera_control_config.to_json_dict().get('camCtrlCfg'),
                              'trackCfg':self.trackConfig.toJson().get('trackCfg'),
                              'scriptCfg':self.scriptConfig.toJson().get('scriptCfg'),
                              'trackDb': self.trackDb.toJson().get('trackDb')

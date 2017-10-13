@@ -499,6 +499,12 @@ class RcpApi:
             if capabilities.has_wifi:
                 cmdSequence.append(RcpCmd('wifiCfg', self.get_wifi_config))
 
+            if capabilities.has_sd_logging:
+                cmdSequence.append(RcpCmd('autoLoggerCfg', self.get_sdlog_control_config))
+
+            if capabilities.has_camera_control:
+                cmdSequence.append(RcpCmd('camCtrlCfg', self.get_camera_control_config))
+
             self._queue_multiple(cmdSequence, 'rcpCfg', lambda rcpJson: self.getRcpCfgCallback(cfg, rcpJson, winCallback), failCallback)
 
         # First we need to get capabilities, then figure out what to query
@@ -580,6 +586,14 @@ class RcpApi:
         wifi_config = cfg.wifi_config
         if wifi_config.stale:
             cmdSequence.append(RcpCmd('setWifiCfg', self.set_wifi_config, wifi_config.to_json()))
+
+        sdlog_control_config = cfg.sd_logging_control_config
+        if sdlog_control_config.stale:
+            cmdSequence.append(RcpCmd('setAutoLoggerCfg', self.set_sdlog_control_config, sdlog_control_config.to_json_dict()))
+
+        camera_control_config = cfg.camera_control_config
+        if camera_control_config.stale:
+            cmdSequence.append(RcpCmd('setCamCtrlCfg', self.set_camera_control_config, camera_control_config.to_json_dict()))
 
         cmdSequence.append(RcpCmd('flashCfg', self.sendFlashConfig))
 
@@ -722,8 +736,20 @@ class RcpApi:
     def get_wifi_config(self):
         self.sendGet('getWifiCfg', None)
 
+    def get_sdlog_control_config(self):
+        self.sendGet('getAutoLoggerCfg', None)
+
+    def get_camera_control_config(self):
+        self.sendGet('getCamCtrlCfg', None)
+
     def set_wifi_config(self, wifi_config):
         self.sendSet('setWifiCfg', wifi_config)
+
+    def set_sdlog_control_config(self, sdlog_control_config):
+        self.sendSet('setAutoLoggerCfg', sdlog_control_config)
+
+    def set_camera_control_config(self, camera_control_config):
+        self.sendSet('setCamCtrlCfg', camera_control_config)
 
     def start_telemetry(self, rate):
         self.sendSet('setTelemetry', {'rate': rate})

@@ -221,8 +221,8 @@ class ConfigView(Screen):
 
         attach_node('OBDII', None, lambda: OBD2ChannelsView(channels=runtime_channels, base_dir=self.base_dir))
 
-        attach_node('Automatic', None, lambda: AutoControlConfigView())
-                    
+        attach_node('Automatic', None, lambda: AutoControlConfigView(channels=runtime_channels))
+
         attach_node('Wireless', None, lambda: WirelessConfigView(self.base_dir, self.rc_config, self.rc_config.capabilities))
 
         attach_node('Telemetry', None, lambda: TelemetryConfigView(self.rc_config.capabilities))
