@@ -73,7 +73,7 @@ class ImuView(BoxLayout):
 
     def init_view(self):
         Window.bind(on_motion=self.on_motion)
-        self.model_path = 'resource/models/car-farara-sport-white.obj'
+        self.model_path = 'resource/models/car_sports_2.obj'
 
     def cleanup_view(self):
         Window.unbind(on_motion=self.on_motion)
