@@ -20,20 +20,23 @@
 
 import math
 from kivy.clock import Clock
+from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
 from kivy.resources import resource_find
-from kivy.properties import ReferenceListProperty, NumericProperty, ObjectProperty
+from kivy.properties import ReferenceListProperty, NumericProperty, ObjectProperty, StringProperty
 from kivy.logger import Logger
 from kivy3 import Scene, Renderer, PerspectiveCamera
 from kivy3.loaders import OBJLoader
 from kivy.core.window import Window
 from kivy.metrics import dp
+
 class ImuView(BoxLayout):
     ACCEL_SCALING = 1.0
     GYRO_SCALING = 1.0
     ZOOM_SCALING = 0.2
     TOUCHWHEEL_ZOOM_MULTIPLIER = 1
     ROTATION_SCALING = 0.2
+    DRAG_CUSTOMIZE_THRESHOLD = 10
 
     position_x = NumericProperty(0)
     position_y = NumericProperty(-0.15)
@@ -53,6 +56,7 @@ class ImuView(BoxLayout):
     gyro_pitch = NumericProperty(0)
     gyro_roll = NumericProperty(0)
     gyro = ReferenceListProperty(gyro_yaw, gyro_pitch, gyro_roll)
+    model_path = StringProperty()
 
     def __init__(self, **kwargs):
         super(ImuView, self).__init__(**kwargs)
@@ -60,26 +64,36 @@ class ImuView(BoxLayout):
         self.imu_obj = None
         self.size_scaling = 1
         self.init_view()
+        self.register_event_type('on_customize')
+        self._total_drag_distance = 0
+        self._last_button = None
+
+    def on_customize(self):
+        pass
 
     def init_view(self):
         Window.bind(on_motion=self.on_motion)
-        self._setup_object()
+        self.model_path = 'resource/models/car-farara-sport-white.obj'
 
     def cleanup_view(self):
         Window.unbind(on_motion=self.on_motion)
 
-    def _setup_object(self):
-        if self.imu_obj is not None:
-            return
+    def on_model_path(self, instance, value):
+        self._setup_object()
 
+    def _setup_object(self):
+
+        self.clear_widgets()
         shader_file = resource_find('resource/models/shaders.glsl')
-        # self.scene = ObjFileLoader(resource_find("resource/models/car-kart-white.obj"))
-        obj_path = resource_find('resource/models/car-formula-white.obj')
- #       obj_path = resource_find('resource/models/car-kart-white.obj')
-#        obj_path = resource_find('resource/models/car-parsche-sport-white.obj')
+        # obj_path = resource_find('resource/models/car-formula-white.obj')
+        # obj_path = resource_find('resource/models/car-kart-white.obj')
+        # obj_path = resource_find('resource/models/car-parsche-sport-white.obj')
+        # obj_path = resource_find('resource/models/car-groupc-2-white.obj')
+        # obj_path = resource_find('resource/models/car-groupc-1-white.obj')
         # TODO: the following needs work
         # "resource/models/car-groupc-2-white.obj"
         # "resource/models/car-groupc-1-white.obj"
+        obj_path = resource_find(self.model_path)
 
         self.renderer = Renderer(shader_file=shader_file)
         scene = Scene()
@@ -126,18 +140,19 @@ class ImuView(BoxLayout):
         return x_angle, y_angle
 
     def on_touch_down(self, touch):
+        super(ImuView, self).on_touch_down(touch)
+        if self._last_button == 'left':
+            self._total_drag_distance = 0
+
         x, y = touch.x, touch.y
         if self.collide_point(x, y):
             touch.grab(self)
             self._touches.append(touch)
-
-            super(ImuView, self).on_touch_down(touch)
             return True
-        else:
-            super(ImuView, self).on_touch_down(touch)
-            return False
+        return False
 
     def on_touch_up(self, touch):
+        super(ImuView, self).on_touch_up(touch)
         x, y = touch.x, touch.y
 
         # remove it from our saved touches
@@ -145,12 +160,20 @@ class ImuView(BoxLayout):
             touch.ungrab(self)
             self._touches.remove(touch)
 
+        if self._total_drag_distance < ImuView.DRAG_CUSTOMIZE_THRESHOLD:
+            self.dispatch('on_customize')
+            self._total_drag_distance = ImuView.DRAG_CUSTOMIZE_THRESHOLD
+
         # stop propagating if its within our bounds
         if self.collide_point(x, y):
             return True
 
+        return False
+
     def on_touch_move(self, touch):
         Logger.debug("dx: %s, dy: %s. Widget: (%s, %s)" % (touch.dx, touch.dy, self.width, self.height))
+        self._total_drag_distance += abs(touch.dx) + abs(touch.dy)
+
         if touch in self._touches and touch.grab_current == self:
             if len(self._touches) == 1:
                 # here do just rotation
@@ -160,7 +183,6 @@ class ImuView(BoxLayout):
                 self.rotation_y += (ax * ImuView.ROTATION_SCALING)
 
                 # ax, ay = math.radians(ax), math.radians(ay)
-
 
             elif len(self._touches) == 2:  # scaling here
                 # use two touches to determine do we need scal
@@ -172,14 +194,11 @@ class ImuView(BoxLayout):
                 old_dy = old_pos1[1] - old_pos2[1]
 
                 old_distance = (old_dx * old_dx + old_dy * old_dy)
-                Logger.debug('Old distance: %s' % old_distance)
 
                 new_dx = touch1.x - touch2.x
                 new_dy = touch1.y - touch2.y
 
                 new_distance = (new_dx * new_dx + new_dy * new_dy)
-
-                Logger.debug('New distance: %s' % new_distance)
 
                 if new_distance > old_distance:
                     scale = 1 * self._zoom_scaling
@@ -192,17 +211,22 @@ class ImuView(BoxLayout):
                     self.position_z += scale
 
     def on_motion(self, instance, event, motion_event):
+        button = motion_event.button
+        self._last_button = button
+
         if motion_event.x > 0 and motion_event.y > 0 and self.collide_point(motion_event.x, motion_event.y):
             try:
-                button = motion_event.button
                 SCALE_FACTOR = 0.1
+                z_distance = self._zoom_scaling * ImuView.TOUCHWHEEL_ZOOM_MULTIPLIER
                 if button == 'scrollup':
-                    self.position_z += self._zoom_scaling * ImuView.TOUCHWHEEL_ZOOM_MULTIPLIER
+                    self.position_z += z_distance
+                    self._total_drag_distance += 100
                 else:
                     if button == 'scrolldown':
-                        self.position_z -= self._zoom_scaling * ImuView.TOUCHWHEEL_ZOOM_MULTIPLIER
+                        self.position_z -= z_distance
             except:
                 pass  # no scrollwheel support
+
 
     def on_position_x(self, instance, value):
         self.imu_obj.pos.x = value

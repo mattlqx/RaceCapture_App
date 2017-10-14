@@ -20,16 +20,78 @@
 
 import kivy
 kivy.require('1.9.1')
-from kivy.uix.behaviors import ButtonBehavior
+from kivy.clock import Clock
 from kivy.app import Builder
 from kivy.metrics import dp
 from fieldlabel import FieldLabel
+from kivy.uix.image import Image
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.modalview import ModalView
 from utils import kvFind, kvquery
-from kivy.properties import NumericProperty, ObjectProperty
+from kivy.properties import NumericProperty, ObjectProperty, StringProperty
+from kivy.uix.anchorlayout import AnchorLayout
 from autosportlabs.uix.imu.imuview import ImuView
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
 from autosportlabs.uix.color.colorsequence import ColorSequence
 from kivy.uix.settings import SettingsWithNoMenu
+
+class ModelSelectorItemView(BoxLayout):
+    Builder.load_string("""
+<ModelSelectorItemView>:
+    canvas.before:
+        Color:
+            rgba: ColorScheme.get_widget_translucent_background()
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    padding: (dp(5), dp(5))
+    FieldLabel:
+        text: root.label
+    Image:
+        source: root.image_source
+    """)
+
+    label = StringProperty()
+    image_source = StringProperty()
+
+class ModelSelectorView(AnchorLayout):
+    Builder.load_string("""
+<ModelSelectorView>:
+    canvas.before:
+        Color:
+            rgba: ColorScheme.get_dark_background()
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    
+    ScrollContainer:
+        id: scroll
+        size_hint_y: 1.0
+        do_scroll_x:False
+        do_scroll_y:True
+        GridLayout:
+            id: grid
+            padding: (dp(10), dp(10))
+            spacing: dp(10)
+            row_default_height: root.height * 0.3
+            size_hint_y: None
+            height: self.minimum_height
+            cols: 1        
+    """)
+
+
+    def __init__(self, **kwargs):
+        super(ModelSelectorView, self).__init__(**kwargs)
+        self.init_view()
+
+    def init_view(self):
+        self._add_model('Universal Arrow', 'resource/models/arrow_preview.png')
+        self._add_model('Formula Car', 'resource/models/car_formula_preview.png')
+        self._add_model('Sports Car', 'resource/models/car_sports_preview.png')
+        self._add_model('Kart', 'resource/models/kart_preview.png')
+
+    def _add_model(self, label, image_source):
+        self.ids.grid.add_widget(ModelSelectorItemView(label=label, image_source=image_source))
 
 
 class ImuLabel(FieldLabel):
@@ -43,6 +105,7 @@ IMU_GAUGE_KV = """
     AnchorLayout:
         ImuView:
             id: imu
+            on_customize: root.on_customize(*args)
 
     AnchorLayout:
         anchor_x: 'left'
@@ -116,6 +179,7 @@ class ImuGauge(Gauge):
     GYRO_YAW = "Yaw"
     GYRO_PITCH = "Pitch"
     GYRO_ROLL = "Roll"
+    _POPUP_SIZE_HINT = (0.75, 0.9)
 
     IMU_AMPLIFICATION = 2.0
 
@@ -125,6 +189,17 @@ class ImuGauge(Gauge):
     def __init__(self, **kwargs):
         super(ImuGauge, self).__init__(**kwargs)
         self._color_sequence = ColorSequence()
+
+    def on_customize(self, *args):
+        view = ModelSelectorView()
+
+        def popup_dismissed(*args):
+           print('dismissed')
+
+        popup = ModalView(size_hint=ImuGauge._POPUP_SIZE_HINT)
+        popup.add_widget(view)
+        popup.bind(on_dismiss=popup_dismissed)
+        popup.open()
 
     def on_zoom(self, instance, value):
         self.ids.imu.position_z /= value
