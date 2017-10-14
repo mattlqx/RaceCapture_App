@@ -49,6 +49,7 @@ TRACTION_VIEW_KV = """
             size_hint_y: 1.0
             padding: (dp(40), dp(40))
             id: imu_gauge
+            rcid: 'traction_view_imu'
 """
 
 class TractionView(DashboardScreen):

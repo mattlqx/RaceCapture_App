@@ -37,6 +37,25 @@ from autosportlabs.uix.imu.imuview import ImuView
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
 from autosportlabs.uix.color.colorsequence import ColorSequence
 from kivy.uix.settings import SettingsWithNoMenu
+from kivy.event import EventDispatcher
+import os
+import json
+
+class ModelCollection(EventDispatcher):
+    model_path = ListProperty(['.'])
+
+    def __init__(self, **kwargs):
+        super(ModelCollection, self).__init__(**kwargs)
+
+    def _load_models(self):
+        models_path = open(os.path.join(*self.model_path + ['models.json']))
+        return json.load(models_path)
+
+    def get_models(self):
+        return self._load_models().get('models')
+
+    def get_default_model(self):
+        return self._load_models().get('default_model')
 
 class ModelSelectorItemView(ToggleButtonBehavior, BoxLayout):
     Builder.load_string("""
@@ -58,6 +77,7 @@ class ModelSelectorItemView(ToggleButtonBehavior, BoxLayout):
 
     label = StringProperty()
     image_source = StringProperty()
+    obj_source = StringProperty()
     selected_color = ListProperty(ColorScheme.get_dark_background())
 
     def on_state(self, instance, value):
@@ -68,7 +88,8 @@ class ModelSelectorItemView(ToggleButtonBehavior, BoxLayout):
     def __init__(self, **kwargs):
         super(ModelSelectorItemView, self).__init__(**kwargs)
         self.register_event_type('on_selected')
-        
+        self.state = 'down' if kwargs.get('selected') == True else 'normal'
+
     def on_selected(self, state):
         pass
 
@@ -93,24 +114,32 @@ class ModelSelectorView(BoxLayout):
             cols: 1
     """)
 
+    selected_model = StringProperty()
+    model_path = ListProperty()
 
     def __init__(self, **kwargs):
         super(ModelSelectorView, self).__init__(**kwargs)
         self.init_view()
 
     def init_view(self):
-        self._add_model('Universal Arrow', 'resource/models/arrow_preview.png')
-        self._add_model('Formula Car', 'resource/models/car_formula_preview.png')
-        self._add_model('Sports Car', 'resource/models/car_sports_preview.png')
-        self._add_model('Kart', 'resource/models/kart_preview.png')
-        
-    def _add_model(self, label, image_source):
-        view = ModelSelectorItemView(label=label, image_source=image_source)
+        model_path = self.model_path
+        model_collection = ModelCollection(model_path=model_path)
+        models = model_collection.get_models()
+
+        for m in models:
+            obj_path = os.path.join(*model_path + [m['obj']])
+            self._add_model(m['name'],
+                            os.path.join(*model_path + [m['preview']]),
+                            obj_path, obj_path == self.selected_model)
+
+    def _add_model(self, label, image_source, obj_source, selected):
+        view = ModelSelectorItemView(label=label, image_source=image_source, obj_source=obj_source, selected=selected)
         view.bind(on_selected=self.on_model_state)
         self.ids.grid.add_widget(view)
-        
+
     def on_model_state(self, instance, value):
-        print('state {}'.format(value))
+        if value:
+            self.selected_model = instance.obj_source
 
 class ImuLabel(FieldLabel):
     Builder.load_string("""
@@ -198,7 +227,7 @@ class ImuGauge(Gauge):
     GYRO_PITCH = "Pitch"
     GYRO_ROLL = "Roll"
     _POPUP_SIZE_HINT = (0.6, 0.9)
-
+    MODEL_PATH = ['.', 'resource', 'models']
     IMU_AMPLIFICATION = 2.0
 
     channel_metas = ObjectProperty(None)
@@ -208,14 +237,26 @@ class ImuGauge(Gauge):
         super(ImuGauge, self).__init__(**kwargs)
         self._color_sequence = ColorSequence()
 
+    def _set_model_pref(self, model):
+        self.settings.userPrefs.set_gauge_config(self.rcid + '_model', model)
+
+    def _get_model_pref(self):
+        return self.settings.userPrefs.get_gauge_config(self.rcid + '_model')
+
     def on_customize(self, *args):
         def popup_dismissed(instance, result):
+            if result:
+                selected_model = instance.content.selected_model
+                self._set_model_pref(selected_model)
+                self.ids.imu.model_path = selected_model
             popup.dismiss()
-            
-        view = ModelSelectorView()
-        
-        popup = editor_popup('Select Model', view, popup_dismissed, size=(dp(700), dp(500)))
-                
+
+        view = ModelSelectorView(selected_model=self.ids.imu.model_path, model_path=ImuGauge.MODEL_PATH)
+
+        popup = editor_popup('Select Model', view,
+                             popup_dismissed,
+                             size=(dp(700), dp(500)),
+                             auto_dismiss_time=Gauge.POPUP_DISMISS_TIMEOUT_SHORT)
 
     def on_zoom(self, instance, value):
         self.ids.imu.position_z /= value
@@ -288,7 +329,14 @@ class ImuGauge(Gauge):
         self.ids.imu.cleanup_view()
 
     def on_show(self):
-        self.ids.imu.init_view()
+        model = self._get_model_pref()
+        model_path = ImuGauge.MODEL_PATH
+        try:
+            self.ids.imu.model_path = os.path.join(*model_path + [model])
+        except:
+            model = ModelCollection(model_path=model_path).get_default_model()
+            self.ids.imu.model_path = os.path.join(*model_path + [model])
+
 
     def _update_imu_meta(self, channel_meta, gauge):
         if channel_meta is None:

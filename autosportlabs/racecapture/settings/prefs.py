@@ -143,15 +143,15 @@ class UserPrefs(EventDispatcher):
         '''
         return self._prefs_dict["range_alerts"].get(key, default)
 
-    def set_gauge_config(self, gauge_id, channel):
+    def set_gauge_config(self, gauge_id, config_value):
         '''
         Stores a gauge configuration for the specified gauge_id
         :param gauge_id the key for the gauge
         :type gauge_id string
-        :param channel the configuration for the channel
-        :type channel object
+        :param config_value the configuration value to set
+        :type config_value string
         '''
-        self._prefs_dict["gauge_settings"][gauge_id] = channel
+        self._prefs_dict["gauge_settings"][gauge_id] = config_value
         self._schedule_save()
 
     def get_gauge_config(self, gauge_id):
@@ -280,7 +280,7 @@ class UserPrefs(EventDispatcher):
         :type string
         '''
         self.config.adddefaultsection(section)
-                
+
     def get_pref_bool(self, section, option, default=None):
         '''
         Retrieve a preferences value as a bool. 

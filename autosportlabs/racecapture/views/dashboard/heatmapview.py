@@ -87,6 +87,7 @@ HEATMAP_VIEW_KV = """
                     id: imu
                     size_hint_y: 0.4
                     zoom: 0.5
+                    rcid: 'heatmap_view_imu'
 """
 
 class HeatmapView(DashboardScreen):

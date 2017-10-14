@@ -48,8 +48,6 @@ DEFAULT_MAX = 100
 DEFAULT_PRECISION = 0
 DEFAULT_TYPE = CHANNEL_TYPE_SENSOR
 MENU_ITEM_RADIUS = 100
-POPUP_DISMISS_TIMEOUT_SHORT = 10.0
-POPUP_DISMISS_TIMEOUT_LONG = 60.0
 
 Builder.load_string('''
 <CustomizeGaugeBubble>
@@ -67,6 +65,8 @@ class CustomizeGaugeBubble(CenteredBubble):
 NULL_LAP_TIME = '--:--.---'
 
 class Gauge(AnchorLayout):
+    POPUP_DISMISS_TIMEOUT_SHORT = 10.0
+    POPUP_DISMISS_TIMEOUT_LONG = 60.0
     rcid = None
     settings = ObjectProperty(None)
     value_size = NumericProperty(0)
@@ -115,13 +115,13 @@ class Gauge(AnchorLayout):
 
     def on_channel_meta(self, channel_metas):
         pass
-    
+
     def on_hide(self):
         pass
-    
+
     def on_show(self):
         pass
-    
+
 class SingleChannelGauge(Gauge):
     _valueView = None
     channel = StringProperty(None, allownone=True)
@@ -253,7 +253,7 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
 
     def __init__(self, **kwargs):
         super(CustomizableGauge, self).__init__(**kwargs)
-        self._dismiss_customization_popup_trigger = Clock.create_trigger(self._dismiss_popup, POPUP_DISMISS_TIMEOUT_LONG)
+        self._dismiss_customization_popup_trigger = Clock.create_trigger(self._dismiss_popup, Gauge.POPUP_DISMISS_TIMEOUT_LONG)
 
     def _remove_customization_bubble(self, *args):
         try:
@@ -367,7 +367,7 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
                 bubble_height = dp(150)
                 bubble_width = dp(200)
                 bubble.size = (bubble_width, bubble_height)
-                bubble.auto_dismiss_timeout(POPUP_DISMISS_TIMEOUT_SHORT)
+                bubble.auto_dismiss_timeout(Gauge.POPUP_DISMISS_TIMEOUT_SHORT)
                 self._customizeGaugeBubble = bubble
                 self.add_widget(bubble)
                 bubble.center_on_limited(self)

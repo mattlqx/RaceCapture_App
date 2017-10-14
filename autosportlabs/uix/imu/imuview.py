@@ -73,7 +73,6 @@ class ImuView(BoxLayout):
 
     def init_view(self):
         Window.bind(on_motion=self.on_motion)
-        self.model_path = 'resource/models/car_sports_2.obj'
 
     def cleanup_view(self):
         Window.unbind(on_motion=self.on_motion)
@@ -141,7 +140,7 @@ class ImuView(BoxLayout):
 
     def on_touch_down(self, touch):
         super(ImuView, self).on_touch_down(touch)
-        if self._last_button == 'left':
+        if self._last_button == 'left' or self._last_button == None:
             self._total_drag_distance = 0
 
         x, y = touch.x, touch.y
@@ -160,12 +159,12 @@ class ImuView(BoxLayout):
             touch.ungrab(self)
             self._touches.remove(touch)
 
-        if self._total_drag_distance < ImuView.DRAG_CUSTOMIZE_THRESHOLD:
-            self.dispatch('on_customize')
-            self._total_drag_distance = ImuView.DRAG_CUSTOMIZE_THRESHOLD
-
         # stop propagating if its within our bounds
         if self.collide_point(x, y):
+            if self._total_drag_distance < ImuView.DRAG_CUSTOMIZE_THRESHOLD:
+                self.dispatch('on_customize')
+                self._total_drag_distance = ImuView.DRAG_CUSTOMIZE_THRESHOLD
+
             return True
 
         return False
@@ -211,11 +210,11 @@ class ImuView(BoxLayout):
                     self.position_z += scale
 
     def on_motion(self, instance, event, motion_event):
-        button = motion_event.button
-        self._last_button = button
 
         if motion_event.x > 0 and motion_event.y > 0 and self.collide_point(motion_event.x, motion_event.y):
             try:
+                button = motion_event.button
+                self._last_button = button
                 SCALE_FACTOR = 0.1
                 z_distance = self._zoom_scaling * ImuView.TOUCHWHEEL_ZOOM_MULTIPLIER
                 if button == 'scrollup':
@@ -229,39 +228,75 @@ class ImuView(BoxLayout):
 
 
     def on_position_x(self, instance, value):
-        self.imu_obj.pos.x = value
+        try:
+            self.imu_obj.pos.x = value
+        except AttributeError:
+            pass
 
     def on_position_y(self, instance, value):
-        self.imu_obj.pos.y = value
+        try:
+            self.imu_obj.pos.y = value
+        except AttributeError:
+            pass
 
     def on_position_z(self, instance, value):
-        self.imu_obj.pos.z = value
+        try:
+            self.imu_obj.pos.z = value
+        except AttributeError:
+            pass
 
     def on_rotation_x(self, instance, value):
-        self.imu_obj.rotation.x = value
+        try:
+            self.imu_obj.rotation.x = value
+        except AttributeError:
+            pass
 
     def on_rotation_y(self, instance, value):
-        self.imu_obj.rotation.y = value
+        try:
+            self.imu_obj.rotation.y = value
+        except AttributeError:
+            pass
 
     def on_rotation_z(self, instance, value):
-        self.imu_obj.rotation.z = value
+        try:
+            self.imu_obj.rotation.z = value
+        except AttributeError:
+            pass
 
     def on_accel_x(self, instance, value):
-        self.imu_obj.pos.z = self.position_z + (value * ImuView.ACCEL_SCALING)
+        try:
+            self.imu_obj.pos.z = self.position_z + (value * ImuView.ACCEL_SCALING)
+        except AttributeError:
+            pass
 
     def on_accel_y(self, instance, value):
-        self.imu_obj.pos.x = self.position_x - (value * ImuView.ACCEL_SCALING)
+        try:
+            self.imu_obj.pos.x = self.position_x - (value * ImuView.ACCEL_SCALING)
+        except AttributeError:
+            pass
 
     def on_accel_z(self, instance, value):
-        # subtract 1.0 to compensate for gravity
-        self.imu_obj.pos.y = self.position_y + ((value - 1.0) * ImuView.ACCEL_SCALING)
+        try:
+            # subtract 1.0 to compensate for gravity
+            self.imu_obj.pos.y = self.position_y + ((value - 1.0) * ImuView.ACCEL_SCALING)
+        except AttributeError:
+            pass
 
     def on_gyro_yaw(self, instance, value):
-        self.imu_obj.rotation.y = self.rotation_y - (value * ImuView.GYRO_SCALING)
+        try:
+            self.imu_obj.rotation.y = self.rotation_y - (value * ImuView.GYRO_SCALING)
+        except AttributeError:
+            pass
 
     def on_gyro_pitch(self, instance, value):
-        self.imu_obj.rotation.x = self.rotation_x - (value * ImuView.GYRO_SCALING)
+        try:
+            self.imu_obj.rotation.x = self.rotation_x - (value * ImuView.GYRO_SCALING)
+        except AttributeError:
+            pass
 
     def on_gyro_roll(self, instance, value):
-        self.imu_obj.rotation.z = self.rotation_z + (value * ImuView.GYRO_SCALING)
+        try:
+            self.imu_obj.rotation.z = self.rotation_z + (value * ImuView.GYRO_SCALING)
+        except AttributeError:
+            pass
 
