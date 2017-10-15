@@ -40,12 +40,50 @@ class Preset(object):
     """Object to represent a preset item
     """
     def __init__(self):
-        pass
+        self.mapping_id = None
+        self.uri = None
+        self.name = None
+        self.created = None
+        self.updated = None
+        self.more_info_url = None
+        self.image_url = None
+        self.mapping = None
+        self.mapping_type_id = None
+        self.mapping_type = None
+    
+    def from_dict(self, track_dict):
+        self.mapping_id = int(track_dict.get('id'))
+        self.uri = track_dict.get('URI')
+        self.name = track_dict.get('name')
+        self.created = track_dict.get('created')
+        self.updated = track_dict.get('updated')
+        self.more_info_url = track_dict.get('more_info_url')
+        self.image_url = track_dict.get('image_url')
+        self.mapping = track_dict.get('mapping')
+        self.mapping_type_id = track_dict.get('mapping_type_id')
+        self.mapping_type = track_dict.get('mapping_type')
+        
+    def to_dict(self):
+        return {'id': self.mapping_id,
+                'URI': self.uri,
+                'name': self.name,
+                'created': self.created,
+                'updated': self.updated,
+                'more_info_url': self.more_info_url,
+                'image_url': self.image_url,
+                'mapping': self.mapping,
+                'mapping_type_id': self.mapping_type_id,
+                'mapping_type': self.mapping_type}
+               
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.mapping_id == other.mapping_id
+        return False
 
 class PresetManager(object):
     """Manages fetching and updating Presets 
     """
-    RCP_PRESET_URL = 'https://podium.live/api/v1/venues'
+    PRESET_URL = 'https://podium.live/api/v1/mappings'
     READ_RETRIES = 3
     RETRY_DELAY = 1.0
     PRESET_DOWNLOAD_TIMEOUT = 30
@@ -103,55 +141,55 @@ class PresetManager(object):
         for venue in venues:
                 preset = Preset()
                 preset.from_dict(venue)
-                presets[preset.preset_id] = preset
+                presets[preset.mapping_id] = preset
 
         return presets
 
     def fetch_preset_list(self, full_response=False):
-        """Fetches all venues from RCL's API and returns them as an array of dicts. RCL's API normally returns minimal
+        """Fetches all presets from RCL's API and returns them as an array of dicts. RCL's API normally returns minimal
         object information when listing multiple objects. The 'full_response' arg tells this function to expand
-        all objects to contain all their data. This allows us to quickly get basic information about tracks or pull
-        down everything if we have no tracks locally.
+        all objects to contain all their data. This allows us to quickly get basic information about presets or pull
+        down everything if we have no presets locally.
         """
 
-        total_venues = None
-        next_uri = self.RCP_PRESET_URL + "?start=0&per_page=100"
+        total_mappings = None
+        next_uri = self.PRESET_URL + "?start=0&per_page=100"
 
         if full_response:
             next_uri += '&expand=1'
 
-        venues_list = []
+        mappings_list = []
 
         while next_uri:
-            Logger.info('PresetManager: Fetching venue data: {}'.format(next_uri))
+            Logger.info('PresetManager: Fetching preset data: {}'.format(next_uri))
             response = self.load_json(next_uri)
             try:
-                if total_venues is None:
-                    total_venues = int(response.get('total', None))
-                    if total_venues is None:
-                        raise MissingKeyException('Venue list JSON: could not get total venue count')
+                if total_mappings is None:
+                    total_mappings = int(response.get('total', None))
+                    if total_mappings is None:
+                        raise MissingKeyException('Mapping list JSON: could not get total preset count')
 
-                venues = response.get('venues', None)
+                mappings = response.get('mappings', None)
 
-                if venues is None:
-                    raise MissingKeyException('Venue list JSON: could not get venue list')
+                if mappings is None:
+                    raise MissingKeyException('Mapping list JSON: could not get preset list')
 
-                venues_list += venues
+                mappings_list += mappings
                 next_uri = response.get('nextURI')
 
             except MissingKeyException as detail:
                 Logger.error('PresetManager: Malformed venue JSON from url ' + next_uri + '; json =  ' + str(response) +
                              ' ' + str(detail))
 
-        Logger.info('PresetManager: fetched list of ' + str(len(venues_list)) + ' tracks')
+        Logger.info('PresetManager: fetched list of ' + str(len(mappings_list)) + ' presets')
 
-        if not total_venues == len(venues_list):
-            Logger.warning('PresetManager: track list count does not reflect downloaded track list size ' + str(total_venues) + '/' + str(len(venues_list)))
+        if not total_mappings == len(mappings_list):
+            Logger.warning('PresetManager: mappings list count does not reflect downloaded size ' + str(total_mappings) + '/' + str(len(mappings_list)))
 
-        return venues_list
+        return mappings_list
 
-    def download_preset(self, preset_id):
-        preset_url = self.RCP_PRESET_URL + '/' + preset_id
+    def download_preset(self, mapping_id):
+        preset_url = self.PRESET_URL + '/' + mapping_id
         response = self.load_json(preset_url)
         preset = Preset()
         try:
@@ -164,19 +202,20 @@ class PresetManager(object):
     def add_preset(self, preset):
         """ Add the specified preset
         :param preset the preset to add
-        :type preset TrackMap
+        :type preset Preset
         """
         self.save_preset(preset)
-        self.presets[preset.preset_id] = preset
+        self.presets[preset.mapping_id] = preset
 
     def save_preset(self, preset):
-        path = os.path.join(self.presets_user_dir, preset.preset_id + '.json')
-        track_json_string = json.dumps(preset.to_dict(), sort_keys=True, indent=2, separators=(',', ': '))
+        path = os.path.join(self.presets_user_dir, str(preset.mapping_id) + '.json')
+        print('path ' + str(path))
+        preset_json_string = json.dumps(preset.to_dict(), sort_keys=True, indent=2, separators=(',', ': '))
         with open(path, 'w') as text_file:
-            text_file.write(track_json_string)
+            text_file.write(preset_json_string)
 
-    def load_current_tracks_worker(self, success_cb, fail_cb, progress_cb=None):
-        """Method for loading local tracks files in a separate thread
+    def load_current_mappings_worker(self, success_cb, fail_cb, progress_cb=None):
+        """Method for loading local preset files in a separate thread
         """
         try:
             self.update_lock.acquire()
@@ -193,50 +232,42 @@ class PresetManager(object):
         if (len(preset_file_names) == 0):
             Logger.info("PresetManager: No presets found; loading defaults")
             try:
-                with zipfile.ZipFile(os.path.join(self.base_dir, 'defaults', 'default_presets.zip'), 'r') as z:
+                with zipfile.ZipFile(os.path.join(self.base_dir, 'defaults', 'default_mappings.zip'), 'r') as z:
                     z.extractall(self.presets_user_dir)
             except Exception as e:
                 Logger.error("PresetManager: Could not load default presets: {}".format(e))
 
     def load_presets(self, progress_cb=None, success_cb=None, fail_cb=None):
-        """Loads tracks from local files. If called with success and fail callbacks it sets up a separate thread
+        """Loads presets from local files. If called with success and fail callbacks it sets up a separate thread
         """
         if success_cb and fail_cb:
-            t = Thread(target=self.load_current_tracks_worker, args=(success_cb, fail_cb, progress_cb))
+            t = Thread(target=self.load_current_mappings_worker, args=(success_cb, fail_cb, progress_cb))
             t.daemon = True
             t.start()
         else:
             preset_file_names = os.listdir(self.presets_user_dir)
             self.presets.clear()
-            track_count = len(preset_file_names)
+            preset_count = len(preset_file_names)
             count = 0
 
-            for trackPath in preset_file_names:
+            for preset_path in preset_file_names:
                 try:
-                    json_data = open(os.path.join(self.presets_user_dir, trackPath))
+                    json_data = open(os.path.join(self.presets_user_dir, preset_path))
                     preset_dict = json.load(json_data)
-                    resave = False
-
-                    # Backwards compatible-check for old format of preset files
-                    if 'venue' in preset_dict:
-                        preset_dict = preset_dict.get('venue')
-                        resave = True
 
                     if preset_dict is not None:
                         preset = Preset()
                         preset.from_dict(preset_dict)
-                        if resave:
-                            self.save_preset(preset)
 
-                        self.presets[preset.preset_id] = preset
+                        self.presets[preset.mapping_id] = preset
                         count += 1
                         if progress_cb:
-                            progress_cb(count=preset.count, total=track_count, message=preset.name)
+                            progress_cb(count=preset.count, total=preset_count, message=preset.name)
                 except Exception as detail:
-                    Logger.warning('PresetManager: failed to read preset file ' + trackPath + ';\n' + str(detail))
+                    Logger.warning('PresetManager: failed to read preset file ' + preset_path + ';\n' + str(detail))
 
     def update_all_presets_worker(self, success_cb, fail_cb, progress_cb=None):
-        """Method for updating all tracks in a separate thread
+        """Method for updating all presets in a separate thread
         """
         try:
             self.update_lock.acquire()
@@ -250,11 +281,12 @@ class PresetManager(object):
 
     def refresh(self, progress_cb=None, success_cb=None, fail_cb=None):
         """Refreshes all presets. If success and fail callbacks are provided, sets up a new thread.
-        If no presets are saved locally, it will fetch all preset data from RCL and save it.
-        If there are tracks saved locally, it will fetch a minimal amount of data from RCL and only download
-        all data for a track if the track has been updated
+        If no presets are saved locally, it will fetch all preset data and save it.
+        If there are presets saved locally, it will fetch a minimal amount of data and only download
+        all data for a preset if the preset has been updated
         """
-        progress_cb(message="Fetching list of Presets...")
+        if progress_cb:
+            progress_cb(message="Fetching list of Presets...")
         if success_cb and fail_cb:
             t = Thread(target=self.update_all_presets_worker, args=(success_cb, fail_cb, progress_cb))
             t.daemon = True
@@ -266,12 +298,12 @@ class PresetManager(object):
                 count = 0
                 total = len(preset_list)
 
-                for preset_id, track in preset_list.iteritems():
+                for mapping_id, preset in preset_list.iteritems():
                     count += 1
                     if progress_cb:
-                        progress_cb(count=count, total=total, message=track.name)
-                    self.save_preset(track)
-                    self.presets[preset_id] = track
+                        progress_cb(count=count, total=total, message=preset.name)
+                    self.save_preset(preset)
+                    self.presets[mapping_id] = preset
             else:
                 Logger.info("PresetManager: refreshing presets")
                 venues = self.fetch_preset_list()
@@ -285,7 +317,7 @@ class PresetManager(object):
                     venue_id = venue.get('id')
 
                     if self.presets.get(venue_id) is None:
-                        Logger.info('PresetManager: new track detected ' + venue_id)
+                        Logger.info('PresetManager: new preset detected ' + venue_id)
                         update = True
                     elif not self.presets[venue_id].updated == venue['updated']:
                         Logger.info('PresetManager: existing preset changed ' + venue_id)

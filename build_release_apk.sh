@@ -23,6 +23,7 @@
 set -e
 rm -rf bin
 python -m build_tools.build_default_tracks
+python -m build_tools.build_default_mappings
 cp data/images/defaulttheme-0.png .buildozer/android/platform/build/dists/racecapture/private/lib/python2.7/site-packages/kivy/data/images/defaulttheme-0.png
 cp data/images/defaulttheme-0.png .buildozer/android/platform/build/dists/racecapture/python-install/lib/python2.7/site-packages/kivy/data/images/defaulttheme-0.png
 
