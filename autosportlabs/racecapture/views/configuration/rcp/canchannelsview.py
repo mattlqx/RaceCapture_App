@@ -113,12 +113,13 @@ class CANChannelsView(BaseConfigView):
             label_text: 'CAN channels'
             help_text: ''
         BoxLayout:
+            padding: (dp(10), dp(0))
             orientation: 'horizontal'
             size_hint_y: 0.4        
             BoxLayout:
-                size_hint_x: 0.8
             LabelIconButton:
-                size_hint_x: 0.2
+                size_hint_x: None
+                width: dp(150)
                 id: load_preset
                 title: 'Presets'
                 icon_size: self.height * 0.7
@@ -350,12 +351,13 @@ class CANChannelsView(BaseConfigView):
                     new_channel = CANChannel()
                     new_channel.from_json_dict(channel_json)
                     self.add_can_channel(new_channel)
+            self._refresh_channel_list_notice(self.can_channels_cfg)
         except Exception as e:
-            alertPopup('Error', 'Error Loading Preset:\n\n{}'.format(e))
+            alertPopup('Error', 'There was an error loading the preset:\n\n{}'.format(e))
             raise
 
     def load_preset_view(self):
-        content = PresetBrowserView(self.preset_manager)
+        content = PresetBrowserView(self.preset_manager, 'can')
         content.bind(on_preset_selected=self.on_preset_selected)
         content.bind(on_preset_close=lambda *args:popup.dismiss())
         popup = Popup(title='Import a preset configuration', content=content, size_hint=(0.5, 0.75))
@@ -420,8 +422,8 @@ class PresetItemView(BoxLayout):
     def __init__(self, preset_id, name, notes, image_path, **kwargs):
         super(PresetItemView, self).__init__(**kwargs)
         self.preset_id = preset_id
-        self.ids.title.text = name
-        self.ids.notes.text = notes
+        self.ids.title.text = '' if not name else name
+        self.ids.notes.text = '' if not notes else notes
         self.ids.image.source = image_path
         self.register_event_type('on_preset_selected')
 
@@ -432,7 +434,6 @@ class PresetItemView(BoxLayout):
         pass
 
 class PresetBrowserView(BoxLayout):
-    presets = None
     Builder.load_string("""
 <PresetBrowserView>:
     orientation: 'vertical'
@@ -461,11 +462,12 @@ class PresetBrowserView(BoxLayout):
         on_press: root.on_close()
 """)
 
-    def __init__(self, preset_manager, **kwargs):
+    def __init__(self, preset_manager, preset_type, **kwargs):
         super(PresetBrowserView, self).__init__(**kwargs)
         self.register_event_type('on_preset_close')
         self.register_event_type('on_preset_selected')
         self.preset_manager = preset_manager
+        self.preset_type = preset_type
         self.init_view()
 
     def on_preset_close(self):
@@ -478,7 +480,7 @@ class PresetBrowserView(BoxLayout):
         self.refresh_view()
 
     def refresh_view(self):
-        for k, v in self.preset_manager.presets.iteritems():
+        for k, v in self.preset_manager.get_presets_by_type(self.preset_type):
             name = v.name
             notes = v.notes
             self.add_preset(k, name, notes)
@@ -487,7 +489,7 @@ class PresetBrowserView(BoxLayout):
         preset = self.preset_manager.get_preset_by_id(preset_id)
         if preset:
             image_path = preset.image_url
-            preset_view = PresetItemView(preset_id, name, notes, image_path)
+            preset_view = PresetItemView(preset_id, name, notes, preset.local_image_path)
             preset_view.bind(on_preset_selected=self.preset_selected)
             self.ids.preset_grid.add_widget(preset_view)
 

@@ -56,7 +56,7 @@ if __name__ == '__main__':
     from kivy.uix.label import Label
     from kivy.uix.popup import Popup
     from kivy.uix.screenmanager import *
-    if hasattr(sys, '_MEIPASS'): #handle pyinstaller frozen packaging
+    if hasattr(sys, '_MEIPASS'):  # handle pyinstaller frozen packaging
         kivy.resources.resource_add_path(os.path.join(sys._MEIPASS))
 
     from installfix_garden_navigationdrawer import NavigationDrawer
@@ -155,7 +155,7 @@ class RaceCaptureApp(App):
     def __init__(self, **kwargs):
         super(RaceCaptureApp, self).__init__(**kwargs)
 
-        if kivy.platform in ['ios','macosx','linux']:
+        if kivy.platform in ['ios', 'macosx', 'linux']:
             kivy.resources.resource_add_path(os.path.join(os.path.dirname(os.path.realpath(__file__)), "data"))
 
         # We do this because when this app is bundled into a standalone app
@@ -225,10 +225,10 @@ class RaceCaptureApp(App):
 
     def _init_presets_success(self):
         Logger.info('RaceCaptureApp: Current presets loaded')
-        
+
     def _init_presets_error(self, details):
         Logger.error('RaceCaptureApp: Error initializing presets: {}'.format(details))
-        
+
     def init_data(self):
         self.track_manager.init(None, self._init_tracks_success, self._init_tracks_error)
         self.preset_manager.init(None, self._init_presets_success, self._init_presets_error)
@@ -289,7 +289,7 @@ class RaceCaptureApp(App):
 
     def on_tracks_updated(self, track_manager):
         for view in self.tracks_listeners:
-            view.dispatch('on_tracks_updated', )
+            view.dispatch('on_tracks_updated', self.track_manager)
 
     def notifyTracksUpdated(self):
         self.dispatch('on_tracks_updated', self.track_manager)

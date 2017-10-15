@@ -28,6 +28,7 @@ import string
 from threading import Thread, Lock
 import urllib2
 import os
+import os.path
 import traceback
 from StringIO import StringIO
 import gzip
@@ -48,22 +49,26 @@ class Preset(object):
         self.updated = None
         self.more_info_url = None
         self.image_url = None
+        self.local_image_path = None
         self.mapping = None
         self.mapping_type_id = None
         self.mapping_type = None
-    
-    def from_dict(self, track_dict):
-        self.mapping_id = int(track_dict.get('id'))
-        self.uri = track_dict.get('URI')
-        self.name = track_dict.get('name', self.name)
-        self.created = track_dict.get('created')
-        self.updated = track_dict.get('updated')
-        self.more_info_url = track_dict.get('more_info_url')
-        self.image_url = track_dict.get('image_url')
-        self.mapping = track_dict.get('mapping')
-        self.mapping_type_id = track_dict.get('mapping_type_id')
-        self.mapping_type = track_dict.get('mapping_type')
-        
+
+    def from_dict(self, preset_dict):
+        self.mapping_id = int(preset_dict.get('id'))
+        self.uri = preset_dict.get('URI')
+        self.name = preset_dict.get('name', self.name)
+        self.created = preset_dict.get('created')
+        self.updated = preset_dict.get('updated')
+        self.notes = preset_dict.get('notes')
+        self.notes = 'Mapping for E46 internal CAN bus'
+        self.more_info_url = preset_dict.get('more_info_url')
+        self.image_url = preset_dict.get('image_url')
+        self.mapping = preset_dict.get('mapping')
+        self.mapping_type_id = preset_dict.get('mapping_type_id')
+        self.mapping_type = preset_dict.get('mapping_type')
+
+
     def to_dict(self):
         return {'id': self.mapping_id,
                 'URI': self.uri,
@@ -75,7 +80,7 @@ class Preset(object):
                 'mapping': self.mapping,
                 'mapping_type_id': self.mapping_type_id,
                 'mapping_type': self.mapping_type}
-               
+
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return self.mapping_id == other.mapping_id
@@ -101,7 +106,10 @@ class PresetManager(object):
 
     def get_preset_by_id(self, id):
         return self.presets.get(id)
-    
+
+    def get_presets_by_type(self, type):
+        return dict ((k, v) for k, v in self.presets.items() if v.mapping_type == type).items()
+
     def set_presets_user_dir(self, path):
         try:
             os.makedirs(path)
@@ -249,7 +257,7 @@ class PresetManager(object):
             t.daemon = True
             t.start()
         else:
-            preset_file_names = os.listdir(self.presets_user_dir)
+            preset_file_names = [f for f in os.listdir(self.presets_user_dir) if f.endswith('.json')]
             self.presets.clear()
             preset_count = len(preset_file_names)
             count = 0
@@ -262,6 +270,9 @@ class PresetManager(object):
                     if preset_dict is not None:
                         preset = Preset()
                         preset.from_dict(preset_dict)
+                        local_path = self._image_url_to_local_path(preset.mapping_id, preset.image_url)
+                        if local_path:
+                            preset.local_image_path = os.path.join(self.presets_user_dir, local_path)
 
                         self.presets[preset.mapping_id] = preset
                         count += 1
@@ -269,6 +280,20 @@ class PresetManager(object):
                             progress_cb(count=preset.count, total=preset_count, message=preset.name)
                 except Exception as detail:
                     Logger.warning('PresetManager: failed to read preset file ' + preset_path + ';\n' + str(detail))
+                    raise
+
+    def _image_url_to_local_path(self, mapping_id, image_url):
+        if image_url is None:
+            return None
+
+        extension = None
+        extension = '.jpg' if '.jpg' in image_url else extension
+        extension = '.png' if '.png' in image_url else extension
+        if not extension:
+            return None
+
+        return '{}{}'.format(mapping_id, extension)
+
 
     def update_all_presets_worker(self, success_cb, fail_cb, progress_cb=None):
         """Method for updating all presets in a separate thread

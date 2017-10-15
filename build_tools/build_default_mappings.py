@@ -24,17 +24,33 @@ import json
 import zipfile
 import StringIO
 import os
+import requests
 from autosportlabs.racecapture.presets.presetmanager import PresetManager
+from canmatrix.cmcsv import extension
+
+headers = {'User-Agent': 'ASL mapping builder'}
 
 tm = PresetManager()
 
-tracks = tm.download_all_presets()
+presets = tm.download_all_presets()
 
 mf = StringIO.StringIO()
 with zipfile.ZipFile(mf, mode='w', compression=zipfile.ZIP_DEFLATED) as zf:
-    for track_id, track in tracks.iteritems():
-        track_json_string = json.dumps(track.to_dict(), sort_keys=True, indent=2, separators=(',', ': '))
-        zf.writestr('{}.json'.format(track_id), track_json_string)
+    for preset_id, preset in presets.iteritems():
+        preset_json_string = json.dumps(preset.to_dict(), sort_keys=True, indent=2, separators=(',', ': '))
+        zf.writestr('{}.json'.format(preset_id), preset_json_string)
+        image_url = preset.image_url
+        if image_url:
+            extension = None
+            extension = '.jpg' if '.jpg' in image_url else extension
+            extension = '.png' if '.png' in image_url else extension
+            r = requests.get(image_url, allow_redirects=True, headers=headers)
+            image_file = '{}{}'.format(preset_id, extension)
+            open(image_file, 'wb').write(r.content)
+            zf.write(image_file)
+            os.remove(image_file)
+
+
 
 archive_path = os.path.join('defaults', 'default_mappings.zip')
 
