@@ -26,7 +26,6 @@ import StringIO
 import os
 import requests
 from autosportlabs.racecapture.presets.presetmanager import PresetManager
-from canmatrix.cmcsv import extension
 
 headers = {'User-Agent': 'ASL mapping builder'}
 
