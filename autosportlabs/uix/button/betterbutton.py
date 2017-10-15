@@ -27,11 +27,11 @@ from kivy.app import Builder
 BB_KV = """
 <BetterButton>:
     font_name: 'resource/fonts/ASL_regular.ttf'
-    font_size: self.height * 0.5
+    font_size: self.height * 0.5 / dp(1)
 
 <BetterToggleButton>:
     font_name: 'resource/fonts/ASL_regular.ttf'
-    font_size: self.height * 0.5    
+    font_size: self.height * 0.5 / dp(1)
 """
 
 class BetterButton(Button):

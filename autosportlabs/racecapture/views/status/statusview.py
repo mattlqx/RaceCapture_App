@@ -274,7 +274,7 @@ class StatusView(Screen):
         self._add_item('IMEI', imei)
         self._add_item('Signal strength', signal_strength)
         self._add_item('Phone Number', number)
-        self._add_item('Network Status', status['state'].capitalize())
+        self._add_item('Network Status', status.get('state', '').capitalize())
 
     def render_bt(self):
         status = self.status['bt']

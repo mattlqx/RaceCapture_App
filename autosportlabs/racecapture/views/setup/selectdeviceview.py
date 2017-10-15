@@ -58,7 +58,7 @@ SELECT_DEVICE_VIEW_KV = """
                         padding: (dp(10), dp(10))
                         BetterToggleButton:
                             group: 'device'
-                            size_hint: (0.5, 0.5)
+                            size_hint: (0.45, 0.5)
                             text: 'RaceCapture'
                             on_release: root.select_device('RCT')
 
@@ -66,12 +66,13 @@ SELECT_DEVICE_VIEW_KV = """
                     Image:
                         allow_stretch: True
                         source: 'resource/setup/device_RCP_MK3.png'
+                        nocache: True
                     AnchorLayout:
                         anchor_x: 'right'
                         padding: (dp(10), dp(10))
                         BetterToggleButton:
                             group: 'device'
-                            size_hint: (0.5, 0.5)
+                            size_hint: (0.45, 0.5)
                             text: 'RaceCapture/Pro MK3'
                             on_release: root.select_device('RCP_MK3')
 
@@ -79,37 +80,41 @@ SELECT_DEVICE_VIEW_KV = """
                     Image:
                         allow_stretch: True
                         source: 'resource/setup/device_RC_Apex.png'
+                        nocache: True
                     AnchorLayout:
                         anchor_x: 'right'
                         padding: (dp(10), dp(10))
                         BetterToggleButton:
                             group: 'device'
-                            size_hint: (0.5, 0.5)
+                            size_hint: (0.45, 0.5)
                             text: 'RaceCapture/Apex'
                             on_release: root.select_device('RC_Apex')
 
                 AnchorLayout:
                     Image:
                         allow_stretch: True
-                        source: 'resource/setup/device_RCP_MK2.png'             
+                        source: 'resource/setup/device_RCP_MK2.png'
+                        nocache: True             
                     AnchorLayout:
                         anchor_x: 'right'
                         padding: (dp(10), dp(10))
                         BetterToggleButton:
                             id: racecapturepro
                             group: 'device'
-                            size_hint: (0.5, 0.5)
+                            size_hint: (0.45, 0.5)
                             text: 'RaceCapture/Pro MK2'
                             on_release: root.select_device('RCP_MK2')
         BoxLayout:
             size_hint_y: 0.15
 """
 
+
 class SelectDeviceView(InfoView):
     """
     A setup screen that lets users select what device they have.
     """
     Builder.load_string(SELECT_DEVICE_VIEW_KV)
+
     def __init__(self, **kwargs):
         super(SelectDeviceView, self).__init__(**kwargs)
         self.ids.next.disabled = True
@@ -132,4 +137,3 @@ class SelectDeviceView(InfoView):
             current_device_button = self.ids.get(current_device)
             if current_device_button is not None:
                 current_device_button.active = True
-

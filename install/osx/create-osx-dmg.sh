@@ -25,7 +25,7 @@ ln -s /Applications "${STAGING_DIR}/Applications"
 # create the initial dmg
 echo "-- Create volume"
 du -sm ${STAGING_DIR} | awk '{print $1}' > _size
-expr $(cat _size) + 6 > _size
+expr $(cat _size) + 9 > _size
 hdiutil create -srcfolder "${STAGING_DIR}" -volname "${VOL_NAME}" -fs HFS+ \
 	-format UDRW -size $(cat _size)M \
 	"${DMG_TEMP}"

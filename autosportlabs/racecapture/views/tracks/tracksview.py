@@ -273,7 +273,7 @@ class TracksBrowser(BoxLayout):
 
     def on_update_check_error(self, details):
         def error(details):
-            self.dismissPopups(details)
+            self.dismissPopups()
             Clock.schedule_once(lambda dt: self.refreshTrackList())
             Logger.error('TracksBrowser: Error updating: {}'.format(details))
             alertPopup('Error Updating', 'There was an error updating the track list.\n\nPlease check your network connection and try again')

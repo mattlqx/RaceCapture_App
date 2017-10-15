@@ -19,6 +19,12 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
+from kivy.uix.behaviors.focus import FocusBehavior
+from kivy.uix.recycleview import RecycleView
+from kivy.uix.recycleview.views import RecycleDataViewBehavior
+from kivy.uix.label import Label
+from kivy.uix.recycleview.layout import LayoutSelectionBehavior
+from kivy.uix.recycleboxlayout import RecycleBoxLayout
 kivy.require('1.9.1')
 from iconbutton import IconButton
 from kivy.app import Builder
@@ -28,116 +34,144 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.listview import ListView, ListItemButton
 from utils import kvFind
 from kivy.adapters.listadapter import ListAdapter
-from kivy.properties import ListProperty
+from kivy.properties import ListProperty, StringProperty, BooleanProperty, NumericProperty
 from kivy.logger import Logger
+from autosportlabs.racecapture.theme.color import ColorScheme
 
-Builder.load_file('autosportlabs/racecapture/views/channels/channelselectview.kv')
+class SelectableChannelLabel(RecycleDataViewBehavior, Label):
+    Builder.load_string("""
+<SelectableChannelLabel>:
+    # Draw a background to indicate selection
+    canvas.before:
+        Color:
+            rgba: ColorScheme.get_primary() if self.selected else ColorScheme.get_dark_background_translucent()
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    font_name: 'resource/fonts/ASL_light.ttf'
+    font_size: self.height * 0.5    
+    """)
 
-class ChannelItemButton(ListItemButton):
-    def __init__(self, **kwargs):
-        super(ChannelItemButton, self).__init__(**kwargs)
+    index = NumericProperty(None, allownone=True)
+    selected = BooleanProperty(False)
+    selectable = BooleanProperty(True)
 
-class ChannelSelectorView(BoxLayout):
-    channels = ListProperty()
-    def __init__(self, **kwargs):
-        super(ChannelSelectorView, self).__init__(**kwargs)
-        self.multi_select = False
-        self.register_event_type('on_channel_selected')
-        self.multi_select = kwargs.get('multi_select', self.multi_select)
-    
-    def select_channel(self, channels):
-        '''
-        Select one or more channels to show as selected in the view.
-        the view.trigger_action is some voodoo that simulates a UI selection.
-        '''
-        if channels:
-            index = 0
-            list_adapter = self.ids.channelList.adapter
-            for item in list_adapter.data:
-                if item['text'] in channels:
-                    view = list_adapter.get_view(index)
-                    view.trigger_action(duration=0) #duration=0 means make it an instant selection
-                index += 1
+    def refresh_view_attrs(self, rv, index, data):
+        ''' Catch and handle the view changes '''
+        self.index = index
+        return super(SelectableChannelLabel, self).refresh_view_attrs(rv, index, data)
 
-    def on_channels(self, instance, value):    
-        '''
-        Set the list of available channels for this view.
-        Uses the Kivy ListAdapter to adapt the string channel name into a data structure that can track selection in the UI.
-        '''
-        data = []
-        channel_list = self.ids.channelList
-        for channel in self.channels:
-            data.append({'text': str(channel), 'is_selected': False})
-        
-        args_converter = lambda row_index, rec: {'text': rec['text'], 'size_hint_y': None, 'height': dp(50)}
+    def on_touch_down(self, touch):
+        ''' Add selection on touch down '''
+        if super(SelectableChannelLabel, self).on_touch_down(touch):
+            return True
+        if self.collide_point(*touch.pos) and self.selectable:
+            return self.parent.select_with_touch(self.index, touch)
 
-        list_adapter = ListAdapter(data=data,
-                           args_converter=args_converter,
-                           cls=ChannelItemButton,
-                           selection_mode= 'multiple' if self.multi_select else 'single',
-                           allow_empty_selection=True)
+    def apply_selection(self, rv, index, is_selected):
+        ''' Respond to the selection of items in the view. '''
+        self.selected = is_selected
+        if is_selected:
+            rv.selected_channel = rv.data[index]['text']
 
-        channel_list.adapter=list_adapter
-        list_adapter.bind(on_selection_change=self.on_select)
-        
-    def on_channel_selected(self, channel):
-        pass
-    
-    def on_select(self, value):
-        channels = []
-        for channel in value.selection:
-            channels.append(channel.text)
-        self.dispatch('on_channel_selected', channels)
-    
-class ChannelSelectView(FloatLayout):
-    channel = None
+class SelectableRecycleBoxLayout(FocusBehavior, LayoutSelectionBehavior,
+                                 RecycleBoxLayout):
+    ''' Adds selection and focus behaviour to the view. '''
+
+class ChannelSelectDialog(FloatLayout):
+    Builder.load_string("""
+<ChannelSelectDialog>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: 'vertical'
+        ChannelSelectView:
+            id: sv
+        IconButton:
+            size_hint_y: 0.2
+            text: "\357\200\214"
+            on_press: root.on_close()
+    """)
+
+    selected_channel = StringProperty(None, allownone=True)
+
     def __init__(self, settings, channel, **kwargs):
-        super(ChannelSelectView, self).__init__(**kwargs)
+        super(ChannelSelectDialog, self).__init__(**kwargs)
         self.register_event_type('on_channel_selected')
         self.register_event_type('on_channel_cancel')
-        data = []
-        channel_list = self.ids.channelList
+
+        self.selected_channel = channel
+        sv = self.ids.sv
+
+        sv.selected_channel = channel
 
         available_channels = list(settings.runtimeChannels.get_active_channels().iterkeys())
         available_channels.sort()
-        try:
-            for available_channel in available_channels:
-                data.append({'text': available_channel, 'is_selected': False})
-                
-            args_converter = lambda row_index, rec: {'text': rec['text'], 'size_hint_y': None, 'height': dp(50)}
-    
-            list_adapter = ListAdapter(data=data,
-                               args_converter=args_converter,
-                               cls=ChannelItemButton,
-                               selection_mode='single',
-                               allow_empty_selection=True)
-    
-            channel_list.adapter = list_adapter
 
-            #select the current channel
-            index = 0
-            for item in list_adapter.data:
-                if item['text'] == channel:
-                    view = list_adapter.get_view(index)
-                    view.trigger_action(duration=0) #duration=0 means make it an instant selection
-                index += 1
+        sv.available_channels = available_channels
+        sv.bind(on_channel_selected=self.on_select)
 
-            list_adapter.bind(on_selection_change=self.on_select)
-            self.channel = channel
-        except Exception as e:
-            Logger.error("ChannelSelectView: Error initializing: " + str(e))
-    
-    def on_select(self, value):
-        try:
-            self.channel = value.selection[0].text
-        except Exception as e:
-            Logger.error('ChannelSelectView: Error Selecting channel: ' + str(e))
-    
+    def on_select(self, instance, value):
+        self.selected_channel = value
+
+    def on_cancel(self):
+        self.dispatch('on_channel_cancel', self.selected_channel)
+
     def on_close(self):
-        self.dispatch('on_channel_selected', self.channel)
+        self.dispatch('on_channel_selected', self.selected_channel)
 
     def on_channel_selected(self, selected_channel):
         pass
-    
+
     def on_channel_cancel(self):
         pass
+
+class ChannelSelectView(RecycleView):
+    Builder.load_string("""
+<ChannelSelectView>:
+    viewclass: 'SelectableChannelLabel'
+    scroll_type: ['bars', 'content']
+    scroll_wheel_distance: dp(114)
+    bar_width: dp(20)
+       
+    SelectableRecycleBoxLayout:
+        default_size: None, dp(56)
+        default_size_hint: 1, None
+        size_hint_y: None
+        height: self.minimum_height
+        orientation: 'vertical'
+        multiselect: False
+        touch_multiselect: True    
+    """)
+    available_channels = ListProperty()
+    selected_channel = StringProperty(None, allownone=True)
+
+    def __init__(self, **kwargs):
+        super(ChannelSelectView, self).__init__(**kwargs)
+        self.register_event_type('on_channel_selected')
+
+    def on_available_channels(self, instance, value):
+        channel = self.selected_channel
+        data = []
+        selected_index = None
+        index = 0
+        for c in value:
+            data.append({'text': c})
+            if c == channel:
+                selected_index = index
+            index += 1
+
+        self.data = data
+
+        if selected_index:
+            self.layout_manager.selected_nodes = [selected_index]
+
+    def on_selected_channel(self, instance, value):
+        self.dispatch('on_channel_selected', value)
+
+    def on_channel_selected(self, selected_channel):
+        pass
+
+
+
+

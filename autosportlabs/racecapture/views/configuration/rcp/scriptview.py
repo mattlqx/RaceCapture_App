@@ -157,7 +157,7 @@ class LuaScriptingView(BaseConfigView):
 
     def _hide_lua(self):
         self.ids.buttons.remove_widget(self.ids.run_script)
-        self.ids.lua_log_wrapper.remove_widget(self.ids.lua_script_sv)
+        self.ids.lua_log_wrapper.remove_widget(self.ids.lua_script)
         self.ids.splitter.strip_size = 0
 
     def on_config_updated(self, rcp_cfg):

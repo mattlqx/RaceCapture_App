@@ -25,7 +25,6 @@ from kivy.app import Builder
 from kivy.clock import Clock
 from kivy.uix.anchorlayout import AnchorLayout
 from iconbutton import IconButton
-from autosportlabs.racecapture.views.channels.channelselectview import ChannelSelectView
 from autosportlabs.racecapture.views.analysis.customizechannelsview import CustomizeChannelsView
 from autosportlabs.racecapture.views.analysis.markerevent import SourceRef
 from autosportlabs.racecapture.settings.prefs import UserPrefs

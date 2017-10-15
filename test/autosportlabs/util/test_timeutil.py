@@ -19,6 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from autosportlabs.util.timeutil import *
+from datetime import datetime, timedelta
 
 class TimeUtilTest(unittest.TestCase):
 
@@ -30,6 +31,16 @@ class TimeUtilTest(unittest.TestCase):
 
         self.assertTrue(t1 == t2 == t3 == t4)
 
+    def test_friendly_format_time_ago(self):
+        n = datetime.now()
+        self.assertEqual('Just now', friendly_format_time_ago(n - timedelta(seconds=1))) 
+        self.assertEqual('1 min ago', friendly_format_time_ago(n - timedelta(minutes=1)))
+        self.assertEqual('2 mins ago', friendly_format_time_ago(n - timedelta(minutes=2)))
+        self.assertEqual('1 hour 1 min ago', friendly_format_time_ago(n - timedelta(minutes=61)))
+        self.assertEqual('2 hours 2 mins ago', friendly_format_time_ago(n - timedelta(minutes=122)))
+        long_ago = n - timedelta(days=30)
+        self.assertEqual(format_time(long_ago), friendly_format_time_ago(long_ago))
+        
 def main():
     unittest.main()
 

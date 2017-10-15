@@ -54,10 +54,11 @@ INFO_VIEW_KV = """
                 icon_size: self.height * 0.5
                 title_font_size: self.height * 0.6
                 icon: root.next_icon
-                size_hint: (0.22, 0.15)                
+                size_hint: (0.22, 0.1)                
                 on_release: root._on_next()
                 
 """
+
 
 class InfoView(Screen):
     """
@@ -73,6 +74,7 @@ class InfoView(Screen):
     settings = ObjectProperty()
 
     Builder.load_string(INFO_VIEW_KV)
+
     def __init__(self, **kwargs):
         super(InfoView, self).__init__(**kwargs)
         self.register_event_type('on_next')

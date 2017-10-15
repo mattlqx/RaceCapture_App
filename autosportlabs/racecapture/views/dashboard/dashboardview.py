@@ -356,7 +356,7 @@ class DashboardView(Screen):
         automatic configuration
         """
         # skip if this screen is not active
-        if self.manager.current_screen != self:
+        if self.manager is not None and self.manager.current_screen != self:
             return
 
         # skip if we're not connected
@@ -434,15 +434,16 @@ class DashboardView(Screen):
                 track_cfg.stale = True
                 self._set_rc_track(track_cfg)
 
-            self._popup.dismiss()
+            if self._popup:
+                self._popup.dismiss()
             self._popup = None
-
 
         def on_close(instance, answer):
             if not answer:
                 cancelled_track()
 
-            self._popup.dismiss()
+            if self._popup:
+                self._popup.dismiss()
             self._popup = None
 
         if self._popup is not None:

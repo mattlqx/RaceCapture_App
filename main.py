@@ -20,7 +20,7 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "1.9.2"
+__version__ = "1.12.0"
 import sys
 import os
 
@@ -56,6 +56,9 @@ if __name__ == '__main__':
     from kivy.uix.label import Label
     from kivy.uix.popup import Popup
     from kivy.uix.screenmanager import *
+    if hasattr(sys, '_MEIPASS'): #handle pyinstaller frozen packaging
+        kivy.resources.resource_add_path(os.path.join(sys._MEIPASS))
+
     from installfix_garden_navigationdrawer import NavigationDrawer
     from autosportlabs.racecapture.views.util.alertview import alertPopup, confirmPopup
     from autosportlabs.racecapture.views.configuration.rcp.configview import ConfigView
@@ -151,7 +154,7 @@ class RaceCaptureApp(App):
     def __init__(self, **kwargs):
         super(RaceCaptureApp, self).__init__(**kwargs)
 
-        if kivy.platform == 'ios' or kivy.platform == 'macosx':
+        if kivy.platform in ['ios','macosx','linux']:
             kivy.resources.resource_add_path(os.path.join(os.path.dirname(os.path.realpath(__file__)), "data"))
 
         # We do this because when this app is bundled into a standalone app
@@ -423,7 +426,7 @@ class RaceCaptureApp(App):
         # WipeTransition
         # FallOutTransition
         # RiseInTransition
-        screenMgr.transition = RiseInTransition()  # FallOutTransition()  # NoTransition()
+        screenMgr.transition = NoTransition()  # FallOutTransition()  # NoTransition()
 
         self.screenMgr = screenMgr
         self.icon = ('resource/images/app_icon_128x128.ico' if sys.platform == 'win32' else 'resource/images/app_icon_128x128.png')
