@@ -61,7 +61,6 @@ class Preset(object):
         self.created = preset_dict.get('created')
         self.updated = preset_dict.get('updated')
         self.notes = preset_dict.get('notes')
-        self.notes = 'Mapping for E46 internal CAN bus'
         self.more_info_url = preset_dict.get('more_info_url')
         self.image_url = preset_dict.get('image_url')
         self.mapping = preset_dict.get('mapping')
