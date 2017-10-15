@@ -40,5 +40,4 @@ archive_path = os.path.join('defaults', 'default_mappings.zip')
 
 with open(archive_path, 'wb') as f:
     f.write(mf.getvalue())
-    
-tm.refresh()
+

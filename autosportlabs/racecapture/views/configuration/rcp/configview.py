@@ -66,11 +66,11 @@ class LinkedTreeViewLabel(TreeViewLabel):
 class ConfigView(Screen):
     Builder.load_file(CONFIG_VIEW_KV)
     # file save/load
-    loaded = BooleanProperty()
+    loaded = BooleanProperty(False)
+    writeStale = BooleanProperty(False)
     loadfile = ObjectProperty()
     savefile = ObjectProperty()
     text_input = ObjectProperty()
-    writeStale = BooleanProperty()
     track_manager = ObjectProperty()
     preset_manager = ObjectProperty()
 
@@ -217,7 +217,7 @@ class ConfigView(Screen):
         attach_node('CAN Bus', None, lambda: CANConfigView())
 
         if self.rc_config.capabilities.has_can_channel:
-            attach_node('CAN Mapping', None, lambda: CANChannelsView(settings=self._settings, channels=runtime_channels, base_dir=self.base_dir))
+            attach_node('CAN Mapping', None, lambda: CANChannelsView(settings=self._settings, preset_manager=self.preset_manager, channels=runtime_channels, base_dir=self.base_dir))
 
         attach_node('OBDII', None, lambda: OBD2ChannelsView(channels=runtime_channels, base_dir=self.base_dir))
 

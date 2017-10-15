@@ -58,8 +58,6 @@ class BaseChannelView(BoxLayout):
 
         
 class BaseConfigView(GridLayout):
-    channels = None
-    rc_api = None
     def __init__(self, **kwargs):    
         super(BaseConfigView, self).__init__(**kwargs)
         self.settings = kwargs.get('settings')

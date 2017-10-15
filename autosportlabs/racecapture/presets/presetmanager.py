@@ -42,7 +42,8 @@ class Preset(object):
     def __init__(self):
         self.mapping_id = None
         self.uri = None
-        self.name = None
+        self.name = ''
+        self.notes = ''
         self.created = None
         self.updated = None
         self.more_info_url = None
@@ -54,7 +55,7 @@ class Preset(object):
     def from_dict(self, track_dict):
         self.mapping_id = int(track_dict.get('id'))
         self.uri = track_dict.get('URI')
-        self.name = track_dict.get('name')
+        self.name = track_dict.get('name', self.name)
         self.created = track_dict.get('created')
         self.updated = track_dict.get('updated')
         self.more_info_url = track_dict.get('more_info_url')
@@ -98,6 +99,9 @@ class PresetManager(object):
         self.update_lock = Lock()
         self.presets = {}
 
+    def get_preset_by_id(self, id):
+        return self.presets.get(id)
+    
     def set_presets_user_dir(self, path):
         try:
             os.makedirs(path)
@@ -107,6 +111,7 @@ class PresetManager(object):
         self.presets_user_dir = path
 
     def init(self, progress_cb, success_cb, fail_cb):
+        self.check_load_default_presets()
         self.load_presets(progress_cb, success_cb, fail_cb)
 
     def load_json(self, uri):
@@ -209,7 +214,6 @@ class PresetManager(object):
 
     def save_preset(self, preset):
         path = os.path.join(self.presets_user_dir, str(preset.mapping_id) + '.json')
-        print('path ' + str(path))
         preset_json_string = json.dumps(preset.to_dict(), sort_keys=True, indent=2, separators=(',', ': '))
         with open(path, 'w') as text_file:
             text_file.write(preset_json_string)

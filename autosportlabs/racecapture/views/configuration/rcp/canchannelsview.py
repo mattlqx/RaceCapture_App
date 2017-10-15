@@ -8,7 +8,7 @@ from kivy.uix.spinner import SpinnerOption
 from kivy.uix.popup import Popup
 from kivy.uix.image import Image
 from kivy.uix.anchorlayout import AnchorLayout
-from kivy.properties import StringProperty, NumericProperty
+from kivy.properties import StringProperty, NumericProperty, ObjectProperty
 from garden_androidtabs import AndroidTabsBase, AndroidTabs
 from iconbutton import IconButton
 from settingsview import SettingsSwitch
@@ -18,8 +18,8 @@ from autosportlabs.racecapture.views.configuration.baseconfigview import BaseCon
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.uix.layout.sections import SectionBoxLayout
 from autosportlabs.racecapture.views.util.alertview import confirmPopup, choicePopup, editor_popup
-from autosportlabs.racecapture.resourcecache.resourcemanager import ResourceCache
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
+from autosportlabs.racecapture.views.util.alertview import alertPopup
 from fieldlabel import FieldLabel
 from utils import *
 from valuefield import FloatValueField, IntegerValueField
@@ -97,22 +97,9 @@ class CANChannelView(BoxLayout):
         self.ids.can_formula.text = u'\u00D7 {} \u00F7 {} {} {}'.format(can_mapping.multiplier, can_mapping.divider, sign, abs(can_mapping.adder))
         self._loaded = True
 
-class CANPresetResourceCache(ResourceCache):
-    preset_url = "https://podium.live/api/v1/mappings"
-    preset_name = 'can_presets'
-
-    def __init__(self, settings, base_dir, **kwargs):
-        default_preset_dir = os.path.join(base_dir, 'resource', self.preset_name)
-        super(CANPresetResourceCache, self).__init__(settings, self.preset_url, self.preset_name, default_preset_dir, **kwargs)
-
 class CANChannelsView(BaseConfigView):
+    preset_manager = ObjectProperty()
     DEFAULT_CAN_SAMPLE_RATE = 1
-    can_channels_cfg = None
-    max_sample_rate = 0
-    can_grid = None
-    can_channels_settings = None
-    can_filters = None
-    _popup = None
     Builder.load_string("""
 <CANChannelsView>:
     spacing: dp(20)
@@ -130,14 +117,14 @@ class CANChannelsView(BaseConfigView):
             size_hint_y: 0.4        
             BoxLayout:
                 size_hint_x: 0.8
-#            LabelIconButton:
-#                size_hint_x: 0.2
-#                id: load_preset
-#                title: 'Presets'
-#                icon_size: self.height * 0.7
-#                title_font_size: self.height * 0.5
-#                icon: u'\uf150'
-#                on_press: root.load_preset_view()
+            LabelIconButton:
+                size_hint_x: 0.2
+                id: load_preset
+                title: 'Presets'
+                icon_size: self.height * 0.7
+                title_font_size: self.height * 0.5
+                icon: u'\uf150'
+                on_press: root.load_preset_view()
         
     BoxLayout:
         size_hint_y: 0.70
@@ -209,6 +196,9 @@ class CANChannelsView(BaseConfigView):
     def __init__(self, **kwargs):
         super(CANChannelsView, self).__init__(**kwargs)
         self.register_event_type('on_config_updated')
+        self.can_channels_cfg = None
+        self.max_sample_rate = 0
+        self.can_filters = None
         self.can_grid = self.ids.can_grid
         self._base_dir = kwargs.get('base_dir')
         self.max_can_channels = 0
@@ -217,12 +207,6 @@ class CANChannelsView(BaseConfigView):
         can_channels_enable.setControl(SettingsSwitch())
         self.update_view_enabled()
         self.can_filters = UnitsConversionFilters(self._base_dir)
-        self._resource_cache = None
-
-    def get_resource_cache(self):
-        if self._resource_cache is None:
-            self._resource_cache = CANPresetResourceCache(self.settings, self._base_dir)
-        return self._resource_cache
 
     def on_modified(self, *args):
         if self.can_channels_cfg:
@@ -357,17 +341,21 @@ class CANChannelsView(BaseConfigView):
         else:
             self._import_preset(preset_id)
 
-    def _import_preset(self, preset_id):
-        resource_cache = self.get_resource_cache()
-        preset = resource_cache.resources.get(preset_id)
-        if preset:
-            for channel_json in preset['channels']:
-                new_channel = CANChannel()
-                new_channel.from_json_dict(channel_json)
-                self.add_can_channel(new_channel)
+    def _import_preset(self, id):
+        try:
+            preset = self.preset_manager.get_preset_by_id(id)
+            if preset:
+                mapping = preset.mapping
+                for channel_json in mapping['chans']:
+                    new_channel = CANChannel()
+                    new_channel.from_json_dict(channel_json)
+                    self.add_can_channel(new_channel)
+        except Exception as e:
+            alertPopup('Error', 'Error Loading Preset:\n\n{}'.format(e))
+            raise
 
     def load_preset_view(self):
-        content = PresetBrowserView(self.get_resource_cache())
+        content = PresetBrowserView(self.preset_manager)
         content.bind(on_preset_selected=self.on_preset_selected)
         content.bind(on_preset_close=lambda *args:popup.dismiss())
         popup = Popup(title='Import a preset configuration', content=content, size_hint=(0.5, 0.75))
@@ -473,11 +461,11 @@ class PresetBrowserView(BoxLayout):
         on_press: root.on_close()
 """)
 
-    def __init__(self, resource_cache, **kwargs):
+    def __init__(self, preset_manager, **kwargs):
         super(PresetBrowserView, self).__init__(**kwargs)
         self.register_event_type('on_preset_close')
         self.register_event_type('on_preset_selected')
-        self.resource_cache = resource_cache
+        self.preset_manager = preset_manager
         self.init_view()
 
     def on_preset_close(self):
@@ -490,16 +478,18 @@ class PresetBrowserView(BoxLayout):
         self.refresh_view()
 
     def refresh_view(self):
-        for k, v in self.resource_cache.resources.iteritems():
-            name = v.get('name', '')
-            notes = v.get('notes', '')
+        for k, v in self.preset_manager.presets.iteritems():
+            name = v.name
+            notes = v.notes
             self.add_preset(k, name, notes)
 
     def add_preset(self, preset_id, name, notes):
-        image_path = self.resource_cache.resource_image_paths.get(preset_id)
-        preset_view = PresetItemView(preset_id, name, notes, image_path)
-        preset_view.bind(on_preset_selected=self.preset_selected)
-        self.ids.preset_grid.add_widget(preset_view)
+        preset = self.preset_manager.get_preset_by_id(preset_id)
+        if preset:
+            image_path = preset.image_url
+            preset_view = PresetItemView(preset_id, name, notes, image_path)
+            preset_view.bind(on_preset_selected=self.preset_selected)
+            self.ids.preset_grid.add_widget(preset_view)
 
     def preset_selected(self, instance, preset_id):
         self.dispatch('on_preset_selected', preset_id)
