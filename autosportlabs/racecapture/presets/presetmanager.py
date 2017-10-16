@@ -118,8 +118,8 @@ class PresetManager(object):
         self.presets_user_dir = path
 
     def init(self, progress_cb, success_cb, fail_cb):
-        self.check_load_default_presets()
-        self.load_presets(progress_cb, success_cb, fail_cb)
+        self._check_load_default_presets()
+        self._load_presets(progress_cb, success_cb, fail_cb)
 
     def load_json(self, uri):
         """Semi-generic method for fetching JSON data
@@ -148,11 +148,11 @@ class PresetManager(object):
         """Downloads all presets, then turns them into Preset objects
         """
         presets = {}
-        venues = self.fetch_preset_list(True)
+        preset_json = self.fetch_preset_list(True)
 
-        for venue in venues:
+        for p in preset_json:
                 preset = Preset()
-                preset.from_dict(venue)
+                preset.from_dict(p)
                 presets[preset.mapping_id] = preset
 
         return presets
@@ -201,11 +201,11 @@ class PresetManager(object):
         return mappings_list
 
     def download_preset(self, mapping_id):
-        preset_url = self.PRESET_URL + '/' + mapping_id
+        preset_url = '{}/{}'.format(self.PRESET_URL, mapping_id)
         response = self.load_json(preset_url)
         preset = Preset()
         try:
-            preset_json = response.get('preset')
+            preset_json = response.get('mapping')
             preset.from_dict(preset_json)
             return copy.deepcopy(preset)
         except Warning:
@@ -216,21 +216,36 @@ class PresetManager(object):
         :param preset the preset to add
         :type preset Preset
         """
-        self.save_preset(preset)
+        self._save_preset(preset)
         self.presets[preset.mapping_id] = preset
 
-    def save_preset(self, preset):
+    def _save_preset(self, preset):
         path = os.path.join(self.presets_user_dir, str(preset.mapping_id) + '.json')
         preset_json_string = json.dumps(preset.to_dict(), sort_keys=True, indent=2, separators=(',', ': '))
         with open(path, 'w') as text_file:
             text_file.write(preset_json_string)
 
-    def load_current_mappings_worker(self, success_cb, fail_cb, progress_cb=None):
+    def _download_preset_image(self, preset):
+        image_url = preset.image_url
+        if image_url:
+            extension = None
+            extension = '.jpg' if '.jpg' in image_url else extension
+            extension = '.png' if '.png' in image_url else extension
+
+            request = urllib2.Request(image_url, headers={'User-Agent': 'ASL mapping builder'})
+            response = urllib2.urlopen(request, timeout=PresetManager.PRESET_DOWNLOAD_TIMEOUT)
+            data = response.read()
+
+            image_file = '{}{}'.format(preset.mapping_id, extension)
+            path = os.path.join(self.presets_user_dir, image_file)
+            open(path, 'wb').write(data)
+
+    def _load_current_mappings_worker(self, success_cb, fail_cb, progress_cb=None):
         """Method for loading local preset files in a separate thread
         """
         try:
             self.update_lock.acquire()
-            self.load_presets(progress_cb)
+            self._load_presets(progress_cb)
             success_cb()
         except Exception as detail:
             Logger.exception('')
@@ -238,7 +253,7 @@ class PresetManager(object):
         finally:
             self.update_lock.release()
 
-    def check_load_default_presets(self):
+    def _check_load_default_presets(self):
         preset_file_names = os.listdir(self.presets_user_dir)
         if (len(preset_file_names) == 0):
             Logger.info("PresetManager: No presets found; loading defaults")
@@ -248,11 +263,11 @@ class PresetManager(object):
             except Exception as e:
                 Logger.error("PresetManager: Could not load default presets: {}".format(e))
 
-    def load_presets(self, progress_cb=None, success_cb=None, fail_cb=None):
+    def _load_presets(self, progress_cb=None, success_cb=None, fail_cb=None):
         """Loads presets from local files. If called with success and fail callbacks it sets up a separate thread
         """
         if success_cb and fail_cb:
-            t = Thread(target=self.load_current_mappings_worker, args=(success_cb, fail_cb, progress_cb))
+            t = Thread(target=self._load_current_mappings_worker, args=(success_cb, fail_cb, progress_cb))
             t.daemon = True
             t.start()
         else:
@@ -269,9 +284,7 @@ class PresetManager(object):
                     if preset_dict is not None:
                         preset = Preset()
                         preset.from_dict(preset_dict)
-                        local_path = self._image_url_to_local_path(preset.mapping_id, preset.image_url)
-                        if local_path:
-                            preset.local_image_path = os.path.join(self.presets_user_dir, local_path)
+                        self._set_preset_local_path(preset)
 
                         self.presets[preset.mapping_id] = preset
                         count += 1
@@ -280,6 +293,12 @@ class PresetManager(object):
                 except Exception as detail:
                     Logger.warning('PresetManager: failed to read preset file ' + preset_path + ';\n' + str(detail))
                     raise
+
+
+    def _set_preset_local_path(self, preset):
+        local_path = self._image_url_to_local_path(preset.mapping_id, preset.image_url)
+        if local_path:
+            preset.local_image_path = os.path.join(self.presets_user_dir, local_path)
 
     def _image_url_to_local_path(self, mapping_id, image_url):
         if image_url is None:
@@ -330,11 +349,13 @@ class PresetManager(object):
                     count += 1
                     if progress_cb:
                         progress_cb(count=count, total=total, message=preset.name)
-                    self.save_preset(preset)
+                    self._save_preset(preset)
+                    self._download_preset_image(preset)
+                    self._set_preset_local_path(preset)
                     self.presets[mapping_id] = preset
             else:
                 Logger.info("PresetManager: refreshing presets")
-                venues = self.fetch_preset_list()
+                venues = self.fetch_preset_list(full_response=True)
 
                 preset_count = len(venues)
                 count = 0
@@ -342,20 +363,22 @@ class PresetManager(object):
                 for venue in venues:
                     update = False
                     count += 1
-                    venue_id = venue.get('id')
+                    preset_id = venue.get('id')
 
-                    if self.presets.get(venue_id) is None:
-                        Logger.info('PresetManager: new preset detected ' + venue_id)
+                    if self.presets.get(preset_id) is None:
+                        Logger.info('PresetManager: new preset detected: {}'.format(preset_id))
                         update = True
-                    elif not self.presets[venue_id].updated == venue['updated']:
-                        Logger.info('PresetManager: existing preset changed ' + venue_id)
+                    elif not self.presets[preset_id].updated == venue['updated']:
+                        Logger.info('PresetManager: existing preset changed: {}'.format(preset_id))
                         update = True
 
                     if update:
-                        updated_preset = self.download_preset(venue_id)
+                        updated_preset = self.download_preset(preset_id)
                         if updated_preset is not None:
-                            self.save_preset(updated_preset)
-                            self.presets[venue_id] = updated_preset
+                            self._save_preset(updated_preset)
+                            self._download_preset_image(updated_preset)
+                            self._set_preset_local_path(updated_preset)
+                            self.presets[preset_id] = updated_preset
                             if progress_cb:
                                 progress_cb(count=count, total=preset_count, message=updated_preset.name)
                     else:

@@ -3,14 +3,17 @@ kivy.require('1.9.1')
 import os
 from kivy.metrics import dp
 from kivy.app import Builder
+from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.spinner import SpinnerOption
 from kivy.uix.popup import Popup
 from kivy.uix.image import Image
+from kivy.logger import Logger
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.properties import StringProperty, NumericProperty, ObjectProperty
 from iconbutton import IconButton
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
+from autosportlabs.racecapture.views.util.alertview import alertPopup
 
 #    def load_preset_view(self):
 #        content = PresetBrowserView(self.preset_manager, 'can')
@@ -19,6 +22,36 @@ from autosportlabs.widgets.scrollcontainer import ScrollContainer
 #        popup = Popup(title='Import a preset configuration', content=content, size_hint=(0.5, 0.75))
 #        popup.bind(on_dismiss=self.popup_dismissed)
 #        popup.open()
+
+class PresetUpdateStatusView(BoxLayout):
+    Builder.load_string("""
+<PresetUpdateStatusView>:
+    orientation: 'vertical'
+    ProgressBar:
+        value: root.progress_value
+    Label:
+        text: root.update_msg
+    """)
+    progress_value = NumericProperty()
+    update_msg = StringProperty()
+    def __init__(self, **kwargs):
+        super(PresetUpdateStatusView, self).__init__(**kwargs)
+
+    def _update_progress(self, percent):
+        self.progress_value = percent
+
+    def _update_message(self, message):
+        self.update_msg = message
+
+    def on_progress(self, count=None, total=None, message=None):
+        if count and total:
+            progress_percent = (float(count) / float(total) * 100)
+            Clock.schedule_once(lambda dt: self._update_progress(progress_percent))
+        if message:
+            Clock.schedule_once(lambda dt: self._update_message(message))
+
+    def on_message(self, message):
+        self.update_msg = message
 
 class PresetItemView(BoxLayout):
     Builder.load_string("""
@@ -93,7 +126,7 @@ class PresetBrowserView(BoxLayout):
     Builder.load_string("""
 <PresetBrowserView>:
     orientation: 'vertical'
-    spacing: dp(10)
+    spacing: dp(5)
     ScrollContainer:
         size_hint_y: 0.85
         canvas.before:
@@ -112,6 +145,18 @@ class PresetBrowserView(BoxLayout):
             size_hint_y: None
             height: max(self.minimum_height, scroller.height)
             cols: 1
+    AnchorLayout:
+        anchor_x: 'right'
+        size_hint_y: None
+        height: dp(30)
+        LabelIconButton:
+            size_hint_x: None
+            width: dp(120)
+            id: updatecheck
+            disabled: True
+            title: 'Update'
+            icon: '\357\203\255'
+            on_press: root._on_update_check()
     IconButton:
         size_hint_y: 0.15
         text: u'\uf00d'
@@ -135,11 +180,42 @@ class PresetBrowserView(BoxLayout):
     def init_view(self):
         self.refresh_view()
 
+    def set_view_disabled(self, disabled):
+        self.ids.updatecheck.disabled = disabled
+
+    def _on_update_check(self):
+
+        def on_update_check_success():
+            def _success():
+                # do this in the UI thread
+                popup.content.on_message('Processing...')
+                Clock.schedule_once(lambda dt: self.refresh_view())
+                popup.dismiss()
+            Clock.schedule_once(lambda dt: _success())
+
+        def on_update_check_error(details):
+            def _error(details):
+                # do this in the UI thread
+                popup.dismiss()
+                Clock.schedule_once(lambda dt: self.refresh_view())
+                Logger.error('PresetBrowserView: Error updating: {}'.format(details))
+                alertPopup('Error Updating', 'There was an error updating the presets.\n\nPlease check your network connection and try again')
+            Clock.schedule_once(lambda dt: _error(details))
+
+        self.set_view_disabled(True)
+        update_view = PresetUpdateStatusView()
+        popup = Popup(title='Checking for updates', content=update_view, auto_dismiss=False, size_hint=(None, None), size=(dp(400), dp(200)))
+        popup.open()
+
+        self.preset_manager.refresh(update_view.on_progress, on_update_check_success, on_update_check_error)
+
     def refresh_view(self):
+        self.ids.preset_grid.clear_widgets()
         for k, v in self.preset_manager.get_presets_by_type(self.preset_type):
             name = v.name
             notes = v.notes
             self.add_preset(k, name, notes)
+        self.set_view_disabled(False)
 
     def add_preset(self, preset_id, name, notes):
         preset = self.preset_manager.get_preset_by_id(preset_id)
