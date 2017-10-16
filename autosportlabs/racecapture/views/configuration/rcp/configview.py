@@ -219,7 +219,7 @@ class ConfigView(Screen):
         if self.rc_config.capabilities.has_can_channel:
             attach_node('CAN Mapping', None, lambda: CANChannelsView(settings=self._settings, preset_manager=self.preset_manager, channels=runtime_channels, base_dir=self.base_dir))
 
-        attach_node('OBDII', None, lambda: OBD2ChannelsView(channels=runtime_channels, base_dir=self.base_dir))
+        attach_node('OBDII', None, lambda: OBD2ChannelsView(channels=runtime_channels, base_dir=self.base_dir, preset_manager=self.preset_manager))
 
         attach_node('Wireless', None, lambda: WirelessConfigView(self.base_dir, self.rc_config, self.rc_config.capabilities))
 

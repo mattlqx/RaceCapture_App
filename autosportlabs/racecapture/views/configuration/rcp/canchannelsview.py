@@ -109,14 +109,15 @@ class CANChannelsView(BaseConfigView):
         orientation: 'vertical'
         size_hint_y: 0.20
         SettingsView:
-            size_hint_y: 0.6
             id: can_channels_enable
+            size_hint_y: 0.6
             label_text: 'CAN channels'
             help_text: ''
         BoxLayout:
             padding: (dp(10), dp(0))
             orientation: 'horizontal'
-            size_hint_y: 0.4        
+            size_hint_y: None
+            height: dp(40)        
             BoxLayout:
             LabelIconButton:
                 size_hint_x: None
@@ -129,7 +130,7 @@ class CANChannelsView(BaseConfigView):
                 on_press: root.load_preset_view()
         
     BoxLayout:
-        size_hint_y: 0.70
+        size_hint_y: 0.85
         orientation: 'vertical'        
         HSeparator:
             text: 'CAN Channels'
@@ -356,8 +357,9 @@ class CANChannelsView(BaseConfigView):
 
     def load_preset_view(self):
         def popup_dismissed(*args):
-            self.reload_can_channel_grid(self.can_channels_cfg)
-        
+            pass
+            # self.reload_can_channel_grid(self.can_channels_cfg)
+
         content = PresetBrowserView(self.preset_manager, 'can')
         content.bind(on_preset_selected=self._on_preset_selected)
         content.bind(on_preset_close=lambda *args:popup.dismiss())
