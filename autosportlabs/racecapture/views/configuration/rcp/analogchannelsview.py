@@ -25,6 +25,7 @@ from math import sin
 from installfix_garden_graph import Graph, LinePlot
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
+from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.properties import ObjectProperty
 from kivy.utils import get_color_from_hex as rgb
 from kivy.app import Builder
@@ -41,12 +42,8 @@ from autosportlabs.racecapture.views.util.alertview import alertPopup
 from autosportlabs.racecapture.views.popup.centeredbubble import CenteredBubble, WarnLabel
 from autosportlabs.racecapture.presets.presetview import PresetBrowserView
 
-ANALOG_CHANNELS_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/analogchannelsview.kv'
-
-
 class AnalogChannelsView(BaseMultiChannelConfigView):
     preset_manager = ObjectProperty()
-    Builder.load_file(ANALOG_CHANNELS_VIEW_KV)
 
     def __init__(self, **kwargs):
         super(AnalogChannelsView, self).__init__(**kwargs)
@@ -65,13 +62,133 @@ class AnalogChannelsView(BaseMultiChannelConfigView):
         return rcp_cfg.analogConfig
 
 class AnalogChannel(BaseChannelView):
+    Builder.load_string("""
+<AnalogChannel>:
+    orientation: 'horizontal'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: (dp(10), dp(10))
+        spacing: dp(5)
+        ChannelNameSelectorView:
+            id: chan_id
+            channel_type: 1
+            size_hint: (1.0,0.15)
+        SampleRateSelectorView:
+            id: sr
+            size_hint: (1.0,0.15)
+        HSeparatorMinor:
+            text: 'Mode'
+        GridLayout:
+            size_hint: (1.0, 0.4)
+            cols: 2
+            FieldLabel:
+                text: 'Raw (0-5v)'
+                font_size: sp(17)
+                halign: 'right'
+            CheckBox:
+                size_hint_x: None
+                width: dp(140)
+                group: 'scalingType'
+                id: smRaw
+                on_active: root.on_scaling_type_raw(*args)
+            FieldLabel:
+                text: 'Linear'
+                font_size: sp(17)
+                halign: 'right'
+            CheckBox:
+                size_hint_x: None
+                width: dp(140)
+                group: 'scalingType'
+                id: smLinear
+                on_active: root.on_scaling_type_linear(*args)
+            FieldLabel:
+                text: 'Mapped'
+                font_size: sp(17)
+                halign: 'right'
+            CheckBox:
+                size_hint_x: None
+                width: dp(140)
+                group: 'scalingType'
+                id: smMapped
+                on_active: root.on_scaling_type_map(*args)
+        BoxLayout:
+            size_hint_y: None
+            height: dp(30)
+            orientation: 'horizontal'
+            BoxLayout:
+            LabelIconButton:
+                size_hint_x: None
+                width: dp(120)
+                id: load_preset
+                title: 'Presets'
+                icon_size: self.height * 0.7
+                title_font_size: self.height * 0.5
+                icon: u'\uf150'
+                on_press: root.load_preset_view()
+                           
+    VSeparator:
+    ScreenManager:
+        id: screens
+        padding: (dp(10), dp(10))
+        orientation: 'vertical'
+        Screen:
+            name: 'blank'
+        Screen:
+            name: 'map'
+            AnalogScalingMapEditor:
+                id: map_editor
+        Screen:
+            name: 'linear'
+            BoxLayout:
+                orientation: 'vertical'
+                HSeparatorMinor:
+                    text: 'Linear Formula'
+                    size_hint_y: None
+                    height: dp(50)
+                BoxLayout:
+                    padding: (dp(10), dp(10))
+                    size_hint_y: None
+                    height: dp(60)
+                    orientation: 'horizontal'
+                    FieldLabel:
+                        text: u'Raw \u00D7'
+                        halign: 'center'
+                        font_size: self.height * 0.7
+                        size_hint_x: None
+                        width: dp(100)                       
+                    FloatValueField:
+                        id: linearscaling
+                        on_text: root.on_linear_map_value(*args)
+                    FieldLabel:
+                        text: '+'
+                        halign: 'center'
+                        font_size: self.height * 0.7
+                        size_hint_x: None
+                        width: dp(50)                       
+                    FloatValueField:
+                        id: linearoffset
+                        on_text: root.on_linear_map_offset(*args)
+                BoxLayout:
+    """)
     preset_manager = ObjectProperty()
-    
+
+    SCREEN_MAP = {ANALOG_SCALING_MODE_RAW: 'blank',
+                  ANALOG_SCALING_MODE_LINEAR: 'linear',
+                  ANALOG_SCALING_MODE_MAP: 'map'}
+
     def __init__(self, **kwargs):
         super(AnalogChannel, self).__init__(**kwargs)
         self.max_sample_rate = None
         self.channelConfig = None
 
+    def on_linear_map_offset(self, instance, value):
+        try:
+            if self.channelConfig:
+                self.channelConfig.linearOffset = float(value)
+                self.channelConfig.stale = True
+                self.dispatch('on_modified', self.channelConfig)
+        except:
+            pass
     def on_linear_map_value(self, instance, value):
         try:
             if self.channelConfig:
@@ -86,18 +203,34 @@ class AnalogChannel(BaseChannelView):
             self.channelConfig.scalingMode = ANALOG_SCALING_MODE_RAW
             self.channelConfig.stale = True
             self.dispatch('on_modified', self.channelConfig)
+            self._update_mapping_screen()
 
     def on_scaling_type_linear(self, instance, value):
         if self.channelConfig and value:
             self.channelConfig.scalingMode = ANALOG_SCALING_MODE_LINEAR
             self.channelConfig.stale = True
             self.dispatch('on_modified', self.channelConfig)
+            self._update_mapping_screen()
 
     def on_scaling_type_map(self, instance, value):
         if self.channelConfig and value:
             self.channelConfig.scalingMode = ANALOG_SCALING_MODE_MAP
             self.channelConfig.stale = True
             self.dispatch('on_modified', self.channelConfig)
+            self._update_mapping_screen()
+
+    def _update_mapping_screen(self):
+        self.ids.screens.current = AnalogChannel.SCREEN_MAP.get(self.channelConfig.scalingMode)
+        Clock.schedule_once(self._animate_mapping_screen)
+
+    def _animate_mapping_screen(self, dt):
+        if self.channelConfig.scalingMode == ANALOG_SCALING_MODE_RAW and self.ids.screens.size_hint_x >= .1:
+            self.ids.screens.size_hint_x -= 0.1
+            Clock.schedule_once(self._animate_mapping_screen)
+
+        if not self.channelConfig.scalingMode == ANALOG_SCALING_MODE_RAW and self.ids.screens.size_hint_x <= 1:
+            self.ids.screens.size_hint_x += 0.1
+            Clock.schedule_once(self._animate_mapping_screen)
 
     def on_config_updated(self, channelConfig, max_sample_rate):
         self.max_sample_rate = max_sample_rate
@@ -123,16 +256,18 @@ class AnalogChannel(BaseChannelView):
             check_mapped.active = True
 
         self.ids.linearscaling.text = str(channelConfig.linearScaling)
+        self.ids.linearoffset.text = str(channelConfig.linearOffset)
         map_editor = self.ids.map_editor
         map_editor.on_config_changed(channelConfig.scalingMap)
         map_editor.bind(on_map_updated=self.on_map_updated)
 
         self.channelConfig = channelConfig
+        self._update_mapping_screen()
 
     def on_map_updated(self, *args):
         self.channelConfig.stale = True
         self.dispatch('on_modified', self.channelConfig)
-            
+
     def _import_preset(self, preset_id):
         try:
             preset = self.preset_manager.get_preset_by_id(preset_id)
@@ -145,12 +280,12 @@ class AnalogChannel(BaseChannelView):
         except Exception as e:
             Logger.error('Failed to import analog preset {}'.format(e))
             raise
-        
+
     def load_preset_view(self):
         def preset_selected(instance, preset_id):
             self._import_preset(preset_id)
             popup.dismiss()
-            
+
         def popup_dismissed(*args):
             pass
 
@@ -163,14 +298,105 @@ class AnalogChannel(BaseChannelView):
 
     def _on_preset_selected(self):
         pass
-    
+
 class AnalogScaler(Graph):
+    Builder.load_string("""
+<AnalogScaler>:
+    id: graph
+    xlabel: 'Volts'
+    ylabel: 'Scaled'
+    x_ticks_minor: 1
+    x_ticks_major: 1
+    y_grid_label: True
+    x_grid_label: True
+    padding: 5
+    x_grid: True
+    y_grid: True
+    xmin: 0
+    xmax: 5    
+    """)
     def __init__(self, **kwargs):
         super(AnalogScaler, self).__init__(**kwargs)
 
 WARN_DISMISS_TIMEOUT = 3
 
+class LinearScalingMapEditor(Screen):
+    Builder.load_string("""
+<LinearScalingMapEditor>:
+    """)
+
 class AnalogScalingMapEditor(BoxLayout):
+    Builder.load_string("""
+<AnalogScalingMapEditor>:
+    orientation: 'vertical'
+    HSeparatorMinor:
+        text: 'Interpolated Mapping'
+        size_hint_y: None
+        height: dp(50)
+    BoxLayout:
+        size_hint: (1.0, 0.6)
+        id: graphcontainer        
+        orientation: 'vertical'
+    GridLayout:
+        cols: 6
+        size_hint: (1.0, 0.4)
+        Label:
+            text: ''
+        Label:
+            text: '1'
+        Label:
+            text: '2'
+        Label:
+            text: '3'
+        Label:
+            text: '4'
+        Label:
+            text: '5'
+        Label:
+            text: 'Volts'
+        FloatValueField:
+            rcid: 'v_0'
+            text: ''
+            on_text_validate: root.on_volts(0, *args)
+        FloatValueField:
+            rcid: 'v_1'
+            text: ''
+            on_text_validate: root.on_volts(1, *args)
+        FloatValueField:
+            rcid: 'v_2'
+            text: ''
+            on_text_validate: root.on_volts(2, *args)
+        FloatValueField:
+            rcid: 'v_3'
+            text: ''
+            on_text_validate: root.on_volts(3, *args)
+        FloatValueField:
+            rcid: 'v_4'
+            text: ''
+            on_text_validate: root.on_volts(4, *args)
+        Label:
+            text: 'Scaled'
+        FloatValueField:
+            rcid: 's_0'
+            text: ''
+            on_text: root.on_scaled(0, *args)
+        FloatValueField:
+            rcid: 's_1'
+            text: ''
+            on_text: root.on_scaled(1, *args)
+        FloatValueField:
+            rcid: 's_2'
+            text: ''
+            on_text: root.on_scaled(2, *args)
+        FloatValueField:
+            rcid: 's_3'
+            text: ''
+            on_text: root.on_scaled(3, *args)
+        FloatValueField:
+            rcid: 's_4'
+            text: ''
+            on_text: root.on_scaled(4, *args)    
+    """)
     map_size = SCALING_MAP_POINTS
     scaling_map = None
     plot = None
