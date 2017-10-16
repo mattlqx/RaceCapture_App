@@ -25,9 +25,12 @@ from math import sin
 from installfix_garden_graph import Graph, LinePlot
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
+from kivy.properties import ObjectProperty
 from kivy.utils import get_color_from_hex as rgb
 from kivy.app import Builder
 from kivy.clock import Clock
+from kivy.metrics import sp
+from kivy.uix.popup import Popup
 from valuefield import *
 from utils import *
 from autosportlabs.racecapture.views.configuration.channels.channelnameselectorview import ChannelNameSelectorView
@@ -36,12 +39,13 @@ from autosportlabs.racecapture.views.configuration.baseconfigview import BaseMul
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.racecapture.views.util.alertview import alertPopup
 from autosportlabs.racecapture.views.popup.centeredbubble import CenteredBubble, WarnLabel
-from kivy.metrics import sp
+from autosportlabs.racecapture.presets.presetview import PresetBrowserView
 
 ANALOG_CHANNELS_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/analogchannelsview.kv'
 
 
 class AnalogChannelsView(BaseMultiChannelConfigView):
+    preset_manager = ObjectProperty()
     Builder.load_file(ANALOG_CHANNELS_VIEW_KV)
 
     def __init__(self, **kwargs):
@@ -51,7 +55,7 @@ class AnalogChannelsView(BaseMultiChannelConfigView):
 
 
     def channel_builder(self, index, max_sample_rate):
-        editor = AnalogChannel(id='analog' + str(index), channels=self.channels)
+        editor = AnalogChannel(id='analog' + str(index), channels=self.channels, preset_manager=self.preset_manager)
         editor.bind(on_modified=self.on_modified)
         if self.config:
             editor.on_config_updated(self.config.channels[index], max_sample_rate)
@@ -61,8 +65,12 @@ class AnalogChannelsView(BaseMultiChannelConfigView):
         return rcp_cfg.analogConfig
 
 class AnalogChannel(BaseChannelView):
+    preset_manager = ObjectProperty()
+    
     def __init__(self, **kwargs):
         super(AnalogChannel, self).__init__(**kwargs)
+        self.max_sample_rate = None
+        self.channelConfig = None
 
     def on_linear_map_value(self, instance, value):
         try:
@@ -72,7 +80,6 @@ class AnalogChannel(BaseChannelView):
                 self.dispatch('on_modified', self.channelConfig)
         except:
             pass
-
 
     def on_scaling_type_raw(self, instance, value):
         if self.channelConfig and value:
@@ -93,6 +100,7 @@ class AnalogChannel(BaseChannelView):
             self.dispatch('on_modified', self.channelConfig)
 
     def on_config_updated(self, channelConfig, max_sample_rate):
+        self.max_sample_rate = max_sample_rate
         self.ids.chan_id.setValue(channelConfig)
         self.ids.sr.setValue(channelConfig.sampleRate, max_sample_rate)
 
@@ -124,8 +132,38 @@ class AnalogChannel(BaseChannelView):
     def on_map_updated(self, *args):
         self.channelConfig.stale = True
         self.dispatch('on_modified', self.channelConfig)
+            
+    def _import_preset(self, preset_id):
+        try:
+            preset = self.preset_manager.get_preset_by_id(preset_id)
+            mapping = preset.mapping
+            cfg = self.channelConfig
+            cfg.fromJson(mapping)
+            self.on_config_updated(cfg, self.max_sample_rate)
+            cfg.stale = True
+            self.dispatch('on_modified', cfg)
+        except Exception as e:
+            Logger.error('Failed to import analog preset {}'.format(e))
+            raise
+        
+    def load_preset_view(self):
+        def preset_selected(instance, preset_id):
+            self._import_preset(preset_id)
+            popup.dismiss()
+            
+        def popup_dismissed(*args):
+            pass
 
+        content = PresetBrowserView(self.preset_manager, 'analog')
+        content.bind(on_preset_selected=preset_selected)
+        content.bind(on_preset_close=lambda *args:popup.dismiss())
+        popup = Popup(title='Import a preset', content=content, size_hint=(0.5, 0.75))
+        popup.bind(on_dismiss=popup_dismissed)
+        popup.open()
 
+    def _on_preset_selected(self):
+        pass
+    
 class AnalogScaler(Graph):
     def __init__(self, **kwargs):
         super(AnalogScaler, self).__init__(**kwargs)
@@ -252,7 +290,7 @@ class AnalogScalingMapEditor(BoxLayout):
                 self.dispatch('on_map_updated')
                 self.regen_plot()
         except Exception as e:
-            print("Error updating chart with scaled value: " + str(e))
+            Logger.error("Error updating chart with scaled value: " + str(e))
 
 
 

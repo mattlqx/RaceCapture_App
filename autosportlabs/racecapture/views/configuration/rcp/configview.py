@@ -201,7 +201,7 @@ class ConfigView(Screen):
         attach_node('Race Timing', None, lambda: LapStatsView())
 
         if self.rc_config.capabilities.has_analog:
-            attach_node('Analog Sensors', None, lambda: AnalogChannelsView(channels=runtime_channels))
+            attach_node('Analog Sensors', None, lambda: AnalogChannelsView(channels=runtime_channels, preset_manager=self.preset_manager))
 
         if self.rc_config.capabilities.has_timer:
             attach_node('Pulse/RPM Sensors', None, lambda: PulseChannelsView(channels=runtime_channels))

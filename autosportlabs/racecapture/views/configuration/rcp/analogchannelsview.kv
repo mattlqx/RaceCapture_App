@@ -26,20 +26,19 @@
 	orientation: 'horizontal'
 	BoxLayout:
         orientation: 'vertical'
+        padding: (dp(10), dp(10))
         spacing: dp(5)
-        HSeparator:
-            text: 'Configuration'
         ChannelNameSelectorView:
             id: chan_id
             channel_type: 1
-            size_hint: (1.0,0.3)
+            size_hint: (1.0,0.15)
         SampleRateSelectorView:
             id: sr
-            size_hint: (1.0,0.3)
-        HSeparator:
+            size_hint: (1.0,0.15)
+        HSeparatorMinor:
             text: 'Mode'
 	    GridLayout:
-	        size_hint: (1.0, 0.5)
+	        size_hint: (1.0, 0.4)
 	        cols: 3
 	        FieldLabel:
         		text: 'Raw (0-5v)'
@@ -69,16 +68,30 @@
 	        	group: 'scalingType'
                 id: smMapped
                 on_active: root.on_scaling_type_map(*args)
-			Label:               
+			Label:
+		BoxLayout:
+		    size_hint_y: None
+		    height: dp(30)
+            orientation: 'horizontal'
+            BoxLayout:
+            LabelIconButton:
+                size_hint_x: None
+                width: dp(120)
+                id: load_preset
+                title: 'Presets'
+                icon_size: self.height * 0.7
+                title_font_size: self.height * 0.5
+                icon: u'\uf150'
+                on_press: root.load_preset_view()
+			               
     VSeparator:
     BoxLayout:
+        padding: (dp(10), dp(10))
         orientation: 'vertical'
-        padding: [2,0,0,0]
-        HSeparator:
-            text: 'Calibration'
+        #padding: [2,0,0,0]
         AnalogScalingMapEditor:
             id: map_editor
- 
+        
 <AnalogScaler>:
     id: graph
     xlabel: 'Volts'
