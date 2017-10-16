@@ -15,14 +15,6 @@ from iconbutton import IconButton
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.racecapture.views.util.alertview import alertPopup
 
-#    def load_preset_view(self):
-#        content = PresetBrowserView(self.preset_manager, 'can')
-#        content.bind(on_preset_selected=self.on_preset_selected)
-#        content.bind(on_preset_close=lambda *args:popup.dismiss())
-#        popup = Popup(title='Import a preset configuration', content=content, size_hint=(0.5, 0.75))
-#        popup.bind(on_dismiss=self.popup_dismissed)
-#        popup.open()
-
 class PresetUpdateStatusView(BoxLayout):
     Builder.load_string("""
 <PresetUpdateStatusView>:
