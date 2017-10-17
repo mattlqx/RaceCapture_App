@@ -44,6 +44,9 @@ class ChannelNameField(TextValueField):
         s = ChannelMeta.filter_name(s)
         return super(ChannelNameField, self).insert_text(s, from_undo=from_undo)
 
+    def on_text(self, instance, value):
+        self.text = value.strip()
+
 
 class ChannelLabel(Label):
     Builder.load_string("""
@@ -131,6 +134,38 @@ class ChannelView(BoxLayout):
         self.updateView()
         self.dispatch('on_modified')
 
+class ChannelNameEditor(BoxLayout):
+    Builder.load_string("""
+<ChannelNameEditor>:
+    orientation: 'vertical'
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint_y: None
+        height: dp(90)
+        FieldLabel:
+            text: 'Name'
+        TextValueField:
+            id: name
+            on_text: root.on_name(*args)
+    IconButton:
+        text: "\357\200\214"
+        on_press: root.on_close()    
+    """)
+    def __init__(self, **kwargs):
+        super(ChannelNameEditor, self).__init__(**kwargs)
+        self.register_event_type('on_channel_edited')
+        channel = self.channel = kwargs.get('channel', None)
+        self.ids.name.text = str(channel.name)
+
+    def on_name(self, instance, value):
+        self.channel.name = value
+
+    def on_channel_edited(self, *args):
+        pass
+
+    def on_close(self):
+        self.dispatch('on_channel_edited')
+
 class ChannelEditor(BoxLayout):
     Builder.load_string("""
 <ChannelEditor>:
@@ -190,7 +225,6 @@ class ChannelEditor(BoxLayout):
         on_press: root.on_close()    
     """)
 
-    channel = None
     def __init__(self, **kwargs):
         super(ChannelEditor, self).__init__(**kwargs)
         self.channel = kwargs.get('channel', None)
@@ -223,8 +257,6 @@ class ChannelEditor(BoxLayout):
             maxField.text = str(channel.max)
 
     def on_name(self, instance, value):
-        value = value.strip()
-        instance.text = value
         self.channel.name = value
 
     def on_units(self, instance, value):
