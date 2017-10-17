@@ -31,6 +31,12 @@ if __name__ == '__main__' and sys.platform == 'win32':
 if __name__ == '__main__':
     import logging
     import argparse
+    import platform
+    from kivy.config import Config
+    if platform.system() =='Windows':
+        # disable multisamples to prevent false opengl error
+        # https://github.com/kivy/kivy/issues/3576
+        Config.set('graphics', 'multisamples', '0')
     import kivy
     import os
     import traceback
@@ -39,7 +45,6 @@ if __name__ == '__main__':
     from kivy.properties import AliasProperty
     from functools import partial
     from kivy.clock import Clock
-    from kivy.config import Config
     from kivy.logger import Logger
     kivy.require('1.9.1')
     from kivy.base import ExceptionManager, ExceptionHandler
@@ -48,10 +53,6 @@ if __name__ == '__main__':
     Config.set('kivy', 'exit_on_escape', 0)
     from utils import is_mobile_platform, is_windows
 
-    if is_windows():
-        # disable multisamples to prevent false opengl error
-        # https://github.com/kivy/kivy/issues/3576
-        Config.set('graphics', 'multisamples', '0')
 
     if is_mobile_platform():
         # optimize scroll vs touch behavior for mobile platform
