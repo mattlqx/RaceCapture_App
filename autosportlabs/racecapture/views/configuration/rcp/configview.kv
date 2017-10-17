@@ -28,10 +28,10 @@
     BoxLayout:
         orientation: 'horizontal'
         BoxLayout:
-            size_hint_x: 0.2
+            size_hint_x: None
+            width: max(dp(150), 200)
             orientation: 'vertical'
             ScrollContainer:
-                size_hint_y: 0.75
                 id: scroller 
                 do_scroll_x:False
                 TreeView:
@@ -43,7 +43,8 @@
                     indent_start: dp(5)
             BoxLayout:
                 padding: (dp(5), dp(0))           
-                size_hint_y: 0.25
+                size_hint_y: None
+                height: max(dp(100), 150)
                 BoxLayout:
                     orientation: 'vertical'
                     padding: (dp(0), dp(10))
