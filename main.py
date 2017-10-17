@@ -24,24 +24,27 @@ __version__ = "1.11.0"
 import sys
 import os
 
+
+# do stuff for windows platforms
 if __name__ == '__main__' and sys.platform == 'win32':
+    from kivy.config import Config
     from multiprocessing import freeze_support
     freeze_support()
+
+    # disable multisamples to prevent false opengl error
+    # https://github.com/kivy/kivy/issues/3576
+    Config.set('graphics', 'multisamples', '0')
 
 if __name__ == '__main__':
     import logging
     import argparse
     import platform
-    from kivy.config import Config
-    if platform.system() =='Windows':
-        # disable multisamples to prevent false opengl error
-        # https://github.com/kivy/kivy/issues/3576
-        Config.set('graphics', 'multisamples', '0')
     import kivy
     import os
     import traceback
     import time
     from threading import Thread
+    from kivy.config import Config
     from kivy.properties import AliasProperty
     from functools import partial
     from kivy.clock import Clock
