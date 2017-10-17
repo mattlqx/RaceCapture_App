@@ -435,7 +435,10 @@ class RcpApi:
             Logger.error(traceback.format_exc())
             self.recover_connection()
         finally:
-            self.sendCommandLock.release()
+            try:
+                self.sendCommandLock.release()
+            except:
+                pass
             Clock.schedule_once(lambda dt: self.on_tx(True))
 
 
