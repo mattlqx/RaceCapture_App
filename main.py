@@ -46,11 +46,18 @@ if __name__ == '__main__':
     Config.set('graphics', 'width', '1024')
     Config.set('graphics', 'height', '576')
     Config.set('kivy', 'exit_on_escape', 0)
-    from utils import is_mobile_platform
-    # optimize scroll vs touch behavior for mobile platform
+    from utils import is_mobile_platform, is_windows
+
+    if is_windows():
+        # disable multisamples to prevent false opengl error
+        # https://github.com/kivy/kivy/issues/3576
+        Config.set('graphics', 'multisamples', '0')
+
     if is_mobile_platform():
+        # optimize scroll vs touch behavior for mobile platform
         Config.set('widgets', 'scroll_distance', 40)
         Config.set('widgets', 'scroll_timeout', 250)
+
     from kivy.core.window import Window
     from kivy.uix.boxlayout import BoxLayout
     from kivy.uix.label import Label

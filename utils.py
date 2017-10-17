@@ -57,6 +57,9 @@ def is_ios():
 def is_mobile_platform():
     return True if is_android() or is_ios() else False
 
+def is_windows():
+    return True if platform == 'win' else False
+
 def pct_h(pct):
     return Window.height * pct
 
