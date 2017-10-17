@@ -48,6 +48,8 @@ BAR_GRAPH_GAUGE_KV = """
     FieldLabel:
         id: value
         font_size: min(dp(18), max(1,self.height * 1.0))
+        color: root.label_color
+        bold: True
 """
 
 class BarGraphGauge(AnchorLayout):
@@ -59,6 +61,7 @@ class BarGraphGauge(AnchorLayout):
     maxval = NumericProperty(100)
     value = NumericProperty(0, allownone=True)
     color = ListProperty([1, 1, 1, 0.5])
+    label_color = ListProperty([1, 1, 1, 1.0])
     orientation = StringProperty('left-right')
 
     def __init__(self, **kwargs):
@@ -124,7 +127,7 @@ class BarGraphGauge(AnchorLayout):
                 elif self._orientation == BarGraphGauge.ORIENTATION_RIGHT_LEFT:
                     x = self.width - width
                 else:
-                    x = 0 # BarGraphGauge.ORIENTATION_RIGHT_LEFT
+                    x = 0  # BarGraphGauge.ORIENTATION_RIGHT_LEFT
 
 
         stencil.width = width

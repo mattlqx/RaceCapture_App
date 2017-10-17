@@ -29,6 +29,7 @@ from autosportlabs.racecapture.widgets.heat.heatgauge import TireHeatGauge, Brak
 from kivy.app import Builder
 
 class TireCorner(BoxLayout):
+    LABEL_COLOR = [0.5, 0.5, 0.5, 1.0]
     zones = NumericProperty()
     minval = NumericProperty()
     maxval = NumericProperty()
@@ -57,7 +58,7 @@ class TireCorner(BoxLayout):
         self.ids.tire_values_top.clear_widgets()
         self.ids.tire_values_bottom.clear_widgets()
         self.ids.tire_values.clear_widgets()
-        
+
         if value > 2:
             tv = self.ids.tire_values
             value_containers = [tv]
@@ -65,17 +66,17 @@ class TireCorner(BoxLayout):
         else:
             value_containers = [self.ids.tire_values_top, self.ids.tire_values_bottom]
             orientation = 'center'
-        
+
         if len(value_containers) == 2:
             for c in value_containers:
                 c.size_hint_y = 0.1
             self.ids.tire.size_hint_y = 0.6
 
-        
+
         del(self.tire_value_widgets[:])
         for i in range(0, value):
             tire_values = value_containers[0] if i % len(value_containers) == 0 else value_containers[1]
-            gauge = BarGraphGauge(orientation=orientation)
+            gauge = BarGraphGauge(orientation=orientation, label_color=TireCorner.LABEL_COLOR)
             tire_values.add_widget(gauge)
             self.tire_value_widgets.append(gauge)
             gauge.minval = self.minval
@@ -178,11 +179,12 @@ BRAKE_CORNER_KV = """
 """
 
 class BrakeCorner(BoxLayout):
-    Builder.load_string(BRAKE_CORNER_KV)    
+    Builder.load_string(BRAKE_CORNER_KV)
     zones = NumericProperty()
     minval = NumericProperty()
     maxval = NumericProperty()
     bar_gauge_orientation = StringProperty()
+    LABEL_COLOR = [0.5, 0.5, 0.5, 1.0]
 
     def __init__(self, **kwargs):
         super(BrakeCorner, self).__init__(**kwargs)
@@ -192,24 +194,24 @@ class BrakeCorner(BoxLayout):
     def on_zones(self, instance, value):
         self.ids.brake.zones = value
         top_values = self.ids.brake_values_top
-        bottom_values = self.ids.brake_values_bottom  
+        bottom_values = self.ids.brake_values_bottom
         top_values.clear_widgets()
         bottom_values.clear_widgets()
         del(self.brake_value_widgets[:])
-        
-        
+
+
         for i in range(0, value):
-            if value <= 2: # if zones are 2 or less zones go above and below
+            if value <= 2:  # if zones are 2 or less zones go above and below
                 current_grid = top_values if i % 2 == 0 else bottom_values
-            else: # if zones > 2 then go top to bottom
+            else:  # if zones > 2 then go top to bottom
                 current_grid = top_values if i < 2 else bottom_values
 
-            gauge = BarGraphGauge(orientation=self.bar_gauge_orientation)
+            gauge = BarGraphGauge(orientation=self.bar_gauge_orientation, label_color=BrakeCorner.LABEL_COLOR)
             gauge.minval = self.minval
             gauge.maxval = self.maxval
             current_grid.add_widget(gauge)
             self.brake_value_widgets.append(gauge)
-            
+
         size_hint_y = 0.5 if value <= 2 else 1.0
         top_values.size_hint_y = size_hint_y
         bottom_values.size_hint_y = size_hint_y
