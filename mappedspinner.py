@@ -31,7 +31,8 @@ class MappedSpinner(Spinner):
         self.values = []
         self.defaultValue = ''
         super(MappedSpinner, self).__init__(**kwargs)
-        
+        self.register_event_type('on_value')
+
     def setValueMap(self, valueMap, defaultValue, sort_key=None):
         """
         Sets the displayed and actual values for the spinner
@@ -60,7 +61,12 @@ class MappedSpinner(Spinner):
 
     def getValueFromKey(self, key):
         return self.keyMappings.get(key, None)
-    
+
     def getSelectedValue(self):
         return self.getValueFromKey(self.text)
 
+    def on_value(self, value):
+        pass
+
+    def on_text(self, instance, value):
+        self.dispatch('on_value', self.getValueFromKey(value))

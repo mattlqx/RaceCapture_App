@@ -26,7 +26,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import NumericProperty, ListProperty, BooleanProperty
 from utils import *
-from autosportlabs.racecapture.views.configuration.channels.channelsview import ChannelEditor
+from autosportlabs.racecapture.views.configuration.channels.channelsview import ChannelEditor, ChannelNameEditor
 from autosportlabs.racecapture.data.channels import *
 
 
@@ -56,9 +56,9 @@ class ChannelNameSelectorView(BoxLayout):
                 on_release: root.on_customize(*args)    
     """)
 
+    full_editor = BooleanProperty(True)
     channel_type = NumericProperty(CHANNEL_TYPE_UNKNOWN)
     filter_list = ListProperty([])
-    compact = BooleanProperty(False)
 
     def __init__(self, **kwargs):
         super(ChannelNameSelectorView, self).__init__(**kwargs)
@@ -78,11 +78,6 @@ class ChannelNameSelectorView(BoxLayout):
     def on_channel_type(self, instance, value):
         self.ids.channel_name.channelType = value
 
-    def on_compact(self, instance, value):
-        if value:
-            label = self.ids.channel_label
-            label.parent.remove_widget(label)
-
     def setValue(self, value):
         self.channel_config = value
         self.set_channel_name(value.name)
@@ -98,14 +93,14 @@ class ChannelNameSelectorView(BoxLayout):
             self.channel_config.min = channel_meta.min
             self.channel_config.max = channel_meta.max
             self.channel_config.precision = channel_meta.precision
-            self.dispatch('on_channel')
+            self.dispatch('on_channel', self.channel_config)
 
     def _dismiss_editor(self):
         self._popup.dismiss()
 
     def on_customize(self, *args):
 
-        content = ChannelEditor(channel=self.channel_config)
+        content = ChannelEditor(channel=self.channel_config) if self.full_editor else ChannelNameEditor(channel=self.channel_config)
         popup = Popup(title='Customize Channel',
                       content=content,
                       size_hint=(None, None), size=(dp(500), dp(220)))
@@ -115,8 +110,8 @@ class ChannelNameSelectorView(BoxLayout):
 
     def on_edited(self, *args):
         self.set_channel_name(self.channel_config.name)
-        self.dispatch('on_channel')
+        self.dispatch('on_channel', self.channel_config)
 
-    def on_channel(self):
+    def on_channel(self, value):
         pass
 

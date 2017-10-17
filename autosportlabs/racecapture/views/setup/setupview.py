@@ -82,7 +82,9 @@ SETUP_VIEW_KV = """
                         icon_size: self.height * 0.5
                         title_font_size: self.height * 0.6
                         icon: u'\uf052'
-                        size_hint: (0.2, 0.1)                
+                        size_hint_x: None
+                        size_hint_y: 0.1
+                        width: dp(100)
                         on_release: root.on_skip()
 """
 
