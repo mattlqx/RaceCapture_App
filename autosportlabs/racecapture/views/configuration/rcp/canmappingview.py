@@ -160,7 +160,7 @@ class CANChannelCustomizationTab(CANChannelMappingTab):
         if self._loaded:
             self.channel_cfg.sampleRate = instance.getValueFromKey(value)
 
-    def _on_channel_selected(self, value):
+    def _on_channel_selected(self, instance, value):
         if self._loaded:
             self.dispatch('on_channel', value.channel_config)
 
