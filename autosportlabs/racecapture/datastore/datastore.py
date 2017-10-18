@@ -473,12 +473,13 @@ class DataStore(object):
 
         for channel in channels:
             name = _scrub_sql_value(channel.name)
-            if name in existing_columns:
+            # SQLite column names are case-insensitive
+            if name.upper() in (col.upper() for col in existing_columns):
                 continue
             # Extend the datapoint table to include the channel as a
             # new field
             self._conn.execute("""ALTER TABLE datapoint
-            ADD {} REAL""".format(_scrub_sql_value(name)))
+            ADD {} REAL""".format(name))
         self._add_extra_indexes(channels)
         self._conn.commit()
 
