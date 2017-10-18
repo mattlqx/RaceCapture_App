@@ -67,7 +67,7 @@ if __name__ == '__main__':
     from kivy.uix.label import Label
     from kivy.uix.popup import Popup
     from kivy.uix.screenmanager import *
-    if hasattr(sys, '_MEIPASS'): #handle pyinstaller frozen packaging
+    if hasattr(sys, '_MEIPASS'):  # handle pyinstaller frozen packaging
         kivy.resources.resource_add_path(os.path.join(sys._MEIPASS))
 
     from installfix_garden_navigationdrawer import NavigationDrawer
@@ -82,6 +82,7 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.menu.mainmenu import MainMenu
     from autosportlabs.comms.commsfactory import comms_factory
     from autosportlabs.racecapture.tracks.trackmanager import TrackManager
+    from autosportlabs.racecapture.presets.presetmanager import PresetManager
     from autosportlabs.racecapture.menu.homepageview import HomePageView
     from autosportlabs.racecapture.settings.systemsettings import SystemSettings
     from autosportlabs.racecapture.settings.prefs import Range
@@ -135,7 +136,7 @@ class RaceCaptureApp(App):
     _status_pump = StatusPump()
 
     # Track database manager
-    trackManager = None
+    track_manager = None
 
     # Application Status bars
     status_bar = None
@@ -165,7 +166,7 @@ class RaceCaptureApp(App):
     def __init__(self, **kwargs):
         super(RaceCaptureApp, self).__init__(**kwargs)
 
-        if kivy.platform in ['ios','macosx','linux']:
+        if kivy.platform in ['ios', 'macosx', 'linux']:
             kivy.resources.resource_add_path(os.path.join(os.path.dirname(os.path.realpath(__file__)), "data"))
 
         # We do this because when this app is bundled into a standalone app
@@ -179,7 +180,8 @@ class RaceCaptureApp(App):
         self.settings = SystemSettings(self.user_data_dir, base_dir=self.base_dir)
         self.settings.userPrefs.bind(on_pref_change=self._on_preference_change)
 
-        self.trackManager = TrackManager(user_dir=self.settings.get_default_data_dir(), base_dir=self.base_dir)
+        self.track_manager = TrackManager(user_dir=self.settings.get_default_data_dir(), base_dir=self.base_dir)
+        self.preset_manager = PresetManager(user_dir=self.settings.get_default_data_dir(), base_dir=self.base_dir)
 
         # RaceCapture communications API
         self._rc_api = RcpApi(on_disconnect=self._on_rcp_disconnect, settings=self.settings)
@@ -187,7 +189,7 @@ class RaceCaptureApp(App):
         self._databus = DataBusFactory().create_standard_databus(self.settings.systemChannels)
         self.settings.runtimeChannels.data_bus = self._databus
         self._datastore = CachingAnalysisDatastore(databus=self._databus)
-        self._session_recorder = SessionRecorder(self._datastore, self._databus, self._rc_api, self.settings, self.trackManager, self._status_pump)
+        self._session_recorder = SessionRecorder(self._datastore, self._databus, self._rc_api, self.settings, self.track_manager, self._status_pump)
         self._session_recorder.bind(on_recording=self._on_session_recording)
 
 
@@ -225,15 +227,22 @@ class RaceCaptureApp(App):
     def getAppArg(self, name):
         return self.app_args.get(name, None)
 
-    def loadCurrentTracksSuccess(self):
-        Logger.info('RaceCaptureApp: Current Tracks Loaded')
+    def _init_tracks_success(self):
+        Logger.info('RaceCaptureApp: Current tracks loaded')
         Clock.schedule_once(lambda dt: self.notifyTracksUpdated())
 
-    def loadCurrentTracksError(self, details):
-        Clock.schedule_once(lambda dt: alertPopup('Error Loading Tracks', str(details)))
+    def _init_tracks_error(self, details):
+        Logger.error('RaceCaptureApp: Error initializing tracks: {}'.format(details))
+
+    def _init_presets_success(self):
+        Logger.info('RaceCaptureApp: Current presets loaded')
+
+    def _init_presets_error(self, details):
+        Logger.error('RaceCaptureApp: Error initializing presets: {}'.format(details))
 
     def init_data(self):
-        self.trackManager.init(None, self.loadCurrentTracksSuccess, self.loadCurrentTracksError)
+        self.track_manager.init(None, self._init_tracks_success, self._init_tracks_error)
+        self.preset_manager.init(None, self._init_presets_success, self._init_presets_error)
         self._init_datastore()
 
     def _init_datastore(self):
@@ -291,10 +300,10 @@ class RaceCaptureApp(App):
 
     def on_tracks_updated(self, track_manager):
         for view in self.tracks_listeners:
-            view.dispatch('on_tracks_updated', track_manager)
+            view.dispatch('on_tracks_updated', self.track_manager)
 
     def notifyTracksUpdated(self):
-        self.dispatch('on_tracks_updated', self.trackManager)
+        self.dispatch('on_tracks_updated', self.track_manager)
 
     def on_main_menu_item(self, instance, value):
         self.switchMainView(value)
@@ -353,7 +362,8 @@ class RaceCaptureApp(App):
                                 databus=self._databus,
                                 settings=self.settings,
                                 base_dir=self.base_dir,
-                                track_manager=self.trackManager,
+                                track_manager=self.track_manager,
+                                preset_manager=self.preset_manager,
                                  status_pump=self._status_pump)
         config_view.bind(on_read_config=self.on_read_config)
         config_view.bind(on_write_config=self.on_write_config)
@@ -362,18 +372,18 @@ class RaceCaptureApp(App):
         return config_view
 
     def build_status_view(self):
-        status_view = StatusView(self.trackManager, self._status_pump, name='status')
+        status_view = StatusView(self.track_manager, self._status_pump, name='status')
         self.tracks_listeners.append(status_view)
         return status_view
 
     def build_dash_view(self):
-        dash_view = DashboardView(self._status_pump, self.trackManager, self._rc_api, self.rc_config, self._databus, self.settings, name='dash')
+        dash_view = DashboardView(self._status_pump, self.track_manager, self._rc_api, self.rc_config, self._databus, self.settings, name='dash')
         self.config_listeners.append(dash_view)
         self.tracks_listeners.append(dash_view)
         return dash_view
 
     def build_analysis_view(self):
-        analysis_view = AnalysisView(name='analysis', datastore=self._datastore, databus=self._databus, settings=self.settings, track_manager=self.trackManager, session_recorder=self._session_recorder)
+        analysis_view = AnalysisView(name='analysis', datastore=self._datastore, databus=self._databus, settings=self.settings, track_manager=self.track_manager, session_recorder=self._session_recorder)
         self.tracks_listeners.append(analysis_view)
         return analysis_view
 
@@ -528,7 +538,7 @@ class RaceCaptureApp(App):
     def _setup_toolbar(self):
         status_bar = self.root.ids.status_bar
         status_bar.status_pump = self._status_pump
-        status_bar.track_manager = self.trackManager
+        status_bar.track_manager = self.track_manager
 
     def setup_telemetry(self):
         host = self.getAppArg('telemetryhost')

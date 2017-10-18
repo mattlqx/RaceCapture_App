@@ -116,14 +116,15 @@ class CANChannelCustomizationTab(CANChannelMappingTab):
                     on_channel: root._on_channel_selected(*args)
             SectionBoxLayout:
                 FieldLabel:
-                    size_hint_x: 0.4
                     halign: 'right'
                     text: 'Rate'
                 SampleRateSpinner:
                     id: sr
-                    size_hint_x: 0.45
+                    size_hint_x: None
+                    width: dp(100)
                 BoxLayout:
-                    size_hint_x: 0.15
+                    size_hint_x: None
+                    width: dp(40)
         BoxLayout:
             size_hint_x: 0.1
 
@@ -159,7 +160,7 @@ class CANChannelCustomizationTab(CANChannelMappingTab):
         if self._loaded:
             self.channel_cfg.sampleRate = instance.getValueFromKey(value)
 
-    def _on_channel_selected(self, value):
+    def _on_channel_selected(self, instance, value):
         if self._loaded:
             self.dispatch('on_channel', value.channel_config)
 

@@ -24,20 +24,24 @@ from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
 from kivy.app import Builder
 from kivy.clock import Clock
-from iconbutton import IconButton
+from kivy.properties import ObjectProperty
+from kivy.uix.popup import Popup
 from settingsview import SettingsSwitch
+from iconbutton import IconButton
 from autosportlabs.help.helpmanager import HelpInfo
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
 from autosportlabs.racecapture.views.configuration.rcp.canmappingview import CANChannelConfigView, CANChannelMappingTab
+from autosportlabs.racecapture.presets.presetview import PresetBrowserView
 from autosportlabs.racecapture.data.unitsconversion import UnitsConversionFilters
 from autosportlabs.uix.layout.sections import SectionBoxLayout
-from autosportlabs.racecapture.views.util.alertview import editor_popup, confirmPopup
+from autosportlabs.racecapture.views.util.alertview import editor_popup, confirmPopup, choicePopup
 from autosportlabs.racecapture.OBD2.obd2settings import OBD2Settings
 from autosportlabs.racecapture.views.util.viewutils import clock_sequencer
 from utils import *
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
+from autosportlabs.racecapture.views.util.alertview import alertPopup
 import copy
 
 class PIDConfigTab(CANChannelMappingTab):
@@ -243,11 +247,29 @@ class OBD2ChannelsView(BaseConfigView):
 <OBD2ChannelsView>:
     spacing: dp(20)
     orientation: 'vertical'
-    SettingsView:
-        id: obd2enable
-        label_text: 'OBDII channels'
-        help_text: ''
-        size_hint_y: 0.15
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint_y: 0.20
+        SettingsView:
+            id: obd2enable
+            size_hint_y: 0.6
+            label_text: 'OBDII channels'
+            help_text: ''
+        BoxLayout:
+            padding: (dp(10), dp(0))
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: dp(40)        
+            BoxLayout:
+            LabelIconButton:
+                size_hint_x: None
+                width: dp(120)
+                id: load_preset
+                title: 'Presets'
+                icon_size: self.height * 0.7
+                title_font_size: self.height * 0.5
+                icon: u'\uf150'
+                on_press: root.load_preset_view()
     BoxLayout:
         size_hint_y: 0.85
         orientation: 'vertical'        
@@ -300,6 +322,7 @@ class OBD2ChannelsView(BaseConfigView):
                     disabled: True
                     id: addpid
 """)
+    preset_manager = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(OBD2ChannelsView, self).__init__(**kwargs)
@@ -423,3 +446,50 @@ class OBD2ChannelsView(BaseConfigView):
     def _refresh_channel_list_notice(self, obd2_cfg):
         channel_count = len(obd2_cfg.pids)
         self.ids.list_msg.text = 'Press (+) to add an OBDII channel' if channel_count == 0 else ''
+
+
+    def _delete_all_channels(self):
+        del self.obd2_cfg.pids[:]
+        self.reload_obd2_channel_grid(self.obd2_cfg)
+        self.dispatch('on_modified')
+
+    def _on_preset_selected(self, instance, preset_id):
+        popup = None
+        def _on_answer(instance, answer):
+            if answer == True:
+                self._delete_all_channels()
+            self._import_preset(preset_id)
+            popup.dismiss()
+
+        if len(self.obd2_cfg.pids) > 0:
+            popup = choicePopup('Confirm', 'Overwrite or append existing channels?', 'Overwrite', 'Append', _on_answer)
+        else:
+            self._import_preset(preset_id)
+
+    def _import_preset(self, id):
+        try:
+            preset = self.preset_manager.get_preset_by_id(id)
+            if preset:
+                mapping = preset.mapping
+                for channel_json in mapping['pids']:
+                    new_channel = PidConfig()
+                    new_channel.fromJson(channel_json)
+                    self.obd2_cfg.pids.append(new_channel)
+                self.reload_obd2_channel_grid(self.obd2_cfg)
+                self.obd2_cfg.stale = True
+                self.dispatch('on_modified')
+            self._refresh_channel_list_notice(self.obd2_cfg)
+        except Exception as e:
+            alertPopup('Error', 'There was an error loading the preset:\n\n{}'.format(e))
+            raise
+
+    def load_preset_view(self):
+        def popup_dismissed(*args):
+            pass
+
+        content = PresetBrowserView(self.preset_manager, 'obd2')
+        content.bind(on_preset_selected=self._on_preset_selected)
+        content.bind(on_preset_close=lambda *args:popup.dismiss())
+        popup = Popup(title='Import a preset configuration', content=content, size_hint=(0.5, 0.75))
+        popup.bind(on_dismiss=popup_dismissed)
+        popup.open()

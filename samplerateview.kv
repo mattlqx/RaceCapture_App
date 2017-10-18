@@ -20,11 +20,14 @@
 
 <SampleRateSelectorView>:
     BoxLayout:
+        padding: dp(5)
         spacing: dp(5)
         orientation: 'horizontal'
         FieldLabel:
             text: 'Sample Rate'
             halign: 'right'
         SampleRateSpinner:
+            size_hint_x: None
+            width: dp(140)
             rcid: 'sampleRate'
             on_text: root.onSelect(*args)

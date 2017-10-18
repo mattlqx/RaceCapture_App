@@ -68,11 +68,12 @@ class ConfigView(Screen):
     Builder.load_file(CONFIG_VIEW_KV)
     # file save/load
     loaded = BooleanProperty(False)
-    loadfile = ObjectProperty(None)
-    savefile = ObjectProperty(None)
-    text_input = ObjectProperty(None)
     writeStale = BooleanProperty(False)
-    track_manager = ObjectProperty(None)
+    loadfile = ObjectProperty()
+    savefile = ObjectProperty()
+    text_input = ObjectProperty()
+    track_manager = ObjectProperty()
+    preset_manager = ObjectProperty()
 
     # List of config views
     configViews = []
@@ -201,7 +202,7 @@ class ConfigView(Screen):
         attach_node('Race Timing', None, lambda: LapStatsView())
 
         if self.rc_config.capabilities.has_analog:
-            attach_node('Analog Sensors', None, lambda: AnalogChannelsView(channels=runtime_channels))
+            attach_node('Analog Sensors', None, lambda: AnalogChannelsView(channels=runtime_channels, preset_manager=self.preset_manager))
 
         if self.rc_config.capabilities.has_timer:
             attach_node('Pulse/RPM Sensors', None, lambda: PulseChannelsView(channels=runtime_channels))
@@ -217,9 +218,9 @@ class ConfigView(Screen):
         attach_node('CAN Bus', None, lambda: CANConfigView())
 
         if self.rc_config.capabilities.has_can_channel:
-            attach_node('CAN Mapping', None, lambda: CANChannelsView(settings=self._settings, channels=runtime_channels, base_dir=self.base_dir))
+            attach_node('CAN Mapping', None, lambda: CANChannelsView(settings=self._settings, preset_manager=self.preset_manager, channels=runtime_channels, base_dir=self.base_dir))
 
-        attach_node('OBDII', None, lambda: OBD2ChannelsView(channels=runtime_channels, base_dir=self.base_dir))
+        attach_node('OBDII', None, lambda: OBD2ChannelsView(channels=runtime_channels, base_dir=self.base_dir, preset_manager=self.preset_manager))
 
         attach_node('Automatic Control', None, lambda: AutoControlConfigView(channels=runtime_channels))
 
