@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -21,7 +21,7 @@
 import kivy
 from autosportlabs.racecapture.theme.color import ColorScheme
 from kivy.uix.behaviors import ToggleButtonBehavior
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.properties import NumericProperty, ObjectProperty, BooleanProperty, ListProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.clock import Clock

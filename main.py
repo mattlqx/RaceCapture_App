@@ -3,7 +3,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -24,33 +24,44 @@ __version__ = "1.12.0"
 import sys
 import os
 
+
+# do stuff for windows platforms
 if __name__ == '__main__' and sys.platform == 'win32':
+    from kivy.config import Config
     from multiprocessing import freeze_support
     freeze_support()
+
+    # disable multisamples to prevent false opengl error
+    # https://github.com/kivy/kivy/issues/3576
+    Config.set('graphics', 'multisamples', '0')
 
 if __name__ == '__main__':
     import logging
     import argparse
+    import platform
     import kivy
     import os
     import traceback
     import time
     from threading import Thread
+    from kivy.config import Config
     from kivy.properties import AliasProperty
     from functools import partial
     from kivy.clock import Clock
-    from kivy.config import Config
     from kivy.logger import Logger
-    kivy.require('1.9.1')
+    kivy.require('1.10.0')
     from kivy.base import ExceptionManager, ExceptionHandler
     Config.set('graphics', 'width', '1024')
     Config.set('graphics', 'height', '576')
     Config.set('kivy', 'exit_on_escape', 0)
-    from utils import is_mobile_platform
-    # optimize scroll vs touch behavior for mobile platform
+    from utils import is_mobile_platform, is_windows
+
+
     if is_mobile_platform():
+        # optimize scroll vs touch behavior for mobile platform
         Config.set('widgets', 'scroll_distance', 40)
         Config.set('widgets', 'scroll_timeout', 250)
+
     from kivy.core.window import Window
     from kivy.uix.boxlayout import BoxLayout
     from kivy.uix.label import Label
