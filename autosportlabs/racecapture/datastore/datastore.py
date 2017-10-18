@@ -684,74 +684,78 @@ class DataStore(object):
 
         for line in data_file:
 
-            # Strip the line and break it down into it's component
-            # channels, replace all blank entries with None
-            channels = [
-                None if x == '' else float(x) for x in line.strip().split(',')]
+            try:
+                # Strip the line and break it down into it's component
+                # channels, replace all blank entries with None
+                channels = [
+                    None if x == '' else float(x) for x in line.strip().split(',')]
 
-            # Now, if this is the first entry (characterized by
-            # work_list being an empty list), we need to create all of
-            # our 'plinko slots' for each channel in both the work and
-            # yield lists
-            work_list_len = len(work_list)
-            channels_len = len(channels)
-            if work_list_len == 0:
-                work_list = [[] for x in channels]
-                yield_list = [[] for x in channels]
+                # Now, if this is the first entry (characterized by
+                # work_list being an empty list), we need to create all of
+                # our 'plinko slots' for each channel in both the work and
+                # yield lists
+                work_list_len = len(work_list)
+                channels_len = len(channels)
+                if work_list_len == 0:
+                    work_list = [[] for x in channels]
+                    yield_list = [[] for x in channels]
 
-            if channels_len > work_list_len and current_line > 0:
-                warn_msg = 'Unexpected channel count in line {}. Expected {}, got {}'.format(
-                    current_line, work_list_len, channels_len)
-                if warnings:
-                    warnings.append((line, warn_msg))
-                Logger.warn("DataStore: {}".format(warn_msg))
-                continue
-
-            # Down to business, first, we stuff each channel's sample
-            # into the work list
-            Logger.debug('DataStore: work_list.len={}, channels.len={}, current_line={}'.format(
-                work_list_len, channels_len, current_line))
-            for c in range(channels_len):
-                work_list[c].append(channels[c])
-
-            # At this point, we need to walk through each channel
-            # column in the work list.  If the length of the column is
-            # 1, we simply move onto the next column.  If the length
-            # is > 1, we check if column[-1] is a miss (None) or a
-            # hit(anything else).  If it is a hit, we
-            # interpolate/extrapolate the column, then move everything
-            # EXCEPT the last item into the yield list
-
-            for c in range(len(work_list)):
-                if len(work_list[c]) == 1:
+                if channels_len > work_list_len and current_line > 0:
+                    warn_msg = 'Unexpected channel count in line {}. Expected {}, got {}'.format(
+                        current_line, work_list_len, channels_len)
+                    if warnings:
+                        warnings.append((line, warn_msg))
+                    Logger.warn("DataStore: {}".format(warn_msg))
                     continue
 
-                # If we have a hit at the end of the list, get the
-                # extraploated/interpolated list of datapoints
-                if not work_list[c][-1] == None:
-                    mod_list = self._extrap_datapoints(work_list[c])
+                # Down to business, first, we stuff each channel's sample
+                # into the work list
+                Logger.debug('DataStore: work_list.len={}, channels.len={}, current_line={}'.format(
+                    work_list_len, channels_len, current_line))
+                for c in range(channels_len):
+                    work_list[c].append(channels[c])
 
-                    # Now copy everything but the last point in the
-                    # modified list into the yield_list
-                    yield_list[c].extend(mod_list[:-1])
+                # At this point, we need to walk through each channel
+                # column in the work list.  If the length of the column is
+                # 1, we simply move onto the next column.  If the length
+                # is > 1, we check if column[-1] is a miss (None) or a
+                # hit(anything else).  If it is a hit, we
+                # interpolate/extrapolate the column, then move everything
+                # EXCEPT the last item into the yield list
 
-                    # And remove everything BUT the last datapoint from
-                    # the current list in work_list
-                    work_list[c] = work_list[c][-1:]
+                for c in range(len(work_list)):
+                    if len(work_list[c]) == 1:
+                        continue
 
-            # Ok, we now have THINGS in our yield list, if we have
-            # something in EVERY column of the yield list, create a
-            # new list containing the first item in every column,
-            # shift all columns down one, and yield the new list
-            if not 0 in [len(x) for x in yield_list]:
-                ds_to_yield = [x[0] for x in yield_list]
-                map(lambda x: x.pop(0), yield_list)
-                if progress_cb:
-                    percent_complete = float(current_line) / line_count * 100
-                    progress_cb(percent_complete)
-                yield ds_to_yield
+                    # If we have a hit at the end of the list, get the
+                    # extraploated/interpolated list of datapoints
+                    if not work_list[c][-1] == None:
+                        mod_list = self._extrap_datapoints(work_list[c])
 
-            # Increment line number
+                        # Now copy everything but the last point in the
+                        # modified list into the yield_list
+                        yield_list[c].extend(mod_list[:-1])
+
+                        # And remove everything BUT the last datapoint from
+                        # the current list in work_list
+                        work_list[c] = work_list[c][-1:]
+
+                # Ok, we now have THINGS in our yield list, if we have
+                # something in EVERY column of the yield list, create a
+                # new list containing the first item in every column,
+                # shift all columns down one, and yield the new list
+                if not 0 in [len(x) for x in yield_list]:
+                    ds_to_yield = [x[0] for x in yield_list]
+                    map(lambda x: x.pop(0), yield_list)
+                    if progress_cb:
+                        percent_complete = float(current_line) / line_count * 100
+                        progress_cb(percent_complete)
+                    yield ds_to_yield
+
+                # Increment line number
+            except Exception as e:
+                Logger.warn('Datastore: could not parse logfile data at line {}'.format(current_line))
+
             current_line += 1
 
         # now, finish off and extrapolate the remaining items in the
