@@ -35,19 +35,21 @@ class ChannelNameSelectorView(BoxLayout):
     Builder.load_string("""
 <ChannelNameSelectorView>:
     BoxLayout:
+        spacing: dp(5)
         orientation: 'horizontal'
-        spacing: sp(5)
         FieldLabel:
             size_hint_x: 0.4
             text: 'Channel'
             halign: 'right'
             id: channel_label
         ChannelNameSpinner:
-            size_hint_x: 0.45
+            size_hint_x: None
+            width: dp(100)
             id: channel_name
             on_text: root.on_channel_selected(*args)
         BoxLayout:
-            size_hint_x: 0.15
+            size_hint_x: None
+            width: dp(40)
             IconButton:
                 color: ColorScheme.get_accent()        
                 text: u'\uf013'

@@ -61,15 +61,16 @@ class BaseChannel(object):
                     self.max == other.max and
                     self.sampleRate == other.sampleRate)
 
-SCALING_MAP_POINTS = 5
-SCALING_MAP_MIN_VOLTS = 0
+
 
 class ScalingMapException(Exception):
     pass
 
 class ScalingMap(object):
+    SCALING_MAP_POINTS = 5
+    SCALING_MAP_MIN_VOLTS = 0
     def __init__(self, **kwargs):
-        points = SCALING_MAP_POINTS
+        points = ScalingMap.SCALING_MAP_POINTS
         raw = []
         scaled = []
         for i in range(points):
@@ -117,7 +118,7 @@ class ScalingMap(object):
             value = float(value)
         except:
             raise ScalingMapException("Value must be numeric")
-        if map_bin < SCALING_MAP_POINTS - 1:
+        if map_bin < ScalingMap.SCALING_MAP_POINTS - 1:
             next_value = self.raw[map_bin + 1]
             if value > next_value:
                 raise ScalingMapException("Must be less or equal to {}".format(next_value))
@@ -125,8 +126,8 @@ class ScalingMap(object):
             prev_value = self.raw[map_bin - 1]
             if value < prev_value:
                 raise ScalingMapException("Must be greater or equal to {}".format(prev_value))
-        if value < SCALING_MAP_MIN_VOLTS:
-            raise ScalingMapException('Must be greater than {}'.format(SCALING_MAP_MIN_VOLTS))
+        if value < ScalingMap.SCALING_MAP_MIN_VOLTS:
+            raise ScalingMapException('Must be greater than {}'.format(ScalingMap.SCALING_MAP_MIN_VOLTS))
 
         self.raw[map_bin] = value
 

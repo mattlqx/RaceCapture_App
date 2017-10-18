@@ -1,4 +1,3 @@
-#!/bin/bash
 #
 # Race Capture App
 #
@@ -19,12 +18,3 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
-
-set -e
-rm -rf bin
-python -m build_tools.build_default_tracks
-python -m build_tools.build_default_mappings
-cp data/images/defaulttheme-0.png .buildozer/android/platform/build/dists/racecapture/private/lib/python2.7/site-packages/kivy/data/images/defaulttheme-0.png
-cp data/images/defaulttheme-0.png .buildozer/android/platform/build/dists/racecapture/python-install/lib/python2.7/site-packages/kivy/data/images/defaulttheme-0.png
-
-buildozer -v android release

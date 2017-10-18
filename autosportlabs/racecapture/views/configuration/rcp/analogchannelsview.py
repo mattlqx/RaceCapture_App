@@ -25,9 +25,13 @@ from math import sin
 from installfix_garden_graph import Graph, LinePlot
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
+from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.properties import ObjectProperty
 from kivy.utils import get_color_from_hex as rgb
 from kivy.app import Builder
 from kivy.clock import Clock
+from kivy.metrics import sp
+from kivy.uix.popup import Popup
 from valuefield import *
 from utils import *
 from autosportlabs.racecapture.views.configuration.channels.channelnameselectorview import ChannelNameSelectorView
@@ -36,13 +40,10 @@ from autosportlabs.racecapture.views.configuration.baseconfigview import BaseMul
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.racecapture.views.util.alertview import alertPopup
 from autosportlabs.racecapture.views.popup.centeredbubble import CenteredBubble, WarnLabel
-from kivy.metrics import sp
-
-ANALOG_CHANNELS_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/analogchannelsview.kv'
-
+from autosportlabs.racecapture.presets.presetview import PresetBrowserView
 
 class AnalogChannelsView(BaseMultiChannelConfigView):
-    Builder.load_file(ANALOG_CHANNELS_VIEW_KV)
+    preset_manager = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(AnalogChannelsView, self).__init__(**kwargs)
@@ -51,7 +52,7 @@ class AnalogChannelsView(BaseMultiChannelConfigView):
 
 
     def channel_builder(self, index, max_sample_rate):
-        editor = AnalogChannel(id='analog' + str(index), channels=self.channels)
+        editor = AnalogChannel(id='analog' + str(index), channels=self.channels, preset_manager=self.preset_manager)
         editor.bind(on_modified=self.on_modified)
         if self.config:
             editor.on_config_updated(self.config.channels[index], max_sample_rate)
@@ -61,9 +62,142 @@ class AnalogChannelsView(BaseMultiChannelConfigView):
         return rcp_cfg.analogConfig
 
 class AnalogChannel(BaseChannelView):
+    Builder.load_string("""
+<AnalogChannel>:
+    orientation: 'horizontal'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: (dp(10), dp(10))
+        spacing: dp(5)
+        ChannelNameSelectorView:
+            id: chan_id
+            channel_type: 1
+            size_hint: (1.0,0.15)
+        SampleRateSelectorView:
+            id: sr
+            size_hint: (1.0,0.15)
+        HSeparatorMinor:
+            text: 'Mode'
+        GridLayout:
+            size_hint: (1.0, 0.4)
+            cols: 2
+            FieldLabel:
+                text: 'Raw (0-5v)'
+                font_size: sp(17)
+                halign: 'right'
+            CheckBox:
+                size_hint_x: None
+                width: dp(140)
+                group: 'scalingType'
+                id: smRaw
+                on_active: root.on_scaling_type_raw(*args)
+            FieldLabel:
+                text: 'Linear'
+                font_size: sp(17)
+                halign: 'right'
+            CheckBox:
+                size_hint_x: None
+                width: dp(140)
+                group: 'scalingType'
+                id: smLinear
+                on_active: root.on_scaling_type_linear(*args)
+            FieldLabel:
+                text: 'Mapped'
+                font_size: sp(17)
+                halign: 'right'
+            CheckBox:
+                size_hint_x: None
+                width: dp(140)
+                group: 'scalingType'
+                id: smMapped
+                on_active: root.on_scaling_type_map(*args)
+        BoxLayout:
+            size_hint_y: None
+            height: dp(30)
+            orientation: 'horizontal'
+            BoxLayout:
+            LabelIconButton:
+                size_hint_x: None
+                width: dp(120)
+                id: load_preset
+                title: 'Presets'
+                icon_size: self.height * 0.7
+                title_font_size: self.height * 0.5
+                icon: u'\uf150'
+                on_press: root.load_preset_view()
+                           
+    VSeparator:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: (dp(5), dp(5))
+        BoxLayout:
+            size_hint_y: 0.6
+            id: graphcontainer        
+            orientation: 'vertical'
+        ScreenManager:
+            size_hint_y: 0.4
+            id: screens
+            orientation: 'vertical'
+            Screen:
+                name: 'blank'
+            Screen:
+                name: 'map'
+                AnalogScalingMapEditor:
+                    id: map_editor
+                    size_hint_x: 1.0
+            Screen:
+                name: 'linear'
+                BoxLayout:
+                    size_hint_x: 1.0
+                    orientation: 'vertical'
+                    HSeparatorMinor:
+                        text: 'Linear Formula'
+                        size_hint_y: None
+                        height: dp(50)
+                    BoxLayout:
+                        padding: (dp(10), dp(10))
+                        size_hint_y: None
+                        height: dp(60)
+                        orientation: 'horizontal'
+                        FieldLabel:
+                            text: u'Raw \u00D7'
+                            halign: 'center'
+                            font_size: self.height * 0.7
+                            size_hint_x: None
+                            width: dp(100)                       
+                        FloatValueField:
+                            id: linearscaling
+                            on_text: root.on_linear_map_value(*args)
+                        FieldLabel:
+                            text: '+'
+                            halign: 'center'
+                            font_size: self.height * 0.7
+                            size_hint_x: None
+                            width: dp(50)                       
+                        FloatValueField:
+                            id: linearoffset
+                            on_text: root.on_linear_map_offset(*args)
+                    BoxLayout:
+    """)
+    preset_manager = ObjectProperty()
+
+    SCREEN_MAP = {ANALOG_SCALING_MODE_RAW: 'blank',
+                  ANALOG_SCALING_MODE_LINEAR: 'linear',
+                  ANALOG_SCALING_MODE_MAP: 'map'}
+
     def __init__(self, **kwargs):
         super(AnalogChannel, self).__init__(**kwargs)
+        self.max_sample_rate = None
+        self.channelConfig = None
 
+    def on_linear_map_offset(self, instance, value):
+        try:
+            if self.channelConfig:
+                self.channelConfig.linearOffset = float(value)
+                self.channelConfig.stale = True
+                self.dispatch('on_modified', self.channelConfig)
+        except:
+            pass
     def on_linear_map_value(self, instance, value):
         try:
             if self.channelConfig:
@@ -73,26 +207,33 @@ class AnalogChannel(BaseChannelView):
         except:
             pass
 
-
     def on_scaling_type_raw(self, instance, value):
         if self.channelConfig and value:
             self.channelConfig.scalingMode = ANALOG_SCALING_MODE_RAW
             self.channelConfig.stale = True
             self.dispatch('on_modified', self.channelConfig)
+            self._synchronize_view()
 
     def on_scaling_type_linear(self, instance, value):
         if self.channelConfig and value:
             self.channelConfig.scalingMode = ANALOG_SCALING_MODE_LINEAR
             self.channelConfig.stale = True
             self.dispatch('on_modified', self.channelConfig)
+            self._synchronize_view()
 
     def on_scaling_type_map(self, instance, value):
         if self.channelConfig and value:
             self.channelConfig.scalingMode = ANALOG_SCALING_MODE_MAP
             self.channelConfig.stale = True
             self.dispatch('on_modified', self.channelConfig)
+            self._synchronize_view()
+
+    def _synchronize_view(self):
+        self.ids.screens.current = AnalogChannel.SCREEN_MAP.get(self.channelConfig.scalingMode)
+        self.regen_plot()
 
     def on_config_updated(self, channelConfig, max_sample_rate):
+        self.max_sample_rate = max_sample_rate
         self.ids.chan_id.setValue(channelConfig)
         self.ids.sr.setValue(channelConfig.sampleRate, max_sample_rate)
 
@@ -115,25 +256,198 @@ class AnalogChannel(BaseChannelView):
             check_mapped.active = True
 
         self.ids.linearscaling.text = str(channelConfig.linearScaling)
+        self.ids.linearoffset.text = str(channelConfig.linearOffset)
         map_editor = self.ids.map_editor
         map_editor.on_config_changed(channelConfig.scalingMap)
         map_editor.bind(on_map_updated=self.on_map_updated)
-
         self.channelConfig = channelConfig
+        self._synchronize_view()
+
+    def regen_plot(self):
+        cfg = self.channelConfig
+        mode = cfg.scalingMode
+        if mode == 0:
+            self._regen_plot_linear(1, 0)
+        elif mode == 1:
+            self._regen_plot_linear(cfg.linearScaling, cfg.linearOffset)
+        else:
+            scaling_map = self.channelConfig.scalingMap
+            volts = []
+            scaled = []
+            for i in range (0, ScalingMap.SCALING_MAP_POINTS):
+                volts.append(scaling_map.getVolts(i))
+                scaled.append(scaling_map.getScaled(i))
+            self._regen_plot_interpolated(volts, scaled)
+
+    def _regen_plot_linear(self, scaling, offset):
+        volt_increment = float(ScalingMap.SCALING_MAP_POINTS) / (ScalingMap.SCALING_MAP_POINTS - 1)
+        volts = []
+        scaled = []
+        v = 0
+        for i in range(0, ScalingMap.SCALING_MAP_POINTS):
+            volts.append(v)
+            scaled.append(v * scaling + offset)
+            v += volt_increment
+        self._regen_plot_interpolated(volts, scaled)
+
+    def _regen_plot_interpolated(self, volts, scaled):
+        graphContainer = self.ids.graphcontainer
+        graphContainer.clear_widgets()
+
+        graph = AnalogScaler()
+        graphContainer.add_widget(graph)
+
+        plot = LinePlot(color=rgb('00FF00'), line_width=1.25)
+        graph.add_plot(plot)
+        self.plot = plot
+
+        points = []
+        max_scaled = None
+        min_scaled = None
+        for i in range(ScalingMap.SCALING_MAP_POINTS):
+            v = volts[i]
+            s = scaled[i]
+            points.append((v, s))
+            if max_scaled == None or s > max_scaled:
+                max_scaled = s
+            if min_scaled == None or s < min_scaled:
+                min_scaled = s
+
+        graph.ymin = min_scaled
+        graph.ymax = max_scaled
+        graph.xmin = 0
+        graph.xmax = 5
+        plot.points = points
 
     def on_map_updated(self, *args):
         self.channelConfig.stale = True
         self.dispatch('on_modified', self.channelConfig)
+        self._synchronize_view()
 
+    def _import_preset(self, preset_id):
+        try:
+            preset = self.preset_manager.get_preset_by_id(preset_id)
+            mapping = preset.mapping
+            cfg = self.channelConfig
+            cfg.fromJson(mapping)
+            self.on_config_updated(cfg, self.max_sample_rate)
+            cfg.stale = True
+            self.dispatch('on_modified', cfg)
+        except Exception as e:
+            Logger.error('Failed to import analog preset {}'.format(e))
+            raise
+
+    def load_preset_view(self):
+        def preset_selected(instance, preset_id):
+            self._import_preset(preset_id)
+            popup.dismiss()
+
+        def popup_dismissed(*args):
+            pass
+
+        content = PresetBrowserView(self.preset_manager, 'analog')
+        content.bind(on_preset_selected=preset_selected)
+        content.bind(on_preset_close=lambda *args:popup.dismiss())
+        popup = Popup(title='Import a preset', content=content, size_hint=(0.5, 0.75))
+        popup.bind(on_dismiss=popup_dismissed)
+        popup.open()
+
+    def _on_preset_selected(self):
+        pass
 
 class AnalogScaler(Graph):
+    Builder.load_string("""
+<AnalogScaler>:
+    id: graph
+    xlabel: 'Volts'
+    ylabel: 'Scaled'
+    x_ticks_minor: 1
+    x_ticks_major: 1
+    y_grid_label: True
+    x_grid_label: True
+    padding: 5
+    x_grid: True
+    y_grid: True
+    xmin: 0
+    xmax: 5    
+    """)
     def __init__(self, **kwargs):
         super(AnalogScaler, self).__init__(**kwargs)
 
 WARN_DISMISS_TIMEOUT = 3
 
+class LinearScalingMapEditor(Screen):
+    Builder.load_string("""
+<LinearScalingMapEditor>:
+    """)
+
 class AnalogScalingMapEditor(BoxLayout):
-    map_size = SCALING_MAP_POINTS
+    Builder.load_string("""
+<AnalogScalingMapEditor>:
+    orientation: 'vertical'
+    HSeparatorMinor:
+        text: 'Interpolated Mapping'
+        size_hint_y: None
+        height: dp(50)
+    GridLayout:
+        cols: 6
+        Label:
+            text: ''
+        Label:
+            text: '1'
+        Label:
+            text: '2'
+        Label:
+            text: '3'
+        Label:
+            text: '4'
+        Label:
+            text: '5'
+        Label:
+            text: 'Volts'
+        FloatValueField:
+            rcid: 'v_0'
+            text: ''
+            on_text_validate: root.on_volts(0, *args)
+        FloatValueField:
+            rcid: 'v_1'
+            text: ''
+            on_text_validate: root.on_volts(1, *args)
+        FloatValueField:
+            rcid: 'v_2'
+            text: ''
+            on_text_validate: root.on_volts(2, *args)
+        FloatValueField:
+            rcid: 'v_3'
+            text: ''
+            on_text_validate: root.on_volts(3, *args)
+        FloatValueField:
+            rcid: 'v_4'
+            text: ''
+            on_text_validate: root.on_volts(4, *args)
+        Label:
+            text: 'Scaled'
+        FloatValueField:
+            rcid: 's_0'
+            text: ''
+            on_text: root.on_scaled(0, *args)
+        FloatValueField:
+            rcid: 's_1'
+            text: ''
+            on_text: root.on_scaled(1, *args)
+        FloatValueField:
+            rcid: 's_2'
+            text: ''
+            on_text: root.on_scaled(2, *args)
+        FloatValueField:
+            rcid: 's_3'
+            text: ''
+            on_text: root.on_scaled(3, *args)
+        FloatValueField:
+            rcid: 's_4'
+            text: ''
+            on_text: root.on_scaled(4, *args)    
+    """)
     scaling_map = None
     plot = None
     def __init__(self, **kwargs):
@@ -160,7 +474,7 @@ class AnalogScalingMapEditor(BoxLayout):
         scaled_field.text = '{:.3g}'.format(value)
 
     def on_config_changed(self, scaling_map):
-        map_size = self.map_size
+        map_size = ScalingMap.SCALING_MAP_POINTS
         self.setTabStops(map_size)
         for i in range(map_size):
             volts = scaling_map.getVolts(i)
@@ -170,40 +484,6 @@ class AnalogScalingMapEditor(BoxLayout):
             self.set_volts_cell(volts_cell, volts)
             self.set_scaled_cell(scaled_cell, scaled)
         self.scaling_map = scaling_map
-        self.regen_plot()
-
-    # TODO make regen_plot2 the actual routine; we should'nt have to delete and re-add the plot to change the points
-    def regen_plot(self):
-        scalingMap = self.scaling_map
-
-        graphContainer = self.ids.graphcontainer
-        graphContainer.clear_widgets()
-
-        graph = AnalogScaler()
-        graphContainer.add_widget(graph)
-
-        plot = LinePlot(color=rgb('00FF00'), line_width=1.25)
-        graph.add_plot(plot)
-        self.plot = plot
-
-        points = []
-        map_size = self.map_size
-        max_scaled = None
-        min_scaled = None
-        for i in range(map_size):
-            volts = scalingMap.getVolts(i)
-            scaled = scalingMap.getScaled(i)
-            points.append((volts, scaled))
-            if max_scaled == None or scaled > max_scaled:
-                max_scaled = scaled
-            if min_scaled == None or scaled < min_scaled:
-                min_scaled = scaled
-
-        graph.ymin = min_scaled
-        graph.ymax = max_scaled
-        graph.xmin = 0
-        graph.xmax = 5
-        plot.points = points
 
     def on_map_updated(self):
         pass
@@ -221,7 +501,6 @@ class AnalogScalingMapEditor(BoxLayout):
             if self.scaling_map:
                 self.scaling_map.setVolts(mapBin, value)
                 self.dispatch('on_map_updated')
-                self.regen_plot()
         except ScalingMapException as e:
             warn = CenteredBubble()
             warn.add_widget(WarnLabel(text=str(e)))
@@ -250,9 +529,8 @@ class AnalogScalingMapEditor(BoxLayout):
             if self.scaling_map:
                 self.scaling_map.setScaled(mapBin, value)
                 self.dispatch('on_map_updated')
-                self.regen_plot()
         except Exception as e:
-            print("Error updating chart with scaled value: " + str(e))
+            Logger.error("Error updating chart with scaled value: " + str(e))
 
 
 
