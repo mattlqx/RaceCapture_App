@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -20,7 +20,7 @@
 
 import kivy
 import math
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from autosportlabs.uix.color import colorgradient
 from kivy.core.image import Image as CoreImage
 from kivy.core.text import Label as CoreLabel
