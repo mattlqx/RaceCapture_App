@@ -21,7 +21,7 @@
 import kivy
 from autosportlabs.racecapture.theme.color import ColorScheme
 from kivy.uix.behaviors import ToggleButtonBehavior
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.properties import NumericProperty, ObjectProperty, BooleanProperty, ListProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.clock import Clock

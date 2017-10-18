@@ -1,5 +1,5 @@
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 import os
 from kivy.metrics import dp
 from kivy.app import Builder

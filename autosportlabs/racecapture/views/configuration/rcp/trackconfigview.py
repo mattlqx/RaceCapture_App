@@ -20,7 +20,7 @@
 
 import kivy
 import time
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 
 from kivy.properties import ObjectProperty
 from kivy.core.clipboard import Clipboard

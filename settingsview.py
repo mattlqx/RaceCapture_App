@@ -20,7 +20,7 @@
 
 import kivy
 from valuefield import ValueField
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 
 from kivy.uix.label import Label
 from kivy.uix.relativelayout import RelativeLayout

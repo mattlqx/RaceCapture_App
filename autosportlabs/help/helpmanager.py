@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from autosportlabs.racecapture.views.popup.centeredbubble import CenteredBubble
 from autosportlabs.racecapture.theme.color import ColorScheme
 from __builtin__ import staticmethod

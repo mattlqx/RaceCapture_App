@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from fieldlabel import FieldLabel
 from kivy.app import Builder
 from utils import kvFind, kvFindClass

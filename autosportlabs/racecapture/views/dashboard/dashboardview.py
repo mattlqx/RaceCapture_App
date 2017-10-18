@@ -22,7 +22,7 @@ import os
 import time
 import datetime
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.app import Builder
 from kivy.core.window import Window, Keyboard
 from kivy.logger import Logger

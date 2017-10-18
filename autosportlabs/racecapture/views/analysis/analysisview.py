@@ -21,7 +21,7 @@
 import os.path
 import kivy
 import traceback
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from threading import Thread
 from kivy.logger import Logger
 from kivy.app import Builder

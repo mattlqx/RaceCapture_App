@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.metrics import dp
 from settingsview import SettingsSwitch
 from mappedspinner import MappedSpinner

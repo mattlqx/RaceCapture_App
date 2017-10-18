@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.logger import Logger
 from utils import is_mobile_platform, is_android
 from kivy.clock import mainthread, Clock

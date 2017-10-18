@@ -20,7 +20,7 @@
 
 import kivy
 import math
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from autosportlabs.uix.color import colorgradient
 from kivy.core.image import Image as CoreImage
 from kivy.core.text import Label as CoreLabel
