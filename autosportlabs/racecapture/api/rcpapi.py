@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -435,7 +435,10 @@ class RcpApi:
             Logger.error(traceback.format_exc())
             self.recover_connection()
         finally:
-            self.sendCommandLock.release()
+            try:
+                self.sendCommandLock.release()
+            except:
+                pass
             Clock.schedule_once(lambda dt: self.on_tx(True))
 
 
