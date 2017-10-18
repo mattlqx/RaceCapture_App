@@ -18,7 +18,7 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 import os
 from kivy.metrics import dp
 from kivy.app import Builder
