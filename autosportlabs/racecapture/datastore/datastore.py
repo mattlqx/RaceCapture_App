@@ -1100,10 +1100,8 @@ class DataStore(object):
         return session
 
     def get_sessions(self):
-        c = self._conn.cursor()
-
         sessions = []
-        for row in c.execute('SELECT id, name, notes, date FROM session ORDER BY date DESC;'):
+        for row in self._conn.execute('SELECT id, name, notes, date FROM session ORDER BY date DESC;'):
             sessions.append(
                 Session(session_id=row[0], name=row[1], notes=row[2], date=row[3]))
 
