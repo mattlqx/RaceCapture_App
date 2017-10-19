@@ -378,7 +378,7 @@ class LineChart(ChannelAnalysisWidget):
                 time_data = time_data_values.values
                 sample_count = len(time_data)
                 interval = max(1, int(sample_count / self.MAX_SAMPLES_TO_DISPLAY))
-                Logger.info('LineChart: plot interval {}'.format(interval))
+                Logger.info('LineChart: sample count {}; plot interval {}'.format(sample_count, interval))
                 last_time = None
                 time = 0
                 last_time = time_data[0]
@@ -430,7 +430,7 @@ class LineChart(ChannelAnalysisWidget):
                 channel_data = channel_data_values.values
                 sample_count = len(distance_data)
                 interval = max(1, int(sample_count / self.MAX_SAMPLES_TO_DISPLAY))
-                Logger.info('LineChart: plot interval {}'.format(interval))
+                Logger.info('LineChart: sample count {}; plot interval {}'.format(sample_count, interval))
                 while sample_index < sample_count:
                     sample = channel_data[sample_index]
                     distance = distance_data[sample_index]

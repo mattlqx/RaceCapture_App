@@ -1011,7 +1011,8 @@ class DataStore(object):
         self._populate_channel_list()
         return session_id
 
-    def query(self, sessions=[], channels=[], data_filter=None, distinct_records=False):
+    def query(self, session, channels=[], data_filter=None, distinct_records=False):
+        Logger.info('Querying {} for session {}'.format(channels, session))
         # Build our select statement
         sel_st = 'SELECT '
 
@@ -1021,11 +1022,6 @@ class DataStore(object):
         columns = []
         joins = []
         params = []
-
-        # make sure that the sessions list exists
-        if type(sessions) != list or len(sessions) == 0:
-            raise DatastoreException(
-                "Must provide a list of sessions to query!")
 
         # If there are no channels, or if a '*' is passed, select all
         # of the channels
@@ -1046,38 +1042,38 @@ class DataStore(object):
         # Add the columns to the select statement
         sel_st += ','.join(columns)
 
-        # Point out where we're pulling this from
-        sel_st += '\nFROM sample\n'
-
-        # Add our joins
-        sel_st += 'JOIN datapoint ON datapoint.sample_id=sample.id\n'
+        sel_st += ' FROM sample,datapoint WHERE datapoint.sample_id=sample.id '
 
         if data_filter is not None:
             # Add our filter
-            sel_st += 'WHERE '
+            sel_st += ' AND '
             if not 'Filter' in type(data_filter).__name__:
                 raise TypeError("data_filter must be of class Filter")
 
             sel_st += str(data_filter)
             params = params + data_filter.params
 
-        # create the session filter
-        if data_filter == None:
-            ses_st = "WHERE "
-        else:
-            ses_st = "AND "
+        ses_st = ' AND sample.session_id = ? '
+        params.append(session)
 
-        ses_filters = []
-        for s in sessions:
-            ses_filters.append('sample.session_id = ?')
-            params.append(s)
+        ses_st += ' AND (sample.ROWID - (SELECT s.ROWID FROM sample s, datapoint where s.session_id = ? and datapoint.sample_id = s.id and '
+        ses_st += str(data_filter)
+        ses_st += ' limit 1)) % ((SELECT COUNT(s.ROWID) FROM sample s, datapoint WHERE s.session_id = ? AND datapoint.sample_id = s.id AND '
+        ses_st += str(data_filter)
+        ses_st += ') / ?) = 0'
 
-        ses_st += 'OR '.join(ses_filters)
+        params.append(session)
+        if data_filter is not None:
+            params = params + data_filter.params
+        params.append(session)
+        if data_filter is not None:
+            params = params + data_filter.params
+        params.append(1000)
 
         # Now add the session filter to the select statement
         sel_st += ses_st
 
-        Logger.debug('[datastore] Query execute: {}'.format(sel_st))
+        Logger.info('[datastore] Query execute: {} with params {}'.format(sel_st, params))
         c = self._conn.cursor()
         c.execute(sel_st, params)
 
