@@ -1263,7 +1263,11 @@ class DataStore(object):
                     # the first interval is our synchronization point
                     # for determining when to output samples
                     # The first sample outputs all values by default
-                    sync_point = long(record[1 + datalog_interval_index])
+                    interval_record = record[1 + datalog_interval_index]
+                    if interval_record is None:
+                        Logger.warning('DataStore: Export: invalid row detected, skipping: {}'.format(record))
+                        break
+                    sync_point = long(interval_record)
 
                 row = ''
                 current_interval = long(record[1 + datalog_interval_index])
