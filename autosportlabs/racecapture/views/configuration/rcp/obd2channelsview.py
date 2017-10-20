@@ -46,7 +46,7 @@ import copy
 
 class PIDConfigTab(CANChannelMappingTab):
     PID_MIN = 0
-    PID_MAX = 65535
+    PID_MAX = 0xFFFFFFFF
     SUPPORTED_MODES = {1:'01h', 9: '09h', 34:'22h'}
     DEFAULT_MODE = '01h'
 
@@ -55,6 +55,7 @@ class PIDConfigTab(CANChannelMappingTab):
     text: 'OBDII PID'
     BoxLayout:
         AnchorLayout:
+            size_hint_x: 0.55
             BoxLayout:
                 spacing: dp(5)
                 orientation: 'vertical'
@@ -75,6 +76,7 @@ class PIDConfigTab(CANChannelMappingTab):
                         on_text: root.on_mode(*args)
         
         SectionBoxLayout:
+            size_hint_x: 0.45
             orientation: 'horizontal'
             FieldLabel:
                 size_hint_x: 0.7

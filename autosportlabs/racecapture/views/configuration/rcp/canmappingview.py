@@ -162,7 +162,7 @@ class CANChannelCustomizationTab(CANChannelMappingTab):
 
     def _on_channel_selected(self, instance, value):
         if self._loaded:
-            self.dispatch('on_channel', value.channel_config)
+            self.dispatch('on_channel', value)
 
 class CANIDMappingTab(CANChannelMappingTab):
     Builder.load_string("""
