@@ -75,17 +75,30 @@ class PIDConfigTab(CANChannelMappingTab):
                         id: mode
                         on_text: root.on_mode(*args)
         
-        SectionBoxLayout:
+        BoxLayout:
             size_hint_x: 0.45
-            orientation: 'horizontal'
-            FieldLabel:
-                size_hint_x: 0.7
-                text: 'Passive Mode'
-                halign: 'right'
-            CheckBox:
-                id: passive
-                size_hint_x: 0.3                
-                on_active: root.on_passive(*args)
+            orientation: 'vertical'
+            SectionBoxLayout:
+                orientation: 'horizontal'
+                FieldLabel:
+                    size_hint_x: 0.7
+                    text: 'Passive Mode'
+                    halign: 'right'
+                CheckBox:
+                    id: passive
+                    size_hint_x: 0.3                
+                    on_active: root.on_passive(*args)
+            SectionBoxLayout:
+                orientation: 'horizontal'
+                FieldLabel:
+                    size_hint_x: 0.7
+                    text: '29 bit mode'
+                    halign: 'right'
+                CheckBox:
+                    id: mode29bit
+                    size_hint_x: 0.3                
+                    on_active: root.on_29bit(*args)
+
     """)
 
     def __init__(self, **kwargs):
@@ -100,6 +113,7 @@ class PIDConfigTab(CANChannelMappingTab):
         self.ids.mode.setFromValue(channel_cfg.mode)
         self.ids.pid.text = str(channel_cfg.pid)
         self.ids.passive.active = channel_cfg.passive
+        self.ids.mode29bit.active = channel_cfg.mapping.can_id == PidConfig.OBDII_MODE_29_BIT_CAN_ID_RESPONSE
         self._loaded = True
 
     def on_pid(self, instance, value):
@@ -120,6 +134,10 @@ class PIDConfigTab(CANChannelMappingTab):
     def on_passive(self, instance, value):
         if self._loaded:
             self.channel_cfg.passive = instance.active
+
+    def on_29bit(self, instance, value):
+        if self._loaded:
+            self.channel_cfg.mapping.can_id = PidConfig.OBDII_MODE_29_BIT_CAN_ID_RESPONSE if value == True else PidConfig.OBDII_MODE_11_BIT_CAN_ID_RESPONSE
 
 class OBD2ChannelConfigView(CANChannelConfigView):
     def __init__(self, obd2_preset_settings, is_new, mapping_capable, **kwargs):
