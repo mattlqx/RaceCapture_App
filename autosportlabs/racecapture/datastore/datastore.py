@@ -558,7 +558,14 @@ class DataStore(object):
             self._conn.rollback()
             raise
 
-    def insert_sample(self, sample, session_id):
+    def commit(self):
+        try:
+            self._conn.commit()
+        except:  # rollback under any exception, then re-raise exception
+            self._conn.rollback()
+            raise
+
+    def insert_sample_nocommit(self, sample, session_id):
         cursor = self._conn.cursor()
         try:
             # First, insert into the datalog table to give us a reference
@@ -579,7 +586,7 @@ class DataStore(object):
                                                                        ','.join(['?'] * (len(values))))
 
             cursor.execute(base_sql, values)
-            self._conn.commit()
+            # self._conn.commit() # moved to separate function
         except:  # rollback under any exception, then re-raise exception
             self._conn.rollback()
             raise

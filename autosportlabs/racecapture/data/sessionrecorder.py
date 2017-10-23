@@ -226,10 +226,12 @@ class SessionRecorder(EventDispatcher):
                     # Merging previous sample with new data to desparsify the
                     # data
                     sample_data.update(sample)
-                    self._datastore.insert_sample(
+                    self._datastore.insert_sample_nocommit(
                         sample_data, self._current_session_id)
                     qsize = sample_queue.qsize()
-                    if index % SessionRecorder.SAMPLE_QUEUE_BACKLOG_LOG_INTERVAL == 0 and qsize > 0:
+                    if qsize == 0:
+                        self._datastore.commit()
+                    elif index % SessionRecorder.SAMPLE_QUEUE_BACKLOG_LOG_INTERVAL == 0:
                         Logger.info(
                             'SessionRecorder: queue backlog: {}'.format(qsize))
                     index += 1
