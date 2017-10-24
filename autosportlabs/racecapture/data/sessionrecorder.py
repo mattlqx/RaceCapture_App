@@ -40,7 +40,7 @@ class SessionRecorder(EventDispatcher):
     # displayed
     RECORDING_VIEWS = ['dash']
     SAMPLE_QUEUE_GET_TIMEOUT = 0.5
-    SAMPLE_QUEUE_MAX_SIZE = 500
+    SAMPLE_QUEUE_MAX_SIZE = 20
     SAMPLE_QUEUE_BACKLOG_LOG_INTERVAL = 100
 
     def __init__(self, datastore, databus, rcpapi, settings, track_manager=None, status_pump=None, stop_delay=120):
