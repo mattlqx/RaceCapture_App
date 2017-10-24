@@ -229,7 +229,9 @@ class SessionRecorder(EventDispatcher):
                     self._datastore.insert_sample_nocommit(
                         sample_data, self._current_session_id)
                     qsize = sample_queue.qsize()
-                    if qsize == 0:
+                    if (qsize == 0) or (index % 20 == 0):
+                        # since the commit is slow, only do the commit once the queue empty to prevent overrunning the buffer.
+                        # the % 20 ensures that commit is called occasionally if this loop isn't keeping up with the "producer"
                         self._datastore.commit()
                     elif index % SessionRecorder.SAMPLE_QUEUE_BACKLOG_LOG_INTERVAL == 0:
                         Logger.info(
