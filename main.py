@@ -231,10 +231,8 @@ class RaceCaptureApp(App):
         if key == 116:  # ASCII 't'
             self.switchMainView('status')
 
-        if key == 293 and 'ctrl' in modifier:  # ctrl-F12
-            print('stop')
-            Logger.info('App stopping due to user command')
-            App.get_running_app().stop()
+        if key == 113 and 'ctrl' in modifier:  # ctrl-q
+            self._shutdown_app()
 
 
     def processArgs(self):
@@ -271,11 +269,11 @@ class RaceCaptureApp(App):
 
     def _init_datastore(self):
         def _init_datastore(dstore_path):
-            Logger.info('Main: initializing datastore...')
+            Logger.info('RaceCaptureApp:initializing datastore...')
             self._datastore.open_db(dstore_path)
 
         dstore_path = self.settings.userPrefs.datastore_location
-        Logger.info("Main: Datastore Path:" + str(dstore_path))
+        Logger.info("RaceCaptureApp:Datastore Path:" + str(dstore_path))
         t = Thread(target=_init_datastore, args=(dstore_path,))
         t.daemon = True
         t.start()
@@ -320,7 +318,7 @@ class RaceCaptureApp(App):
 
     def on_read_config_error(self, detail):
         self.showActivity("Error reading configuration")
-        Logger.error("Main: Error reading configuration: {}".format(str(detail)))
+        Logger.error("RaceCaptureApp:Error reading configuration: {}".format(str(detail)))
 
     def on_tracks_updated(self, track_manager):
         for view in self.tracks_listeners:
@@ -330,6 +328,9 @@ class RaceCaptureApp(App):
         self.dispatch('on_tracks_updated', self.track_manager)
 
     def on_main_menu_item(self, instance, value):
+        if value == 'exit':
+            self._shutdown_app()
+
         self.switchMainView(value)
 
     def on_main_menu(self, instance, *args):
@@ -350,11 +351,19 @@ class RaceCaptureApp(App):
     def on_start(self):
         pass
 
-    def on_stop(self):
+    def _stop_workers(self):
         self._status_pump.stop()
         self._data_bus_pump.stop()
         self._rc_api.shutdown_api()
         self._telemetry_connection.telemetry_enabled = False
+
+    def _shutdown_app(self):
+        Logger.info('RaceCaptureApp: Shutting down app')
+        self._stop_workers()
+        App.get_running_app().stop()
+
+    def on_stop(self):
+        self._stop_workers()
 
     def _get_main_screen(self, view_name):
         view = self.mainViews.get(view_name)
@@ -510,7 +519,7 @@ class RaceCaptureApp(App):
         if cli_conn_type:
             conn_type = cli_conn_type
 
-        Logger.info("RacecaptureApp: initializing rc comms with, conn type: {}".format(conn_type))
+        Logger.info("RaceCaptureApp: initializing rc comms with, conn type: {}".format(conn_type))
 
         comms = comms_factory(port, conn_type)
         rc_api = self._rc_api
@@ -616,7 +625,7 @@ class RaceCaptureApp(App):
 
         if token == ('preferences', 'conn_type'):
             # User changed their RC connection type
-            Logger.info("Racecaptureapp: RC connection type changed to {}, restarting comms".format(value))
+            Logger.info("RaceCaptureApp: RC connection type changed to {}, restarting comms".format(value))
             Clock.schedule_once(lambda dt: self._restart_comms())
 
     def _enable_telemetry(self):
@@ -654,7 +663,7 @@ if __name__ == '__main__':
     except:
         if 'sentry_client' in globals():
             ident = sentry_client.captureException()
-            Logger.error("Main: crash caught: Reference is %s" % ident)
+            Logger.error("RaceCaptureApp:crash caught: Reference is %s" % ident)
             Logger.critical(traceback.format_exc())
         else:
             raise

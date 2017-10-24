@@ -944,6 +944,8 @@ class RcpApi:
                 testVer = VersionConfig()
                 for device in devices:
                     try:
+                        if not self._running.is_set():
+                            break
                         Logger.debug('RCPAPI: Trying ' + str(device))
                         if self.detect_activity_callback: self.detect_activity_callback(str(device))
                         comms.device = device
