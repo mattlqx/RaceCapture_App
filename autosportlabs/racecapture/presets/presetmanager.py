@@ -355,7 +355,7 @@ class PresetManager(object):
                     self.presets[mapping_id] = preset
             else:
                 Logger.info("PresetManager: refreshing presets")
-                venues = self.fetch_preset_list(full_response=True)
+                venues = self.fetch_preset_list(full_response=False)
 
                 preset_count = len(venues)
                 count = 0
