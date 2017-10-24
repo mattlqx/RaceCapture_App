@@ -209,9 +209,33 @@ class RaceCaptureApp(App):
     def on_pause(self):
         return True
 
-    def _on_keyboard(self, keyboard, keycode, *args):
-        if keycode == 27:
+    def _on_keyboard(self, keyboard, key, scancode, codepoint, modifier):
+        if key == 27:  # go up to home screen
             self.switchMainView('home')
+
+        if not self.screenMgr.current == 'home':
+            return
+
+        if key == 97:  # ASCII 'a'
+            self.switchMainView('analysis')
+
+        if key == 100:  # ASCII 'd'
+            self.switchMainView('dash')
+
+        if key == 115:  # ASCII 's'
+            self.switchMainView('config')
+
+        if key == 112:  # ASCII 'p'
+            self.switchMainView('preferences')
+
+        if key == 116:  # ASCII 't'
+            self.switchMainView('status')
+
+        if key == 293 and 'ctrl' in modifier:  # ctrl-F12
+            print('stop')
+            Logger.info('App stopping due to user command')
+            App.get_running_app().stop()
+
 
     def processArgs(self):
         parser = argparse.ArgumentParser(description='Autosport Labs Race Capture App')
