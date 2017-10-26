@@ -29,6 +29,7 @@ from kivy3 import Scene, Renderer, PerspectiveCamera
 from kivy3.loaders import OBJLoader
 from kivy.core.window import Window
 from kivy.metrics import dp
+import os
 
 class ImuView(BoxLayout):
     ACCEL_SCALING = 1.0
@@ -83,15 +84,7 @@ class ImuView(BoxLayout):
     def _setup_object(self):
 
         self.clear_widgets()
-        shader_file = resource_find('resource/models/shaders.glsl')
-        # obj_path = resource_find('resource/models/car-formula-white.obj')
-        # obj_path = resource_find('resource/models/car-kart-white.obj')
-        # obj_path = resource_find('resource/models/car-parsche-sport-white.obj')
-        # obj_path = resource_find('resource/models/car-groupc-2-white.obj')
-        # obj_path = resource_find('resource/models/car-groupc-1-white.obj')
-        # TODO: the following needs work
-        # "resource/models/car-groupc-2-white.obj"
-        # "resource/models/car-groupc-1-white.obj"
+        shader_file = resource_find(os.path.join('resource', 'models', 'shaders.glsl'))
         obj_path = resource_find(self.model_path)
 
         self.renderer = Renderer(shader_file=shader_file)
