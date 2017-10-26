@@ -990,6 +990,9 @@ class CANChannels(object):
         return {'canChanCfg':{'en': 1 if self.enabled else 0, 'chans':channels_json }}
 
 class PidConfig(BaseChannel):
+    OBDII_MODE_11_BIT_CAN_ID_RESPONSE = 0x7E8
+    OBDII_MODE_29_BIT_CAN_ID_RESPONSE = 0x18DAF110
+
     def __init__(self, **kwargs):
         super(PidConfig, self).__init__(**kwargs)
         self.pid = 0

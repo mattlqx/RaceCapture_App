@@ -30,7 +30,7 @@ from kivy.properties import ObjectProperty
 from kivy.utils import get_color_from_hex as rgb
 from kivy.app import Builder
 from kivy.clock import Clock
-from kivy.metrics import sp
+from kivy.metrics import dp
 from kivy.uix.popup import Popup
 from valuefield import *
 from utils import *
@@ -48,7 +48,7 @@ class AnalogChannelsView(BaseMultiChannelConfigView):
     def __init__(self, **kwargs):
         super(AnalogChannelsView, self).__init__(**kwargs)
         self.channel_title = 'Analog '
-        self.accordion_item_height = sp(300)
+        self.accordion_item_height = dp(350)
 
 
     def channel_builder(self, index, max_sample_rate):
@@ -83,7 +83,7 @@ class AnalogChannel(BaseChannelView):
             cols: 2
             FieldLabel:
                 text: 'Raw (0-5v)'
-                font_size: sp(17)
+                font_size: dp(17)
                 halign: 'right'
             CheckBox:
                 size_hint_x: None
@@ -93,7 +93,7 @@ class AnalogChannel(BaseChannelView):
                 on_active: root.on_scaling_type_raw(*args)
             FieldLabel:
                 text: 'Linear'
-                font_size: sp(17)
+                font_size: dp(17)
                 halign: 'right'
             CheckBox:
                 size_hint_x: None
@@ -103,7 +103,7 @@ class AnalogChannel(BaseChannelView):
                 on_active: root.on_scaling_type_linear(*args)
             FieldLabel:
                 text: 'Mapped'
-                font_size: sp(17)
+                font_size: dp(17)
                 halign: 'right'
             CheckBox:
                 size_hint_x: None
@@ -111,6 +111,35 @@ class AnalogChannel(BaseChannelView):
                 group: 'scalingType'
                 id: smMapped
                 on_active: root.on_scaling_type_map(*args)
+        HSeparatorMinor:
+            text: 'Smoothing'
+        AnchorLayout:
+            size_hint: (1.0,0.2)
+            AnchorLayout:
+                anchor_y: 'top'
+                BoxLayout:
+                    FieldLabel:
+                        text: 'Less'
+                        size_hint_x: None
+                        width: dp(50)
+                        halign: 'right'
+                    Slider:
+                        id: smoothing
+                        min: 0
+                        max: 99
+                        on_value: root.on_smoothing(*args)
+                    FieldLabel:
+                        text: 'More'
+                        halign: 'left'
+                        size_hint_x: None
+                        width: dp(50)
+            AnchorLayout:
+                anchor_y: 'bottom'
+                FieldLabel:
+                    id: smoothing_value
+                    halign: 'center'
+                    size_hint_y: None
+                    height: dp(20)
         BoxLayout:
             size_hint_y: None
             height: dp(30)
@@ -190,6 +219,17 @@ class AnalogChannel(BaseChannelView):
         self.max_sample_rate = None
         self.channelConfig = None
 
+    def on_smoothing(self, instance, value):
+        self.ids.smoothing_value.text = str(int(value))
+        try:
+            if self.channelConfig:
+                alpha = (100.0 - float(value)) * .01
+                self.channelConfig.alpha = alpha
+                self.channelConfig.stale = True
+                self.dispatch('on_modified', self.channelConfig)
+        except:
+            pass
+
     def on_linear_map_offset(self, instance, value):
         try:
             if self.channelConfig:
@@ -255,6 +295,7 @@ class AnalogChannel(BaseChannelView):
             check_linear.active = False
             check_mapped.active = True
 
+        self.ids.smoothing.value = 100 - (channelConfig.alpha * 100.0)
         self.ids.linearscaling.text = str(channelConfig.linearScaling)
         self.ids.linearoffset.text = str(channelConfig.linearOffset)
         map_editor = self.ids.map_editor
@@ -506,7 +547,7 @@ class AnalogScalingMapEditor(BoxLayout):
             warn.add_widget(WarnLabel(text=str(e)))
             warn.auto_dismiss_timeout(WARN_DISMISS_TIMEOUT)
             warn.background_color = (1, 0, 0, 1.0)
-            warn.size = (sp(200), sp(50))
+            warn.size = (dp(200), dp(50))
             warn.size_hint = (None, None)
             self.get_root_window().add_widget(warn)
             warn.center_above(instance)

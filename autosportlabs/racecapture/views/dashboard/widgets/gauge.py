@@ -171,7 +171,7 @@ class SingleChannelGauge(Gauge):
     def on_settings(self, instance, value):
         # Do I have an id so I can track my settings?
         if self.rcid:
-            channel = self.settings.userPrefs.get_gauge_config(self.rcid)
+            channel = self.settings.userPrefs.get_gauge_config(self.rcid) or self.channel
             if channel:
                 self.channel = channel
                 self._update_gauge_meta()
