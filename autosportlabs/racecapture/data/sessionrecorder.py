@@ -40,7 +40,9 @@ class SessionRecorder(EventDispatcher):
     # displayed
     RECORDING_VIEWS = ['dash']
     SAMPLE_QUEUE_GET_TIMEOUT = 0.5
-    SAMPLE_QUEUE_MAX_SIZE = 20
+    SAMPLE_QUEUE_MAX_SIZE = 30
+    SAMPLE_QUEUE_UNCOMMITTED_INSERT_LIMIT = 37
+    SAMPLE_QUEUE_BACKLOG_LOG_THRESHOLD = 0.7
     SAMPLE_QUEUE_BACKLOG_LOG_INTERVAL = 100
 
     def __init__(self, datastore, databus, rcpapi, settings, track_manager=None, status_pump=None, stop_delay=120):
@@ -215,9 +217,10 @@ class SessionRecorder(EventDispatcher):
         try:
             # reset our sample data dict
             sample_data = {}
-            index = 0
             qsize = 0
+            insert_counter = 0
             sample_queue = self._sample_queue
+            index = 0
             # will drain the queue before exiting thread
             while self.recording or qsize > 0:
                 try:
@@ -228,13 +231,26 @@ class SessionRecorder(EventDispatcher):
                     sample_data.update(sample)
                     self._datastore.insert_sample_nocommit(
                         sample_data, self._current_session_id)
+                    insert_counter += 1
                     qsize = sample_queue.qsize()
-                    if (qsize == 0) or (index % 20 == 0):
-                        # since the commit is slow, only do the commit once the queue empty to prevent overrunning the buffer.
-                        # the % 20 ensures that commit is called occasionally if this loop isn't keeping up with the "producer"
+                    # since the commit is slow, only do the commit once the queue empty to prevent overrunning the buffer.
+                    if (qsize == 0) or (insert_counter >= SessionRecorder.SAMPLE_QUEUE_UNCOMMITTED_INSERT_LIMIT):
                         self._datastore.commit()
-                    elif index % SessionRecorder.SAMPLE_QUEUE_BACKLOG_LOG_INTERVAL == 0:
+                        insert_counter = 0
+                    
+                    if qsize > 0 and index % SessionRecorder.SAMPLE_QUEUE_BACKLOG_LOG_INTERVAL == 0:
                         Logger.info(
+                            'SessionRecorder: queue backlog: {}'.format(qsize))
+                        Logger.info(
+                            'SessionRecorder: commit backlog: {}'.format(insert_counter))
+
+
+                    if insert_counter > (SessionRecorder.SAMPLE_QUEUE_UNCOMMITTED_INSERT_LIMIT*SessionRecorder.SAMPLE_QUEUE_BACKLOG_LOG_THRESHOLD):
+                        Logger.debug(
+                            'SessionRecorder: commit backlog: {}'.format(insert_counter))
+
+                    if qsize > (SessionRecorder.SAMPLE_QUEUE_MAX_SIZE*SessionRecorder.SAMPLE_QUEUE_BACKLOG_LOG_THRESHOLD):
+                        Logger.debug(
                             'SessionRecorder: queue backlog: {}'.format(qsize))
                     index += 1
                 except Empty:
