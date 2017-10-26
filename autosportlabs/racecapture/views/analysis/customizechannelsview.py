@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -21,7 +21,7 @@
 import os
 from threading import Thread
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.logger import Logger
 from kivy.app import Builder
 from kivy.metrics import sp
@@ -46,8 +46,6 @@ KV_FILE = """
             GridLayout:
                 spacing: sp(5)
                 id: current_channels
-                row_default_height: root.height * 0.18
-                row_force_default: True
                 size_hint_y: None
                 height: max(self.minimum_height, scroller.height)
                 cols: 1
@@ -56,6 +54,7 @@ KV_FILE = """
     spacing: sp(5)
     padding: [0, 0, 0, sp(5)]
     size_hint_y: None
+    height: dp(50)
     orientation: 'horizontal'
 
     canvas.before:
@@ -64,22 +63,24 @@ KV_FILE = """
         Rectangle:
             pos: self.pos
             size: self.size
-    LabelButton:
-        halign: 'center'
-        id: name
-        size_hint_x: 0.9
-        font_size: root.height * 0.6
-        on_press: root.on_label_add()
     IconButton:
         size_hint_x: 0.1
         size_hint_y: 0.9
         text: ''
         id: action_button
         on_release: root.on_action()
+    LabelButton:
+        halign: 'center'
+        id: name
+        size_hint_x: 0.9
+        font_size: self.height * 0.6
+        on_press: root.on_label_add()
 """
 
+
 class ChannelSelection(BoxLayout):
-    highlight_color = ListProperty(ColorScheme.get_dark_background_translucent())
+    highlight_color = ListProperty(
+        ColorScheme.get_dark_background_translucent())
     current_channel = BooleanProperty(False)
 
     def __init__(self, **kwargs):
@@ -114,6 +115,7 @@ class ChannelSelection(BoxLayout):
         else:
             self.dispatch('on_add_channel', self.channel)
 
+
 class CustomizeChannelsView(BoxLayout):
     Builder.load_string(KV_FILE)
 
@@ -146,7 +148,8 @@ class CustomizeChannelsView(BoxLayout):
             self._refresh_channel_list()
             self.dispatch('on_channels_customized', self._current_channels)
         except Exception as e:
-            Logger.error('Error deleting channel ' + name + ': ' + str(name) + ' ' + str(e))
+            Logger.error(
+                'Error deleting channel ' + name + ': ' + str(name) + ' ' + str(e))
 
     def on_add_channel(self, instance, name):
         self._current_channels.append(name)
@@ -166,7 +169,8 @@ class CustomizeChannelsView(BoxLayout):
 
     def _add_unselected_channels(self, current_channels):
         available_channels = self._get_available_channel_names()
-        add_channels = [c for c in available_channels if c not in current_channels]
+        add_channels = [
+            c for c in available_channels if c not in current_channels]
         grid = self.ids.current_channels
         for channel in sorted(add_channels):
             add_channel = ChannelSelection(channel=channel)
@@ -177,5 +181,3 @@ class CustomizeChannelsView(BoxLayout):
 
     def on_channels_customized(self, *args):
         pass
-
-

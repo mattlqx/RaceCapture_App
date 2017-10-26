@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.clock import Clock
 from kivy.app import Builder
 from kivy.uix.screenmanager import Screen
@@ -54,10 +54,13 @@ INFO_VIEW_KV = """
                 icon_size: self.height * 0.5
                 title_font_size: self.height * 0.6
                 icon: root.next_icon
-                size_hint: (0.22, 0.15)                
+                size_hint_x: None
+                width: dp(110)
+                size_hint_y: 0.1
                 on_release: root._on_next()
                 
 """
+
 
 class InfoView(Screen):
     """
@@ -73,6 +76,7 @@ class InfoView(Screen):
     settings = ObjectProperty()
 
     Builder.load_string(INFO_VIEW_KV)
+
     def __init__(self, **kwargs):
         super(InfoView, self).__init__(**kwargs)
         self.register_event_type('on_next')

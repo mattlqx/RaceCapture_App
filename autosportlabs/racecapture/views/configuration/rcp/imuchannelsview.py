@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 
 from kivy.uix.boxlayout import BoxLayout
 from kivy.app import Builder
@@ -52,18 +52,23 @@ class ImuMappingSpinner(MappedSpinner):
             self.setValueMap({0:'X', 1:'Y', 2:'Z'}, default)
         elif imuType == 'gyro':
             self.setValueMap({3:'Yaw', 4:'Pitch', 5:'Roll'}, default)
-        
+
 class ImuChannel(BoxLayout):
-    channelConfig = None
-    channelLabels = []
     def __init__(self, **kwargs):
         super(ImuChannel, self).__init__(**kwargs)
+        self.channelConfig = None
+        self.channelLabels = []
+
         self.imu_id = kwargs.get('imu_id', None)
         self.register_event_type('on_modified')
         # State to track if we're in the process of updating the UI values and we should
         # ignore modified events that are fired by them as we change their values.
         self._updating = False
-    
+
+    @property
+    def stale(self):
+        return self.channelConfig is not None and self.channelConfig.stale
+
     def on_modified(self):
         pass
 
@@ -126,8 +131,8 @@ class ImuChannel(BoxLayout):
             mapping.setImuType('gyro', channelConfig.chan)
 
         mapping.setFromValue(channelConfig.chan)
-        
-            
+
+
         zeroValue = kvFind(self, 'rcid', 'zeroValue')
         zeroValue.text = str(channelConfig.zeroValue)
         self.channelConfig = channelConfig
@@ -137,7 +142,7 @@ class ImuChannel(BoxLayout):
 class ImuChannelsView(BaseConfigView):
     editors = []
     imu_cfg = None
-    channelLabels = {0:'X', 1:'Y', 2:'Z', 3:'Yaw',4:'Pitch',5:'Roll',6:'Compass'}
+    channelLabels = {0:'X', 1:'Y', 2:'Z', 3:'Yaw', 4:'Pitch', 5:'Roll', 6:'Compass'}
     Builder.load_file(IMU_CHANNELS_VIEW_KV)
 
     def __init__(self, **kwargs):
@@ -147,7 +152,7 @@ class ImuChannelsView(BaseConfigView):
         imu_container = self.ids.imu_channels
         self.appendImuChannels(imu_container, self.editors, IMU_ACCEL_CHANNEL_IDS)
         self.appendImuChannels(imu_container, self.editors, IMU_GYRO_CHANNEL_IDS)
-        self.ids.sr.bind(on_sample_rate = self.on_sample_rate)
+        self.ids.sr.bind(on_sample_rate=self.on_sample_rate)
 
         self.rc_config = None
         # State to track if we're in the process of updating the UI values and we should
@@ -160,20 +165,20 @@ class ImuChannelsView(BaseConfigView):
             container.add_widget(editor)
             editor.bind(on_modified=self.on_modified)
             editors.append(editor)
-    
+
     def on_calibrate(self):
         # First check if config was updated and prompt
 
         stale = False
         for editor in self.editors:
-            if editor.channelConfig.stale:
+            if editor.stale:
                 stale = True
 
         if stale:
-            alertPopup("Warning", "Accel configuration has been modified, write config first, then calibrate.")
+            alertPopup("Warning", "Configuration has been modified - please write configuration before calibrating.")
         else:
             self.rc_api.calibrate_imu(self.on_calibrate_win, self.on_calibrate_fail)
-        
+
     def on_calibrate_win(self, result):
         alertPopup('Calibration', 'Calibration Complete')
         # Re-read just imu config
@@ -189,7 +194,7 @@ class ImuChannelsView(BaseConfigView):
 
     def on_calibrate_fail(self, result):
         alertPopup('Calibration', 'Calibration Failed:\n\n' + str(result))
-        
+
     def on_sample_rate(self, instance, value):
         if self.imu_cfg:
             for imuChannel in self.imu_cfg.channels:

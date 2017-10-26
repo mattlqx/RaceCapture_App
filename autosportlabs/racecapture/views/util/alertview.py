@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 from kivy.uix.progressbar import ProgressBar
@@ -172,7 +172,11 @@ class ConfirmPopup(GridLayout):
     def on_answer(self, *args):
         pass
 
-def editor_popup(title, content, answerCallback, size_hint=(None, None), size=(dp(500), dp(220)), hide_ok=False):
+def editor_popup(title, content, answerCallback, size_hint=(None, None), size=(dp(500), dp(220)), hide_ok=False, auto_dismiss_time=None):
+
+    def auto_dismiss(*args):
+        popup.dismiss()
+
     def on_title(instance, title):
         popup.title = title
 
@@ -185,6 +189,10 @@ def editor_popup(title, content, answerCallback, size_hint=(None, None), size=(d
                     auto_dismiss=True,
                   title_size=sp(18))
     popup.open()
+
+    if auto_dismiss_time:
+        Clock.create_trigger(auto_dismiss, auto_dismiss_time)()
+
     return popup
 
 class EditorPopup(GridLayout):

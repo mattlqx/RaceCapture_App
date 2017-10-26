@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 import json
 from kivy.app import Builder
 from kivy.properties import ListProperty
@@ -248,7 +248,7 @@ class SessionListView(AnchorLayout):
         selection_json = json.dumps(selection_settings)
 
         self.settings.userPrefs.set_pref('analysis_preferences', 'selected_sessions_laps', selection_json)
-        Logger.info("SessionListView: saved selection: {}".format(selection_json))
+        Logger.debug("SessionListView: saved selection: {}".format(selection_json))
 
     @property
     def selected_count(self):

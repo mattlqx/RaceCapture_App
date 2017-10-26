@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,9 +19,11 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.properties import StringProperty
+from utils import kvFindClass
+from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
 
 class DashboardScreen(AnchorLayout):
     """
@@ -33,4 +35,15 @@ class DashboardScreen(AnchorLayout):
         """
         Called when the screen is shown. 
         """
-        pass
+        gauges = list(kvFindClass(self, Gauge))
+        for gauge in gauges:
+            gauge.on_show()
+
+    def on_exit(self):
+        """
+        Called when the screen is hidden. 
+        """
+        gauges = list(kvFindClass(self, Gauge))
+        for gauge in gauges:
+            gauge.on_hide()
+        

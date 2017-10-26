@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -18,7 +18,7 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 import os
 from kivy.clock import Clock
 from kivy.metrics import dp
@@ -116,14 +116,15 @@ class CANChannelCustomizationTab(CANChannelMappingTab):
                     on_channel: root._on_channel_selected(*args)
             SectionBoxLayout:
                 FieldLabel:
-                    size_hint_x: 0.4
                     halign: 'right'
                     text: 'Rate'
                 SampleRateSpinner:
                     id: sr
-                    size_hint_x: 0.45
+                    size_hint_x: None
+                    width: dp(100)
                 BoxLayout:
-                    size_hint_x: 0.15
+                    size_hint_x: None
+                    width: dp(40)
         BoxLayout:
             size_hint_x: 0.1
 
@@ -159,9 +160,9 @@ class CANChannelCustomizationTab(CANChannelMappingTab):
         if self._loaded:
             self.channel_cfg.sampleRate = instance.getValueFromKey(value)
 
-    def _on_channel_selected(self, value):
+    def _on_channel_selected(self, instance, value):
         if self._loaded:
-            self.dispatch('on_channel', value.channel_config)
+            self.dispatch('on_channel', value)
 
 class CANIDMappingTab(CANChannelMappingTab):
     Builder.load_string("""

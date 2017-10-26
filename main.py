@@ -3,7 +3,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -20,42 +20,56 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "1.9.2"
+__version__ = "1.12.0"
 import sys
 import os
 
+
+# do stuff for windows platforms
 if __name__ == '__main__' and sys.platform == 'win32':
+    from kivy.config import Config
     from multiprocessing import freeze_support
     freeze_support()
+
+    # disable multisamples to prevent false opengl error
+    # https://github.com/kivy/kivy/issues/3576
+    Config.set('graphics', 'multisamples', '0')
 
 if __name__ == '__main__':
     import logging
     import argparse
+    import platform
     import kivy
     import os
     import traceback
     import time
     from threading import Thread
+    from kivy.config import Config
     from kivy.properties import AliasProperty
     from functools import partial
     from kivy.clock import Clock
-    from kivy.config import Config
     from kivy.logger import Logger
-    kivy.require('1.9.1')
+    kivy.require('1.10.0')
     from kivy.base import ExceptionManager, ExceptionHandler
     Config.set('graphics', 'width', '1024')
     Config.set('graphics', 'height', '576')
     Config.set('kivy', 'exit_on_escape', 0)
-    from utils import is_mobile_platform
-    # optimize scroll vs touch behavior for mobile platform
+    from utils import is_mobile_platform, is_windows
+
+
     if is_mobile_platform():
+        # optimize scroll vs touch behavior for mobile platform
         Config.set('widgets', 'scroll_distance', 40)
         Config.set('widgets', 'scroll_timeout', 250)
+
     from kivy.core.window import Window
     from kivy.uix.boxlayout import BoxLayout
     from kivy.uix.label import Label
     from kivy.uix.popup import Popup
     from kivy.uix.screenmanager import *
+    if hasattr(sys, '_MEIPASS'):  # handle pyinstaller frozen packaging
+        kivy.resources.resource_add_path(os.path.join(sys._MEIPASS))
+
     from installfix_garden_navigationdrawer import NavigationDrawer
     from autosportlabs.racecapture.views.util.alertview import alertPopup, confirmPopup
     from autosportlabs.racecapture.views.configuration.rcp.configview import ConfigView
@@ -68,6 +82,7 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.menu.mainmenu import MainMenu
     from autosportlabs.comms.commsfactory import comms_factory
     from autosportlabs.racecapture.tracks.trackmanager import TrackManager
+    from autosportlabs.racecapture.presets.presetmanager import PresetManager
     from autosportlabs.racecapture.menu.homepageview import HomePageView
     from autosportlabs.racecapture.settings.systemsettings import SystemSettings
     from autosportlabs.racecapture.settings.prefs import Range
@@ -121,7 +136,7 @@ class RaceCaptureApp(App):
     _status_pump = StatusPump()
 
     # Track database manager
-    trackManager = None
+    track_manager = None
 
     # Application Status bars
     status_bar = None
@@ -151,7 +166,7 @@ class RaceCaptureApp(App):
     def __init__(self, **kwargs):
         super(RaceCaptureApp, self).__init__(**kwargs)
 
-        if kivy.platform == 'ios' or kivy.platform == 'macosx':
+        if kivy.platform in ['ios', 'macosx', 'linux']:
             kivy.resources.resource_add_path(os.path.join(os.path.dirname(os.path.realpath(__file__)), "data"))
 
         # We do this because when this app is bundled into a standalone app
@@ -165,7 +180,8 @@ class RaceCaptureApp(App):
         self.settings = SystemSettings(self.user_data_dir, base_dir=self.base_dir)
         self.settings.userPrefs.bind(on_pref_change=self._on_preference_change)
 
-        self.trackManager = TrackManager(user_dir=self.settings.get_default_data_dir(), base_dir=self.base_dir)
+        self.track_manager = TrackManager(user_dir=self.settings.get_default_data_dir(), base_dir=self.base_dir)
+        self.preset_manager = PresetManager(user_dir=self.settings.get_default_data_dir(), base_dir=self.base_dir)
 
         # RaceCapture communications API
         self._rc_api = RcpApi(on_disconnect=self._on_rcp_disconnect, settings=self.settings)
@@ -173,7 +189,7 @@ class RaceCaptureApp(App):
         self._databus = DataBusFactory().create_standard_databus(self.settings.systemChannels)
         self.settings.runtimeChannels.data_bus = self._databus
         self._datastore = CachingAnalysisDatastore(databus=self._databus)
-        self._session_recorder = SessionRecorder(self._datastore, self._databus, self._rc_api, self.settings, self.trackManager, self._status_pump)
+        self._session_recorder = SessionRecorder(self._datastore, self._databus, self._rc_api, self.settings, self.track_manager, self._status_pump)
         self._session_recorder.bind(on_recording=self._on_session_recording)
 
 
@@ -193,9 +209,31 @@ class RaceCaptureApp(App):
     def on_pause(self):
         return True
 
-    def _on_keyboard(self, keyboard, keycode, *args):
-        if keycode == 27:
+    def _on_keyboard(self, keyboard, key, scancode, codepoint, modifier):
+        if key == 27:  # go up to home screen
             self.switchMainView('home')
+
+        if not self.screenMgr.current == 'home':
+            return
+
+        if key == 97:  # ASCII 'a'
+            self.switchMainView('analysis')
+
+        if key == 100:  # ASCII 'd'
+            self.switchMainView('dash')
+
+        if key == 115:  # ASCII 's'
+            self.switchMainView('config')
+
+        if key == 112:  # ASCII 'p'
+            self.switchMainView('preferences')
+
+        if key == 116:  # ASCII 't'
+            self.switchMainView('status')
+
+        if key == 113 and 'ctrl' in modifier:  # ctrl-q
+            self._shutdown_app()
+
 
     def processArgs(self):
         parser = argparse.ArgumentParser(description='Autosport Labs Race Capture App')
@@ -211,24 +249,31 @@ class RaceCaptureApp(App):
     def getAppArg(self, name):
         return self.app_args.get(name, None)
 
-    def loadCurrentTracksSuccess(self):
-        Logger.info('RaceCaptureApp: Current Tracks Loaded')
+    def _init_tracks_success(self):
+        Logger.info('RaceCaptureApp: Current tracks loaded')
         Clock.schedule_once(lambda dt: self.notifyTracksUpdated())
 
-    def loadCurrentTracksError(self, details):
-        Clock.schedule_once(lambda dt: alertPopup('Error Loading Tracks', str(details)))
+    def _init_tracks_error(self, details):
+        Logger.error('RaceCaptureApp: Error initializing tracks: {}'.format(details))
+
+    def _init_presets_success(self):
+        Logger.info('RaceCaptureApp: Current presets loaded')
+
+    def _init_presets_error(self, details):
+        Logger.error('RaceCaptureApp: Error initializing presets: {}'.format(details))
 
     def init_data(self):
-        self.trackManager.init(None, self.loadCurrentTracksSuccess, self.loadCurrentTracksError)
+        self.track_manager.init(None, self._init_tracks_success, self._init_tracks_error)
+        self.preset_manager.init(None, self._init_presets_success, self._init_presets_error)
         self._init_datastore()
 
     def _init_datastore(self):
         def _init_datastore(dstore_path):
-            Logger.info('Main: initializing datastore...')
+            Logger.info('RaceCaptureApp:initializing datastore...')
             self._datastore.open_db(dstore_path)
 
         dstore_path = self.settings.userPrefs.datastore_location
-        Logger.info("Main: Datastore Path:" + str(dstore_path))
+        Logger.info("RaceCaptureApp:Datastore Path:" + str(dstore_path))
         t = Thread(target=_init_datastore, args=(dstore_path,))
         t.daemon = True
         t.start()
@@ -273,16 +318,19 @@ class RaceCaptureApp(App):
 
     def on_read_config_error(self, detail):
         self.showActivity("Error reading configuration")
-        Logger.error("Main: Error reading configuration: {}".format(str(detail)))
+        Logger.error("RaceCaptureApp:Error reading configuration: {}".format(str(detail)))
 
     def on_tracks_updated(self, track_manager):
         for view in self.tracks_listeners:
-            view.dispatch('on_tracks_updated', track_manager)
+            view.dispatch('on_tracks_updated', self.track_manager)
 
     def notifyTracksUpdated(self):
-        self.dispatch('on_tracks_updated', self.trackManager)
+        self.dispatch('on_tracks_updated', self.track_manager)
 
     def on_main_menu_item(self, instance, value):
+        if value == 'exit':
+            self._shutdown_app()
+
         self.switchMainView(value)
 
     def on_main_menu(self, instance, *args):
@@ -303,11 +351,19 @@ class RaceCaptureApp(App):
     def on_start(self):
         pass
 
-    def on_stop(self):
+    def _stop_workers(self):
         self._status_pump.stop()
         self._data_bus_pump.stop()
         self._rc_api.shutdown_api()
         self._telemetry_connection.telemetry_enabled = False
+
+    def _shutdown_app(self):
+        Logger.info('RaceCaptureApp: Shutting down app')
+        self._stop_workers()
+        App.get_running_app().stop()
+
+    def on_stop(self):
+        self._stop_workers()
 
     def _get_main_screen(self, view_name):
         view = self.mainViews.get(view_name)
@@ -339,7 +395,8 @@ class RaceCaptureApp(App):
                                 databus=self._databus,
                                 settings=self.settings,
                                 base_dir=self.base_dir,
-                                track_manager=self.trackManager,
+                                track_manager=self.track_manager,
+                                preset_manager=self.preset_manager,
                                  status_pump=self._status_pump)
         config_view.bind(on_read_config=self.on_read_config)
         config_view.bind(on_write_config=self.on_write_config)
@@ -348,18 +405,18 @@ class RaceCaptureApp(App):
         return config_view
 
     def build_status_view(self):
-        status_view = StatusView(self.trackManager, self._status_pump, name='status')
+        status_view = StatusView(self.track_manager, self._status_pump, name='status')
         self.tracks_listeners.append(status_view)
         return status_view
 
     def build_dash_view(self):
-        dash_view = DashboardView(self._status_pump, self.trackManager, self._rc_api, self.rc_config, self._databus, self.settings, name='dash')
+        dash_view = DashboardView(self._status_pump, self.track_manager, self._rc_api, self.rc_config, self._databus, self.settings, name='dash')
         self.config_listeners.append(dash_view)
         self.tracks_listeners.append(dash_view)
         return dash_view
 
     def build_analysis_view(self):
-        analysis_view = AnalysisView(name='analysis', datastore=self._datastore, databus=self._databus, settings=self.settings, track_manager=self.trackManager, session_recorder=self._session_recorder)
+        analysis_view = AnalysisView(name='analysis', datastore=self._datastore, databus=self._databus, settings=self.settings, track_manager=self.track_manager, session_recorder=self._session_recorder)
         self.tracks_listeners.append(analysis_view)
         return analysis_view
 
@@ -423,7 +480,7 @@ class RaceCaptureApp(App):
         # WipeTransition
         # FallOutTransition
         # RiseInTransition
-        screenMgr.transition = RiseInTransition()  # FallOutTransition()  # NoTransition()
+        screenMgr.transition = NoTransition()  # FallOutTransition()  # NoTransition()
 
         self.screenMgr = screenMgr
         self.icon = ('resource/images/app_icon_128x128.ico' if sys.platform == 'win32' else 'resource/images/app_icon_128x128.png')
@@ -462,7 +519,7 @@ class RaceCaptureApp(App):
         if cli_conn_type:
             conn_type = cli_conn_type
 
-        Logger.info("RacecaptureApp: initializing rc comms with, conn type: {}".format(conn_type))
+        Logger.info("RaceCaptureApp: initializing rc comms with, conn type: {}".format(conn_type))
 
         comms = comms_factory(port, conn_type)
         rc_api = self._rc_api
@@ -514,7 +571,7 @@ class RaceCaptureApp(App):
     def _setup_toolbar(self):
         status_bar = self.root.ids.status_bar
         status_bar.status_pump = self._status_pump
-        status_bar.track_manager = self.trackManager
+        status_bar.track_manager = self.track_manager
 
     def setup_telemetry(self):
         host = self.getAppArg('telemetryhost')
@@ -568,7 +625,7 @@ class RaceCaptureApp(App):
 
         if token == ('preferences', 'conn_type'):
             # User changed their RC connection type
-            Logger.info("Racecaptureapp: RC connection type changed to {}, restarting comms".format(value))
+            Logger.info("RaceCaptureApp: RC connection type changed to {}, restarting comms".format(value))
             Clock.schedule_once(lambda dt: self._restart_comms())
 
     def _enable_telemetry(self):
@@ -606,7 +663,7 @@ if __name__ == '__main__':
     except:
         if 'sentry_client' in globals():
             ident = sentry_client.captureException()
-            Logger.error("Main: crash caught: Reference is %s" % ident)
+            Logger.error("RaceCaptureApp:crash caught: Reference is %s" % ident)
             Logger.critical(traceback.format_exc())
         else:
             raise

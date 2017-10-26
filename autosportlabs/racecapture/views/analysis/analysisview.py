@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -21,7 +21,7 @@
 import os.path
 import kivy
 import traceback
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from threading import Thread
 from kivy.logger import Logger
 from kivy.app import Builder
@@ -418,6 +418,7 @@ class AnalysisView(Screen):
         self.ids.analysismap.datastore = self._datastore
         self.ids.channel_stats.track_manager = self._track_manager
         self.ids.channel_stats.datastore = self._datastore
+        self.ids.analysismap.settings = self._settings
         self.ids.sessions_view.datastore = self._datastore
         self.ids.sessions_view.settings = self._settings
         self.ids.sessions_view.init_view()

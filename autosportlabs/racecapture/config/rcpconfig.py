@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -61,15 +61,16 @@ class BaseChannel(object):
                     self.max == other.max and
                     self.sampleRate == other.sampleRate)
 
-SCALING_MAP_POINTS = 5
-SCALING_MAP_MIN_VOLTS = 0
+
 
 class ScalingMapException(Exception):
     pass
 
 class ScalingMap(object):
+    SCALING_MAP_POINTS = 5
+    SCALING_MAP_MIN_VOLTS = 0
     def __init__(self, **kwargs):
-        points = SCALING_MAP_POINTS
+        points = ScalingMap.SCALING_MAP_POINTS
         raw = []
         scaled = []
         for i in range(points):
@@ -117,7 +118,7 @@ class ScalingMap(object):
             value = float(value)
         except:
             raise ScalingMapException("Value must be numeric")
-        if map_bin < SCALING_MAP_POINTS - 1:
+        if map_bin < ScalingMap.SCALING_MAP_POINTS - 1:
             next_value = self.raw[map_bin + 1]
             if value > next_value:
                 raise ScalingMapException("Must be less or equal to {}".format(next_value))
@@ -125,8 +126,8 @@ class ScalingMap(object):
             prev_value = self.raw[map_bin - 1]
             if value < prev_value:
                 raise ScalingMapException("Must be greater or equal to {}".format(prev_value))
-        if value < SCALING_MAP_MIN_VOLTS:
-            raise ScalingMapException('Must be greater than {}'.format(SCALING_MAP_MIN_VOLTS))
+        if value < ScalingMap.SCALING_MAP_MIN_VOLTS:
+            raise ScalingMapException('Must be greater than {}'.format(ScalingMap.SCALING_MAP_MIN_VOLTS))
 
         self.raw[map_bin] = value
 
@@ -904,27 +905,44 @@ class CANMapping(object):
                     self.adder == other.adder and
                     self.conversion_filter_id == other.conversion_filter_id)
 class CanConfig(object):
+    DEFAULT_BAUD_RATE = [0, 0]
+    DEFAULT_TERMINATION_ENABED = [0, 0]
     def __init__(self, **kwargs):
         self.stale = False
         self.enabled = False
-        self.baudRate = [0, 0]
+        self.baudRate = CanConfig.DEFAULT_BAUD_RATE
+        self.termination_enabled = CanConfig.DEFAULT_TERMINATION_ENABED
 
-    def fromJson(self, canCfgJson):
-        self.enabled = True if canCfgJson.get('en', self.enabled) == 1 else False
-        bauds = canCfgJson.get('baud')
+    def fromJson(self, can_cfg_json):
+        self.enabled = True if can_cfg_json.get('en', self.enabled) == 1 else False
+
+        bauds = can_cfg_json.get('baud')
         self.baudRate = []
         for baud in bauds:
             self.baudRate.append(int(baud))
+
+        terms = can_cfg_json.get('term', CanConfig.DEFAULT_TERMINATION_ENABED)
+        if terms is not None:
+            self.termination_enabled = []
+            for t in terms:
+                self.termination_enabled.append(int(t))
+
         self.stale = False
 
     def toJson(self):
-        canCfgJson = {}
-        canCfgJson['en'] = 1 if self.enabled else 0
+        can_cfg_json = {}
+        can_cfg_json['en'] = 1 if self.enabled else 0
         bauds = []
         for baud in self.baudRate:
             bauds.append(baud)
-        canCfgJson['baud'] = bauds
-        return {'canCfg':canCfgJson}
+        can_cfg_json['baud'] = bauds
+
+        terms = []
+        for term in self.termination_enabled:
+            terms.append(term)
+        can_cfg_json['term'] = terms
+
+        return {'canCfg':can_cfg_json}
 
 class CANChannel(BaseChannel):
 
@@ -972,6 +990,9 @@ class CANChannels(object):
         return {'canChanCfg':{'en': 1 if self.enabled else 0, 'chans':channels_json }}
 
 class PidConfig(BaseChannel):
+    OBDII_MODE_11_BIT_CAN_ID_RESPONSE = 0x7E8
+    OBDII_MODE_29_BIT_CAN_ID_RESPONSE = 0x18DAF110
+
     def __init__(self, **kwargs):
         super(PidConfig, self).__init__(**kwargs)
         self.pid = 0
@@ -1188,6 +1209,72 @@ class ConnectivityConfig(object):
 
         return {'connCfg':connCfgJson}
 
+class AutoControlConfig(object):
+    def __init__(self, **kwargs):
+        self.stale = False
+
+        self.channel = 'Speed'
+        self.enabled = False
+
+        self.start_threshold = 15
+        self.start_greater_than = True
+        self.start_time = 5
+
+        self.stop_threshold = 10
+        self.stop_greater_than = False
+        self.stop_time = 10
+
+    def from_json_dict(self, json_dict):
+        if json_dict:
+            self.enabled = json_dict.get('en', self.enabled)
+            self.channel = json_dict.get('channel', self.channel)
+
+            start = json_dict.get('start')
+            if start:
+                self.start_threshold = start.get('thresh', float(self.start_threshold))
+                self.start_time = start.get('time', int(self.start_time))
+                self.start_greater_than = start.get('gt', bool(self.start_greater_than))
+
+            stop = json_dict.get('stop')
+            if stop:
+                self.stop_threshold = stop.get('thresh', float(self.stop_threshold))
+                self.stop_time = stop.get('time', int(self.stop_time))
+                self.stop_greater_than = stop.get('gt', bool(self.stop_greater_than))
+
+    def to_json_dict(self):
+        json_dict = {'channel':self.channel,
+                     'en':self.enabled,
+                     'start':{'thresh': float(self.start_threshold),
+                              'gt': bool(self.start_greater_than),
+                              'time': int(self.start_time)
+                              },
+                     'stop':{'thresh': float(self.stop_threshold),
+                             'gt': bool(self.stop_greater_than),
+                             'time': int(self.stop_time) }
+                     }
+        return json_dict
+
+class CameraControlConfig(AutoControlConfig):
+    def __init__(self, **kwargs):
+        super(CameraControlConfig, self).__init__(**kwargs)
+        self.make_model = 0
+
+    def from_json_dict(self, json_dict):
+        super(CameraControlConfig, self).from_json_dict(json_dict)
+        self.make_model = json_dict.get('makeModel', self.make_model)
+
+    def to_json_dict(self):
+        json_dict = super(CameraControlConfig, self).to_json_dict()
+        json_dict['makeModel'] = self.make_model
+        return {'camCtrlCfg':json_dict}
+
+class SDLoggingControlConfig(AutoControlConfig):
+    def __init__(self, **kwargs):
+        super(SDLoggingControlConfig, self).__init__(**kwargs)
+
+    def to_json_dict(self):
+        json_dict = super(SDLoggingControlConfig, self).to_json_dict()
+        return {'autoLoggerCfg':json_dict}
 
 class VersionConfig(object):
     def __init__(self, **kwargs):
@@ -1232,7 +1319,7 @@ class VersionConfig(object):
         Indicates if version data represents valid version data
         :returns True if version data is valid
         '''
-        return self.major > 0 and len(self.name) > 0 and len(self.serial) > 0
+        return self.major > 0 and len(self.name) > 0 and len(self.friendlyName) > 0
 
 
 class ChannelCapabilities(object):
@@ -1369,8 +1456,20 @@ class Capabilities(object):
         return self.channels.can_channel > 0
 
     @property
+    def has_can_term(self):
+        return 'can_term' in self.flags
+
+    @property
     def has_streaming(self):
         return 'telemstream' in self.flags
+
+    @property
+    def has_camera_control(self):
+        return 'camctl' in self.flags
+
+    @property
+    def has_sd_logging(self):
+        return 'sd' in self.flags
 
     def from_json_dict(self, json_dict, version_config=None):
         if json_dict:
@@ -1432,6 +1531,8 @@ class RcpConfig(object):
         self.canConfig = CanConfig()
         self.can_channels = CANChannels()
         self.obd2Config = Obd2Config()
+        self.camera_control_config = CameraControlConfig()
+        self.sd_logging_control_config = SDLoggingControlConfig()
         self.scriptConfig = LuaScript()
         self.trackDb = TracksDb()
 
@@ -1451,6 +1552,8 @@ class RcpConfig(object):
                 self.can_channels.stale or
                 self.obd2Config.stale or
                 self.scriptConfig.stale or
+                self.camera_control_config.stale or
+                self.sd_logging_control_config.stale or
                 self.trackDb.stale)
 
     @stale.setter
@@ -1464,12 +1567,14 @@ class RcpConfig(object):
         self.pwmConfig.stale = value
         self.trackConfig.stale = value
         self.connectivityConfig.stale = value
+        self.wifi_config.stale = value
         self.canConfig.stale = value
         self.can_channels.stale = value
         self.obd2Config.stale = value
         self.scriptConfig.stale = value
+        self.camera_control_config.stale = value
+        self.sd_logging_control_config.stale = value
         self.trackDb.stale = value
-        self.wifi_config.stale = value
 
     def fromJson(self, rcpJson):
         if rcpJson:
@@ -1539,6 +1644,14 @@ class RcpConfig(object):
                 if scriptJson:
                     self.scriptConfig.fromJson(scriptJson)
 
+                camera_ctrl_cfg_json = rcpJson.get('camCtrlCfg')
+                if camera_ctrl_cfg_json:
+                    self.camera_control_config.from_json_dict(camera_ctrl_cfg_json)
+
+                sd_logging_ctrl_cfg = rcpJson.get('autoLoggerCfg')
+                if sd_logging_ctrl_cfg:
+                    self.sd_logging_control_config.from_json_dict(sd_logging_ctrl_cfg)
+
                 trackDbJson = rcpJson.get('trackDb', None)
                 if trackDbJson:
                     self.trackDb.fromJson(trackDbJson)
@@ -1569,6 +1682,8 @@ class RcpConfig(object):
                              'obd2Cfg':self.obd2Config.toJson().get('obd2Cfg'),
                              'connCfg':self.connectivityConfig.toJson().get('connCfg'),
                              'wifiCfg': self.wifi_config.to_json(),
+                             'autoLoggerCfg': self.sd_logging_control_config.to_json_dict().get('autoLoggerCfg'),
+                             'camCtrlCfg': self.camera_control_config.to_json_dict().get('camCtrlCfg'),
                              'trackCfg':self.trackConfig.toJson().get('trackCfg'),
                              'scriptCfg':self.scriptConfig.toJson().get('scriptCfg'),
                              'trackDb': self.trackDb.toJson().get('trackDb')

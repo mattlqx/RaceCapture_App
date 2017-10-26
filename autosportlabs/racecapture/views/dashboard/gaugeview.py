@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from fieldlabel import FieldLabel
 from kivy.app import Builder
 from kivy.clock import Clock
@@ -52,10 +52,11 @@ class GaugeView(DashboardScreen):
 
     def _find_active_gauges(self):
         return list(kvFindClass(self, Gauge))
-
+        
     def on_enter(self):
         if not self._initialized:
             self._init_view()
+        super(GaugeView, self).on_enter()            
 
     def _init_view(self):
         dataBus = self._databus
@@ -181,7 +182,6 @@ GAUGE_VIEW_8x_KV = """
             rcid: 'b3'
         RoundGauge:
             rcid: 'b4'
-
 """
 
 class GaugeView8x(GaugeView):

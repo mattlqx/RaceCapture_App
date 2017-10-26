@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -23,7 +23,7 @@ from threading import Thread
 import kivy
 from kivy.uix.boxlayout import BoxLayout
 
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.app import Builder
 
 class SessionEditorView(BoxLayout):

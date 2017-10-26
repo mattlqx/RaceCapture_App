@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -92,42 +92,37 @@
 <SessionListItem>:
     rows: 1
     spacing: dp(10)
-    FieldLabel:
-        text: ''
-        id: name
-        size: self.texture_size
-        font_size: self.height * 0.6
-        size_hint_x: 0.38
-    FieldLabel:
-        text: ''
-        id: date
-        size: self.texture_size
-        font_size: self.height * 0.6
-        size_hint_x: 0.2
-    LabelIconButton:
-        title: 'Load'
+    BoxLayout:
+        orientation: 'horizontal'
+        FieldLabel:
+            text: ''
+            id: name
+            font_size: self.height * 0.6
+        FieldLabel:
+            text: ''
+            id: date
+            font_size: self.height * 0.6
+    IconButton:
         on_press: root.add_session()
-        icon: u'\uf067'
-        icon_size: self.height * .5
-        title_font_size: self.height * 0.5
+        text: u'\uf0fe'
+        font_size: self.height
         height: root.height
-        size_hint_x: 0.12
-    LabelIconButton:
-        title: 'Export'
+        width: dp(50)
+        size_hint_x: None
+    IconButton:
         on_press: root.export_session()
-        icon: u'\uf045'
-        icon_size: self.height * .5
-        title_font_size: self.height * 0.5
+        text: u'\uf045'
+        font_size: self.height
         height: root.height
-        size_hint_x: 0.15
-    LabelIconButton:
-        title: 'Delete'
+        width: dp(50)
+        size_hint_x: None
+    IconButton:
         on_press: root.delete_session()
-        icon: u'\uf014'
-        icon_size: self.height * .5
-        title_font_size: self.height * 0.5
+        text: u'\uf014'
+        font_size: self.height
         height: root.height
-        size_hint_x: 0.15
+        width: dp(50)
+        size_hint_x: None
 
 <FileConnectView>:
     BoxLayout:

@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -56,6 +56,9 @@ def is_ios():
 
 def is_mobile_platform():
     return True if is_android() or is_ios() else False
+
+def is_windows():
+    return True if platform == 'win' else False
 
 def pct_h(pct):
     return Window.height * pct
@@ -480,10 +483,4 @@ def paste_clipboard(text):
     # convert to appropriate format
     text = unicode(text)
 
-    clipboard_types = Clipboard.get_types()
-    for cb_type in clipboard_types:
-        if str(cb_type).lower().strip().startswith('text'):
-            Clipboard.put(text, cb_type)
-            return
-
-    raise Exception('Could not find plain text clipboard in ' + str(clipboard_types))
+    Clipboard.copy(text)

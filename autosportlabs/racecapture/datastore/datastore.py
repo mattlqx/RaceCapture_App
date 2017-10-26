@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -60,7 +60,6 @@ def timing(f):
 
 
 def _get_interp_slope(start, finish, num_samples):
-    # print "Start, finish, num_samples", start, finish, num_samples
     if start == finish:
         return 0
 
@@ -129,9 +128,7 @@ def _smooth_dataset(dset, smoothing_rate):
 
 def _scrub_sql_value(value):
     """
-    Takes a string and strips it of all non-alphanumeric characters, 
-    replaces embedded spaces with underscores and prefixes with a '_' 
-    if the name starts with a digit.
+    Takes a string and makes it safe for a sql parameter, and wraps it in double quotes.
     This makes it safe for use in a SQL query for things like a column name or table name. 
     Not to be confused with traditional SQL escaping with backslashes or
     parameterized queries
@@ -140,12 +137,8 @@ def _scrub_sql_value(value):
     """
     value = value.strip()
     sql_name = ''.join(
-        [char for char in value if char.isalnum() or char == ' '])
-    sql_name = sql_name.replace(' ', '_')
-    if sql_name[:1].isdigit():
-        sql_name = '_' + sql_name
-    return sql_name
-
+        [char for char in value if char is not '"'])
+    return '"{}"'.format(sql_name)
 
 class DataSet(object):
 
@@ -459,14 +452,14 @@ class DataStore(object):
         for c in channels:
             name = c.name
             if name in self.EXTRA_INDEX_CHANNELS:
-                extra_indexes.append(_scrub_sql_value(name))
+                extra_indexes.append(name)
 
         for index_channel in extra_indexes:
             index_name = '{}_index_id'.format(index_channel)
             if index_name in existing_indexes:
                 continue
             self._conn.execute(
-                """CREATE INDEX {} on datapoint({})""".format(index_name, index_channel))
+                """CREATE INDEX {} on datapoint({})""".format(_scrub_sql_value(index_name), _scrub_sql_value(index_channel)))
 
     def _extend_datalog_channels(self, channels):
         """
@@ -475,16 +468,17 @@ class DataStore(object):
         existing_columns = []
         c = self._conn.cursor()
         for row in c.execute('PRAGMA table_info(datapoint)'):
-            existing_columns.append(row[1])
+            existing_columns.append(_scrub_sql_value(row[1]))
 
         for channel in channels:
             name = _scrub_sql_value(channel.name)
-            if name in existing_columns:
+            # SQLite column names are case-insensitive
+            if name.upper() in (col.upper() for col in existing_columns):
                 continue
             # Extend the datapoint table to include the channel as a
             # new field
             self._conn.execute("""ALTER TABLE datapoint
-            ADD {} REAL""".format(_scrub_sql_value(name)))
+            ADD {} REAL""".format(name))
         self._add_extra_indexes(channels)
         self._conn.commit()
 
@@ -689,75 +683,78 @@ class DataStore(object):
 
         for line in data_file:
 
-            # Strip the line and break it down into it's component
-            # channels, replace all blank entries with None
-            channels = [
-                None if x == '' else float(x) for x in line.strip().split(',')]
-            # print channels
+            try:
+                # Strip the line and break it down into it's component
+                # channels, replace all blank entries with None
+                channels = [
+                    None if x == '' else float(x) for x in line.strip().split(',')]
 
-            # Now, if this is the first entry (characterized by
-            # work_list being an empty list), we need to create all of
-            # our 'plinko slots' for each channel in both the work and
-            # yield lists
-            work_list_len = len(work_list)
-            channels_len = len(channels)
-            if work_list_len == 0:
-                work_list = [[] for x in channels]
-                yield_list = [[] for x in channels]
+                # Now, if this is the first entry (characterized by
+                # work_list being an empty list), we need to create all of
+                # our 'plinko slots' for each channel in both the work and
+                # yield lists
+                work_list_len = len(work_list)
+                channels_len = len(channels)
+                if work_list_len == 0:
+                    work_list = [[] for x in channels]
+                    yield_list = [[] for x in channels]
 
-            if channels_len > work_list_len and current_line > 0:
-                warn_msg = 'Unexpected channel count in line {}. Expected {}, got {}'.format(
-                    current_line, work_list_len, channels_len)
-                if warnings:
-                    warnings.append((line, warn_msg))
-                Logger.warn("DataStore: {}".format(warn_msg))
-                continue
-
-            # Down to business, first, we stuff each channel's sample
-            # into the work list
-            Logger.debug('DataStore: work_list.len={}, channels.len={}, current_line={}'.format(
-                work_list_len, channels_len, current_line))
-            for c in range(channels_len):
-                work_list[c].append(channels[c])
-
-            # At this point, we need to walk through each channel
-            # column in the work list.  If the length of the column is
-            # 1, we simply move onto the next column.  If the length
-            # is > 1, we check if column[-1] is a miss (None) or a
-            # hit(anything else).  If it is a hit, we
-            # interpolate/extrapolate the column, then move everything
-            # EXCEPT the last item into the yield list
-
-            for c in range(len(work_list)):
-                if len(work_list[c]) == 1:
+                if channels_len > work_list_len and current_line > 0:
+                    warn_msg = 'Unexpected channel count in line {}. Expected {}, got {}'.format(
+                        current_line, work_list_len, channels_len)
+                    if warnings:
+                        warnings.append((line, warn_msg))
+                    Logger.warn("DataStore: {}".format(warn_msg))
                     continue
 
-                # If we have a hit at the end of the list, get the
-                # extraploated/interpolated list of datapoints
-                if not work_list[c][-1] == None:
-                    mod_list = self._extrap_datapoints(work_list[c])
+                # Down to business, first, we stuff each channel's sample
+                # into the work list
+                Logger.debug('DataStore: work_list.len={}, channels.len={}, current_line={}'.format(
+                    work_list_len, channels_len, current_line))
+                for c in range(channels_len):
+                    work_list[c].append(channels[c])
 
-                    # Now copy everything but the last point in the
-                    # modified list into the yield_list
-                    yield_list[c].extend(mod_list[:-1])
+                # At this point, we need to walk through each channel
+                # column in the work list.  If the length of the column is
+                # 1, we simply move onto the next column.  If the length
+                # is > 1, we check if column[-1] is a miss (None) or a
+                # hit(anything else).  If it is a hit, we
+                # interpolate/extrapolate the column, then move everything
+                # EXCEPT the last item into the yield list
 
-                    # And remove everything BUT the last datapoint from
-                    # the current list in work_list
-                    work_list[c] = work_list[c][-1:]
+                for c in range(len(work_list)):
+                    if len(work_list[c]) == 1:
+                        continue
 
-            # Ok, we now have THINGS in our yield list, if we have
-            # something in EVERY column of the yield list, create a
-            # new list containing the first item in every column,
-            # shift all columns down one, and yield the new list
-            if not 0 in [len(x) for x in yield_list]:
-                ds_to_yield = [x[0] for x in yield_list]
-                map(lambda x: x.pop(0), yield_list)
-                if progress_cb:
-                    percent_complete = float(current_line) / line_count * 100
-                    progress_cb(percent_complete)
-                yield ds_to_yield
+                    # If we have a hit at the end of the list, get the
+                    # extraploated/interpolated list of datapoints
+                    if not work_list[c][-1] == None:
+                        mod_list = self._extrap_datapoints(work_list[c])
 
-            # Increment line number
+                        # Now copy everything but the last point in the
+                        # modified list into the yield_list
+                        yield_list[c].extend(mod_list[:-1])
+
+                        # And remove everything BUT the last datapoint from
+                        # the current list in work_list
+                        work_list[c] = work_list[c][-1:]
+
+                # Ok, we now have THINGS in our yield list, if we have
+                # something in EVERY column of the yield list, create a
+                # new list containing the first item in every column,
+                # shift all columns down one, and yield the new list
+                if not 0 in [len(x) for x in yield_list]:
+                    ds_to_yield = [x[0] for x in yield_list]
+                    map(lambda x: x.pop(0), yield_list)
+                    if progress_cb:
+                        percent_complete = float(current_line) / line_count * 100
+                        progress_cb(percent_complete)
+                    yield ds_to_yield
+
+                # Increment line number
+            except Exception as e:
+                Logger.warn('Datastore: could not parse logfile data at line {}'.format(current_line))
+
             current_line += 1
 
         # now, finish off and extrapolate the remaining items in the
@@ -789,8 +786,6 @@ class DataStore(object):
 
     def init_session(self, name, channel_metas=None, notes=''):
         session_id = self.create_session(name, notes)
-        Logger.info(
-            "Datastore: init_session. channels: {}".format(channel_metas))
 
         if channel_metas:
             session_channels = []
@@ -873,6 +868,10 @@ class DataStore(object):
             raise
 
     def get_location_center(self, sessions=None):
+
+        if not (self.channel_exists('Latitude') and self.channel_exists('Longitude')):
+            return (0, 0)
+
         c = self._conn.cursor()
 
         base_sql = 'SELECT AVG(Latitude), AVG(Longitude) from datapoint'
@@ -1088,7 +1087,7 @@ class DataStore(object):
         # Put together the smoothing map
         for ch in channels:
             sr = self.get_channel_smoothing(ch)
-            smoothing_map[_scrub_sql_value(ch)] = sr
+            smoothing_map[ch] = sr
 
         # add the session_id to the smoothing map with a smoothing rate
         # of 0
@@ -1103,13 +1102,9 @@ class DataStore(object):
         return session
 
     def get_sessions(self):
-        c = self._conn.cursor()
-
         sessions = []
-        for row in c.execute('SELECT id, name, notes, date FROM session ORDER BY date DESC;'):
-            sessions.append(
-                Session(session_id=row[0], name=row[1], notes=row[2], date=row[3]))
-
+        for row in self._conn.execute('SELECT id, name, notes, date FROM session ORDER BY date DESC;'):
+        sessions.append(Session(session_id=row[0], name=row[1], notes=row[2], date=row[3]))
         return sessions
 
     def session_has_laps(self, session_id):
@@ -1268,7 +1263,11 @@ class DataStore(object):
                     # the first interval is our synchronization point
                     # for determining when to output samples
                     # The first sample outputs all values by default
-                    sync_point = long(record[1 + datalog_interval_index])
+                    interval_record = record[1 + datalog_interval_index]
+                    if interval_record is None:
+                        Logger.warning('DataStore: Export: invalid row detected, skipping: {}'.format(record))
+                        break
+                    sync_point = long(interval_record)
 
                 row = ''
                 current_interval = long(record[1 + datalog_interval_index])

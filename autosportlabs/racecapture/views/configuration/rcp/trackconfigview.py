@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -20,7 +20,7 @@
 
 import kivy
 import time
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 
 from kivy.properties import ObjectProperty
 from kivy.core.clipboard import Clipboard

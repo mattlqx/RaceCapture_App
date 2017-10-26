@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.app import Builder
@@ -103,6 +103,7 @@ class TachometerView(DashboardScreen):
     def on_enter(self):
         if not self._initialized:
             self._init_screen()
+        super(TachometerView, self).on_enter()
 
     def _init_screen(self):
         dataBus = self._databus

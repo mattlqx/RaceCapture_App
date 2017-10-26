@@ -2,7 +2,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -23,11 +23,8 @@
 set -e
 rm -rf bin
 python -m build_tools.build_default_tracks
-cp data/images/defaulttheme-0.png .buildozer/android/platform/python-for-android/dist/racecapture/private/lib/python2.7/site-packages/kivy/data/images/defaulttheme-0.png
-cp data/images/defaulttheme-0.png .buildozer/android/platform/python-for-android/dist/racecapture/python-install/lib/python2.7/site-packages/kivy/data/images/defaulttheme-0.png
+python -m build_tools.build_default_mappings
+cp data/images/defaulttheme-0.png .buildozer/android/platform/build/dists/racecapture/private/lib/python2.7/site-packages/kivy/data/images/defaulttheme-0.png
+cp data/images/defaulttheme-0.png .buildozer/android/platform/build/dists/racecapture/python-install/lib/python2.7/site-packages/kivy/data/images/defaulttheme-0.png
+
 buildozer -v android release
-APK=$(ls bin/*.apk)
-RELEASE_APK="${APK/unsigned/signed}"
-jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore $1 -storepass $2 $APK rcpmobile
-ZA=`find ~/.buildozer/ -name zipalign -print -quit`
-$ZA -f 4 $APK $RELEASE_APK

@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -22,7 +22,7 @@ import os
 
 import kivy
 
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.app import Builder
 from kivy.uix.treeview import TreeViewLabel
 from kivy.properties import ObjectProperty, BooleanProperty
@@ -33,6 +33,7 @@ from kivy import platform
 from kivy.logger import Logger
 from autosportlabs.help.helpmanager import HelpInfo
 
+from autosportlabs.racecapture.views.configuration.rcp.autocontrolconfigview import AutoControlConfigView
 from autosportlabs.racecapture.views.configuration.rcp.analogchannelsview import *
 from autosportlabs.racecapture.views.configuration.rcp.imuchannelsview import *
 from autosportlabs.racecapture.views.configuration.rcp.gpschannelsview import *
@@ -67,11 +68,12 @@ class ConfigView(Screen):
     Builder.load_file(CONFIG_VIEW_KV)
     # file save/load
     loaded = BooleanProperty(False)
-    loadfile = ObjectProperty(None)
-    savefile = ObjectProperty(None)
-    text_input = ObjectProperty(None)
     writeStale = BooleanProperty(False)
-    track_manager = ObjectProperty(None)
+    loadfile = ObjectProperty()
+    savefile = ObjectProperty()
+    text_input = ObjectProperty()
+    track_manager = ObjectProperty()
+    preset_manager = ObjectProperty()
 
     # List of config views
     configViews = []
@@ -200,7 +202,7 @@ class ConfigView(Screen):
         attach_node('Race Timing', None, lambda: LapStatsView())
 
         if self.rc_config.capabilities.has_analog:
-            attach_node('Analog Sensors', None, lambda: AnalogChannelsView(channels=runtime_channels))
+            attach_node('Analog Sensors', None, lambda: AnalogChannelsView(channels=runtime_channels, preset_manager=self.preset_manager))
 
         if self.rc_config.capabilities.has_timer:
             attach_node('Pulse/RPM Sensors', None, lambda: PulseChannelsView(channels=runtime_channels))
@@ -216,9 +218,11 @@ class ConfigView(Screen):
         attach_node('CAN Bus', None, lambda: CANConfigView())
 
         if self.rc_config.capabilities.has_can_channel:
-            attach_node('CAN Mapping', None, lambda: CANChannelsView(settings=self._settings, channels=runtime_channels, base_dir=self.base_dir))
+            attach_node('CAN Mapping', None, lambda: CANChannelsView(settings=self._settings, preset_manager=self.preset_manager, channels=runtime_channels, base_dir=self.base_dir))
 
-        attach_node('OBDII', None, lambda: OBD2ChannelsView(channels=runtime_channels, base_dir=self.base_dir))
+        attach_node('OBDII', None, lambda: OBD2ChannelsView(channels=runtime_channels, base_dir=self.base_dir, preset_manager=self.preset_manager))
+
+        attach_node('Automatic Control', None, lambda: AutoControlConfigView(channels=runtime_channels))
 
         attach_node('Wireless', None, lambda: WirelessConfigView(self.base_dir, self.rc_config, self.rc_config.capabilities))
 
@@ -252,7 +256,9 @@ class ConfigView(Screen):
                     view.dispatch('on_config_updated', self.rc_config)
                 if self.track_manager:
                     view.dispatch('on_tracks_updated', self.track_manager)
-        Clock.schedule_once(lambda dt: self.ids.content.add_widget(view))
+
+        if view.get_parent_window() is None:
+            Clock.schedule_once(lambda dt: self.ids.content.add_widget(view))
 
     def on_select_node(self, instance, value):
         if not value:

@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -143,15 +143,15 @@ class UserPrefs(EventDispatcher):
         '''
         return self._prefs_dict["range_alerts"].get(key, default)
 
-    def set_gauge_config(self, gauge_id, channel):
+    def set_gauge_config(self, gauge_id, config_value):
         '''
         Stores a gauge configuration for the specified gauge_id
         :param gauge_id the key for the gauge
         :type gauge_id string
-        :param channel the configuration for the channel
-        :type channel object
+        :param config_value the configuration value to set
+        :type config_value string
         '''
-        self._prefs_dict["gauge_settings"][gauge_id] = channel
+        self._prefs_dict["gauge_settings"][gauge_id] = config_value
         self._schedule_save()
 
     def get_gauge_config(self, gauge_id):
@@ -271,6 +271,15 @@ class UserPrefs(EventDispatcher):
 
         except Exception:
             pass
+
+    def init_pref_section(self, section):
+        '''
+        Initializes a preferences section with the specified name. 
+        if the section already exists, there is no effect. 
+        :param section the name of the preference section
+        :type string
+        '''
+        self.config.adddefaultsection(section)
 
     def get_pref_bool(self, section, option, default=None):
         '''

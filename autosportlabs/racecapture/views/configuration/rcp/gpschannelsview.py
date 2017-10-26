@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 
 from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
@@ -32,7 +32,7 @@ from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.help.helpmanager import HelpInfo
 
 GPS_CHANNELS_VIEW_KV = """
-#:kivy 1.9.1
+#:kivy 1.10.0
 #:import ColorScheme autosportlabs.racecapture.theme.color.ColorScheme
 <GPSChannelsView>:
     orientation: 'vertical'

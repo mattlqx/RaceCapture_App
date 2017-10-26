@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.clock import Clock
 from kivy.app import Builder
 from kivy.properties import BooleanProperty, StringProperty, ListProperty
@@ -82,9 +82,12 @@ SETUP_VIEW_KV = """
                         icon_size: self.height * 0.5
                         title_font_size: self.height * 0.6
                         icon: u'\uf052'
-                        size_hint: (0.2, 0.15)                
+                        size_hint_x: None
+                        size_hint_y: 0.1
+                        width: dp(100)
                         on_release: root.on_skip()
 """
+
 
 class SetupItem(BoxLayout):
     """
@@ -102,7 +105,9 @@ class SetupItem(BoxLayout):
         self.ids.complete.text = u'\uf00c' if value else ''
 
     def on_active(self, instance, value):
-        self.title_color = ColorScheme.get_light_primary_text() if value else ColorScheme.get_secondary_text()
+        self.title_color = ColorScheme.get_light_primary_text(
+        ) if value else ColorScheme.get_secondary_text()
+
 
 class SetupView(Screen):
     """
@@ -110,6 +115,7 @@ class SetupView(Screen):
     """
     SETUP_COMPLETE_DELAY_SEC = 1.0
     Builder.load_string(SETUP_VIEW_KV)
+
     def __init__(self, settings, databus, base_dir, rc_api, **kwargs):
         super(SetupView, self).__init__(**kwargs)
         self.register_event_type('on_setup_complete')
@@ -139,7 +145,8 @@ class SetupView(Screen):
         self._skip_request()
 
     def _init_setup_config(self):
-        json_data = open(os.path.join(self._base_dir, 'resource', 'setup', 'setup.json'))
+        json_data = open(
+            os.path.join(self._base_dir, 'resource', 'setup', 'setup.json'))
         setup_config = json.load(json_data)
         self._setup_config = setup_config
 
@@ -187,5 +194,7 @@ class SetupView(Screen):
         return screen
 
     def _setup_complete(self, show_next_time=False):
-        self._settings.userPrefs.set_pref('setup', 'setup_enabled', show_next_time)
-        Clock.schedule_once(lambda dt: self.dispatch('on_setup_complete'), SetupView.SETUP_COMPLETE_DELAY_SEC)
+        self._settings.userPrefs.set_pref(
+            'setup', 'setup_enabled', show_next_time)
+        Clock.schedule_once(lambda dt: self.dispatch(
+            'on_setup_complete'), SetupView.SETUP_COMPLETE_DELAY_SEC)

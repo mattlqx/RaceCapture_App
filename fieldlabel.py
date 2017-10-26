@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 
 from kivy.uix.label import Label
 from kivy.metrics import sp
@@ -28,11 +28,11 @@ class FieldLabel(Label):
     def __init__(self, **kwargs):
         super(FieldLabel, self).__init__(**kwargs)
         self.bind(width=self.width_changed)
-        self.spacing = (20,3)
-        self.font_name = "resource/fonts/ASL_light.ttf"
+        self.spacing = (20, 3)
+        self.font_name = "resource/fonts/ASL_regular.ttf"
         self.font_size = sp(20)
         self.shorten = True
         self.shorten_from = 'right'
-        
+
     def width_changed(self, instance, size):
         self.text_size = (size, None)

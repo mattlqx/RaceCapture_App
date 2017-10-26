@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -435,7 +435,10 @@ class RcpApi:
             Logger.error(traceback.format_exc())
             self.recover_connection()
         finally:
-            self.sendCommandLock.release()
+            try:
+                self.sendCommandLock.release()
+            except:
+                pass
             Clock.schedule_once(lambda dt: self.on_tx(True))
 
 
@@ -498,6 +501,12 @@ class RcpApi:
 
             if capabilities.has_wifi:
                 cmdSequence.append(RcpCmd('wifiCfg', self.get_wifi_config))
+
+            if capabilities.has_sd_logging:
+                cmdSequence.append(RcpCmd('sdLogCtrlCfg', self.get_sdlog_control_config))
+
+            if capabilities.has_camera_control:
+                cmdSequence.append(RcpCmd('camCtrlCfg', self.get_camera_control_config))
 
             self._queue_multiple(cmdSequence, 'rcpCfg', lambda rcpJson: self.getRcpCfgCallback(cfg, rcpJson, winCallback), failCallback)
 
@@ -580,6 +589,14 @@ class RcpApi:
         wifi_config = cfg.wifi_config
         if wifi_config.stale:
             cmdSequence.append(RcpCmd('setWifiCfg', self.set_wifi_config, wifi_config.to_json()))
+
+        sdlog_control_config = cfg.sd_logging_control_config
+        if sdlog_control_config.stale:
+            cmdSequence.append(RcpCmd('setSdLogCtrlCfg', self.set_sdlog_control_config, sdlog_control_config.to_json_dict()))
+
+        camera_control_config = cfg.camera_control_config
+        if camera_control_config.stale:
+            cmdSequence.append(RcpCmd('setCamCtrlCfg', self.set_camera_control_config, camera_control_config.to_json_dict()))
 
         cmdSequence.append(RcpCmd('flashCfg', self.sendFlashConfig))
 
@@ -722,8 +739,20 @@ class RcpApi:
     def get_wifi_config(self):
         self.sendGet('getWifiCfg', None)
 
+    def get_sdlog_control_config(self):
+        self.sendGet('getSdLogCtrlCfg', None)
+
+    def get_camera_control_config(self):
+        self.sendGet('getCamCtrlCfg', None)
+
     def set_wifi_config(self, wifi_config):
         self.sendSet('setWifiCfg', wifi_config)
+
+    def set_sdlog_control_config(self, sdlog_control_config):
+        self.sendSet('setSdLogCtrlCfg', sdlog_control_config)
+
+    def set_camera_control_config(self, camera_control_config):
+        self.sendSet('setCamCtrlCfg', camera_control_config)
 
     def start_telemetry(self, rate):
         self.sendSet('setTelemetry', {'rate': rate})
@@ -915,6 +944,8 @@ class RcpApi:
                 testVer = VersionConfig()
                 for device in devices:
                     try:
+                        if not self._running.is_set():
+                            break
                         Logger.debug('RCPAPI: Trying ' + str(device))
                         if self.detect_activity_callback: self.detect_activity_callback(str(device))
                         comms.device = device

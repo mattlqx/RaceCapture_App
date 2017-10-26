@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -34,7 +34,6 @@ import copy
 from autosportlabs.racecapture.views.util.alertview import alertPopup
 from autosportlabs.racecapture.views.analysis.analysiswidget import ChannelAnalysisWidget
 from autosportlabs.racecapture.views.analysis.markerevent import MarkerEvent
-from autosportlabs.uix.color.colorsequence import ColorSequence
 from autosportlabs.racecapture.datastore import Filter
 from autosportlabs.racecapture.views.analysis.analysisdata import ChannelData
 from autosportlabs.uix.progressspinner import ProgressSpinner
@@ -378,11 +377,18 @@ class LineChart(ChannelAnalysisWidget):
                 time_data = time_data_values.values
                 sample_count = len(time_data)
                 interval = max(1, int(sample_count / self.MAX_SAMPLES_TO_DISPLAY))
-                Logger.debug('LineChart: plot interval {}'.format(interval))
-                start_time = time_data[0]
+                Logger.info('LineChart: plot interval {}'.format(interval))
+                last_time = None
+                time = 0
+                last_time = time_data[0]
                 while sample_index < sample_count:
+                    current_time = time_data[sample_index]
+                    if last_time > current_time:
+                        Logger.warn('LineChart: interruption in interval channel, possible reset in data stream ({}->{})'.format(last_time, current_time))
+                        last_time = current_time
                     sample = channel_data[sample_index]
-                    time = time_data[sample_index] - start_time
+                    time += current_time - last_time
+                    last_time = current_time
                     points.append((time, sample))
                     time_index[time] = sample_index
                     sample_index += interval

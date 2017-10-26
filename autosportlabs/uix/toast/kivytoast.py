@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -26,7 +26,7 @@ from kivy.properties import NumericProperty
 
 __all__ = ('toast')
 
-TOAST_KV='''
+TOAST_KV = '''
 <_Toast@Label>:
     size_hint: (None, None)
     halign: 'center'
@@ -65,7 +65,7 @@ class _Toast(Label):
         self._bound = False
         self._center_on = kwargs.get('center_on')
         super(_Toast, self).__init__(text=text, *args, **kwargs)
-    
+
     def show(self, length_long, *largs):
         duration = 5000 if length_long else 1000
         rampdown = duration * 0.1
@@ -76,21 +76,21 @@ class _Toast(Label):
         self._rampdown = rampdown
         self._duration = duration - rampdown
         Window.add_widget(self)
-        Clock.schedule_interval(self._in_out, 1/60.0)
+        Clock.schedule_interval(self._in_out, 1 / 60.0)
 
     def on_texture_size(self, instance, size):
         self.size = map(lambda i: i * 1.3, size)
         if not self._bound:
             Window.bind(on_resize=self._align)
             self._bound = True
-        self._align(None, Window.size)
-            
-    def _align(self, win, size):
-        self.x = (size[0] - self.width) / 2.0
+        self._align(None, Window.size[0], Window.size[1])
+
+    def _align(self, win, width, height):
+        self.x = (width - self.width) / 2.0
         if self._center_on:
             self.y = self._center_on.y + self._center_on.size[1] * 0.1
         else:
-            self.y = size[1] * 0.1
+            self.y = height * 0.1
 
     def _in_out(self, dt):
         self._duration -= dt * 1000

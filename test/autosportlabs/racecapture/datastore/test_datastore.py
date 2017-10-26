@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -22,7 +22,8 @@ import itertools
 import tempfile
 import csv
 import unittest
-import os, os.path
+import os
+import os.path
 from collections import namedtuple
 from autosportlabs.racecapture.datastore.datastore import DataStore, Filter, \
     DataSet, _interp_dpoints, _smooth_dataset, _scrub_sql_value
@@ -34,7 +35,10 @@ log_path = os.path.join(fqp, 'rc_adj.log')
 import_export_path = os.path.join(fqp, 'import_export.log')
 
 # NOTE! that
+
+
 class DataStoreTest(unittest.TestCase):
+
     @classmethod
     def setUpClass(self):
         self.ds = DataStore()
@@ -56,7 +60,8 @@ class DataStoreTest(unittest.TestCase):
         try:
             self.ds.import_datalog(log_path, 'rc_adj', 'the notes')
         except:
-            import sys, traceback
+            import sys
+            import traceback
             print "Exception importing datalog:"
             print '-' * 60
             traceback.print_exc(file=sys.stdout)
@@ -102,7 +107,8 @@ class DataStoreTest(unittest.TestCase):
         self.assertListEqual(f.params, [1, 212, 9001])
 
     def test_grouped_filter(self):
-        f = Filter().lt('LapCount', 1).group(Filter().gt('Coolant', 212).or_().gt('RPM', 9000))
+        f = Filter().lt('LapCount', 1).group(
+            Filter().gt('Coolant', 212).or_().gt('RPM', 9000))
 
         expected_output = 'datapoint.LapCount < ? AND (datapoint.Coolant > ? OR datapoint.RPM > ?)'
         filter_text = str(f).strip()
@@ -188,14 +194,12 @@ class DataStoreTest(unittest.TestCase):
         self.assertEqual(rpm_min[1], 37)
         self.assertEqual(rpm_max[1], 12)
 
-
     def test_interpolation(self):
         dset = [1., 1., 1., 1., 5.]
 
         smooth_list = _interp_dpoints(1, 5, 4)
 
         self.assertListEqual(smooth_list, [1., 2., 3., 4., 5.])
-
 
     def test_smoothing_even_bound(self):
         dset = [1., 1., 1., 1., 5.]
@@ -208,7 +212,6 @@ class DataStoreTest(unittest.TestCase):
         smooth_list = _smooth_dataset(dset, 4)
 
         self.assertListEqual(smooth_list, [1., 2., 3., 4., 5., 4., 3., 2.])
-
 
     def test_channel_set_get_smoothing(self):
         success = None
@@ -226,7 +229,6 @@ class DataStoreTest(unittest.TestCase):
 
         smoothing_rate = self.ds.get_channel_smoothing('RPM')
         self.assertEqual(smoothing_rate, 1)
-
 
         # Negative case, this would return an error
         try:
@@ -346,7 +348,9 @@ class DataStoreTest(unittest.TestCase):
         self.assertEqual('notes_updated', session.notes)
 
     def test_export_datastore(self):
-        Meta = namedtuple('Meta', ['name', 'units', 'min', 'max', 'sr', 'index'])
+        Meta = namedtuple(
+            'Meta', ['name', 'units', 'min', 'max', 'sr', 'index'])
+
         def parse_header_meta(headers):
             channel_metas = {}
             name_indexes = []
@@ -365,7 +369,8 @@ class DataStoreTest(unittest.TestCase):
 
             return channel_metas, name_indexes
 
-        import_export_id = self.ds.import_datalog(import_export_path, 'import_export', 'the notes')
+        import_export_id = self.ds.import_datalog(
+            import_export_path, 'import_export', 'the notes')
 
         with tempfile.TemporaryFile() as export_file:
             rows = self.ds.export_session(import_export_id, export_file)
@@ -376,7 +381,8 @@ class DataStoreTest(unittest.TestCase):
             log_reader = csv.reader(export_file, delimiter=',', quotechar=' ')
 
             with open(import_export_path, 'rb') as original_log:
-                original_reader = csv.reader(original_log, delimiter=',', quotechar=' ')
+                original_reader = csv.reader(
+                    original_log, delimiter=',', quotechar=' ')
 
                 original_metas = None
                 original_indexes = None
@@ -385,11 +391,14 @@ class DataStoreTest(unittest.TestCase):
 
                 for export, original in itertools.izip(log_reader, original_reader):
                     if not original_metas and not export_metas:
-                        original_metas, original_indexes = parse_header_meta(original)
-                        export_metas, export_indexes = parse_header_meta(export)
+                        original_metas, original_indexes = parse_header_meta(
+                            original)
+                        export_metas, export_indexes = parse_header_meta(
+                            export)
                     else:
                         for om in original_metas.values():
-                            # export log can be in random order, so need to re-align
+                            # export log can be in random order, so need to
+                            # re-align
                             original_index = original_indexes.index(om.name)
                             export_index = export_indexes.index(om.name)
                             export_value = export[export_index]
@@ -399,11 +408,13 @@ class DataStoreTest(unittest.TestCase):
                                 export_value = float(export_value)
                                 original_value = float(original_value)
 
-                            self.assertEqual(export_value, original_value, 'Line {} : Name {} : {} != {}\noriginal: {}\nexport: {}'.format(line_count, om.name, original_value, export_value, original, export))
+                            self.assertEqual(export_value, original_value, 'Line {} : Name {} : {} != {}\noriginal: {}\nexport: {}'.format(
+                                line_count, om.name, original_value, export_value, original, export))
 
                         line_count += 1
 
-                self.assertEqual(len(original_metas.values()), len(export_metas.values()))
+                self.assertEqual(
+                    len(original_metas.values()), len(export_metas.values()))
 
                 # Test headers
                 for o_meta, e_meta in zip(sorted(original_metas.values()), sorted(export_metas.values())):
@@ -417,10 +428,12 @@ class DataStoreTest(unittest.TestCase):
 
     def test_scrub_sql_value(self):
         ds = self.ds
-        self.assertEqual(_scrub_sql_value('ABCD1234'), 'ABCD1234')
-        self.assertEqual(_scrub_sql_value('1234ABCD'), '_1234ABCD')
-        self.assertEqual(_scrub_sql_value('ABCD 1234'), 'ABCD_1234')
-        self.assertEqual(_scrub_sql_value(' 1234ABCD'), '_1234ABCD')
-        self.assertEqual(_scrub_sql_value('1234ABCD '), '_1234ABCD')
-        self.assertEqual(_scrub_sql_value('!!@@##ABCD%%1234%%**'), 'ABCD1234')
-
+        self.assertEqual(_scrub_sql_value('ABCD1234'), '"ABCD1234"')
+        self.assertEqual(_scrub_sql_value('1234ABCD'), '"1234ABCD"')
+        self.assertEqual(_scrub_sql_value('ABCD 1234'), '"ABCD 1234"')
+        self.assertEqual(_scrub_sql_value(' 1234ABCD'), '"1234ABCD"')
+        self.assertEqual(_scrub_sql_value('1234ABCD '), '"1234ABCD"')
+        self.assertEqual(
+            _scrub_sql_value('!!@@##ABCD%%1234%%**'), '"ABCD1234"')
+        self.assertEqual(_scrub_sql_value('ABCD_1234'), '"ABCD_1234"')
+        self.assertEqual(_scrub_sql_value('ABCD 1234'), '"ABCD 1234"')

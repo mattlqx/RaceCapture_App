@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -18,7 +18,7 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ('time_to_epoch', 'format_time', 'format_date', 'epoch_to_time')
+__all__ = ('time_to_epoch', 'format_time', 'friendly_format_time_ago', 'format_date', 'epoch_to_time')
 import calendar
 from datetime import datetime
 from kivy import platform
@@ -51,6 +51,36 @@ def time_to_epoch(timestamp):
 
     return int(calendar.timegm(t.timetuple()))
 
+def friendly_format_time_ago(dt):
+    """
+    Format the specified time relative to now in 
+    a friendly readable format.
+    If the specified time was less than a minute ago, it will report 'Just now'. 
+    If less than an hour, it will report 'X min ago'. 
+    If less than a day, it will report 'X hour Y min ago'.
+    """
+    
+    def _plural(val):
+        return 's' if val > 1 else ''
+    
+    n = datetime.now()
+    diff = n - dt
+    sec = int(diff.total_seconds())
+    if sec < 60:
+        return 'Just now'
+    
+    minutes = sec / 60
+    if minutes < 60:
+        return '{} min{} ago'.format(minutes, _plural(minutes))
+    
+    hours = minutes / 60
+    if hours < 24:
+        minutes %= 60
+        return '{} hour{} {} min{} ago'.format(hours, _plural(hours), minutes, _plural(minutes))
+    
+    # too long ago, just return the date
+    return format_time(dt)
+    
 def format_time(dt=datetime.now()):
     """
     format the supplied datetime to the current locale

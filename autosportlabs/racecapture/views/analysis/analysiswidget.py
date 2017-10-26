@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,13 +19,12 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.logger import Logger
 from kivy.app import Builder
 from kivy.clock import Clock
 from kivy.uix.anchorlayout import AnchorLayout
 from iconbutton import IconButton
-from autosportlabs.racecapture.views.channels.channelselectview import ChannelSelectView
 from autosportlabs.racecapture.views.analysis.customizechannelsview import CustomizeChannelsView
 from autosportlabs.racecapture.views.analysis.markerevent import SourceRef
 from autosportlabs.racecapture.settings.prefs import UserPrefs

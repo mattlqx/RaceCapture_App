@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.properties import ListProperty, StringProperty, NumericProperty, ObjectProperty, DictProperty, \
     BooleanProperty
 from kivy.metrics import dp
@@ -34,7 +34,7 @@ from functools import partial
 from kivy.app import Builder
 from kivy.logger import Logger
 from autosportlabs.racecapture.settings.prefs import Range
-from autosportlabs.racecapture.views.channels.channelselectview import ChannelSelectView
+from autosportlabs.racecapture.views.channels.channelselectview import ChannelSelectDialog
 from autosportlabs.racecapture.views.channels.channelcustomizationview import ChannelCustomizationView
 from autosportlabs.racecapture.views.popup.centeredbubble import CenteredBubble
 from autosportlabs.racecapture.data.channels import *
@@ -48,8 +48,6 @@ DEFAULT_MAX = 100
 DEFAULT_PRECISION = 0
 DEFAULT_TYPE = CHANNEL_TYPE_SENSOR
 MENU_ITEM_RADIUS = 100
-POPUP_DISMISS_TIMEOUT_SHORT = 10.0
-POPUP_DISMISS_TIMEOUT_LONG = 60.0
 
 Builder.load_string('''
 <CustomizeGaugeBubble>
@@ -67,6 +65,8 @@ class CustomizeGaugeBubble(CenteredBubble):
 NULL_LAP_TIME = '--:--.---'
 
 class Gauge(AnchorLayout):
+    POPUP_DISMISS_TIMEOUT_SHORT = 10.0
+    POPUP_DISMISS_TIMEOUT_LONG = 60.0
     rcid = None
     settings = ObjectProperty(None)
     value_size = NumericProperty(0)
@@ -114,6 +114,12 @@ class Gauge(AnchorLayout):
             Logger.error('Gauge: Failed to update gauge title & units ' + str(e) + ' ' + str(title))
 
     def on_channel_meta(self, channel_metas):
+        pass
+
+    def on_hide(self):
+        pass
+
+    def on_show(self):
         pass
 
 class SingleChannelGauge(Gauge):
@@ -165,7 +171,7 @@ class SingleChannelGauge(Gauge):
     def on_settings(self, instance, value):
         # Do I have an id so I can track my settings?
         if self.rcid:
-            channel = self.settings.userPrefs.get_gauge_config(self.rcid)
+            channel = self.settings.userPrefs.get_gauge_config(self.rcid) or self.channel
             if channel:
                 self.channel = channel
                 self._update_gauge_meta()
@@ -247,7 +253,7 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
 
     def __init__(self, **kwargs):
         super(CustomizableGauge, self).__init__(**kwargs)
-        self._dismiss_customization_popup_trigger = Clock.create_trigger(self._dismiss_popup, POPUP_DISMISS_TIMEOUT_LONG)
+        self._dismiss_customization_popup_trigger = Clock.create_trigger(self._dismiss_popup, Gauge.POPUP_DISMISS_TIMEOUT_LONG)
 
     def _remove_customization_bubble(self, *args):
         try:
@@ -299,7 +305,7 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
             view.color = self.select_alert_color()
 
     def showChannelSelectDialog(self):
-        content = ChannelSelectView(settings=self.settings, channel=self.channel)
+        content = ChannelSelectDialog(settings=self.settings, channel=self.channel)
         content.bind(on_channel_selected=self.channel_selected)
         content.bind(on_channel_cancel=self._dismiss_popup)
 
@@ -361,7 +367,7 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
                 bubble_height = dp(150)
                 bubble_width = dp(200)
                 bubble.size = (bubble_width, bubble_height)
-                bubble.auto_dismiss_timeout(POPUP_DISMISS_TIMEOUT_SHORT)
+                bubble.auto_dismiss_timeout(Gauge.POPUP_DISMISS_TIMEOUT_SHORT)
                 self._customizeGaugeBubble = bubble
                 self.add_widget(bubble)
                 bubble.center_on_limited(self)

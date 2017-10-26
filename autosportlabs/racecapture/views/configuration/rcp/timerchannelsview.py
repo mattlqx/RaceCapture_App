@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.accordion import Accordion, AccordionItem
@@ -72,7 +72,8 @@ class PulsePerRevSpinner(MappedSpinner):
         valueMap[0.25] = '1/4'
         valueMap[0.33333] = '1/3'
         valueMap[0.5] = '1/2'
-        for i in range (1, 64):
+        valueMap[1.5] = '1 1/2'
+        for i in range (1, 101):
             valueMap[i] = str(i)
         self.setValueMap(valueMap, '1');
 

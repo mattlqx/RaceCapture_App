@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.stacklayout import StackLayout
@@ -157,7 +157,7 @@ class LuaScriptingView(BaseConfigView):
 
     def _hide_lua(self):
         self.ids.buttons.remove_widget(self.ids.run_script)
-        self.ids.lua_log_wrapper.remove_widget(self.ids.lua_script_sv)
+        self.ids.lua_log_wrapper.remove_widget(self.ids.lua_script)
         self.ids.splitter.strip_size = 0
 
     def on_config_updated(self, rcp_cfg):

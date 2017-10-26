@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.uix.boxlayout import BoxLayout
 from kivy.app import Builder
 from kivy.properties import StringProperty, BooleanProperty
@@ -90,7 +90,7 @@ MAIN_MENU_KV = """
             rcid: 'exit'
             icon: '\357\200\221'
             description: 'Exit'
-            on_main_menu_item_selected: app.stop()
+            on_main_menu_item_selected: root.on_main_menu_item_selected(*args)
 """
 class MainMenu(BoxLayout):
     Builder.load_string(MAIN_MENU_KV)

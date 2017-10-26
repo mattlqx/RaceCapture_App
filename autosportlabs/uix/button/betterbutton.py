@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,7 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.uix.button import Button
 from kivy.uix.togglebutton import ToggleButton
 from kivy.app import Builder
@@ -27,11 +27,11 @@ from kivy.app import Builder
 BB_KV = """
 <BetterButton>:
     font_name: 'resource/fonts/ASL_regular.ttf'
-    font_size: self.height * 0.5
+    font_size: self.height * 0.5 / dp(1)
 
 <BetterToggleButton>:
     font_name: 'resource/fonts/ASL_regular.ttf'
-    font_size: self.height * 0.5    
+    font_size: self.height * 0.5 / dp(1)
 """
 
 class BetterButton(Button):

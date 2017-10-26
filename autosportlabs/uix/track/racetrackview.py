@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -19,21 +19,31 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.widget import Widget
 from kivy.uix.scatter import Scatter
+from kivy.properties import ListProperty
 from kivy.app import Builder
 from kivy.metrics import dp
 from kivy.graphics import Color, Line
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.uix.track.trackmap import TrackMapView
+from autosportlabs.racecapture.theme.color import ColorScheme
 from utils import *
 
-Builder.load_file('autosportlabs/uix/track/racetrackview.kv')
-
+RACETRACK_VIEW_KV = """
+<RaceTrackView>:
+    orientation: 'vertical'
+    TrackMapView:
+        track_color: root.track_color
+        id: trackmap
+"""
 class RaceTrackView(BoxLayout):
+    Builder.load_string(RACETRACK_VIEW_KV)
+    track_color = ListProperty(ColorScheme.get_primary())
+    
     def __init__(self, **kwargs):
         super(RaceTrackView, self).__init__(**kwargs)
 

@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -20,7 +20,7 @@
 
 import time
 import kivy
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
@@ -58,8 +58,6 @@ class BaseChannelView(BoxLayout):
 
         
 class BaseConfigView(GridLayout):
-    channels = None
-    rc_api = None
     def __init__(self, **kwargs):    
         super(BaseConfigView, self).__init__(**kwargs)
         self.settings = kwargs.get('settings')

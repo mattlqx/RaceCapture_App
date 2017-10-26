@@ -1,7 +1,7 @@
 #
 # Race Capture App
 #
-# Copyright (C) 2014-2016 Autosport Labs
+# Copyright (C) 2014-2017 Autosport Labs
 #
 # This file is part of the Race Capture App
 #
@@ -21,7 +21,7 @@
 import kivy
 from autosportlabs.racecapture.theme.color import ColorScheme
 from kivy.uix.behaviors import ToggleButtonBehavior
-kivy.require('1.9.1')
+kivy.require('1.10.0')
 from kivy.properties import NumericProperty, ObjectProperty, BooleanProperty, ListProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.clock import Clock
@@ -82,8 +82,6 @@ class TracksUpdateStatusView(BoxLayout):
 
     def on_message(self, message):
         self.messageView.text = message
-
-
 
 class BaseTrackItemView(BoxLayout):
     def __init__(self, **kwargs):
@@ -269,11 +267,11 @@ class TracksBrowser(BoxLayout):
             self.tracksUpdatePopup.content.on_message('Processing...')
             Clock.schedule_once(lambda dt: self.refreshTrackList())
         Clock.schedule_once(lambda dt: success())
-        
+
 
     def on_update_check_error(self, details):
         def error(details):
-            self.dismissPopups(details)
+            self.dismissPopups()
             Clock.schedule_once(lambda dt: self.refreshTrackList())
             Logger.error('TracksBrowser: Error updating: {}'.format(details))
             alertPopup('Error Updating', 'There was an error updating the track list.\n\nPlease check your network connection and try again')
@@ -343,7 +341,7 @@ class TracksBrowser(BoxLayout):
             return self.trackManager.find_nearby_tracks(self.current_location)
         else:
             return []
-        
+
     def initRegionsList(self):
         regions = self.trackManager.regions
         regions_spinner = self.ids.regions
