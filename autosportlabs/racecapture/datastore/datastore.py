@@ -1104,7 +1104,7 @@ class DataStore(object):
     def get_sessions(self):
         sessions = []
         for row in self._conn.execute('SELECT id, name, notes, date FROM session ORDER BY date DESC;'):
-        sessions.append(Session(session_id=row[0], name=row[1], notes=row[2], date=row[3]))
+            sessions.append(Session(session_id=row[0], name=row[1], notes=row[2], date=row[3]))
         return sessions
 
     def session_has_laps(self, session_id):
