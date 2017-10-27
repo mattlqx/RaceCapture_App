@@ -559,6 +559,9 @@ class DataStore(object):
             raise
 
     def commit(self):
+        """
+        Commit any pending changes to the database.
+        """
         try:
             self._conn.commit()
         except:  # rollback under any exception, then re-raise exception
@@ -566,6 +569,10 @@ class DataStore(object):
             raise
 
     def insert_sample_nocommit(self, sample, session_id):
+        """
+        Insert samples which are queued to be added to the DB. 
+        A subsequent commit is required before the sample will appear in the DB.
+        """
         cursor = self._conn.cursor()
         try:
             # First, insert into the datalog table to give us a reference
@@ -586,7 +593,7 @@ class DataStore(object):
                                                                        ','.join(['?'] * (len(values))))
 
             cursor.execute(base_sql, values)
-            # self._conn.commit() # moved to separate function
+
         except:  # rollback under any exception, then re-raise exception
             self._conn.rollback()
             raise

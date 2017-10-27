@@ -124,6 +124,7 @@ class SessionRecorder(EventDispatcher):
                 self._create_session_name(), self._channels)
             self.dispatch('on_recording', True)
             self.recording = True
+            self._sample_accumulator = {}
 
             t = Thread(target=self._session_recorder_worker)
             t.daemon = True
@@ -240,9 +241,8 @@ class SessionRecorder(EventDispatcher):
                         insert_counter = 0
                     
                     if qsize > 0 and index % SessionRecorder.SAMPLE_QUEUE_BACKLOG_LOG_INTERVAL == 0:
-                        Logger.info( 'SessionRecorder: queue backlog: {}'.format(qsize))
-                        Logger.info( 'SessionRecorder: commit backlog: {}'.format(insert_counter))
-                        Logger.info( 'SessionRecorder: sample send delay: {}ms'.format(self._sample_send_delay))
+                        Logger.info( 'SessionRecorder: queue backlog: {}, commit backlog: {}, sample send delay: {}ms'
+				.format(qsize, insert_counter, self._sample_send_delay ))
 
                     if insert_counter > (SessionRecorder.SAMPLE_QUEUE_UNCOMMITTED_INSERT_LIMIT*SessionRecorder.SAMPLE_QUEUE_BACKLOG_LOG_THRESHOLD):
                         Logger.debug( 'SessionRecorder: commit backlog: {}'.format(insert_counter))
