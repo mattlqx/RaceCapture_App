@@ -89,7 +89,7 @@ class TestSessionRecorder(unittest.TestCase):
                                                self.mock_settings, self.mock_track_manager, self.mock_status_pump)
 
             session_recorder.on_view_change('dash')
-            mock_create_trigger.assert_called_with(session_recorder._actual_stop, 60)
+            mock_create_trigger.assert_called_with(session_recorder._actual_stop, 120)
             self.mock_trigger.is_triggered = False
 
             # Get subscription to connect event and call it
@@ -110,7 +110,7 @@ class TestSessionRecorder(unittest.TestCase):
                                                self.mock_settings, self.mock_track_manager, self.mock_status_pump)
 
             session_recorder.on_view_change('dash')
-            mock_create_trigger.assert_called_with(session_recorder._actual_stop, 60)
+            mock_create_trigger.assert_called_with(session_recorder._actual_stop, 120)
             self.mock_trigger.is_triggered = True
 
             # Get subscription to connect event and call it
@@ -141,7 +141,7 @@ class TestSessionRecorder(unittest.TestCase):
         self.assertFalse(session_recorder.recording, "Session recorder stops recording when view changes to\
          non-recording view")
 
-    def test_stops_on_disconnect(self):
+    def test_should_stay_running_on_disconnect(self):
         self.mock_databus.getMeta = Mock(return_value={"foo": "bar"})
 
         session_recorder = SessionRecorder(self.mock_datastore, self.mock_databus, self.mock_rcp_api,
@@ -156,7 +156,7 @@ class TestSessionRecorder(unittest.TestCase):
 
         disconnect_listener = self.mock_rcp_api.add_disconnect_listener.call_args[0][0]
         disconnect_listener()
-        self.assertFalse(session_recorder.recording, "Session recorder stops recording on disconnect")
+        self.assertTrue(session_recorder.recording, "Session recorder stops recording on disconnect")
 
 
 def main():
