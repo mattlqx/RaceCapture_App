@@ -18,6 +18,7 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
 from threading import Thread
 from kivy.clock import Clock
 from kivy.logger import Logger
@@ -40,10 +41,11 @@ class SessionRecorder(EventDispatcher):
     # displayed
     RECORDING_VIEWS = ['dash']
     SAMPLE_QUEUE_GET_TIMEOUT = 0.5
-    SAMPLE_QUEUE_MAX_SIZE = 30
+    SAMPLE_QUEUE_MAX_SIZE = 50
     SAMPLE_QUEUE_UNCOMMITTED_INSERT_LIMIT = 37
-    SAMPLE_QUEUE_BACKLOG_LOG_THRESHOLD = 0.7
+    SAMPLE_QUEUE_BACKLOG_LOG_THRESHOLD = 0.5
     SAMPLE_QUEUE_BACKLOG_LOG_INTERVAL = 100
+    SAMPLE_QUEUE_MIN_SEND_DELAY_MS = 8 # 120 should be fast enough
 
     def __init__(self, datastore, databus, rcpapi, settings, track_manager=None, status_pump=None, stop_delay=120):
         """
@@ -57,7 +59,10 @@ class SessionRecorder(EventDispatcher):
             maxsize=SessionRecorder.SAMPLE_QUEUE_MAX_SIZE)
         self._recorder_thread = None
         self._sample_queue_full = False
+        self._sample_last_send = datetime.utcnow()
+        self._sample_send_delay = SessionRecorder.SAMPLE_QUEUE_MIN_SEND_DELAY_MS
 
+        self._sample_accumulator = {}
         self._datastore = datastore
         self._databus = databus
         self._rcapi = rcpapi
@@ -216,7 +221,6 @@ class SessionRecorder(EventDispatcher):
         Logger.info('SessionRecorder: session recorder worker starting')
         try:
             # reset our sample data dict
-            sample_data = {}
             qsize = 0
             insert_counter = 0
             sample_queue = self._sample_queue
@@ -224,11 +228,8 @@ class SessionRecorder(EventDispatcher):
             # will drain the queue before exiting thread
             while self.recording or qsize > 0:
                 try:
-                    sample = sample_queue.get(
+                    sample_data = sample_queue.get(
                         True, SessionRecorder.SAMPLE_QUEUE_GET_TIMEOUT)
-                    # Merging previous sample with new data to desparsify the
-                    # data
-                    sample_data.update(sample)
                     self._datastore.insert_sample_nocommit(
                         sample_data, self._current_session_id)
                     insert_counter += 1
@@ -239,19 +240,16 @@ class SessionRecorder(EventDispatcher):
                         insert_counter = 0
                     
                     if qsize > 0 and index % SessionRecorder.SAMPLE_QUEUE_BACKLOG_LOG_INTERVAL == 0:
-                        Logger.info(
-                            'SessionRecorder: queue backlog: {}'.format(qsize))
-                        Logger.info(
-                            'SessionRecorder: commit backlog: {}'.format(insert_counter))
-
+                        Logger.info( 'SessionRecorder: queue backlog: {}'.format(qsize))
+                        Logger.info( 'SessionRecorder: commit backlog: {}'.format(insert_counter))
+                        Logger.info( 'SessionRecorder: sample send delay: {}ms'.format(self._sample_send_delay))
 
                     if insert_counter > (SessionRecorder.SAMPLE_QUEUE_UNCOMMITTED_INSERT_LIMIT*SessionRecorder.SAMPLE_QUEUE_BACKLOG_LOG_THRESHOLD):
-                        Logger.debug(
-                            'SessionRecorder: commit backlog: {}'.format(insert_counter))
+                        Logger.debug( 'SessionRecorder: commit backlog: {}'.format(insert_counter))
 
                     if qsize > (SessionRecorder.SAMPLE_QUEUE_MAX_SIZE*SessionRecorder.SAMPLE_QUEUE_BACKLOG_LOG_THRESHOLD):
-                        Logger.debug(
-                            'SessionRecorder: queue backlog: {}'.format(qsize))
+                        Logger.debug( 'SessionRecorder: queue backlog: {}'.format(qsize))
+
                     index += 1
                 except Empty:
                     pass
@@ -292,10 +290,22 @@ class SessionRecorder(EventDispatcher):
         """
         if not self.recording:
             return
+
+        # Merging previous sample with new data to desparsify the data
+        self._sample_accumulator.update( sample )
         try:
-            self._sample_queue.put_nowait(copy.deepcopy(sample))
-            self._sample_queue_full = False
+	    if self._sample_queue.qsize() == 0:
+                self._sample_send_delay = max( self._sample_send_delay - 1, SessionRecorder.SAMPLE_QUEUE_MIN_SEND_DELAY_MS )
+	    elif self._sample_queue.qsize() > SessionRecorder.SAMPLE_QUEUE_MAX_SIZE * SessionRecorder.SAMPLE_QUEUE_BACKLOG_LOG_THRESHOLD:
+                self._sample_send_delay += 1
+
+            dtms = (datetime.utcnow() - self._sample_last_send).microseconds/1000
+            if ( dtms >= self._sample_send_delay ):
+                self._sample_queue.put_nowait(copy.deepcopy(self._sample_accumulator))
+                self._sample_queue_full = False
+                self._sample_last_send = datetime.utcnow()
         except Full:
+            self._sample_send_delay += SessionRecorder.SAMPLE_QUEUE_MIN_SEND_DELAY_MS
             if not self._sample_queue_full:
                 # latch to prevent the log from filling up with warnings
                 Logger.warn('SessionRecorder: dropping sample; queue full')
