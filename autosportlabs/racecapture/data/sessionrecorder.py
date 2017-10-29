@@ -45,7 +45,9 @@ class SessionRecorder(EventDispatcher):
     SAMPLE_QUEUE_UNCOMMITTED_INSERT_LIMIT = 37
     SAMPLE_QUEUE_BACKLOG_LOG_THRESHOLD = 0.5
     SAMPLE_QUEUE_BACKLOG_LOG_INTERVAL = 100
-    SAMPLE_QUEUE_MIN_SEND_DELAY_MS = 8 # 120 should be fast enough
+    SAMPLE_QUEUE_MIN_SEND_DELAY_MS = 4 
+    SAMPLE_QUEUE_MAX_SEND_DELAY_MS = 250
+    SAMPLE_QUEUE_SLOWING_THRESHOLD = SAMPLE_QUEUE_MAX_SIZE * SAMPLE_QUEUE_BACKLOG_LOG_THRESHOLD
 
     def __init__(self, datastore, databus, rcpapi, settings, track_manager=None, status_pump=None, stop_delay=120):
         """
@@ -59,7 +61,7 @@ class SessionRecorder(EventDispatcher):
             maxsize=SessionRecorder.SAMPLE_QUEUE_MAX_SIZE)
         self._recorder_thread = None
         self._sample_queue_full = False
-        self._sample_last_send = datetime.utcnow()
+        self._sample_last_send = datetime(1,1,1)
         self._sample_send_delay = SessionRecorder.SAMPLE_QUEUE_MIN_SEND_DELAY_MS
 
         self._sample_accumulator = {}
@@ -282,6 +284,14 @@ class SessionRecorder(EventDispatcher):
         self._channels = copy.deepcopy(dict(metas))
         self._check_should_record()
 
+    def _slow_down_send_rate(self):
+            self._sample_send_delay = min( self._sample_send_delay * 1.5,
+                        SessionRecorder.SAMPLE_QUEUE_MAX_SEND_DELAY_MS )
+
+    def _speed_up_send_rate(self):
+        self._sample_send_delay = max( self._sample_send_delay - SessionRecorder.SAMPLE_QUEUE_MIN_SEND_DELAY_MS,
+                SessionRecorder.SAMPLE_QUEUE_MIN_SEND_DELAY_MS )
+
     def _on_sample(self, sample):
         """
         Sample listener for data from RC. Saves data to Datastore if a session is being recorded
@@ -293,23 +303,28 @@ class SessionRecorder(EventDispatcher):
 
         # Merging previous sample with new data to desparsify the data
         self._sample_accumulator.update( sample )
-        try:
-	    if self._sample_queue.qsize() == 0:
-                self._sample_send_delay = max( self._sample_send_delay - 1, SessionRecorder.SAMPLE_QUEUE_MIN_SEND_DELAY_MS )
-	    elif self._sample_queue.qsize() > SessionRecorder.SAMPLE_QUEUE_MAX_SIZE * SessionRecorder.SAMPLE_QUEUE_BACKLOG_LOG_THRESHOLD:
-                self._sample_send_delay += 1
+        qsize = self._sample_queue.qsize()
+        if qsize == 0:
+            self._speed_up_send_rate()
 
-            dtms = (datetime.utcnow() - self._sample_last_send).microseconds/1000
-            if ( dtms >= self._sample_send_delay ):
+        deltaT_ms = (datetime.utcnow() - self._sample_last_send).microseconds/1000
+        if ((deltaT_ms >= self._sample_send_delay)
+                or (qsize < SessionRecorder.SAMPLE_QUEUE_SLOWING_THRESHOLD)):
+
+            if qsize > SessionRecorder.SAMPLE_QUEUE_SLOWING_THRESHOLD:
+                self._slow_down_send_rate()
+
+            self._sample_last_send = datetime.utcnow()
+
+            try:
                 self._sample_queue.put_nowait(copy.deepcopy(self._sample_accumulator))
                 self._sample_queue_full = False
-                self._sample_last_send = datetime.utcnow()
-        except Full:
-            self._sample_send_delay += SessionRecorder.SAMPLE_QUEUE_MIN_SEND_DELAY_MS
-            if not self._sample_queue_full:
-                # latch to prevent the log from filling up with warnings
-                Logger.warn('SessionRecorder: dropping sample; queue full')
-            self._sample_queue_full = True
+
+            except Full:
+                if not self._sample_queue_full:
+                    # latch to prevent the log from filling up with warnings
+                    Logger.warn('SessionRecorder: dropping sample; queue full')
+                self._sample_queue_full = True
 
     def _on_rc_connected(self):
         """
