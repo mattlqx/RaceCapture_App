@@ -21,7 +21,7 @@
 import unittest
 from mock import Mock, patch
 from autosportlabs.racecapture.data.sessionrecorder import SessionRecorder
-
+import Queue
 
 class TestSessionRecorder(unittest.TestCase):
 
@@ -158,6 +158,40 @@ class TestSessionRecorder(unittest.TestCase):
         disconnect_listener()
         self.assertTrue(session_recorder.recording, "Session recorder stops recording on disconnect")
 
+    def test_on_sample(self):
+        # warning: this is test is  necessarily slow, as it involves timing the queue performance.
+        session_recorder = SessionRecorder(self.mock_datastore, self.mock_databus, self.mock_rcp_api,
+                                           self.mock_settings, self.mock_track_manager, self.mock_status_pump)
+        
+	q = session_recorder._sample_queue
+        session_recorder.recording = True
+
+	sampleIn = { 'v': 0 }
+	session_recorder._on_sample( sampleIn )
+	sampleOut = q.get( True, 0 )
+        self.assertTrue(sampleIn == sampleOut, "Session recorder basic queue test")
+
+	i = 0
+        while not session_recorder._sample_queue_full:
+            session_recorder._on_sample( { 'v': i } )
+            i += 1
+
+        self.assertTrue( session_recorder._sample_send_delay
+            == SessionRecorder.SAMPLE_QUEUE_MAX_SEND_DELAY_MS,
+                "Session recorder is slowing sample rate" )
+        
+        for i in range( 0, SessionRecorder.SAMPLE_QUEUE_MAX_SIZE * 2 ):
+            session_recorder._on_sample( { 'v': i } )
+            try:
+                sampleOut = q.get( True, 0 )
+                sampleOut = q.get( True, 0 )
+            except Queue.Empty:
+                pass
+
+        self.assertTrue( session_recorder._sample_send_delay
+            == SessionRecorder.SAMPLE_QUEUE_MIN_SEND_DELAY_MS,
+                "Session recorder is restoring max sample rate" )
+        
 
 def main():
     unittest.main()
