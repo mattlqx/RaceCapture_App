@@ -29,6 +29,7 @@ from kivy.logger import Logger
 from kivy.clock import Clock
 from kivy.properties import StringProperty, NumericProperty
 from utils import kvFindClass
+from kivy.animation import Animation
 from kivy.uix.carousel import Carousel
 from kivy.uix.settings import SettingsWithNoMenu
 from kivy.uix.modalview import ModalView
@@ -178,7 +179,8 @@ DASHBOARD_VIEW_KV = """
                 size_hint_y: 0.90
                 loop: True
             BoxLayout:
-                size_hint_y: 0.10
+                size_hint_y: None
+                height: dp(50)
                 orientation: 'horizontal'
                 IconButton:
                     color: [1.0, 1.0, 1.0, 1.0]
@@ -211,6 +213,33 @@ DASHBOARD_VIEW_KV = """
                 halign: 'left'
                 color: [1.0, 1.0, 1.0, 0.2]
                 on_press: root.on_preferences()
+        AnchorLayout:
+            anchor_x: 'center'
+            anchor_y: 'bottom'
+            BoxLayout:
+                orientation: 'vertical'
+                BoxLayout:
+                    size_hint_x: None
+                    width: dp(500)
+                    pos_hint:{"center_x":0.5}
+                    id: alertbar
+                    canvas.before:
+                        Color:
+                            rgba: (1,0,0,0.8)
+                        Rectangle:
+                            size: self.size
+                            pos: self.pos
+                    size_hint_y: None
+                    height: 0
+                    FieldLabel:
+                        id: alert_msg
+                        halign: 'center'
+                        text: ''
+                        font_size: min(dp(90), self.height)
+                BoxLayout:
+                    size_hint_y: None
+                    height: dp(50)
+                
 """
 
 class DashboardView(Screen):
@@ -222,6 +251,11 @@ class DashboardView(Screen):
     _POPUP_DISMISS_TIMEOUT_LONG = 60.0
     AUTO_CONFIGURE_WAIT_PERIOD_DAYS = 1
     Builder.load_string(DASHBOARD_VIEW_KV)
+    ALERT_BAR_HEIGHT_URGENT_PCT = 0.7
+    ALERT_BAR_HEIGHT_NORMAL_PCT = 0.1
+    ALERT_BAR_GROW_RATE = dp(20)
+    ALERT_BAR_UPDATE_INTERVAL = 0.02
+    TRANSITION_STYLE = 'in_out_expo'
 
     def __init__(self, status_pump, track_manager, rc_api, rc_config, databus, settings, **kwargs):
         self._initialized = False
@@ -244,6 +278,36 @@ class DashboardView(Screen):
         self._track_config = None
         self._gps_sample = GpsSample()
         status_pump.add_listener(self.status_updated)
+        self.alert_bar_height = 0
+        Clock.schedule_once(lambda dt: self.show_alert('PIT NOW', True, 5), 6.0)
+
+    def show_alert(self, message, is_high_priority, timeout):
+        self._show_alert(message, is_high_priority, timeout)
+
+    def _show_alert(self, message, is_high_priority, timeout):
+        def hide(dt):
+            Animation(height=0, duration=0.5).start(self.ids.alertbar)
+            if anim is not None:
+                anim.stop_all(self.ids.alert_msg)
+
+        def minimize(dt):
+            Animation(height=self.height * DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT, duration=1.0, t=DashboardView.TRANSITION_STYLE).start(self.ids.alertbar)
+            Clock.schedule_once(hide, timeout)
+
+        self.ids.alert_msg.text = message
+        target_height = self.height * (DashboardView.ALERT_BAR_HEIGHT_URGENT_PCT if is_high_priority else DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT)
+        Animation(height=target_height, duration=0.5, t=DashboardView.TRANSITION_STYLE).start(self.ids.alertbar)
+
+        anim = None
+        if is_high_priority:
+            anim = Animation(color=(1, 1, 1, 0), duration=0.2) + Animation(color=(1, 1, 1, 0), duration=0.2)
+            anim += Animation(color=(1, 1, 1, 1), duration=0.2) + Animation(color=(1, 1, 1, 1), duration=0.2)
+            anim.repeat = True
+            anim.start(self.ids.alert_msg)
+
+        Clock.schedule_once(minimize, 5.0)
+
+
 
     def status_updated(self, status):
         """
