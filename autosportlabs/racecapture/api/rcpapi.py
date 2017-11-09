@@ -904,7 +904,7 @@ class RcpApi:
                 else:
                     devices = comms.get_available_devices()
                     last_known_device = self._settings.userPrefs.get_pref('preferences', 'last_known_device')
-                    # if there was a last known device try it repeatidly while trying the other devices.
+                    # if there was a last known device try it repeatedly while trying the other devices.
                     if last_known_device:
                         Logger.info('RCPAPI: trying last known device before each other device: {}'.format(last_known_device))
                         # ensure we remove it from the existing list
