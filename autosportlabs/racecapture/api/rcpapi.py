@@ -913,6 +913,7 @@ class RcpApi:
                         except ValueError:
                             pass
 
+                        # rebuild the list, with last_known_device as every second entry
                         tempList = devices
                         devices = []
                         for device in tempList:
