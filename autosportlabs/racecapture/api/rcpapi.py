@@ -904,15 +904,21 @@ class RcpApi:
                 else:
                     devices = comms.get_available_devices()
                     last_known_device = self._settings.userPrefs.get_pref('preferences', 'last_known_device')
-                    # if there was a last known device try this one first.
+                    # if there was a last known device try it repeatedly while trying the other devices.
                     if last_known_device:
-                        Logger.info('RCPAPI: trying last known device first: {}'.format(last_known_device))
+                        Logger.info('RCPAPI: trying last known device before each other device: {}'.format(last_known_device))
                         # ensure we remove it from the existing list
                         try:
                             devices.remove(last_known_device)
                         except ValueError:
                             pass
-                        devices = [last_known_device] + devices
+
+                        # rebuild the list, with last_known_device as every second entry
+                        tempList = devices
+                        devices = []
+                        for device in tempList:
+                            devices = devices + [last_known_device, device]
+
                     Logger.debug('RCPAPI: Searching for device')
 
                 testVer = VersionConfig()
