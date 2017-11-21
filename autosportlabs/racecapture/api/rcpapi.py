@@ -84,6 +84,7 @@ class RcpApi:
     level_2_retries = DEFAULT_LEVEL2_RETRIES
     msg_rx_timeout = DEFAULT_MSG_RX_TIMEOUT
     _cmd_sequence_thread = None
+    _auto_detect_worker = None
     _msg_rx_thread = None
     _auto_detect_event = Event()
     _auto_detect_busy = Event()
@@ -165,9 +166,12 @@ class RcpApi:
         # this allows the auto detect worker to fall through if needed
         self._auto_detect_event.set()
         self._enable_autodetect.set()
-        self._auto_detect_worker.join()
-        self._msg_rx_thread.join()
-        self._cmd_sequence_thread.join()
+        if self._auto_detect_worker is not None:
+            self._auto_detect_worker.join()
+        if self._msg_rx_thread is not None:
+            self._msg_rx_thread.join()
+        if self._cmd_sequence_thread is not None:
+            self._cmd_sequence_thread.join()
 
     def _start_cmd_sequence_worker(self):
         t = Thread(target=self.cmd_sequence_worker)
