@@ -1420,8 +1420,8 @@ class Capabilities(object):
 
     @property
     def has_gps(self):
-        return 'gps' in self.flags 
-        
+        return 'gps' in self.flags
+
     @property
     def has_imu(self):
         return self.channels.imu > 0
@@ -1506,6 +1506,8 @@ class Capabilities(object):
             # Handle flags. Encapsulate legacy firmware versions that don't support flags
             min_flags_version = StrictVersion(Capabilities.MIN_FLAGS_VERSION)
             self.links.from_flags(self.flags if rcp_version >= min_flags_version else Capabilities.LEGACY_FLAGS)
+
+            self.flags = self.flags if rcp_version >= min_flags_version else Capabilities.LEGACY_FLAGS
 
             # Handle BT version
             min_bt_config_version = StrictVersion(Capabilities.MIN_BT_CONFIG_VERSION)
