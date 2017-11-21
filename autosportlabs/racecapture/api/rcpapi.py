@@ -475,7 +475,6 @@ class RcpApi:
 
             cmdSequence = [RcpCmd('ver', self.sendGetVersion),
                            RcpCmd('capabilities', self.getCapabilities),
-                           RcpCmd('gpsCfg', self.getGpsCfg),
                            RcpCmd('lapCfg', self.getLapCfg),
                            RcpCmd('trackCfg', self.getTrackCfg),
                            RcpCmd('canCfg', self.getCanCfg),
@@ -484,6 +483,9 @@ class RcpApi:
                            RcpCmd('trackDb', self.getTrackDb)
                            ]
 
+            if capabilities.has_gps:
+                cmdSequence.append(RcpCmd('gpsCfg', self.getGpsCfg))
+                
             if capabilities.has_imu:
                 cmdSequence.append(RcpCmd('imuCfg', self.getImuCfg))
 
