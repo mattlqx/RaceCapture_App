@@ -1419,6 +1419,10 @@ class Capabilities(object):
         self.flags = []
 
     @property
+    def has_imu(self):
+        return self.channels.imu > 0
+
+    @property
     def has_analog(self):
         # We always have at least 1 analog channel for battery
         return self.channels.analog > 0
