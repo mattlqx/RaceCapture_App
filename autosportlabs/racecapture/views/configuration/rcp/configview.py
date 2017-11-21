@@ -198,7 +198,9 @@ class ConfigView(Screen):
                                                                                     settings=self._settings,
                                                                                     track_manager=self.track_manager))
 
-        attach_node('GPS', None, lambda: GPSChannelsView())
+        if self.rc_config.capabilities.has_gps:
+            attach_node('GPS', None, lambda: GPSChannelsView())
+            
         attach_node('Race Timing', None, lambda: LapStatsView())
 
         if self.rc_config.capabilities.has_analog:
