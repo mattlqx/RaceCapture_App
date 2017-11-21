@@ -914,10 +914,10 @@ class RcpApi:
                             pass
 
                         # rebuild the list, with last_known_device as every second entry
-                        tempList = devices
-                        devices = []
-                        for device in tempList:
-                            devices = devices + [last_known_device, device]
+                        temp_list = devices
+                        devices = [last_known_device]
+                        for device in temp_list:
+                            devices = devices + [device, last_known_device]
 
                     Logger.debug('RCPAPI: Searching for device')
 
