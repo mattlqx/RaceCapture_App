@@ -37,10 +37,10 @@ class FeatureButton(TileIconButton):
 
     disabled_color = ListProperty(ColorScheme.get_dark_accent())
     highlight_color = ListProperty(ColorScheme.get_medium_accent())
-    
+
     def __init__(self, **kwargs):
         super(FeatureButton, self).__init__(**kwargs)
-        self.tile_color =  (1.0, 1.0, 1.0, 1.0)
+        self.tile_color = (1.0, 1.0, 1.0, 1.0)
         Window.bind(mouse_pos=self.on_mouse_pos)
 
     def on_mouse_pos(self, *args):
@@ -73,4 +73,4 @@ class FeatureButton(TileIconButton):
 
     def on_disabled(self, instance, value):
         super(FeatureButton, self).on_disabled(instance, value)
-        self.tile_color = self.highlight_color
+        self.tile_color = self.disabled_color
