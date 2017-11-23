@@ -138,8 +138,8 @@ class FadeableWidget(EventDispatcher):
                 self._current_alpha -= FadeableWidget.FADE_STEP
                 self._schedule_step()
             elif self.pulsing:
-               self.brighten_mode = True
-               self._schedule_step()
+                self.brighten_mode = True
+                self._schedule_step()
 
         color = self.fade_color
         self.fade_color = [color[0], color[1], color[2], self._current_alpha]
@@ -191,7 +191,7 @@ class RoundedRect(BoxLayout):
     line_width = NumericProperty(dp(10))
     radius = NumericProperty(10)
 
-class TileIconButton(ButtonBehavior, AnchorLayout):
+class TileIconButton(FadeableWidget, ButtonBehavior, AnchorLayout):
     title_font = StringProperty('')
     title_font_size = NumericProperty(20)
     tile_color = ObjectProperty((0.5, 0.5, 0.5, 0.8))

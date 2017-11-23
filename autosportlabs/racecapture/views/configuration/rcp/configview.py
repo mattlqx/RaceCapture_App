@@ -70,6 +70,18 @@ class LinkedTreeViewLabel(TreeViewLabel):
 
 class ConfigView(Screen):
     Builder.load_string("""
+<InfoFieldLabel@FieldLabel>:
+    color: ColorScheme.get_dark_primary_text()
+    halign: 'center'
+    font_size: dp(50)
+
+<ConfigFeatureButton@FeatureButton>:
+    icon_size: self.height * 0.5
+    title_font_size: self.height * 0.35
+    tile_color: ColorScheme.get_dark_accent()
+    icon_color: ColorScheme.get_accent()
+    title_color: ColorScheme.get_accent()
+
 <ConfigView>:
     BoxLayout:
         orientation: 'horizontal'
@@ -143,10 +155,8 @@ class ConfigView(Screen):
             orientation: 'vertical'
             BoxLayout:
                 size_hint_y: 0.3
-                FieldLabel:
+                InfoFieldLabel:
                     text: 'Connect your device'
-                    halign: 'center'
-                    font_size: dp(50)
                 Widget:
                     size_hint_x: None
                     width: max(dp(150), 200)                                        
@@ -155,18 +165,14 @@ class ConfigView(Screen):
                 size_hint_y: 0.4
                 padding: (dp(30), dp(30))
                 spacing: dp(30)
-                FeatureButton:
+                ConfigFeatureButton:
                     id: read
                     title: 'Read'
-                    icon_size: self.height * 0.5
-                    title_font_size: self.height * 0.35                 
                     icon: '\357\202\223'
                     on_press: root.readConfig()
-                FeatureButton:
+                ConfigFeatureButton:
                     id: open
                     title: 'Open'
-                    icon_size: self.height * 0.5
-                    title_font_size: self.height * 0.35
                     icon: '\357\204\225'
                     on_press: root.openConfig()
                 Widget:
@@ -174,10 +180,8 @@ class ConfigView(Screen):
                     width: max(dp(150), 200)                    
             BoxLayout:
                 size_hint_y: 0.3
-                FieldLabel:
-                    text: 'Or Open a configuration'
-                    halign: 'center'
-                    font_size: dp(50)
+                InfoFieldLabel:
+                    text: 'Or open a configuration'
                 Widget:
                     size_hint_x: None
                     width: max(dp(150), 200)                                        
