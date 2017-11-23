@@ -295,10 +295,6 @@ class ConfigView(Screen):
     def init_screen(self):
         self.createConfigViews()
 
-    def on_enterx(self):
-        if not self.loaded:
-            Clock.schedule_once(lambda dt: self.init_screen())
-
     def createConfigViews(self):
 
         def attach_node(text, n, view_builder):
