@@ -73,11 +73,10 @@ class ConfigView(Screen):
 <InfoFieldLabel@FieldLabel>:
     color: ColorScheme.get_dark_primary_text()
     halign: 'center'
-    font_size: dp(50)
+    font_size: min(50, sp(50))
+    shorten: False
 
 <ConfigFeatureButton@FeatureButton>:
-    icon_size: self.height * 0.5
-    title_font_size: self.height * 0.35
     tile_color: ColorScheme.get_dark_accent()
     icon_color: ColorScheme.get_accent()
     title_color: ColorScheme.get_accent()
@@ -163,8 +162,8 @@ class ConfigView(Screen):
             BoxLayout:
                 orientation: 'horizontal'
                 size_hint_y: 0.4
-                padding: (dp(30), dp(30))
-                spacing: dp(30)
+                padding: (30, 30)
+                spacing: 30
                 ConfigFeatureButton:
                     id: read
                     title: 'Read'
