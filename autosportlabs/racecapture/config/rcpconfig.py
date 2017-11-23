@@ -990,6 +990,9 @@ class CANChannels(object):
         return {'canChanCfg':{'en': 1 if self.enabled else 0, 'chans':channels_json }}
 
 class PidConfig(BaseChannel):
+    OBDII_MODE_11_BIT_CAN_ID_RESPONSE = 0x7E8
+    OBDII_MODE_29_BIT_CAN_ID_RESPONSE = 0x18DAF110
+
     def __init__(self, **kwargs):
         super(PidConfig, self).__init__(**kwargs)
         self.pid = 0
@@ -1405,7 +1408,7 @@ class Capabilities(object):
 
     MIN_BT_CONFIG_VERSION = "2.9.0"
     MIN_FLAGS_VERSION = "2.10.0"
-    LEGACY_FLAGS = ['bt', 'cell', 'usb']
+    LEGACY_FLAGS = ['bt', 'cell', 'usb', 'gps']
 
     def __init__(self):
         self.channels = ChannelCapabilities()
@@ -1414,6 +1417,14 @@ class Capabilities(object):
         self.links = LinksCapabilities()
         self.bluetooth_config = True
         self.flags = []
+
+    @property
+    def has_gps(self):
+        return 'gps' in self.flags
+
+    @property
+    def has_imu(self):
+        return self.channels.imu > 0
 
     @property
     def has_analog(self):
@@ -1495,6 +1506,8 @@ class Capabilities(object):
             # Handle flags. Encapsulate legacy firmware versions that don't support flags
             min_flags_version = StrictVersion(Capabilities.MIN_FLAGS_VERSION)
             self.links.from_flags(self.flags if rcp_version >= min_flags_version else Capabilities.LEGACY_FLAGS)
+
+            self.flags = self.flags if rcp_version >= min_flags_version else Capabilities.LEGACY_FLAGS
 
             # Handle BT version
             min_bt_config_version = StrictVersion(Capabilities.MIN_BT_CONFIG_VERSION)

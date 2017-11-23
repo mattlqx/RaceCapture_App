@@ -559,7 +559,21 @@ class DataStore(object):
             self._conn.rollback()
             raise
 
-    def insert_sample(self, sample, session_id):
+    def commit(self):
+        """
+        Commit any pending changes to the database.
+        """
+        try:
+            self._conn.commit()
+        except:  # rollback under any exception, then re-raise exception
+            self._conn.rollback()
+            raise
+
+    def insert_sample_nocommit(self, sample, session_id):
+        """
+        Insert samples which are queued to be added to the DB. 
+        A subsequent commit is required before the sample will appear in the DB.
+        """
         cursor = self._conn.cursor()
         try:
             # First, insert into the datalog table to give us a reference
@@ -580,7 +594,7 @@ class DataStore(object):
                                                                        ','.join(['?'] * (len(values))))
 
             cursor.execute(base_sql, values)
-            self._conn.commit()
+
         except:  # rollback under any exception, then re-raise exception
             self._conn.rollback()
             raise
@@ -1259,7 +1273,11 @@ class DataStore(object):
                     # the first interval is our synchronization point
                     # for determining when to output samples
                     # The first sample outputs all values by default
-                    sync_point = long(record[1 + datalog_interval_index])
+                    interval_record = record[1 + datalog_interval_index]
+                    if interval_record is None:
+                        Logger.warning('DataStore: Export: invalid row detected, skipping: {}'.format(record))
+                        break
+                    sync_point = long(interval_record)
 
                 row = ''
                 current_interval = long(record[1 + datalog_interval_index])
