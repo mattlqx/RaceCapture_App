@@ -163,6 +163,19 @@ class RaceCaptureApp(App):
     def get_app_version():
         return __version__
 
+    @property
+    def user_data_dir( self ):
+        # this is a workaround for a kivy bug in which /sdcard is the hardcoded path for
+        # the user dir.  This fails on Android 7.0 systems.
+        # this function should be removed when the bug is fixed in kivy.
+        if kivy.platform == 'android':
+            from jnius import autoclass 
+            env = autoclass('android.os.Environment') 
+            data_dir = os.path.join(env.getExternalStorageDirectory().getPath(), self.name ) 
+        else:
+            data_dir = super(RaceCaptureApp, self).user_data_dir
+        return data_dir
+
     def __init__(self, **kwargs):
         super(RaceCaptureApp, self).__init__(**kwargs)
 
@@ -318,6 +331,7 @@ class RaceCaptureApp(App):
 
     def on_read_config_error(self, detail):
         self.showActivity("Error reading configuration")
+        toast("Error reading configuration. Check your connection", length_long=True)
         Logger.error("RaceCaptureApp:Error reading configuration: {}".format(str(detail)))
 
     def on_tracks_updated(self, track_manager):
@@ -496,9 +510,9 @@ class RaceCaptureApp(App):
         settings_to_view = {'Home Page':'home',
                             'Dashboard':'dash',
                             'Analysis': 'analysis',
-                            'Configuration': 'config' }
+                            'Setup': 'config' }
         view_pref = self.settings.userPrefs.get_pref('preferences', 'startup_screen')
-        self._show_main_view(settings_to_view[view_pref])
+        self._show_main_view(settings_to_view.get(view_pref, 'home'))
 
     def _show_startup_view(self):
         # should we show the stetup wizard?
