@@ -331,6 +331,7 @@ class RaceCaptureApp(App):
 
     def on_read_config_error(self, detail):
         self.showActivity("Error reading configuration")
+        toast("Error reading configuration. Check your connection", length_long=True)
         Logger.error("RaceCaptureApp:Error reading configuration: {}".format(str(detail)))
 
     def on_tracks_updated(self, track_manager):
@@ -509,9 +510,9 @@ class RaceCaptureApp(App):
         settings_to_view = {'Home Page':'home',
                             'Dashboard':'dash',
                             'Analysis': 'analysis',
-                            'Configuration': 'config' }
+                            'Setup': 'config' }
         view_pref = self.settings.userPrefs.get_pref('preferences', 'startup_screen')
-        self._show_main_view(settings_to_view[view_pref])
+        self._show_main_view(settings_to_view.get(view_pref, 'home'))
 
     def _show_startup_view(self):
         # should we show the stetup wizard?
