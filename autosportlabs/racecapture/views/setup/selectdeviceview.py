@@ -52,6 +52,19 @@ SELECT_DEVICE_VIEW_KV = """
                 AnchorLayout:
                     Image:
                         allow_stretch: True
+                        source: 'resource/setup/device_podium_connect.png'
+                    AnchorLayout:
+                        anchor_x: 'right'
+                        padding: (dp(10), dp(10))
+                        BetterToggleButton:
+                            group: 'device'
+                            size_hint: (0.45, 0.5)
+                            text: 'PodiumConnect'
+                            on_release: root.select_device('podiumconnect')
+
+                AnchorLayout:
+                    Image:
+                        allow_stretch: True
                         source: 'resource/setup/device_RCT.png'
                     AnchorLayout:
                         anchor_x: 'right'
@@ -59,7 +72,7 @@ SELECT_DEVICE_VIEW_KV = """
                         BetterToggleButton:
                             group: 'device'
                             size_hint: (0.45, 0.5)
-                            text: 'RaceCapture'
+                            text: 'RaceCapture/Track'
                             on_release: root.select_device('RCT')
 
                 AnchorLayout:

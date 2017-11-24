@@ -104,7 +104,7 @@ class SelectConnectionView(InfoView):
     Builder.load_string(SELECT_CONNECTION_VIEW_KV)
     CONNECTION_CHECK_INTERVAL = 0.5
 
-    CONNECTION_NOTES = {'USB':'Plug your RaceCapture into USB',
+    CONNECTION_NOTES = {'USB':'Plug your system into USB',
                         'WiFi':'Ensure your handheld is already connected to the RaceCapture WiFi network',
                         'Bluetooth': 'Ensure your handheld is paired with the RaceCapture Bluetooth'}
 
