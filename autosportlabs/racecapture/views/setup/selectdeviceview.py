@@ -52,7 +52,7 @@ SELECT_DEVICE_VIEW_KV = """
                 AnchorLayout:
                     Image:
                         allow_stretch: True
-                        source: 'resource/setup/device_podium_connect.png'
+                        source: 'resource/setup/device_PC_MK1.png'
                     AnchorLayout:
                         anchor_x: 'right'
                         padding: (dp(10), dp(10))
@@ -60,7 +60,7 @@ SELECT_DEVICE_VIEW_KV = """
                             group: 'device'
                             size_hint: (0.45, 0.5)
                             text: 'PodiumConnect'
-                            on_release: root.select_device('podiumconnect')
+                            on_release: root.select_device('PC_MK1')
 
                 AnchorLayout:
                     Image:

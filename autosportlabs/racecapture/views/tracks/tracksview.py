@@ -24,6 +24,7 @@ from kivy.uix.behaviors import ToggleButtonBehavior
 kivy.require('1.10.0')
 from kivy.properties import NumericProperty, ObjectProperty, BooleanProperty, ListProperty
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.stacklayout import StackLayout
 from kivy.clock import Clock
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
@@ -139,33 +140,6 @@ class TrackInfoView(BoxLayout):
         else:
             flag_image.source = 'resource/flags/blank.png'
         self.track = track
-
-class TracksView(Screen):
-    loaded = False
-    track_manager = ObjectProperty(None)
-
-    def __init__(self, **kwargs):
-        super(TracksView, self).__init__(**kwargs)
-        self.track_manager = kwargs.get('track_manager')
-        self.register_event_type('on_tracks_updated')
-
-    def init_browser(self):
-        self.ids.browser.set_trackmanager(self.track_manager)
-        self.ids.browser.init_view()
-
-    def on_track_manager(self, instance, value):
-        if value:
-            Clock.schedule_once(lambda dt: self.init_browser())
-
-    def on_enter(self):
-        if not self.loaded:
-            self.loaded = True
-
-    def on_tracks_updated(self, track_manager):
-        self.track_manager = track_manager
-
-    def check_for_update(self):
-        self.ids.browser.on_update_check()
 
 class TracksBrowser(BoxLayout):
     INITIAL_DISPLAY_LIMIT = 10
@@ -371,3 +345,46 @@ class TracksBrowser(BoxLayout):
         if self.tracksGrid:
             for trackView in self.tracksGrid.children:
                 trackView.setSelected(value)
+                
+class TrackSelectView(StackLayout):
+
+    Builder.load_string("""
+<TrackSelectView>:
+    TracksBrowser:
+        id: track_browser
+""")
+
+    def __init__(self, **kwargs):
+        super(TrackSelectView, self).__init__(**kwargs)
+        current_location = kwargs.get('current_location')
+        track_manager = kwargs.get('track_manager')
+        self.selected_track = None
+        self.register_event_type('on_track_selected')
+        self.init_view(track_manager, current_location)
+
+    def init_view(self, track_manager, current_location):
+        if track_manager is None:
+            # can't init if we don't have track_manager
+            # presumably it will happen later
+            return
+        self.ids.track_browser.multi_select = False
+        self.ids.track_browser.bind(on_track_selected=self.track_selected)
+        self.ids.track_browser.set_trackmanager(track_manager)
+        self._track_manager = track_manager
+        self.ids.track_browser.current_location = current_location
+        self.ids.track_browser.init_view()
+        
+    def on_track_selected(self, track):
+        pass
+    
+    def track_selected(self, instance, tracks):
+        if len(tracks) > 0:
+            # Tracks are a set, we only want 1 but we don't want to modify the original
+            tracks_copy = tracks.copy()
+            track_id = tracks_copy.pop()
+            track = self._track_manager.get_track_by_id(track_id)
+            self.selected_track = track
+            self.dispatch('on_track_selected', track)
+        else:
+            self.selected_track = None
+                

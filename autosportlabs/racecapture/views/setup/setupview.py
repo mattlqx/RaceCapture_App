@@ -116,9 +116,10 @@ class SetupView(Screen):
     SETUP_COMPLETE_DELAY_SEC = 1.0
     Builder.load_string(SETUP_VIEW_KV)
 
-    def __init__(self, settings, databus, base_dir, rc_api, **kwargs):
+    def __init__(self, preset_manager, settings, databus, base_dir, rc_api, **kwargs):
         super(SetupView, self).__init__(**kwargs)
         self.register_event_type('on_setup_complete')
+        self._preset_manager = preset_manager
         self._settings = settings
         self._base_dir = base_dir
         self._databus = databus
@@ -188,6 +189,7 @@ class SetupView(Screen):
 
     def _select_view(self, step):
         screen = setup_factory(step['key'])
+        screen.preset_manager = self._preset_manager
         screen.setup_config = self._setup_config
         screen.rc_api = self._rc_api
         screen.settings = self._settings

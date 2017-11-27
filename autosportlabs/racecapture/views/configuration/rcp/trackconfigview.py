@@ -40,8 +40,7 @@ from valuefield import FloatValueField
 from iconbutton import LabelIconButton
 from autosportlabs.racecapture.config.rcpconfig import GpsConfig, GpsSample
 from autosportlabs.racecapture.views.util.alertview import alertPopup
-from autosportlabs.racecapture.views.tracks.tracksview import TrackInfoView, TracksView
-from autosportlabs.racecapture.views.configuration.rcp.trackselectview import TrackSelectView
+from autosportlabs.racecapture.views.tracks.tracksview import TrackInfoView, TrackSelectView
 from autosportlabs.racecapture.views.configuration.baseconfigview import BaseConfigView
 from autosportlabs.racecapture.config.rcpconfig import *
 from autosportlabs.uix.toast.kivytoast import toast
@@ -381,10 +380,7 @@ class AutomaticTrackConfigScreen(Screen):
     TRACK_ITEM_MIN_HEIGHT = 200
     def __init__(self, **kwargs):
         super(AutomaticTrackConfigScreen, self).__init__(**kwargs)
-        self._track_select_popup = None
         self._track_db = None
-        self._tracks_grid = self.ids.tracksgrid
-        self.register_event_type('on_tracks_selected')
         self.register_event_type('on_modified')
 
     def on_modified(self, *args):
@@ -398,32 +394,32 @@ class AutomaticTrackConfigScreen(Screen):
         self.track_manager = value
         self.init_tracks_list()
 
-    def on_tracks_selected(self, instance, selected_track_ids):
-        if self._track_db:
-            failures = False
-            for trackId in selected_track_ids:
-                trackMap = self.track_manager.get_track_by_id(trackId)
-                if trackMap:
-                    startFinish = trackMap.start_finish_point
-                    if startFinish and startFinish.latitude and startFinish.longitude:
-                        Logger.info("TrackConfigView:  adding track " + str(trackMap))
-                        track = Track.fromTrackMap(trackMap)
-                        self._track_db.tracks.append(track)
-                    else:
-                        failures = True
-            if failures:
-                alertPopup('Cannot Add Tracks', 'One or more tracks could not be added due to missing start/finish points.\n\nPlease check for track map updates and try again.')
-            self.init_tracks_list()
-            self._track_select_popup.dismiss()
-            self._track_db.stale = True
-            self.dispatch('on_modified')
-
     def on_add_track_db(self):
+
+        def on_tracks_selected(instance, selected_track_ids):
+            if self._track_db:
+                failures = False
+                for trackId in selected_track_ids:
+                    trackMap = self.track_manager.get_track_by_id(trackId)
+                    if trackMap:
+                        startFinish = trackMap.start_finish_point
+                        if startFinish and startFinish.latitude and startFinish.longitude:
+                            Logger.info("TrackConfigView:  adding track " + str(trackMap))
+                            track = Track.fromTrackMap(trackMap)
+                            self._track_db.tracks.append(track)
+                        else:
+                            failures = True
+                if failures:
+                    alertPopup('Cannot Add Tracks', 'One or more tracks could not be added due to missing start/finish points.\n\nPlease check for track map updates and try again.')
+                self.init_tracks_list()
+                popup.dismiss()
+                self._track_db.stale = True
+                self.dispatch('on_modified')
+        
         content = TrackSelectionPopup(track_manager=self.track_manager)
         popup = Popup(title='Add Race Tracks', content=content, size_hint=(0.9, 0.9))
-        content.bind(on_tracks_selected=self.on_tracks_selected)
+        content.bind(on_tracks_selected=on_tracks_selected)
         popup.open()
-        self._track_select_popup = popup
 
     def init_tracks_list(self):
         if self.track_manager and self._track_db:
@@ -437,9 +433,9 @@ class AutomaticTrackConfigScreen(Screen):
             grid.clear_widgets()
             if len(matched_tracks) == 0:
                 grid.add_widget(EmptyTrackDbView())
-                self._tracks_grid.height = dp(self.TRACK_ITEM_MIN_HEIGHT)
+                grid.height = dp(self.TRACK_ITEM_MIN_HEIGHT)
             else:
-                self._tracks_grid.height = dp(self.TRACK_ITEM_MIN_HEIGHT) * (len(matched_tracks) + 1)
+                grid.height = dp(self.TRACK_ITEM_MIN_HEIGHT) * (len(matched_tracks) + 1)
                 index = 0
                 for track in matched_tracks:
                     track_db_view = TrackDbItemView(track=track, index=index)

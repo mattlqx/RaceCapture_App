@@ -129,6 +129,7 @@ class SelectConnectionView(InfoView):
         self._init_ui()
 
     def _get_image_for_device(self, device):
+        print('device ' + str(device))
         return 'resource/setup/device_{}.png'.format(device)
 
     def _get_supported_connection_list(self, device):
