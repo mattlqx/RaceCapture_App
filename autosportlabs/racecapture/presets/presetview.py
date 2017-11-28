@@ -76,7 +76,7 @@ class PresetItemView(BoxLayout):
 
     orientation: 'vertical'
     size_hint_y: None
-    height: dp(200)
+    height: dp(150)
     padding: (dp(20), dp(0))
     spacing: dp(10)
     FieldLabel:
