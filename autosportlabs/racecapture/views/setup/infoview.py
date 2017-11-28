@@ -55,7 +55,7 @@ INFO_VIEW_KV = """
                 title_font_size: self.height * 0.6
                 icon: root.next_icon
                 size_hint_x: None
-                width: dp(130)
+                width: min(130,dp(130))
                 size_hint_y: 0.1
                 on_release: root.select_next()
                 

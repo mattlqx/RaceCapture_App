@@ -104,13 +104,13 @@ class PresetItemView(BoxLayout):
                         text: '' if root.notes is None else root.notes
 
         AnchorLayout:
-            size_hint_x: None
-            width: dp(120)
             anchor_x: 'center'
             anchor_y: 'center'
+            size_hint_x: None
+            width: min(130,dp(140))
             LabelIconButton:
-                size_hint_x: 1
-                size_hint_y: 0.3
+                size_hint: (None, None)
+                size: (min(130,dp(140)), min(50, dp(50)))
                 id: load_preset
                 title: 'Select'
                 icon_size: self.height * 0.7

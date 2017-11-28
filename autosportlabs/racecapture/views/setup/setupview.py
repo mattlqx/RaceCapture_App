@@ -84,7 +84,7 @@ SETUP_VIEW_KV = """
                         icon: u'\uf052'
                         size_hint_x: None
                         size_hint_y: 0.1
-                        width: dp(100)
+                        width: min(120,dp(100))
                         on_release: root.on_skip()
 """
 

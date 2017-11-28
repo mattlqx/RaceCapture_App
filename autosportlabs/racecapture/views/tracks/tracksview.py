@@ -524,14 +524,22 @@ class EmptyTrackDbView(BoxLayout):
 <EmptyTrackDbView>:
     BoxLayout:
         orientation: 'vertical'
-        pos_hint: {'center_x': .5, 'center_y': .5}        
-        Label:
-            font_size: dp(20)
+        pos_hint: {'center_x': .5, 'center_y': .5}
+        Widget:
+            size_hint_y: 0.5
+        FieldLabel:
+            font_size: dp(25)
             text: 'No tracks selected'
-        Label:
-            height: dp(30)
-        Label:
-            text: 'Press the (+) button to select your favorite tracks'    
+            halign: 'center'
+            size_hint_y: 0.1
+        Widget:
+            size_hint_y: 0.3
+        FieldLabel:
+            text: 'Press (+) to select your favorite tracks'
+            color: ColorScheme.get_dark_primary_text()
+            font_size: dp(25)
+            halign: 'center'
+            size_hint_y: 0.1
     """)
     def __init__(self, **kwargs):
         super(EmptyTrackDbView, self).__init__(**kwargs)
