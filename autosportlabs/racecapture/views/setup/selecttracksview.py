@@ -22,10 +22,14 @@ import kivy
 kivy.require('1.10.0')
 from kivy.clock import Clock
 from kivy.app import Builder
+from kivy.uix.modalview import ModalView
 from kivy.uix.screenmanager import Screen
 from autosportlabs.racecapture.views.setup.infoview import InfoView
 from autosportlabs.uix.button.betterbutton import BetterToggleButton
 from autosportlabs.racecapture.views.tracks.tracksview import TrackCollectionScreen
+from autosportlabs.racecapture.views.util.alertview import okPopup
+from fieldlabel import FieldLabel
+
 SELECT_TRACKS_VIEW_KV = """
 <SelectTracksView>:
     background_source: 'resource/setup/background_blank.png'
@@ -67,11 +71,25 @@ class SelectTracksView(InfoView):
         self.ids.next.disabled = False
 
     def select_next(self):
-        def write_win(details):
+        def do_next():
+            progress_view.dismiss()
             super(SelectTracksView, self).select_next()
+            
+        def write_win(details):
+            msg.text = 'Successfully Updated tracks'
+            Clock.schedule_once(lambda dt: do_next(), 2.0)            
+            
 
         def write_fail(details):
-            super(SelectTracksView, self).select_next()
+            progress_view.dismiss()
+            okPopup('Oops!',
+                         'We had a problem applying the preset. Check the device connection and try again.\n\nError:\n\n{}'.format(details),
+                         lambda *args: None)
+
+        progress_view = ModalView(size_hint=(None, None), size=(600, 200))
+        msg = FieldLabel(text='Updating tracks...', halign='center')
+        progress_view.add_widget(msg)
+        progress_view.open()
 
         self.rc_api.writeRcpCfg(self.rc_config, write_win, write_fail)
 

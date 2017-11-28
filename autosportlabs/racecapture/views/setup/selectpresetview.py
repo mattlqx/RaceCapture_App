@@ -20,9 +20,13 @@
 
 import kivy
 kivy.require('1.10.0')
+from kivy.metrics import dp
 from kivy.clock import Clock
 from kivy.app import Builder
+from kivy.uix.modalview import ModalView
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.label import Label
+from fieldlabel import FieldLabel
 from kivy.uix.screenmanager import Screen
 from autosportlabs.racecapture.views.setup.infoview import InfoView
 from autosportlabs.uix.button.betterbutton import BetterToggleButton
@@ -86,14 +90,20 @@ class SelectPresetView(InfoView):
 
     def _preset_selected(self, instance, preset_id):
         def write_win(details):
-            okPopup('Success', 'Successfully applied preset: {}'.format(preset.name), lambda *args: None)
+            msg.text = 'Success: {}'.format(preset.name)
+            Clock.schedule_once(lambda dt: progress_view.dismiss(), 2.0)
             self.ids.next.disabled = False
 
         def write_fail(details):
+            progress_view.dismiss()
             okPopup('Oops!',
                          'We had a problem applying the preset. Check the device connection and try again.\n\nError:\n\n{}'.format(details),
                          lambda *args: None)
+        progress_view = ModalView(size_hint=(None, None), size=(600, 200))
+        msg = FieldLabel(halign='center', text='Applying Preset...')
 
+        progress_view.add_widget(msg)
+        progress_view.open()
         preset = self.preset_manager.get_preset_by_id(preset_id)
         self.rc_config.fromJson(preset.mapping)
         self.rc_config.stale = True

@@ -48,8 +48,6 @@ from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.racecapture.tracks.trackmanager import TrackManager, TrackMap
 from autosportlabs.racecapture.config.rcpconfig import Track
 
-Builder.load_file('autosportlabs/racecapture/views/tracks/tracksview.kv')
-
 class SearchInput(TextInput):
 
     def __init__(self, *args, **kwargs):
@@ -63,6 +61,14 @@ class SearchInput(TextInput):
         pass
 
 class TracksUpdateStatusView(BoxLayout):
+    Builder.load_string("""
+<TracksUpdateStatusView>:
+    orientation: 'vertical'
+    ProgressBar:
+        id: progress
+    Label:
+        id: updatemsg    
+    """)
     progressView = None
     messageView = None
     def __init__(self, **kwargs):
@@ -98,6 +104,17 @@ class BaseTrackItemView(BoxLayout):
         pass
 
 class TrackItemView(BaseTrackItemView):
+    Builder.load_string("""
+<TrackItemView>:
+    BoxLayout:
+        orientation: 'horizontal'
+        CheckBox:
+            size_hint_x: 0.10
+            on_active: root.track_select(*args)
+            id: select
+        TrackInfoView:
+            id: trackinfo    
+    """)
     def track_select(self, instance, value):
         self.dispatch('on_track_selected', value, self.track.track_id)
 
@@ -105,6 +122,19 @@ class TrackItemView(BaseTrackItemView):
         self.ids.active = selected
 
 class SingleTrackItemView(ToggleButtonBehavior, BaseTrackItemView):
+    Builder.load_string("""
+<SingleTrackItemView>:
+    group: 'track'
+    TrackInfoView:
+        canvas.before:
+            Color:
+                rgba: root.selected_color
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        id: trackinfo    
+    """)
+    
     selected_color = ListProperty(ColorScheme.get_dark_background())
 
     def on_state(self, instance, value):
@@ -113,6 +143,52 @@ class SingleTrackItemView(ToggleButtonBehavior, BaseTrackItemView):
         self.dispatch('on_track_selected', selected, self.track.track_id)
 
 class TrackInfoView(BoxLayout):
+    Builder.load_string("""
+<TrackInfoView>:
+    orientation: 'vertical'
+    spacing: dp(10)
+    canvas.before:
+        Color:
+            rgba: 0.1, 0.1, 0.1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    FieldLabel:
+        halign: 'center'
+        font_size: dp(20)
+        size_hint_y: 0.1
+        text: ''
+        id: name
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            size_hint_x: 0.8
+            padding: (dp(10), dp(10))
+            spacing: dp(30)
+            orientation: 'horizontal'
+            RaceTrackView:
+                id: track
+                size_hint_x: 0.7
+        BoxLayout:
+            size_hint_x: 0.2
+            orientation: 'vertical'
+            BoxLayout:
+                size_hint_y: 0.2
+            AnchorLayout:
+                anchor_x: 'center'
+                size_hint_y: 0.4
+                Image:
+                    id: flag
+                    allow_stretch: True
+                    size_hint_x: None                   
+            FieldLabel:
+                id: length
+                valign: 'top'
+                halign: 'center'
+                size_hint_y: 0.1                
+            BoxLayout:
+                size_hint_y: 0.3    
+    """)
     track = None
     def __init__(self, **kwargs):
         super(TrackInfoView, self).__init__(**kwargs)
@@ -144,6 +220,69 @@ class TrackInfoView(BoxLayout):
         self.track = track
 
 class TracksBrowser(BoxLayout):
+    Builder.load_string("""
+<TracksBrowser>:
+    orientation: 'vertical'
+    spacing: dp(5)
+    BoxLayout:
+        height: dp(30)
+        size_hint_y: None
+        padding: (dp(20), dp(2))
+        spacing: sp(10)
+        orientation: 'horizontal'
+        Label:
+            size_hint_x: 0.1
+            text: 'Search'
+        SearchInput:
+            size_hint_x: 0.50
+            id: namefilter
+            multiline: False
+        IconButton:
+            size_hint_x: 0.05
+            id: search
+            disabled: True
+            text: u'\uf002'
+            color: ColorScheme.get_accent()
+            on_press: root.on_search_track_name()
+        Label:
+            size_hint_x: 0.15
+            text: 'Region'
+        Spinner:
+            size_hint_x: 0.25
+            id: regions
+            on_text: root.on_region_selected(*args)
+                        
+    BoxLayout:
+        size_hint_y: 0.84
+        ScrollContainer:
+            on_scroll_move: root.on_scroll(*args)
+            id: scrltracks
+            do_scroll_x:False
+            do_scroll_y:True
+            GridLayout:
+                id: tracksgrid
+                padding: [dp(20), dp(20)]
+                spacing: [dp(10), dp(10)]
+                size_hint_y: None
+                cols: 1
+            
+    BoxLayout:
+        height: dp(30)
+        size_hint_y: None
+        padding: (dp(20), dp(2))
+        orientation: 'horizontal'
+        Widget:
+            size_hint_x: 0.56
+
+        LabelIconButton:
+            size_hint_x: None
+            width: dp(120)
+            id: updatecheck
+            disabled: True
+            title: 'Update'
+            icon: '\357\203\255'
+            on_press: root.on_update_check()                                
+    """)
     INITIAL_DISPLAY_LIMIT = 10
     LAZY_DISPLAY_CHUNK_COUNT = 1
     LOOK_AHEAD_TRACKS = 10
@@ -191,11 +330,6 @@ class TracksBrowser(BoxLayout):
                 self.tracks_loading = True
                 self.addNextTrack(current_index, self.current_track_ids)
             Clock.schedule_once(lambda dt: self.lazy_load_more_maybe(), 1.0)
-
-    def on_multi_select(self, instance, value):
-        if value == False:
-            selectall = self.ids.selectall_option
-            selectall.parent.remove_widget(selectall)
 
     def set_trackmanager(self, track_manager):
         self.trackManager = track_manager
@@ -342,11 +476,6 @@ class TracksBrowser(BoxLayout):
         else:
             self.selectedTrackIds.discard(trackId)
         self.dispatch('on_track_selected', self.selectedTrackIds)
-
-    def selectAll(self, instance, value):
-        if self.tracksGrid:
-            for trackView in self.tracksGrid.children:
-                trackView.setSelected(value)
 
 class TrackSelectView(StackLayout):
 
@@ -507,14 +636,14 @@ class TrackCollectionScreen(AnchorLayout):
 
     def __init__(self, **kwargs):
         super(TrackCollectionScreen, self).__init__(**kwargs)
-        self._track_db = None
+        self.track_db = None
         self.register_event_type('on_modified')
 
     def on_modified(self, *args):
         pass
 
     def on_config_updated(self, track_db):
-        self._track_db = track_db
+        self.track_db = track_db
         self.init_tracks_list()
 
     def on_track_manager(self, instance, value):
@@ -524,7 +653,7 @@ class TrackCollectionScreen(AnchorLayout):
     def on_add_track_db(self):
 
         def on_tracks_selected(instance, selected_track_ids):
-            if self._track_db:
+            if self.track_db:
                 failures = False
                 for trackId in selected_track_ids:
                     trackMap = self.track_manager.get_track_by_id(trackId)
@@ -533,14 +662,14 @@ class TrackCollectionScreen(AnchorLayout):
                         if startFinish and startFinish.latitude and startFinish.longitude:
                             Logger.info("TrackConfigView:  adding track " + str(trackMap))
                             track = Track.fromTrackMap(trackMap)
-                            self._track_db.tracks.append(track)
+                            self.track_db.tracks.append(track)
                         else:
                             failures = True
                 if failures:
                     alertPopup('Cannot Add Tracks', 'One or more tracks could not be added due to missing start/finish points.\n\nPlease check for track map updates and try again.')
                 self.init_tracks_list()
                 popup.dismiss()
-                self._track_db.stale = True
+                self.track_db.stale = True
                 self.dispatch('on_modified')
 
         content = TrackSelectionPopup(track_manager=self.track_manager)
@@ -549,9 +678,9 @@ class TrackCollectionScreen(AnchorLayout):
         popup.open()
 
     def init_tracks_list(self):
-        if self.track_manager and self._track_db:
+        if self.track_manager and self.track_db:
             matched_tracks = []
-            for track in self._track_db.tracks:
+            for track in self.track_db.tracks:
                 matched_track = self.track_manager.find_track_by_short_id(track.trackId)
                 if matched_track:
                     matched_tracks.append(matched_track)
@@ -576,9 +705,9 @@ class TrackCollectionScreen(AnchorLayout):
 
     def on_remove_track(self, instance, index):
             try:
-                del self._track_db.tracks[index]
+                del self.track_db.tracks[index]
                 self.init_tracks_list()
-                self._track_db.stale = True
+                self.track_db.stale = True
                 self.dispatch('on_modified')
 
             except Exception as detail:
