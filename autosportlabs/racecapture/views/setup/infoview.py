@@ -57,7 +57,7 @@ INFO_VIEW_KV = """
                 size_hint_x: None
                 width: dp(130)
                 size_hint_y: 0.1
-                on_release: root._on_next()
+                on_release: root.select_next()
                 
 """
 
@@ -68,7 +68,7 @@ class InfoView(Screen):
     """
     setup_config = ObjectProperty()
     preset_manager = ObjectProperty()
-    
+
     next_text = StringProperty('Next')
     next_icon = StringProperty(u'\uf0a9')
     background_source = StringProperty()
@@ -76,6 +76,8 @@ class InfoView(Screen):
     is_last = BooleanProperty(False)
     rc_api = ObjectProperty()
     settings = ObjectProperty()
+    rc_config = ObjectProperty()
+    track_manager = ObjectProperty()
 
     Builder.load_string(INFO_VIEW_KV)
 
@@ -99,7 +101,7 @@ class InfoView(Screen):
         self.next_text = 'Done' if value else 'Next'
         self.next_icon = u'\uf00c' if value else u'\uf0a9'
 
-    def _on_next(self):
+    def select_next(self):
         self.dispatch('on_next')
 
     def get_setup_step(self, key):

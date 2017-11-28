@@ -129,7 +129,6 @@ class SelectConnectionView(InfoView):
         self._init_ui()
 
     def _get_image_for_device(self, device):
-        print('device ' + str(device))
         return 'resource/setup/device_{}.png'.format(device)
 
     def _get_supported_connection_list(self, device):
@@ -137,7 +136,7 @@ class SelectConnectionView(InfoView):
         if not self.rc_api.is_wireless_connection:
             supported_connections.append('USB')
         else:
-            if is_android() and (device == 'RCP_MK2' or device == 'RCP_MK3' or device == 'RC_Apex'):
+            if is_android() and (device in ['RCP_MK2', 'RCP_MK3', 'RC_Apex']):
                 supported_connections.append('Bluetooth')
             supported_connections.append('WiFi')
 

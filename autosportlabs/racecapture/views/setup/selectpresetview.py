@@ -22,14 +22,21 @@ import kivy
 kivy.require('1.10.0')
 from kivy.clock import Clock
 from kivy.app import Builder
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.screenmanager import Screen
 from autosportlabs.racecapture.views.setup.infoview import InfoView
 from autosportlabs.uix.button.betterbutton import BetterToggleButton
-from kivy.properties import ObjectProperty
+from kivy.properties import ObjectProperty, StringProperty
+from autosportlabs.racecapture.presets.presetview import PresetItemView
+from autosportlabs.racecapture.views.util.alertview import okPopup
 
-SELECT_PRESET_VIEW_KV = """
+class SelectPresetView(InfoView):
+    """
+    A setup screen that lets users select what device they have.
+    """
+    Builder.load_string("""
 <SelectPresetView>:
-    #background_source: 'resource/setup/background_device.jpg'
+    background_source: 'resource/setup/background_blank.png'
     info_text: 'Select a preset'
     BoxLayout:
         orientation: 'vertical'
@@ -51,16 +58,9 @@ SELECT_PRESET_VIEW_KV = """
                 height: self.minimum_height
                 cols: 1
         BoxLayout:
-            size_hint_y: 0.15
-"""
+            size_hint_y: 0.15    
+    """)
 
-
-class SelectPresetView(InfoView):
-    """
-    A setup screen that lets users select what device they have.
-    """
-    Builder.load_string(SELECT_PRESET_VIEW_KV)
-    
     def __init__(self, **kwargs):
         super(SelectPresetView, self).__init__(**kwargs)
         self.ids.next.disabled = True
@@ -74,13 +74,32 @@ class SelectPresetView(InfoView):
         for k, v in self.preset_manager.get_presets_by_type('PC_MK1'):
             name = v.name
             notes = v.notes
-            self.add_preset(k, name, notes)
-        
+            self.add_preset(k, v)
 
-    def add_preset(self, preset_id, name, notes):
-        print('add presest {}'.format(preset_id))
-    
+    def add_preset(self, key, preset):
+        view = PresetItemView(preset_id=preset.mapping_id,
+                                                   name=preset.name,
+                                                   notes=preset.notes,
+                                                   image_path=preset.local_image_path)
+        view.bind(on_preset_selected=self._preset_selected)
+        self.ids.presets.add_widget(view)
+
+    def _preset_selected(self, instance, preset_id):
+        def write_win(details):
+            okPopup('Success', 'Successfully applied preset: {}'.format(preset.name), lambda *args: None)
+            self.ids.next.disabled = False
+
+        def write_fail(details):
+            okPopup('Oops!',
+                         'We had a problem applying the preset. Check the device connection and try again.\n\nError:\n\n{}'.format(details),
+                         lambda *args: None)
+
+        preset = self.preset_manager.get_preset_by_id(preset_id)
+        self.rc_config.fromJson(preset.mapping)
+        self.rc_config.stale = True
+        self.rc_api.writeRcpCfg(self.rc_config, write_win, write_fail)
+
     def _select_preset(self, preset):
         self.ids.next.disabled = False
-        
-                
+
+

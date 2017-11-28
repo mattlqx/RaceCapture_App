@@ -25,9 +25,10 @@ from kivy.app import Builder
 from kivy.uix.screenmanager import Screen
 from autosportlabs.racecapture.views.setup.infoview import InfoView
 from autosportlabs.uix.button.betterbutton import BetterToggleButton
-
+from autosportlabs.racecapture.views.tracks.tracksview import TrackCollectionScreen
 SELECT_TRACKS_VIEW_KV = """
 <SelectTracksView>:
+    background_source: 'resource/setup/background_blank.png'
     info_text: 'Select your favorite tracks'
     BoxLayout:
         orientation: 'vertical'
@@ -35,9 +36,12 @@ SELECT_TRACKS_VIEW_KV = """
         spacing: [0, dp(10)]
         BoxLayout:
             size_hint_y: 0.10
-            FieldLabel:
-                text: 'Select your favorite tracks for lap timing'
-"""
+        TrackCollectionScreen:
+            id: track_list
+            size_hint_y: 0.7
+        Widget:
+            size_hint_y: 0.15
+    """
 
 
 class SelectTracksView(InfoView):
@@ -48,16 +52,28 @@ class SelectTracksView(InfoView):
 
     def __init__(self, **kwargs):
         super(SelectTracksView, self).__init__(**kwargs)
-        self.ids.next.disabled = True
+        self.ids.next.disabled = False
         self.ids.next.pulsing = False
 
     def on_setup_config(self, instance, value):
         self._update_ui()
 
     def _update_ui(self):
-        pass
-    
+        self.ids.track_list.track_manager = self.track_manager
+        self.ids.track_list.on_config_updated(self.rc_config.trackDb)
+        self.ids.track_list.disableView(False)
+
     def _select_preset(self, preset):
         self.ids.next.disabled = False
-        
-                
+
+    def select_next(self):
+        def write_win(details):
+            super(SelectTracksView, self).select_next()
+
+        def write_fail(details):
+            super(SelectTracksView, self).select_next()
+
+        self.rc_api.writeRcpCfg(self.rc_config, write_win, write_fail)
+
+
+

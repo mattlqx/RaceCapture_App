@@ -116,14 +116,16 @@ class SetupView(Screen):
     SETUP_COMPLETE_DELAY_SEC = 1.0
     Builder.load_string(SETUP_VIEW_KV)
 
-    def __init__(self, preset_manager, settings, databus, base_dir, rc_api, **kwargs):
+    def __init__(self, track_manager, preset_manager, settings, databus, base_dir, rc_api, rc_config, **kwargs):
         super(SetupView, self).__init__(**kwargs)
         self.register_event_type('on_setup_complete')
         self._preset_manager = preset_manager
+        self._track_manager = track_manager
         self._settings = settings
         self._base_dir = base_dir
         self._databus = databus
         self._rc_api = rc_api
+        self._rc_config = rc_config
         self._setup_config = None
         self._current_screen = None
         self._current_step = None
@@ -190,9 +192,11 @@ class SetupView(Screen):
     def _select_view(self, step):
         screen = setup_factory(step['key'])
         screen.preset_manager = self._preset_manager
-        screen.setup_config = self._setup_config
         screen.rc_api = self._rc_api
         screen.settings = self._settings
+        screen.rc_config = self._rc_config
+        screen.track_manager = self._track_manager
+        screen.setup_config = self._setup_config
         return screen
 
     def _setup_complete(self, show_next_time=False):

@@ -45,7 +45,7 @@ from autosportlabs.racecapture.views.analysis.markerevent import MarkerEvent, So
 from autosportlabs.racecapture.views.analysis.linechart import LineChart
 from autosportlabs.racecapture.views.file.loaddialogview import LoadDialog
 from autosportlabs.racecapture.views.file.savedialogview import SaveDialog
-from autosportlabs.racecapture.views.util.alertview import alertPopup, okPopup, confirmPopup, progress_popup
+from autosportlabs.racecapture.views.util.alertview import alertPopup, confirmPopup, progress_popup
 from autosportlabs.uix.color.colorsequence import ColorSequence
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.racecapture.settings.prefs import UserPrefs

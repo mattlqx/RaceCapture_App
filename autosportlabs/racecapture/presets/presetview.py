@@ -80,15 +80,15 @@ class PresetItemView(BoxLayout):
     padding: (dp(20), dp(0))
     spacing: dp(10)
     FieldLabel:
-        id: title
         size_hint_y: 0.1
+        text: root.name
     BoxLayout:
         spacing: dp(10)
         size_hint_y: 0.85
         orientation: 'horizontal'
         AnchorLayout:
             Image:
-                id: image
+                source: root.image_path
             AnchorLayout:
                 anchor_y: 'bottom'
                 BoxLayout:
@@ -101,7 +101,7 @@ class PresetItemView(BoxLayout):
                     size_hint_y: 0.3
                     FieldLabel:
                         halign: 'left'
-                        id: notes
+                        text: '' if root.notes is None else root.notes
 
         AnchorLayout:
             size_hint_x: None
@@ -118,13 +118,12 @@ class PresetItemView(BoxLayout):
                 icon: u'\uf046'
                 on_press: root.select_preset()
 """)
-
-    def __init__(self, preset_id, name, notes, image_path, **kwargs):
+    preset_id = NumericProperty()
+    name = StringProperty()
+    notes = StringProperty(allownone=True)
+    image_path = StringProperty()
+    def __init__(self, **kwargs):
         super(PresetItemView, self).__init__(**kwargs)
-        self.preset_id = preset_id
-        self.ids.title.text = '' if not name else name
-        self.ids.notes.text = '' if not notes else notes
-        self.ids.image.source = image_path
         self.register_event_type('on_preset_selected')
 
     def select_preset(self):
@@ -231,8 +230,7 @@ class PresetBrowserView(BoxLayout):
     def add_preset(self, preset_id, name, notes):
         preset = self.preset_manager.get_preset_by_id(preset_id)
         if preset:
-            image_path = preset.image_url
-            preset_view = PresetItemView(preset_id, name, notes, preset.local_image_path)
+            preset_view = PresetItemView(preset_id=preset_id, name=name, notes=notes, image_path=preset.local_image_path)
             preset_view.bind(on_preset_selected=self.preset_selected)
             self.ids.preset_grid.add_widget(preset_view)
 
