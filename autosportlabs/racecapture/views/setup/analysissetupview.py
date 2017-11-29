@@ -28,7 +28,7 @@ from autosportlabs.racecapture.views.setup.infoview import InfoView
 ANALYSIS_SETUP_VIEW_KV = """
 <AnalysisSetupView>:
     background_source: 'resource/setup/background_analysis.jpg'
-    info_text: 'After you come off track, go to Analysis and your just-completed session will be waiting for you, ready to compare laps and runs.'
+    info_text: 'After your race, go to Analysis and your just-completed session will be waiting for you, ready to compare laps and runs.'
 """
 
 class AnalysisSetupView(InfoView):

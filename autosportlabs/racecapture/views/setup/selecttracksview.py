@@ -72,6 +72,7 @@ class SelectTracksView(InfoView):
 
     def _on_tracks_modified(self, *args):
         self._tracks_modified = True
+        self.ids.next.pulsing = True
 
     def select_next(self):
         def do_next():

@@ -58,14 +58,21 @@ SETUP_VIEW_KV = """
 <SetupView>:
     BoxLayout:
         orientation: 'horizontal'
-        GridLayout:
-            id: steps
-            cols: 1
+        ScrollContainer:
+            id: steps_scroll
             size_hint_x: 0.25
-            row_default_height: self.height * 0.095
-            row_force_default: True
-            padding: (dp(5), dp(5), dp(2.5), dp(5))
-            spacing: dp(5)
+            do_scroll_x: False
+            do_scroll_y: True
+            bar_width: 0
+            GridLayout:
+                id: steps
+                cols: 1
+                row_default_height: dp(50)
+                row_force_default: True
+                size_hint_y: None
+                padding: (dp(5), dp(5), dp(2.5), dp(5))
+                spacing: dp(5)
+                height: self.minimum_height
         BoxLayout:
             padding: (dp(2.5), dp(5), dp(5), dp(5))
             size_hint_x: 0.75     
@@ -83,7 +90,8 @@ SETUP_VIEW_KV = """
                         title_font_size: self.height * 0.6
                         icon: u'\uf052'
                         size_hint_x: None
-                        size_hint_y: 0.1
+                        size_hint_y: None
+                        height: min(55, dp(50))
                         width: min(120,dp(100))
                         on_release: root.on_skip()
 """
@@ -169,7 +177,10 @@ class SetupView(Screen):
             self._current_step = step
             self._current_screen = screen
             screen.bind(on_next=self._on_next_screen)
-            self._steps[step['key']].active = True
+            step = self._steps[step['key']] 
+            step.active = True
+            self.ids.steps_scroll.scroll_to(step)
+            
         else:
             self._setup_complete(show_next_time=False)
 

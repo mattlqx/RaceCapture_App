@@ -28,7 +28,7 @@ from autosportlabs.racecapture.views.setup.infoview import InfoView
 TOUR_VIEW_KV = """
 <TourView>:
     background_source: 'resource/setup/background_tour.jpg'
-    info_text: 'We\\'ll now give you a brief tour of your RaceCapture system.'
+    info_text: 'We\\'ll now give you a brief tour of your system.'
 """
 
 class TourView(InfoView):

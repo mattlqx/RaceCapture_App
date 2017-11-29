@@ -58,7 +58,8 @@ INFO_VIEW_KV = """
                 icon: root.next_icon
                 size_hint_x: None
                 width: min(130,dp(130))
-                size_hint_y: 0.1
+                size_hint_y: None
+                height: min(55, dp(50))
                 on_release: root.select_next()
                 
 """

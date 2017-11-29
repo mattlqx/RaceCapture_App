@@ -55,7 +55,6 @@ class SelectPresetView(InfoView):
                 Rectangle:
                     pos: self.pos
                     size: self.size        
-            size_hint_y: 0.7
             do_scroll_x: False
             do_scroll_y: True
             size_hint_y: 1
