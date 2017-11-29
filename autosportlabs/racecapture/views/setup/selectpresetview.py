@@ -111,7 +111,9 @@ class SelectPresetView(InfoView):
         def preset_selected():
             self.preset_selected = True
             self.ids.next.pulsing = True
+            self.ids.next.disabled = False
 
+        self.ids.next.disabled = True
         preset = self.preset_manager.get_preset_by_id(preset_id)
         self.rc_config.fromJson(preset.mapping)
         self.rc_config.stale = True

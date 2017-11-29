@@ -636,7 +636,7 @@ class RaceCaptureApp(App):
         if token == ('preferences', 'send_telemetry'):
             if value == "1":  # Boolean settings values are 1/0, not True/False
                 if self.rc_config.connectivityConfig.cellConfig.cellEnabled:
-                    alertPopup('Telemetry error', "Turn off RaceCapture's telemetry module for app to stream telemetry.")
+                    alertPopup('Telemetry error', "Disable the telemetry module before enabling app telemetry.")
                 Clock.schedule_once(lambda dt: self._enable_telemetry())
             else:
                 Clock.schedule_once(lambda dt: self._disable_telemetry())

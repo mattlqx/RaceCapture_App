@@ -30,6 +30,7 @@ import webbrowser
 from utils import is_mobile_platform
 from fieldlabel import FieldLabel
 from valuefield import ValueField
+import re
 
 class PodiumSetupView(InfoView):
     """
@@ -38,33 +39,32 @@ class PodiumSetupView(InfoView):
     Builder.load_string("""
 <PodiumSetupView>:
     background_source: 'resource/setup/background_podium.jpg'
-    info_text: 'Broadcast real-time telemetry for free to your pit crew, friends, race coaches and fans around the world.\\nSign up at [color=00BCD4][ref=podium]podium.live[/ref][/color] to get your device Id:'
+    info_text: 'Livestream real-time telemetry for free to your pit crew, friends, race coaches and fans around the world.\\n\\nSign up at [color=00BCD4][ref=podium]podium.live[/ref][/color] to get your device Id:'
     BoxLayout:
         orientation: 'vertical'
         padding: (0, dp(20))
         spacing: (0, dp(10))
         Widget:
-            size_hint_y: 0.4
+            size_hint_y: 0.5
         BoxLayout:
             size_hint_y: None
-            height: dp(50)
+            height: 50
             spacing: dp(10)
             
-            Widget:
-                size_hint_x: None
-                width: dp(60)
             FieldLabel:
                 text: 'Your Device Id'
-                halign: 'right'
-                font_size: self.height * 0.8
+                halign: 'left'
+                font_size: self.height * 0.6
+                size_hint_x: None
+                width: 200
             ValueField:
                 id: device_id
                 on_text: root._on_device_id_value(*args)
-            Widget:
                 size_hint_x: None
-                width: dp(60)
+                width: 200
+            Widget:
         Widget:
-            size_hint_y: 0.6
+            size_hint_y: 0.5
             
                 
     """)
@@ -88,7 +88,10 @@ class PodiumSetupView(InfoView):
         def do_next():
             super(PodiumSetupView, self).select_next()
 
-        device_id = self.ids.device_id.text
+        device_id = re.sub(r'\W+', '', self.ids.device_id.text)[0:34]
+        self.ids.device_id.text = device_id
+
+
         if len(device_id) == 0:
             self.info_popup('You can set your Device ID later under Setup', do_next)
             return

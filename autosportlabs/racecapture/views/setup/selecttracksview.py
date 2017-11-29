@@ -80,4 +80,4 @@ class SelectTracksView(InfoView):
         if self._tracks_modified:
             self.write_rcp_config('Updating Tracks ... ', do_next)
         else:
-            self.info_popup('You can customize your tracks later under Setup', do_next)
+            self.info_popup('You can customize tracks later under Setup', do_next)

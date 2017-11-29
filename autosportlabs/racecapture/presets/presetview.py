@@ -92,7 +92,7 @@ class PresetItemView(AnchorLayout):
                             size: self.size
                     size_hint_y: 0.3
                     FieldLabel:
-                        font_size: dp(20)
+                        font_size: min(25,dp(20))
                         halign: 'left'
                         text: '' if root.notes is None else root.notes
 
@@ -103,7 +103,7 @@ class PresetItemView(AnchorLayout):
             width: min(200,dp(190))
             LabelIconButton:
                 size_hint: (None, None)
-                size: (min(120,dp(130)), min(50, dp(50)))
+                size: (min(150,dp(130)), min(50, dp(50)))
                 pos_hint: (0.5,0.5)
                 id: load_preset
                 title: 'Select'
