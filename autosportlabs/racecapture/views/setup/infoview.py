@@ -26,6 +26,7 @@ from kivy.uix.screenmanager import Screen
 from kivy.properties import StringProperty, BooleanProperty, ObjectProperty
 from kivy.uix.modalview import ModalView
 from fieldlabel import FieldLabel
+from autosportlabs.racecapture.views.util.alertview import okPopup
 
 INFO_VIEW_KV = """    
 <InfoView>:

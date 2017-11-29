@@ -270,8 +270,9 @@ class AutomaticTrackConfigScreen(Screen):
     TRACK_ITEM_MIN_HEIGHT = 200
     def __init__(self, **kwargs):
         super(AutomaticTrackConfigScreen, self).__init__(**kwargs)
-        self.ids.track_collection._track_db = None
-        self.ids.track_collection.bind(on_modified=self._on_modified)
+        tracks_view = self.ids.track_collection
+        tracks_view._track_db = None
+        tracks_view.bind(on_modified=self._on_modified)
         self.register_event_type('on_modified')
 
     def _on_modified(self, *args):
@@ -281,12 +282,14 @@ class AutomaticTrackConfigScreen(Screen):
         pass
 
     def on_config_updated(self, track_db):
-        self.ids.track_collection._track_db = track_db
-        self.ids.track_collection.init_tracks_list()
+        tracks_view = self.ids.track_collection
+        tracks_view.on_config_updated(track_db)
+        tracks_view.disableView(False)
 
     def on_track_manager(self, instance, value):
-        self.ids.track_collection.track_manager = value
-        self.ids.track_collection.init_tracks_list()
+        tracks_view = self.ids.track_collection
+        tracks_view.track_manager = value
+        tracks_view.init_tracks_list()
 
     def disableView(self, disabled):
         self.ids.track_collection.disableView(disabled)

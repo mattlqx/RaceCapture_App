@@ -27,7 +27,6 @@ from kivy.uix.screenmanager import Screen
 from autosportlabs.racecapture.views.setup.infoview import InfoView
 from autosportlabs.uix.button.betterbutton import BetterToggleButton
 from autosportlabs.racecapture.views.tracks.tracksview import TrackCollectionScreen
-from autosportlabs.racecapture.views.util.alertview import okPopup
 from fieldlabel import FieldLabel
 
 SELECT_TRACKS_VIEW_KV = """

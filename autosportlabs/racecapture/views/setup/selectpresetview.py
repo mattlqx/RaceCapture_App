@@ -32,7 +32,6 @@ from autosportlabs.racecapture.views.setup.infoview import InfoView
 from autosportlabs.uix.button.betterbutton import BetterToggleButton
 from kivy.properties import ObjectProperty, StringProperty
 from autosportlabs.racecapture.presets.presetview import PresetItemView
-from autosportlabs.racecapture.views.util.alertview import okPopup
 
 class SelectPresetView(InfoView):
     """
