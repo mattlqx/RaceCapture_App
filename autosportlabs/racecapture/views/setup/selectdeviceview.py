@@ -92,7 +92,7 @@ SELECT_DEVICE_VIEW_KV = """
                 AnchorLayout:
                     Image:
                         allow_stretch: True
-                        source: 'resource/setup/device_RC_Apex.png'
+                        source: 'resource/setup/device_RCP_Apex.png'
                         nocache: True
                     AnchorLayout:
                         anchor_x: 'right'
@@ -101,7 +101,7 @@ SELECT_DEVICE_VIEW_KV = """
                             group: 'device'
                             size_hint: (0.45, 0.5)
                             text: 'RaceCapture/Apex'
-                            on_release: root.select_device('RC_Apex')
+                            on_release: root.select_device('RCP_Apex')
 
                 AnchorLayout:
                     Image:

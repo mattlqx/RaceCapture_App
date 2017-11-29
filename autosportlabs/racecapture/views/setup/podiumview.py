@@ -50,7 +50,7 @@ class PodiumSetupView(InfoView):
             size_hint_y: None
             height: 50
             spacing: dp(10)
-            
+            padding: (dp(10), 0)            
             FieldLabel:
                 text: 'Your Device Id'
                 halign: 'left'

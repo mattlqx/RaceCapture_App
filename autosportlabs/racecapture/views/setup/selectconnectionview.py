@@ -136,7 +136,7 @@ class SelectConnectionView(InfoView):
         if not self.rc_api.is_wireless_connection:
             supported_connections.append('USB')
         else:
-            if is_android() and (device in ['RCP_MK2', 'RCP_MK3', 'RC_Apex']):
+            if is_android() and (device in ['RCP_MK2', 'RCP_MK3', 'RCP_Apex']):
                 supported_connections.append('Bluetooth')
             supported_connections.append('WiFi')
 
