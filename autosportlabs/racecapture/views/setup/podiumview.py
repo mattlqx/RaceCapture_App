@@ -39,7 +39,7 @@ class PodiumSetupView(InfoView):
     Builder.load_string("""
 <PodiumSetupView>:
     background_source: 'resource/setup/background_podium.jpg'
-    info_text: 'Livestream real-time telemetry for free to your pit crew, friends, race coaches and fans around the world.\\n\\nSign up at [color=00BCD4][ref=podium]podium.live[/ref][/color] to get your device Id:'
+    info_text: 'Stream real-time telemetry for free to your pit crew, friends, race coaches, and fans around the world.\\n\\nSign up at [color=00BCD4][ref=podium]podium.live[/ref][/color] to get your device Id:'
     BoxLayout:
         orientation: 'vertical'
         padding: (0, dp(20))
