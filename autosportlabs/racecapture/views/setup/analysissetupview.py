@@ -38,3 +38,6 @@ class AnalysisSetupView(InfoView):
     Builder.load_string(ANALYSIS_SETUP_VIEW_KV)
     def __init__(self, **kwargs):
         super(AnalysisSetupView, self).__init__(**kwargs)
+
+    def on_enter(self, *args):
+        self.ids.next.pulsing = True

@@ -202,6 +202,7 @@ class SelectConnectionView(InfoView):
             self.ids.progress_spinner.stop_spinning()
             self.ids.connection_status.text = u'\uf00c'
             self.ids.next.disabled = False
+            self.ids.next.pulsing = True
             connected_version = self.rc_api.connected_version
             device = None if connected_version is None else connected_version.name
             self._update_device_image(device=device)

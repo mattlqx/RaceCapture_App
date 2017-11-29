@@ -73,6 +73,7 @@ class Preset(object):
         return {'id': self.mapping_id,
                 'URI': self.uri,
                 'name': self.name,
+                'notes': self.notes,
                 'created': self.created,
                 'updated': self.updated,
                 'more_info_url': self.more_info_url,

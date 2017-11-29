@@ -24,6 +24,8 @@ from kivy.clock import Clock
 from kivy.app import Builder
 from kivy.uix.screenmanager import Screen
 from kivy.properties import StringProperty, BooleanProperty, ObjectProperty
+from kivy.uix.modalview import ModalView
+from fieldlabel import FieldLabel
 
 INFO_VIEW_KV = """    
 <InfoView>:
@@ -89,7 +91,7 @@ class InfoView(Screen):
         pass
 
     def on_pre_enter(self, *args):
-        self.ids.next.pulsing = True
+        self.ids.next.pulsing = False
 
     def on_leave(self, *args):
         self.ids.next.pulsing = False
@@ -110,3 +112,38 @@ class InfoView(Screen):
                 if step['key'] == key:
                     return step
         return None
+
+    def info_popup(self, msg, callback):
+        def done():
+            view.dismiss()
+            Clock.schedule_once(lambda dt: callback(), 0.25)
+
+        view = ModalView(size_hint=(None, None), size=(600, 200))
+        msg = FieldLabel(halign='center', text=msg)
+        view.add_widget(msg)
+        view.open()
+        Clock.schedule_once(lambda dt: done(), 2.0)
+
+    def write_rcp_config(self, info_msg, callback):
+        def timeout(dt):
+            progress_view.dismiss()
+            Clock.schedule_once(lambda dt: callback(), 0.25)
+
+        def write_win(details):
+            msg.text += ' Success'
+            Clock.schedule_once(timeout, 1.5)
+
+        def write_fail(details):
+            progress_view.dismiss()
+            okPopup('Oops!',
+                         'We had a problem updating the device. Check the device connection and try again.\n\nError:\n\n{}'.format(details),
+                         lambda *args: None)
+
+
+        progress_view = ModalView(size_hint=(None, None), size=(600, 200))
+        msg = FieldLabel(text=info_msg, halign='center')
+        progress_view.add_widget(msg)
+        progress_view.open()
+
+        self.rc_api.writeRcpCfg(self.rc_config, write_win, write_fail)
+

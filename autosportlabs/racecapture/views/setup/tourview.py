@@ -35,3 +35,6 @@ class TourView(InfoView):
     Builder.load_string(TOUR_VIEW_KV)
     def __init__(self, **kwargs):
         super(TourView, self).__init__(**kwargs)
+
+    def on_enter(self, *args):
+        self.ids.next.pulsing = True

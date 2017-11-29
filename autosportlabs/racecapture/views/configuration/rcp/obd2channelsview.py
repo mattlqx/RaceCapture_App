@@ -510,6 +510,6 @@ class OBD2ChannelsView(BaseConfigView):
         content = PresetBrowserView(self.preset_manager, 'obd2')
         content.bind(on_preset_selected=self._on_preset_selected)
         content.bind(on_preset_close=lambda *args:popup.dismiss())
-        popup = Popup(title='Import a preset configuration', content=content, size_hint=(0.5, 0.75))
+        popup = Popup(title='Import a preset configuration', content=content, size_hint=(0.7, 0.8))
         popup.bind(on_dismiss=popup_dismissed)
         popup.open()

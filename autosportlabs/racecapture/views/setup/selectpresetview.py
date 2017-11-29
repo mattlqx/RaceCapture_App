@@ -44,11 +44,17 @@ class SelectPresetView(InfoView):
     info_text: 'Select a preset'
     BoxLayout:
         orientation: 'vertical'
-        padding: [0, dp(20)]
-        spacing: [0, dp(10)]
+        padding: (0, dp(20))
+        spacing: (0, dp(10))
         BoxLayout:
-            size_hint_y: 0.10
+            size_hint_y: 0.12
         ScrollContainer:
+            canvas.before:
+                Color:
+                    rgba: ColorScheme.get_dark_background()
+                Rectangle:
+                    pos: self.pos
+                    size: self.size        
             size_hint_y: 0.7
             do_scroll_x: False
             do_scroll_y: True
@@ -69,13 +75,26 @@ class SelectPresetView(InfoView):
         super(SelectPresetView, self).__init__(**kwargs)
         self.ids.next.disabled = True
         self.ids.next.pulsing = False
+        self.preset_selected = False
 
     def on_setup_config(self, instance, value):
         self._update_ui()
 
     def _update_ui(self):
         self.ids.presets.clear_widgets()
-        for k, v in self.preset_manager.get_presets_by_type('PC_MK1'):
+        device_step = self.get_setup_step('device')
+        device = device_step.get('device')
+        self.ids.next.disabled = False
+
+        # get the device prefix
+        device = device.split('_')[0]
+        presets = self.preset_manager.get_presets_by_type(device)
+
+        if presets is None:
+            self.select_next()
+            return
+
+        for k, v in presets:
             name = v.name
             notes = v.notes
             self.add_preset(k, v)
@@ -89,27 +108,22 @@ class SelectPresetView(InfoView):
         self.ids.presets.add_widget(view)
 
     def _preset_selected(self, instance, preset_id):
-        def write_win(details):
-            msg.text = 'Success: {}'.format(preset.name)
-            Clock.schedule_once(lambda dt: progress_view.dismiss(), 2.0)
-            self.ids.next.disabled = False
+        def preset_selected():
+            self.preset_selected = True
+            self.ids.next.pulsing = True
 
-        def write_fail(details):
-            progress_view.dismiss()
-            okPopup('Oops!',
-                         'We had a problem applying the preset. Check the device connection and try again.\n\nError:\n\n{}'.format(details),
-                         lambda *args: None)
-        progress_view = ModalView(size_hint=(None, None), size=(600, 200))
-        msg = FieldLabel(halign='center', text='Applying Preset...')
-
-        progress_view.add_widget(msg)
-        progress_view.open()
         preset = self.preset_manager.get_preset_by_id(preset_id)
         self.rc_config.fromJson(preset.mapping)
         self.rc_config.stale = True
-        self.rc_api.writeRcpCfg(self.rc_config, write_win, write_fail)
+        self.write_rcp_config('Applying preset {} ... '.format(preset.name), preset_selected)
 
-    def _select_preset(self, preset):
-        self.ids.next.disabled = False
+    def select_next(self):
+        def do_next():
+            super(SelectPresetView, self).select_next()
 
+        if not self.preset_selected:
+            self.info_popup('You can configure presets later under Setup', do_next)
+            return
+
+        do_next()
 

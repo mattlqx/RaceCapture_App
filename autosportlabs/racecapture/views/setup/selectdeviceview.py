@@ -131,10 +131,10 @@ class SelectDeviceView(InfoView):
     def __init__(self, **kwargs):
         super(SelectDeviceView, self).__init__(**kwargs)
         self.ids.next.disabled = True
-        self.ids.next.pulsing = False
 
     def select_device(self, device):
         self.ids.next.disabled = False
+        self.ids.next.pulsing = True
         # update our setup config with the selected device
         step = self.get_setup_step('device')
         step['device'] = device

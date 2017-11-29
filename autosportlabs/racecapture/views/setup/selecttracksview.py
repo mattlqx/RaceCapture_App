@@ -50,48 +50,34 @@ SELECT_TRACKS_VIEW_KV = """
 
 class SelectTracksView(InfoView):
     """
-    A setup screen that lets users select what device they have.
+    A setup screen that lets users select what tracks they have
     """
     Builder.load_string(SELECT_TRACKS_VIEW_KV)
 
     def __init__(self, **kwargs):
         super(SelectTracksView, self).__init__(**kwargs)
-        self.ids.next.disabled = False
+        self._tracks_modified = False
         self.ids.next.pulsing = False
 
     def on_setup_config(self, instance, value):
         self._update_ui()
+        self.ids.next.disabled = False
 
     def _update_ui(self):
-        self.ids.track_list.track_manager = self.track_manager
-        self.ids.track_list.on_config_updated(self.rc_config.trackDb)
-        self.ids.track_list.disableView(False)
+        track_list = self.ids.track_list
+        track_list.track_manager = self.track_manager
+        track_list.on_config_updated(self.rc_config.trackDb)
+        track_list.disableView(False)
+        track_list.bind(on_modified=self._on_tracks_modified)
 
-    def _select_preset(self, preset):
-        self.ids.next.disabled = False
+    def _on_tracks_modified(self, *args):
+        self._tracks_modified = True
 
     def select_next(self):
         def do_next():
-            progress_view.dismiss()
             super(SelectTracksView, self).select_next()
-            
-        def write_win(details):
-            msg.text = 'Successfully Updated tracks'
-            Clock.schedule_once(lambda dt: do_next(), 2.0)            
-            
 
-        def write_fail(details):
-            progress_view.dismiss()
-            okPopup('Oops!',
-                         'We had a problem applying the preset. Check the device connection and try again.\n\nError:\n\n{}'.format(details),
-                         lambda *args: None)
-
-        progress_view = ModalView(size_hint=(None, None), size=(600, 200))
-        msg = FieldLabel(text='Updating tracks...', halign='center')
-        progress_view.add_widget(msg)
-        progress_view.open()
-
-        self.rc_api.writeRcpCfg(self.rc_config, write_win, write_fail)
-
-
-
+        if self._tracks_modified:
+            self.write_rcp_config('Updating Tracks ... ', do_next)
+        else:
+            self.info_popup('You can customize your tracks later under Setup', do_next)

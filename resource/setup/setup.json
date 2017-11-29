@@ -26,6 +26,11 @@
             "title" : "Tracks",
             "complete": false
         },
+        {
+            "key": "podium",
+            "title" : "Podium",
+            "complete": false
+        },        
 		{
             "key": "tour",
             "title" : "Tour",
@@ -46,14 +51,7 @@
             "key": "analysis",
             "title" : "Analysis",
             "complete": false
-        },
-
-        {
-            "key": "podium",
-            "title" : "Podium",
-            "complete": false
-        },
-        
+        },        
 		{
 			"key": "finish",
 			"title": "Ready to go!",

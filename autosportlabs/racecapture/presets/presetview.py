@@ -33,6 +33,7 @@ from kivy.properties import StringProperty, NumericProperty, ObjectProperty
 from iconbutton import IconButton
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.racecapture.views.util.alertview import alertPopup
+from autosportlabs.racecapture.theme.color import ColorScheme
 
 class PresetUpdateStatusView(BoxLayout):
     Builder.load_string("""
@@ -64,27 +65,18 @@ class PresetUpdateStatusView(BoxLayout):
     def on_message(self, message):
         self.update_msg = message
 
-class PresetItemView(BoxLayout):
+class PresetItemView(AnchorLayout):
     Builder.load_string("""
 <PresetItemView>:
     canvas.before:
         Color:
-            rgba: 0.01, 0.01, 0.01, 1
+            rgba: 0.0, 0.0, 0.0, 1
         Rectangle:
             pos: self.pos
             size: self.size             
-
-    orientation: 'vertical'
     size_hint_y: None
-    height: dp(150)
-    padding: (dp(20), dp(0))
-    spacing: dp(10)
-    FieldLabel:
-        size_hint_y: 0.1
-        text: root.name
+    height: dp(210)
     BoxLayout:
-        spacing: dp(10)
-        size_hint_y: 0.85
         orientation: 'horizontal'
         AnchorLayout:
             Image:
@@ -100,6 +92,7 @@ class PresetItemView(BoxLayout):
                             size: self.size
                     size_hint_y: 0.3
                     FieldLabel:
+                        font_size: dp(20)
                         halign: 'left'
                         text: '' if root.notes is None else root.notes
 
@@ -107,16 +100,27 @@ class PresetItemView(BoxLayout):
             anchor_x: 'center'
             anchor_y: 'center'
             size_hint_x: None
-            width: min(130,dp(140))
+            width: min(200,dp(190))
             LabelIconButton:
                 size_hint: (None, None)
-                size: (min(130,dp(140)), min(50, dp(50)))
+                size: (min(120,dp(130)), min(50, dp(50)))
+                pos_hint: (0.5,0.5)
                 id: load_preset
                 title: 'Select'
                 icon_size: self.height * 0.7
                 title_font_size: self.height * 0.5
                 icon: u'\uf046'
                 on_press: root.select_preset()
+        Widget:
+            size_hint_x: None
+            width: dp(10)
+    AnchorLayout:
+        anchor_y: 'top'
+        FieldLabel:
+            size_hint_y: 0.1
+            text: root.name
+            font_size: dp(30)
+        
 """)
     preset_id = NumericProperty()
     name = StringProperty()
