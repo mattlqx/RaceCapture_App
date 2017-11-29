@@ -252,7 +252,6 @@ class ConfigView(Screen):
             self._sn = copy(config.versionConfig.serial)
             self._clear()
             self.init_screen()
-            self.ids.button_panel.height = max(dp(100), 150)
         else:
             self.rc_config = config
             self.update_config_views()
@@ -273,6 +272,10 @@ class ConfigView(Screen):
 
     def on_track_manager(self, instance, value):
         self.update_tracks()
+
+    def on_enter(self):
+        if not self.loaded and self.rc_config is not None:
+            self.init_screen()
 
     def on_loaded(self, instance, value):
         self.update_config_views()
@@ -363,6 +366,7 @@ class ConfigView(Screen):
 
         self.update_runtime_channels(runtime_channels)
         self.update_tracks()
+        self.ids.button_panel.height = max(dp(100), 150)
         self.loaded = True
 
     def show_node(self, node):

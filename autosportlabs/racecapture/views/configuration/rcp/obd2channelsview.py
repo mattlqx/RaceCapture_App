@@ -47,7 +47,7 @@ import copy
 class PIDConfigTab(CANChannelMappingTab):
     PID_MIN = 0
     PID_MAX = 0xFFFFFFFF
-    SUPPORTED_MODES = {1:'01h', 9: '09h', 34:'22h'}
+    SUPPORTED_MODES = {1:'01h', 2:'02h', 3:'03h', 4:'04h', 5:'05h', 9:'09h', 34:'22h'}
     DEFAULT_MODE = '01h'
 
     Builder.load_string("""
