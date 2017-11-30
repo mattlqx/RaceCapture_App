@@ -43,9 +43,9 @@ SELECT_TRACKS_VIEW_KV = """
             id: track_list
             size_hint_y: 0.7
         Widget:
-            size_hint_y: 0.15
+            size_hint_y: None
+            height: dp(50)
     """
-
 
 class SelectTracksView(InfoView):
     """

@@ -118,7 +118,8 @@ SELECT_DEVICE_VIEW_KV = """
                             text: 'RaceCapture/Pro MK2'
                             on_release: root.select_device('RCP_MK2')
         BoxLayout:
-            size_hint_y: 0.15
+            size_hint_y: None
+            height: dp(50)
 """
 
 

@@ -66,7 +66,8 @@ class SelectPresetView(InfoView):
                 height: self.minimum_height
                 cols: 1
         BoxLayout:
-            size_hint_y: 0.15    
+            size_hint_y: None
+            height: dp(50)
     """)
 
     def __init__(self, **kwargs):

@@ -24,9 +24,11 @@ from kivy.clock import Clock
 from kivy.app import Builder
 from kivy.uix.screenmanager import Screen
 from kivy.properties import StringProperty, BooleanProperty, ObjectProperty
+from kivy.metrics import dp
 from kivy.uix.modalview import ModalView
 from fieldlabel import FieldLabel
 from autosportlabs.racecapture.views.util.alertview import okPopup
+
 
 INFO_VIEW_KV = """    
 <InfoView>:
@@ -58,9 +60,9 @@ INFO_VIEW_KV = """
                 title_font_size: self.height * 0.6
                 icon: root.next_icon
                 size_hint_x: None
-                width: min(130,dp(130))
+                width: dp(130)
                 size_hint_y: None
-                height: min(55, dp(50))
+                height: dp(50)
                 on_release: root.select_next()
                 
 """
@@ -120,7 +122,7 @@ class InfoView(Screen):
             view.dismiss()
             Clock.schedule_once(lambda dt: callback(), 0.25)
 
-        view = ModalView(size_hint=(None, None), size=(600, 200))
+        view = ModalView(size_hint=(None, None), size=(dp(600), dp(200)))
         msg = FieldLabel(halign='center', text=msg)
         view.add_widget(msg)
         view.open()
@@ -133,6 +135,7 @@ class InfoView(Screen):
 
         def write_win(details):
             msg.text += ' Success'
+            self.rc_config.stale = False
             Clock.schedule_once(timeout, 1.5)
 
         def write_fail(details):
@@ -142,7 +145,7 @@ class InfoView(Screen):
                          lambda *args: None)
 
 
-        progress_view = ModalView(size_hint=(None, None), size=(600, 200))
+        progress_view = ModalView(size_hint=(None, None), size=(dp(600), dp(200)))
         msg = FieldLabel(text=info_msg, halign='center')
         progress_view.add_widget(msg)
         progress_view.open()

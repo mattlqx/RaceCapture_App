@@ -48,7 +48,7 @@ class PodiumSetupView(InfoView):
             size_hint_y: 0.5
         BoxLayout:
             size_hint_y: None
-            height: 50
+            height: dp(50)
             spacing: dp(10)
             padding: (dp(10), 0)            
             FieldLabel:
@@ -56,15 +56,16 @@ class PodiumSetupView(InfoView):
                 halign: 'left'
                 font_size: self.height * 0.6
                 size_hint_x: None
-                width: 200
+                width: dp(200)
             ValueField:
                 id: device_id
                 on_text: root._on_device_id_value(*args)
                 size_hint_x: None
-                width: 200
+                width: dp(200)
             Widget:
         Widget:
             size_hint_y: 0.5
+            
             
                 
     """)
@@ -72,8 +73,7 @@ class PodiumSetupView(InfoView):
         super(PodiumSetupView, self).__init__(**kwargs)
 
     def on_info_ref(self, instance, value):
-        if value == 'podium' and is_mobile_platform():
-
+        if value == 'podium':
             webbrowser.open('http://podium.live')
 
     def on_setup_config(self, instance, value):

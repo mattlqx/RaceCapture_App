@@ -81,29 +81,18 @@ class PresetItemView(AnchorLayout):
         AnchorLayout:
             Image:
                 source: root.image_path
-            AnchorLayout:
-                anchor_y: 'bottom'
-                BoxLayout:
-                    canvas.before:
-                        Color:
-                            rgba: 0, 0, 0, 0.7
-                        Rectangle:
-                            pos: self.pos
-                            size: self.size
-                    size_hint_y: 0.3
-                    FieldLabel:
-                        font_size: min(25,dp(20))
-                        halign: 'left'
-                        text: '' if root.notes is None else root.notes
+                allow_stretch: True
+                size_hint_y: None
+                height: dp(100)
 
         AnchorLayout:
             anchor_x: 'center'
             anchor_y: 'center'
             size_hint_x: None
-            width: min(200,dp(190))
+            width: dp(190)
             LabelIconButton:
                 size_hint: (None, None)
-                size: (min(150,dp(130)), min(50, dp(50)))
+                size: (dp(130), dp(50))
                 pos_hint: (0.5,0.5)
                 id: load_preset
                 title: 'Select'
@@ -120,8 +109,23 @@ class PresetItemView(AnchorLayout):
             size_hint_y: 0.1
             text: root.name
             font_size: dp(30)
-        
+
+    AnchorLayout:
+        anchor_y: 'bottom'
+        BoxLayout:
+            canvas.before:
+                Color:
+                    rgba: 0, 0, 0, 0.7
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            size_hint_y: 0.3
+            FieldLabel:
+                font_size: dp(20)
+                halign: 'left'
+                text: '' if root.notes is None else root.notes
 """)
+
     preset_id = NumericProperty()
     name = StringProperty()
     notes = StringProperty(allownone=True)

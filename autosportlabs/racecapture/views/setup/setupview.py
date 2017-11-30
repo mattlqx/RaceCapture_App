@@ -91,8 +91,8 @@ SETUP_VIEW_KV = """
                         icon: u'\uf052'
                         size_hint_x: None
                         size_hint_y: None
-                        height: min(55, dp(50))
-                        width: min(120,dp(100))
+                        height: dp(50) 
+                        width: dp(100) 
                         on_release: root.on_skip()
 """
 
@@ -177,10 +177,10 @@ class SetupView(Screen):
             self._current_step = step
             self._current_screen = screen
             screen.bind(on_next=self._on_next_screen)
-            step = self._steps[step['key']] 
+            step = self._steps[step['key']]
             step.active = True
             self.ids.steps_scroll.scroll_to(step)
-            
+
         else:
             self._setup_complete(show_next_time=False)
 
