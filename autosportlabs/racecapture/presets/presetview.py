@@ -83,7 +83,7 @@ class PresetItemView(AnchorLayout):
                 source: root.image_path
                 allow_stretch: True
                 size_hint_y: None
-                height: dp(100)
+                height: dp(150)
 
         AnchorLayout:
             anchor_x: 'center'
