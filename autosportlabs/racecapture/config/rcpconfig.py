@@ -844,12 +844,14 @@ class CANMapping(object):
     CAN_MAPPING_TYPE_SIGN_MAGNITUDE = 3
     ID_MASK_DISABLED = 0
     CONVERSION_FILTER_DISABLED = 0
+    SUB_ID_DISABLED = -1
 
     def __init__(self, **kwargs):
         self.bit_mode = False
         self.type = CANMapping.CAN_MAPPING_TYPE_UNSIGNED
         self.can_bus = 0
         self.can_id = 0
+        self.sub_id = CANMapping.SUB_ID_DISABLED
         self.can_mask = CANMapping.ID_MASK_DISABLED
         self.endian = False
         self.offset = 0
@@ -865,6 +867,7 @@ class CANMapping(object):
             self.type = json_dict.get('type', self.type)
             self.can_bus = json_dict.get('bus', self.can_bus)
             self.can_id = json_dict.get('id', self.can_id)
+            self.sub_id = json_dict.get('subId', self.sub_id)
             self.can_mask = json_dict.get('idMask', self.can_mask)
             self.offset = json_dict.get('offset', self.offset)
             self.length = json_dict.get('len', self.length)
@@ -881,6 +884,7 @@ class CANMapping(object):
         json_dict['type'] = self.type
         json_dict['bus'] = self.can_bus
         json_dict['id'] = self.can_id
+        json_dict['subId'] = self.sub_id
         json_dict['idMask'] = self.can_mask
         json_dict['offset'] = self.offset
         json_dict['len'] = self.length
