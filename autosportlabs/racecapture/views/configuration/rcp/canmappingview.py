@@ -237,8 +237,8 @@ class CANIDMappingTab(CANChannelMappingTab):
         self._loaded = False
         self.channel_cfg = channel_cfg
         self.ids.can_bus_channel.setValueMap({0: '1', 1: '2'}, '1')
-                
-        self.ids.sub_id.setValueMap({i:'Disabled' if i < 0 else str(i) for i in range(-1,20)}, 
+
+        self.ids.sub_id.setValueMap({i:'Disabled' if i < 0 else str(i) for i in range(-1, 100)},
                                     'Disabled')
         # CAN bus
         self.ids.can_bus_channel.setFromValue(self.channel_cfg.mapping.can_bus)
@@ -248,7 +248,7 @@ class CANIDMappingTab(CANChannelMappingTab):
 
         # CAN Sub ID
         self.ids.sub_id.setFromValue(self.channel_cfg.mapping.sub_id)
-        
+
         # CAN mask
         self.ids.mask.text = str(self.channel_cfg.mapping.can_mask)
         self._loaded = True
@@ -264,7 +264,7 @@ class CANIDMappingTab(CANChannelMappingTab):
     def _on_sub_id(self, instance, value):
         if self._loaded:
             self.channel_cfg.mapping.sub_id = instance.getValueFromKey(value)
-            
+
     def _on_mask(self, instance, value):
         if self._loaded:
             self.channel_cfg.mapping.can_mask = int(value)
