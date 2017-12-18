@@ -274,7 +274,7 @@ class ConfigView(Screen):
         self.update_tracks()
 
     def on_enter(self):
-        if not self.loaded and self.rc_config is not None:
+        if not self.loaded and self.rc_config.loaded == True:
             self.init_screen()
 
     def on_loaded(self, instance, value):
