@@ -450,10 +450,11 @@ class GpsConfig(object):
     GPS_QUALITY_2D = 1
     GPS_QUALITY_3D = 2
     GPS_QUALITY_3D_DGNSS = 3
+    DEFAULT_GPS_SAMPLE_RATE = 10
 
     def __init__(self, **kwargs):
         self.stale = False
-        self.sampleRate = 0
+        self.sampleRate = GpsConfig.DEFAULT_GPS_SAMPLE_RATE
         self.positionEnabled = False
         self.speedEnabled = False
         self.distanceEnabled = False
