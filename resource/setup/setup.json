@@ -30,7 +30,12 @@
             "key": "podium",
             "title" : "Podium",
             "complete": false
-        },        
+        }, 
+        {
+            "key": "cellservice",
+            "title" : "Cell Service",
+            "complete": false
+        }, 
 		{
             "key": "tour",
             "title" : "Tour",
