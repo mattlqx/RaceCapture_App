@@ -30,7 +30,9 @@ import webbrowser
 from utils import is_mobile_platform
 from fieldlabel import FieldLabel
 from valuefield import ValueField
-import re
+from settingsview import SettingsSwitch, SettingsMappedSpinner
+import json
+import os
 
 class CellServiceView(InfoView):
     """
@@ -44,32 +46,109 @@ class CellServiceView(InfoView):
         orientation: 'vertical'
         padding: (0, dp(20))
         spacing: (0, dp(10))
-        Widget:
-            size_hint_y: 0.5
-        BoxLayout:
-            size_hint_y: None
-            height: dp(50)
-            spacing: dp(10)
-            padding: (dp(10), 0)            
+
+        SettingsView:
+            id: cell_enable
+            label_text: 'Cellular Module'
+            help_text: 'Enable if the Real-time telemetry module is installed'
+        SettingsView:
+            id: cell_provider
+            label_text: 'Cellular Provider'
+            help_text: 'Select the cellular provider, or specify custom APN settings'
+        Label:
+            text: 'Custom Cellular Settings'
+            text_size: self.size
+            halign: 'center'
+            font_size: dp(26)
+        GridLayout:
+            cols: 2
+            size_hint_y: 0.2
+            spacing: (dp(30), dp(5))
             FieldLabel:
-                text: 'Cellular Carrier'
-                halign: 'left'
-                font_size: self.height * 0.6
-                size_hint_x: None
-                width: dp(200)
+                text: 'APN Host'
+                halign: 'right'
+            ValueField:
+                id: apn_host
+                disabled: True
+                on_text: root.on_apn_host(*args)
+        GridLayout:
+            cols: 2
+            size_hint_y: 0.2            
+            spacing: (dp(30), dp(5))
             FieldLabel:
-                text: 'foo'
-                size_hint_x: None
-                width: dp(200)
-            Widget:
-        Widget:
-            size_hint_y: 0.5
-            
-            
-                
+                halign: 'right'
+                text: 'APN User Name'
+            ValueField:
+                id: apn_user
+                size_hint_y: 1
+                disabled: True
+                on_text: root.on_apn_user(*args)
+        GridLayout:
+            cols: 2
+            size_hint_y: 0.2            
+            spacing: (dp(30), dp(5))
+            FieldLabel:
+                halign: 'right'
+                text: 'APN Password'
+            ValueField:
+                id: apn_pass
+                disabled: True
+                size_hint_y: 1
+                on_text: root.on_apn_pass(*args)
     """)
     def __init__(self, **kwargs):
         super(CellServiceView, self).__init__(**kwargs)
+        
+        cell_enable = self.ids.cell_enable
+        cell_enable.setControl(SettingsSwitch(active=self.rc_config.connectivityConfig.cellConfig.cell_enabled))
+        cell_enable.control.bind(active=self.on_cell_change)
+
+        cell_provider = self.ids.cell_provider
+        cell_provider.bind(on_setting=self.on_cell_provider)
+        apnSpinner = SettingsMappedSpinner()
+        
+        self.loadApnSettingsSpinner(apnSpinner)
+        self.apnSpinner = apnSpinner
+        cell_provider.setControl(apnSpinner)
+
+    def get_apn_setting_by_name(self, name):
+        providers = self.cellProviderInfo['cellProviders']
+        for apn_name in providers:
+            if apn_name == name:
+                return providers[apn_name]
+        return None
+        
+    def on_cell_change(self, instance, value):
+        self.rc_config.connectivityConfig.stale = True
+        self.connectivityConfig.cellConfig.cellEnabled = value
+
+    def on_cell_provider(self, instance, value):
+        apnSetting = self.get_apn_setting_by_name(value)
+        knownProvider = False
+        if apnSetting:
+            self.apnHostField.text = apnSetting['apn_host']
+            self.apnUserField.text = apnSetting['apn_user']
+            self.apnPassField.text = apnSetting['apn_pass']
+            knownProvider = True
+
+        self.update_controls_state()
+        self.setCustomApnFieldsDisabled(knownProvider)
+        
+    def loadApnSettingsSpinner(self, spinner):
+        try:
+            json_data = open(os.path.join(self.base_dir, 'resource', 'settings', 'cell_providers.json'))
+            cellProviderInfo = json.load(json_data)
+            apnMap = {}
+            apnMap['custom'] = self.customApnLabel
+
+            for name in cellProviderInfo['cellProviders']:
+                apnMap[name] = name
+
+            spinner.setValueMap(apnMap, self.customApnLabel)
+            self.cellProviderInfo = cellProviderInfo
+        except Exception as detail:
+            print('Error loading cell providers ' + str(detail))
+        
 
     def on_setup_config(self, instance, value):
         self.ids.next.disabled = False
