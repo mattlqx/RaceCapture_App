@@ -75,6 +75,7 @@ class InfoView(Screen):
     setup_config = ObjectProperty()
     preset_manager = ObjectProperty()
 
+    base_dir = StringProperty()
     next_text = StringProperty('Next')
     next_icon = StringProperty(u'\uf0a9')
     background_source = StringProperty()
@@ -126,7 +127,7 @@ class InfoView(Screen):
         msg = FieldLabel(halign='center', text=msg)
         view.add_widget(msg)
         view.open()
-        Clock.schedule_once(lambda dt: done(), 2.0)
+        Clock.schedule_once(lambda dt: done(), 0.0)
 
     def write_rcp_config(self, info_msg, callback):
         def timeout(dt):
