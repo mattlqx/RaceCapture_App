@@ -24,7 +24,8 @@
         {
             "key": "tracks",
             "title" : "Tracks",
-            "complete": false
+            "complete": false,
+            "requiresFlag": "tracks"
         },
         {
             "key": "podium",
@@ -34,7 +35,8 @@
         {
             "key": "cellservice",
             "title" : "Cell Service",
-            "complete": false
+            "complete": false,
+            "requiresFlag": "cell"
         }, 
 		{
             "key": "tour",

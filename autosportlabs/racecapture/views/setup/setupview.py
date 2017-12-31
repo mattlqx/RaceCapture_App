@@ -170,6 +170,23 @@ class SetupView(Screen):
 
         self._show_next_screen()
 
+    def _adjust_steps(self):
+        # adjust steps based on device capabilities
+        rc_config = self._rc_config
+        if not rc_config.loaded:
+            return
+
+        steps_to_remove = []
+        setup_steps = self._setup_config['steps']
+        for s in setup_steps:
+            requires_flag = s.get('requiresFlag', None)
+            if requires_flag is not None:
+                if not rc_config.capabilities.has_flag(requires_flag):
+                    steps_to_remove.append(s['key'])
+
+        for s in steps_to_remove:
+            self._remove_step(s)
+
     def _remove_step(self, key):
         step = self._steps.get(key)
         if step is not None:
@@ -180,18 +197,6 @@ class SetupView(Screen):
                 if s['key'] == key:
                     setup_steps.remove(s)
                     break
-
-    def _adjust_steps(self):
-        # adjust the list of steps as needed,
-        # typically based on the capabilities of the device
-        rc_config = self._rc_config
-        if not rc_config.loaded:
-            return
-
-        # remove the cellular configuration step if device
-        # doesn't support cellular
-        if not rc_config.capabilities.has_cellular:
-            self._remove_step('cellservice')
 
     def _show_next_screen(self):
         self._adjust_steps()
