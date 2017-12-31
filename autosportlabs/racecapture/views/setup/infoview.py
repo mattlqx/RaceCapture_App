@@ -127,7 +127,7 @@ class InfoView(Screen):
         msg = FieldLabel(halign='center', text=msg)
         view.add_widget(msg)
         view.open()
-        Clock.schedule_once(lambda dt: done(), 0.0)
+        Clock.schedule_once(lambda dt: done(), 2.0)
 
     def write_rcp_config(self, info_msg, callback):
         def timeout(dt):
