@@ -15,6 +15,9 @@ def addDataFiles():
         if file[0].endswith('.kv') | file[0].endswith('.ttf') | file[0].startswith('defaults/') | file[0].startswith('defaults\\')| file[0].startswith('resource/') | file[0].startswith('resource\\') | (file[0] == 'LICENSE') | (file[0] == 'CHANGELOG.txt'):
             print "Adding datafile: " + file[0]
             extraDatas.append(file)
+    allFiles = Tree('./windows')
+    for file in allFiles:
+        extraDatas.append(file)
     return extraDatas
 
 a = Analysis(['..//main.py'],
