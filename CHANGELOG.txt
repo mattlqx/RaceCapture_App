@@ -5,6 +5,7 @@
 * Core: improve spacing / proportions for iOS
 * Core: Gracefully handle statusview errors when status values aren't available
 * Core: Fix runtime error: cannot release un-acquired lock
+* Core: Include missing msvcr100.dll for windows platform
 * Dashboard: Save preferences faster when changing dashboard gauges
 * Dashboard: Save preferences if you un-set a dashboard gauge
 * Dashboard: Fix 'division by zero' error if you select a channel with no range defined (like Interval)
