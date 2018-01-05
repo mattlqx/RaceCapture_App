@@ -115,7 +115,7 @@ The script will create the .App file and .dmg for distribution.
     python main.py
 
 ## dev installation (Raspberry Pi)
-1. Currently needs Kivy Master (1.10.1) to work around window provider issue (see https://github.com/kivy/kivy/issues/5360)
+1. If installing on Raspberry Stretch you need Kivy Master (1.10.1) to work around window provider issue (see https://github.com/kivy/kivy/issues/5360)
 1. Cython 0.23 required
 
 ## Buildozer android APK build/install (Linux only)
