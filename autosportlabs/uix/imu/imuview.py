@@ -110,13 +110,14 @@ class ImuView(BoxLayout):
             # obj.material.shininess = 1.0
 
         self.renderer.render(scene, camera)
-        self.add_widget(self.renderer)
         self.renderer.bind(size=self._adjust_aspect)
+        Clock.schedule_once(lambda dt: self.add_widget(self.renderer), 1.0)
+
 
     def _adjust_aspect(self, instance, value):
         rsize = self.renderer.size
-        width = rsize[0]
-        height = rsize[1]
+        width = max(1, rsize[0])
+        height = max(1, rsize[1])
         if height == 0:
             return
         self.renderer.camera.aspect = width / float(height)
