@@ -86,6 +86,10 @@ class ImuView(BoxLayout):
     def _setup_object(self):
 
         self.clear_widgets()
+        if is_ios():  # TODO enable this when iOS bug is resolved
+            self.add_widget(Label(text='3D render currently disabled\nfor iOS', halign='center'))
+            return
+
         shader_file = resource_find(os.path.join('resource', 'models', 'shaders.glsl'))
         obj_path = resource_find(self.model_path)
 
@@ -113,10 +117,7 @@ class ImuView(BoxLayout):
 
         self.renderer.render(scene, camera)
         self.renderer.bind(size=self._adjust_aspect)
-        if not is_ios():  # TODO enable this when iOS bug is resolved
-            Clock.schedule_once(lambda dt: self.add_widget(self.renderer))
-        else:
-            self.add_widget(Label(text='3D render currently disabled\nfor iOS', halign='center'))
+        Clock.schedule_once(lambda dt: self.add_widget(self.renderer))
 
 
     def _adjust_aspect(self, instance, value):
