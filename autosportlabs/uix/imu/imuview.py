@@ -87,7 +87,6 @@ class ImuView(BoxLayout):
 
         self.clear_widgets()
         if is_ios():  # TODO enable this when iOS bug is resolved
-            self.add_widget(Label(text='3D render currently disabled\nfor iOS', halign='center'))
             return
 
         shader_file = resource_find(os.path.join('resource', 'models', 'shaders.glsl'))
