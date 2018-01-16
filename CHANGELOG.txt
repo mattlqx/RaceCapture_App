@@ -37,6 +37,8 @@
 * Setup: Add Analog Channel presets
 * Setup: add 1.5 pulse per revolution in timer config
 * Setup: Prevent RaceTiming switches from flipping incorrectly on subsequent config reads
+* iOS: Prevent device from sleeping when app is active
+* iOS: Allow iTunes access to Application documents directory so logfile exports can be accessed
 
 ==1.11.0==
 * Setup: Add CAN termination control options
