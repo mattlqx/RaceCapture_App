@@ -67,6 +67,7 @@ class ChannelNameSelectorView(BoxLayout):
         self.register_event_type('on_channels_updated')
         self.register_event_type('on_channel')
         self.bind(channel_type=self.on_channel_type)
+        self.initialized = False
 
     def on_filter_list(self, instance, value):
         self.ids.channel_name.filterList = value
@@ -81,11 +82,15 @@ class ChannelNameSelectorView(BoxLayout):
     def setValue(self, value):
         self.channel_config = value
         self.set_channel_name(value.name)
+        self.initialized = True
 
     def set_channel_name(self, name):
         self.ids.channel_name.text = str(name)
 
     def on_channel_selected(self, instance, value):
+        if self.initialized == False:
+            return
+
         channel_meta = self._runtime_channels.findChannelMeta(value, None)
         if channel_meta is not None:
             self.channel_config.name = channel_meta.name
