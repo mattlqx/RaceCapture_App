@@ -152,41 +152,44 @@ class ConfigView(Screen):
             padding: [sp(10), sp(10), 0, 0]
             id: content
             orientation: 'vertical'
-            BoxLayout:
-                size_hint_y: 0.3
-                InfoFieldLabel:
-                    text: 'Connect your device'
-                Widget:
-                    size_hint_x: None
-                    width: max(dp(150), 200)                                        
+            Widget:
+                size_hint_y: 0.15
             BoxLayout:
                 orientation: 'horizontal'
-                size_hint_y: 0.4
-                padding: (30, 30)
-                spacing: 30
+                size_hint_y: 0.3
+                padding: (dp(30), dp(15))
+                spacing: dp(30)
                 ConfigFeatureButton:
                     id: read
                     title: 'Read'
-                    icon: '\357\202\223'
+                    icon: u'\uf019'
                     on_press: root.readConfig()
                 ConfigFeatureButton:
                     id: open
                     title: 'Open'
-                    icon: '\357\204\225'
+                    icon: u'\uf07c'
                     on_press: root.openConfig()
                 Widget:
                     size_hint_x: None
-                    width: max(dp(150), 200)                    
+                    width: max(dp(150), 200)
             BoxLayout:
+                orientation: 'horizontal'
                 size_hint_y: 0.3
-                InfoFieldLabel:
-                    text: 'Or open a configuration'
+                padding: (dp(30), dp(15))
+                spacing: dp(30)
+                ConfigFeatureButton:
+                    id: first_time_setup
+                    title: 'First time Setup'
+                    icon: u'\uf138'
+                    on_press: root._on_first_time_setup()
                 Widget:
                     size_hint_x: None
-                    width: max(dp(150), 200)                                        
-                
-                    
+                    width: max(dp(150), 200)
+
+            Widget:
+                size_hint_y: 0.15
     """)
+
     # file save/load
     loaded = BooleanProperty(False)
     writeStale = BooleanProperty(False)
@@ -222,6 +225,7 @@ class ConfigView(Screen):
         self.register_event_type('on_config_modified')
         self.register_event_type('on_read_config')
         self.register_event_type('on_write_config')
+        self.register_event_type('on_show_main_view')
 
         self._sn = ''
 
@@ -229,6 +233,9 @@ class ConfigView(Screen):
             self._sn = self.rc_config.versionConfig.serial
 
         self.ids.menu.bind(selected_node=self.on_select_node)
+
+    def on_show_main_view(self, name):
+        pass
 
     def on_config_written(self, *args):
         self.writeStale = False
@@ -293,6 +300,9 @@ class ConfigView(Screen):
             for view in self.configViews:
                 view.dispatch('on_config_updated', config)
         self._reset_stale()
+
+    def _on_first_time_setup(self):
+        self.dispatch('on_show_main_view', 'setup')
 
     def init_screen(self):
         self.createConfigViews()

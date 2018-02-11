@@ -162,6 +162,8 @@ class SetupView(Screen):
         self._setup_config = setup_config
 
     def init_view(self, *args):
+        self._steps = {}
+        self.ids.steps.clear_widgets()
         steps = self._setup_config['steps']
         for step in steps:
             content = SetupItem(title=step['title'], complete=step['complete'])
