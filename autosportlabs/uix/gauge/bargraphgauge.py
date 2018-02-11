@@ -115,6 +115,7 @@ class BarGraphGauge(AnchorLayout):
             else:
                 channel_range = (maxval - minval)
             pct = 0 if channel_range == 0 else abs(value) / channel_range
+            pct = max(-1.0, min(1.0, pct))
             if self._zero_centered:
                 center = self.width / 2.0
                 width = center * pct
