@@ -24,6 +24,7 @@ from kivy.app import Builder
 from kivy.uix.gridlayout import GridLayout
 from kivy.logger import Logger
 from kivy.properties import StringProperty, ObjectProperty
+from kivy.clock import Clock
 import os
 import json
 from utils import *
@@ -63,7 +64,6 @@ class CellSettingsView(BoxLayout):
                         padding: (dp(5),0)                                            
                     ValueField:
                         id: apn_host
-                        on_text: root.on_apn_host(*args)
                 GridLayout:
                     padding: (0, dp(5))
                     cols: 2
@@ -74,7 +74,6 @@ class CellSettingsView(BoxLayout):
                     ValueField:
                         id: apn_user
                         size_hint_y: 1
-                        on_text: root.on_apn_user(*args)
                 GridLayout:
                     padding: (0, dp(5))
                     cols: 2
@@ -85,7 +84,6 @@ class CellSettingsView(BoxLayout):
                     ValueField:
                         id: apn_pass
                         size_hint_y: 1
-                        on_text: root.on_apn_pass(*args)    
 """)
 
     CUSTOM_APN = 'Custom APN'
@@ -101,15 +99,19 @@ class CellSettingsView(BoxLayout):
     def on_modified(self):
         pass
 
-    def on_rc_config(self, instance, value):
-        self.init_view()
-
-    def on_base_dir(self, instance, value):
-        self.init_view()
-
-    def init_view(self):
+    def init_view(self, rc_config):
+        self.rc_config = rc_config
         if None in [self.base_dir, self.rc_config]:
-            return
+            raise Exception('Invalid state for cellular config view')
+
+
+        def init_listeners(dt):
+            # We have to enable listeners later b/c Kivy seems to be triggering
+            # the event internally, probably around widget setup,
+            # causing on_modified to trigger
+            self.ids.apn_host.bind(text=self.on_apn_host)
+            self.ids.apn_user.bind(text=self.on_apn_user)
+            self.ids.apn_pass.bind(text=self.on_apn_pass)
 
         cell_enable = self.ids.cell_enable
         cell_enable.setControl(SettingsSwitch(active=self.rc_config.connectivityConfig.cellConfig.cellEnabled))
@@ -123,6 +125,7 @@ class CellSettingsView(BoxLayout):
         self.apn_spinner = apn_spinner
         cell_provider.setControl(apn_spinner)
         self._update_from_config()
+        Clock.schedule_once(init_listeners, 0.5)
         self.loaded = True
 
     def _update_from_config(self):
@@ -237,8 +240,7 @@ class CellularConfigView(GridLayout):
         self.ids.cell_settings.base_dir = base_dir
 
     def config_updated(self, rc_config):
-        self.ids.cell_settings.rc_config = rc_config
-        self.ids.cell_settings.init_view()
+        self.ids.cell_settings.init_view(rc_config)
 
     def modified(self):
         self.dispatch('on_modified')

@@ -232,12 +232,12 @@ class SetupView(Screen):
     def _select_view(self, step):
         screen = setup_factory(step['key'])
         screen.preset_manager = self._preset_manager
+        screen.base_dir = self._base_dir
         screen.rc_api = self._rc_api
         screen.settings = self._settings
         screen.rc_config = self._rc_config
         screen.track_manager = self._track_manager
         screen.setup_config = self._setup_config
-        screen.base_dir = self._base_dir
         return screen
 
     def _setup_complete(self, show_next_time=False):
