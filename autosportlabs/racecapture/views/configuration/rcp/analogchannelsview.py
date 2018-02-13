@@ -126,7 +126,7 @@ class AnalogChannel(BaseChannelView):
                     Slider:
                         id: smoothing
                         min: 0
-                        max: 99
+                        max: 100
                         on_value: root.on_smoothing(*args)
                     FieldLabel:
                         text: 'More'
@@ -220,10 +220,10 @@ class AnalogChannel(BaseChannelView):
         self.channelConfig = None
 
     def on_smoothing(self, instance, value):
-        self.ids.smoothing_value.text = str(int(value))
+        self.ids.smoothing_value.text = 'Max' if value > 99 else str(int(value))
         try:
             if self.channelConfig:
-                alpha = (100.0 - float(value)) * .01
+                alpha = max(0.005, (100.0 - float(value)) * .01)
                 self.channelConfig.alpha = alpha
                 self.channelConfig.stale = True
                 self.dispatch('on_modified', self.channelConfig)
@@ -295,7 +295,7 @@ class AnalogChannel(BaseChannelView):
             check_linear.active = False
             check_mapped.active = True
 
-        self.ids.smoothing.value = 100 - (channelConfig.alpha * 100.0)
+        self.ids.smoothing.value = round(100 - (channelConfig.alpha * 100.0))
         self.ids.linearscaling.text = str(channelConfig.linearScaling)
         self.ids.linearoffset.text = str(channelConfig.linearOffset)
         map_editor = self.ids.map_editor

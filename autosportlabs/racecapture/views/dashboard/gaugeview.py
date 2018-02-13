@@ -52,11 +52,11 @@ class GaugeView(DashboardScreen):
 
     def _find_active_gauges(self):
         return list(kvFindClass(self, Gauge))
-        
+
     def on_enter(self):
         if not self._initialized:
             self._init_view()
-        super(GaugeView, self).on_enter()            
+        super(GaugeView, self).on_enter()
 
     def _init_view(self):
         dataBus = self._databus
@@ -128,17 +128,17 @@ GAUGE_VIEW_3x_KV = """
             anchor_x: 'center'
             RoundGauge:
                 size_hint_x: 0.45
-                rcid: 'center'
+                rcid: '3x_center'
         AnchorLayout:
             anchor_x: 'left'
             RoundGauge:
                 size_hint_x: 0.3
-                rcid: 'left'
+                rcid: '3x_left'
         AnchorLayout:
             anchor_x: 'right'
             RoundGauge:
                 size_hint_x: 0.3
-                rcid: 'right'
+                rcid: '3x_right'
 """
 
 class GaugeView3x(GaugeView):
@@ -151,12 +151,12 @@ GAUGE_VIEW_2x_KV = """
             anchor_x: 'left'
             RoundGauge:
                 size_hint_x: 0.5
-                rcid: 'left'
+                rcid: '2x_left'
         AnchorLayout:
             anchor_x: 'right'
             RoundGauge:
                 size_hint_x: 0.5
-                rcid: 'right'
+                rcid: '2x_right'
 """
 
 class GaugeView2x(GaugeView):

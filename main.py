@@ -20,7 +20,7 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "1.12.0"
+__version__ = "1.12.1"
 import sys
 import os
 
@@ -414,6 +414,7 @@ class RaceCaptureApp(App):
                                  status_pump=self._status_pump)
         config_view.bind(on_read_config=self.on_read_config)
         config_view.bind(on_write_config=self.on_write_config)
+        config_view.bind(on_show_main_view=lambda instance, view: self.switchMainView(view))
         self.config_listeners.append(config_view)
         self.tracks_listeners.append(config_view)
         return config_view
@@ -453,6 +454,7 @@ class RaceCaptureApp(App):
                                base_dir=self.base_dir,
                                rc_api=self._rc_api,
                                rc_config=self.rc_config)
+        setup_view.bind(on_setup_complete=lambda x: self._show_preferred_view())
         return setup_view
 
     def init_view_builders(self):
@@ -523,7 +525,6 @@ class RaceCaptureApp(App):
         setup_enabled = self.settings.userPrefs.get_pref_bool('setup', 'setup_enabled')
         if setup_enabled:
             setup_view = self._get_main_screen('setup')
-            setup_view.bind(on_setup_complete=lambda x: self._show_preferred_view())
             self._show_main_view('setup')
         else:
             self._show_preferred_view()

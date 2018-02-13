@@ -65,8 +65,8 @@ class CellServiceView(InfoView):
     def __init__(self, **kwargs):
         super(CellServiceView, self).__init__(**kwargs)
 
-    def on_rc_config(self, instance, value):
-        self.ids.cell_settings.rc_config = value
+    def on_rc_config(self, instance, rc_config):
+        self.ids.cell_settings.init_view(rc_config)
 
     def on_base_dir(self, instance, value):
         self.ids.cell_settings.base_dir = value

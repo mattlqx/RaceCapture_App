@@ -34,7 +34,9 @@ import os
 from utils import is_ios
 
 class ImuView(BoxLayout):
-    ACCEL_SCALING = 1.0
+    ACCELX_SCALING = 5.0
+    ACCELY_SCALING = 1.0
+    ACCELZ_SCALING = 2.0
     GYRO_SCALING = 1.0
     ZOOM_SCALING = 0.2
     TOUCHWHEEL_ZOOM_MULTIPLIER = 1
@@ -42,7 +44,7 @@ class ImuView(BoxLayout):
     DRAG_CUSTOMIZE_THRESHOLD = 10
 
     position_x = NumericProperty(0)
-    position_y = NumericProperty(-0.15)
+    position_y = NumericProperty(-0.30)
     position_z = NumericProperty(-5.0)
     rotation_x = NumericProperty(-5)
     rotation_y = NumericProperty(180)
@@ -264,20 +266,20 @@ class ImuView(BoxLayout):
 
     def on_accel_x(self, instance, value):
         try:
-            self.imu_obj.pos.z = self.position_z + (value * ImuView.ACCEL_SCALING)
+            self.imu_obj.pos.z = self.position_z - (value * ImuView.ACCELX_SCALING)
         except AttributeError:
             pass
 
     def on_accel_y(self, instance, value):
         try:
-            self.imu_obj.pos.x = self.position_x - (value * ImuView.ACCEL_SCALING)
+            self.imu_obj.pos.x = self.position_x + (value * ImuView.ACCELY_SCALING)
         except AttributeError:
             pass
 
     def on_accel_z(self, instance, value):
         try:
             # subtract 1.0 to compensate for gravity
-            self.imu_obj.pos.y = self.position_y + ((value - 1.0) * ImuView.ACCEL_SCALING)
+            self.imu_obj.pos.y = self.position_y - ((value - 1.0) * ImuView.ACCELZ_SCALING)
         except AttributeError:
             pass
 

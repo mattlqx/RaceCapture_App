@@ -63,6 +63,7 @@ class BarGraphGauge(AnchorLayout):
     color = ListProperty([1, 1, 1, 0.5])
     label_color = ListProperty([1, 1, 1, 1.0])
     orientation = StringProperty('left-right')
+    precision = NumericProperty()
 
     def __init__(self, **kwargs):
         self._orientation = BarGraphGauge.ORIENTATION_LEFT_RIGHT
@@ -70,9 +71,10 @@ class BarGraphGauge(AnchorLayout):
         super(BarGraphGauge, self).__init__(**kwargs)
         self.bind(pos=self._refresh_value)
         self.bind(size=self._refresh_value)
+        self.precision = 2
 
     def on_precision(self, instance, value):
-        self._refresh_format()
+        self._value_formatter = '{:.' + str(value) + 'f}'
 
     def on_minval(self, instance, value):
         self._zero_centered = value < 0
@@ -104,8 +106,9 @@ class BarGraphGauge(AnchorLayout):
         value = self.value
         width = 0
         x = 0
+        text = ''
         if value is None:
-            value = '- - -'
+            text = '- - -'
         else:
             minval = self.minval
             maxval = self.maxval
@@ -115,6 +118,7 @@ class BarGraphGauge(AnchorLayout):
             else:
                 channel_range = (maxval - minval)
             pct = 0 if channel_range == 0 else abs(value) / channel_range
+            pct = max(-1.0, min(1.0, pct))
             if self._zero_centered:
                 center = self.width / 2.0
                 width = center * pct
@@ -128,8 +132,8 @@ class BarGraphGauge(AnchorLayout):
                     x = self.width - width
                 else:
                     x = 0  # BarGraphGauge.ORIENTATION_RIGHT_LEFT
-
+            text = self._value_formatter.format(value).rstrip('0').rstrip('.')
 
         stencil.width = width
         stencil.x = x
-        self.ids.value.text = '{:.2f}'.format(value).rstrip('0').rstrip('.')
+        self.ids.value.text = text
