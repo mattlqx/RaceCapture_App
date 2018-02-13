@@ -1,3 +1,14 @@
+==1.12.1==
+* Setup: Ensure OBDII and CAN mapping channel settings (units, precision, min/max) are always persisted
+* Setup: Correct and normalize units for channel defaults
+* Setup: Increase smoothing range by 2X for analog sensors
+* Setup: Add first time setup button to main Setup page (accessed before unit is connected)
+* Setup: Fix grammar / spelling error on WiFi setup screen
+* Setup: Fix issue when write button starts flashing when navigating to wireless Setup
+* Analysis: Fix edge cases when graph handles invalid data
+* Dashboard: Ensure proper orientation for X/Y/Z axis on IMU gauge
+* Dashboard: Ensure gauge screen preferences are saved correctly for 2X, 3X and 5X gauge screens
+
 ==1.12.0==
 * Core: Add keyboard shortcuts for navigating app
 * Core: Improve exit button behavior on mobile
