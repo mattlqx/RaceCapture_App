@@ -1134,7 +1134,7 @@ class DataStore(object):
 
         c = self._conn.cursor()
         for row in c.execute('''SELECT s.session_id, d.LapCount, d.CurrentLap FROM sample s, 
-                             datapoint d WHERE s.session_id = ? AND d.sample_id = s.id LIMIT 1;''',
+                             datapoint d WHERE s.session_id = ? AND d.sample_id = s.id ORDER BY d.LapCount DESC LIMIT 1;''',
                              (session_id,)):
             return row[1] is not None and row[2] is not None
         return False

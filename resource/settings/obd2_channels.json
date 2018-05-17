@@ -112,7 +112,7 @@
 
 	}, {
 		"nm": "WheelSpeed",
-		"ut": "MPH",
+		"ut": "Kph",
 		"sys": 1,
 		"type": 3,
 		"prec": 2,

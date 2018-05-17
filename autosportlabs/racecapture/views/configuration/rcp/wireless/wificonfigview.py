@@ -85,7 +85,7 @@ Builder.load_string('''
         halign: 'center'
         font_size: dp(26)
     BaseLabel:
-        text: 'Use this mode to create a wireless network for your phone or table to connect to.'
+        text: 'Use this mode to create a wireless network for your mobile devices.'
         markup: True
         text_size: (self.parent.width, None)
         padding: [dp(20), 0]
