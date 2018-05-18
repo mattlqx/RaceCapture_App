@@ -279,7 +279,6 @@ class DashboardView(Screen):
         self._gps_sample = GpsSample()
         status_pump.add_listener(self.status_updated)
         self.alert_bar_height = 0
-        Clock.schedule_once(lambda dt: self.show_alert('PIT NOW', True, 5), 6.0)
 
     def show_alert(self, message, is_high_priority, timeout):
         self._show_alert(message, is_high_priority, timeout)
@@ -305,7 +304,7 @@ class DashboardView(Screen):
             anim.repeat = True
             anim.start(self.ids.alert_msg)
 
-        Clock.schedule_once(minimize, 5.0)
+        Clock.schedule_once(minimize, timeout)
 
 
 
@@ -375,9 +374,18 @@ class DashboardView(Screen):
             self._race_setup()
 
         self._rc_api.add_connect_listener(self._on_rc_connect)
+        self._rc_api.addListener('msg', self._on_alert_msg)
         self._initialized = True
 
         Clock.schedule_once(lambda dt: HelpInfo.help_popup('dashboard_gauge_help', self, arrow_pos='right_mid'), 2.0)
+
+    def _on_alert_msg(self, alert_msg):
+        msg = alert_msg.get('msg')
+        if msg:
+            msg = msg.get('msg')
+            self.show_alert('{}'.format(msg), True, 2.0)
+        else:
+            Logger.warning('DashboardView: got malformed alert message: {}'.format(alert_msg))
 
     def _update_screens(self, new_screens):
         """

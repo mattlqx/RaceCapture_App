@@ -225,6 +225,22 @@ class RcpApi:
         if listeners:
             listeners.discard(callback)
 
+    def _dispatch_message(self, msg_json):
+        for messageName in msg_json.keys():
+            Logger.trace('RCPAPI: processing message ' + messageName)
+            listeners = self.msgListeners.get(messageName, None)
+            if listeners:
+                for listener in listeners:
+                    try:
+                        listener(msg_json)
+                    except Exception as e:
+                        Logger.error('RCPAPI: Message Listener Exception for')
+                        Logger.debug(traceback.format_exc())
+                break
+
+    def inject_message(self, msg_json):
+        self._dispatch_message(msg_json)
+
     def msg_rx_worker(self):
         Logger.info('RCPAPI: msg_rx_worker starting')
         comms = self.comms
@@ -236,25 +252,15 @@ class RcpApi:
                 if msg:
                     # clean incoming string, and drop illegal characters
                     msg = unicode(msg, errors='ignore')
-                    msgJson = json.loads(msg, strict=False)
+                    msg_json = json.loads(msg, strict=False)
 
-                    if 's' in msgJson:
+                    if 's' in msg_json:
                         Logger.trace('RCPAPI: Rx: ' + str(msg))
                     else:
                         Logger.debug('RCPAPI: Rx: ' + str(msg))
                     Clock.schedule_once(lambda dt: self.on_rx(True))
                     error_count = 0
-                    for messageName in msgJson.keys():
-                        Logger.trace('RCPAPI: processing message ' + messageName)
-                        listeners = self.msgListeners.get(messageName, None)
-                        if listeners:
-                            for listener in listeners:
-                                try:
-                                    listener(msgJson)
-                                except Exception as e:
-                                    Logger.error('RCPAPI: Message Listener Exception for')
-                                    Logger.debug(traceback.format_exc())
-                            break
+                    self._dispatch_message(msg_json)
                     msg = ''
                 else:
                     sleep(NO_DATA_AVAILABLE_DELAY)
@@ -485,7 +491,7 @@ class RcpApi:
 
             if capabilities.has_gps:
                 cmdSequence.append(RcpCmd('gpsCfg', self.getGpsCfg))
-                
+
             if capabilities.has_imu:
                 cmdSequence.append(RcpCmd('imuCfg', self.getImuCfg))
 
