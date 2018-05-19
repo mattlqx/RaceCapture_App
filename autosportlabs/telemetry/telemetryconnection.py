@@ -316,7 +316,7 @@ class TelemetryConnection(asynchat.async_chat):
         self._data_bus.add_sample_listener(self._on_sample)
         self._data_bus.addMetaListener(self._on_meta)
         self.set_terminator("\n")
-        Clock.schedule_interval(lambda dt: self._fake_msg(), 10.0)
+        Clock.schedule_interval(lambda dt: self._fake_msg(), 5)
 
 
     # Event handler for when RCP sends data to app

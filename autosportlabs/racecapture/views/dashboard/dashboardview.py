@@ -164,6 +164,85 @@ class DashboardFactory(object):
                            status_pump=self._status_pump)
 
 
+class PopupAlertView(BoxLayout):
+    Builder.load_string("""
+<PopupAlertView>:
+    size_hint_x: None
+    width: dp(600)
+    #width: min(dp(600), root.width * 0.7)
+    pos_hint:{"center_x":0.5}
+    id: alertbar
+    canvas.before:
+        Color:
+            rgba: (1,0,0,0.8)
+        Rectangle:
+            size: self.size
+            pos: self.pos
+    size_hint_y: None
+    height: 0
+    orientation: 'vertical'
+    BoxLayout:
+        size_hint_y: 0.5
+        FieldLabel:
+            id: alert_msg
+            halign: 'center'
+            text: 'fff'
+            font_size: min(dp(90), self.height)
+    BoxLayout:
+        size_hint_y: 0.5
+        IconButton:
+            text: u'\uf00c'
+            id: alert_msg_yes
+            on_press: root._alert_msg_yes()
+        IconButton:
+            text: u'\uf00d'
+            id: alert_msg_no
+            on_press: root._alert_msg_no()
+    """)
+
+    def __init__(self, **kwargs):
+        super(PopupAlertView, self).__init__(**kwargs)
+        self.minimize = None
+        self.anim = None
+        self.timeout = 0
+
+    def _alert_msg_yes(self):
+        self._hide()
+
+
+    def _alert_msg_no(self):
+        self._hide()
+
+    def _hide(self, *args):
+        Clock.unschedule(self._hide)
+        if self.minimize is not None:
+            Clock.unschedule(self._minimize)
+        Animation(height=0, duration=0.5).start(self)
+        if self.anim is not None:
+            self.anim.repeat = False
+
+    def _minimize(self, *args):
+        Animation(height=self.height * DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT, duration=1.0, t=DashboardView.TRANSITION_STYLE).start(self)
+        Clock.schedule_once(self._hide, self.timeout * 2.0)
+
+    def show_alert(self, message, source, is_high_priority, timeout):
+        self._hide()
+        self.timeout = timeout
+        self.ids.alert_msg.text = message
+        target_height = self.parent.height * (DashboardView.ALERT_BAR_HEIGHT_URGENT_PCT if is_high_priority else DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT)
+        Animation(height=target_height, duration=0.5, t=DashboardView.TRANSITION_STYLE).start(self)
+
+        self.anim = None
+        if is_high_priority:
+            anim = Animation(color=(1, 1, 1, 0), duration=0.2) + Animation(color=(1, 1, 1, 0), duration=0.2)
+            anim += Animation(color=(1, 1, 1, 1), duration=0.2) + Animation(color=(1, 1, 1, 1), duration=0.2)
+            anim.repeat = True
+            anim.start(self.ids.alert_msg)
+            self.anim = anim
+
+        Clock.schedule_once(self._minimize, timeout)
+
+
 DASHBOARD_VIEW_KV = """
 <DashboardView>:
     AnchorLayout:
@@ -216,30 +295,14 @@ DASHBOARD_VIEW_KV = """
         AnchorLayout:
             anchor_x: 'center'
             anchor_y: 'bottom'
+            
             BoxLayout:
                 orientation: 'vertical'
-                BoxLayout:
-                    size_hint_x: None
-                    width: dp(500)
-                    pos_hint:{"center_x":0.5}
-                    id: alertbar
-                    canvas.before:
-                        Color:
-                            rgba: (1,0,0,0.8)
-                        Rectangle:
-                            size: self.size
-                            pos: self.pos
-                    size_hint_y: None
-                    height: 0
-                    FieldLabel:
-                        id: alert_msg
-                        halign: 'center'
-                        text: ''
-                        font_size: min(dp(90), self.height)
+                PopupAlertView:
+                    id: popup_alert
                 BoxLayout:
                     size_hint_y: None
                     height: dp(50)
-                
 """
 
 class DashboardView(Screen):
@@ -252,7 +315,7 @@ class DashboardView(Screen):
     AUTO_CONFIGURE_WAIT_PERIOD_DAYS = 1
     Builder.load_string(DASHBOARD_VIEW_KV)
     ALERT_BAR_HEIGHT_URGENT_PCT = 0.7
-    ALERT_BAR_HEIGHT_NORMAL_PCT = 0.1
+    ALERT_BAR_HEIGHT_NORMAL_PCT = 0.25
     ALERT_BAR_GROW_RATE = dp(20)
     ALERT_BAR_UPDATE_INTERVAL = 0.02
     TRANSITION_STYLE = 'in_out_expo'
@@ -279,34 +342,6 @@ class DashboardView(Screen):
         self._gps_sample = GpsSample()
         status_pump.add_listener(self.status_updated)
         self.alert_bar_height = 0
-
-    def show_alert(self, message, is_high_priority, timeout):
-        self._show_alert(message, is_high_priority, timeout)
-
-    def _show_alert(self, message, is_high_priority, timeout):
-        def hide(dt):
-            Animation(height=0, duration=0.5).start(self.ids.alertbar)
-            if anim is not None:
-                anim.stop_all(self.ids.alert_msg)
-
-        def minimize(dt):
-            Animation(height=self.height * DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT, duration=1.0, t=DashboardView.TRANSITION_STYLE).start(self.ids.alertbar)
-            Clock.schedule_once(hide, timeout)
-
-        self.ids.alert_msg.text = message
-        target_height = self.height * (DashboardView.ALERT_BAR_HEIGHT_URGENT_PCT if is_high_priority else DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT)
-        Animation(height=target_height, duration=0.5, t=DashboardView.TRANSITION_STYLE).start(self.ids.alertbar)
-
-        anim = None
-        if is_high_priority:
-            anim = Animation(color=(1, 1, 1, 0), duration=0.2) + Animation(color=(1, 1, 1, 0), duration=0.2)
-            anim += Animation(color=(1, 1, 1, 1), duration=0.2) + Animation(color=(1, 1, 1, 1), duration=0.2)
-            anim.repeat = True
-            anim.start(self.ids.alert_msg)
-
-        Clock.schedule_once(minimize, timeout)
-
-
 
     def status_updated(self, status):
         """
@@ -379,11 +414,11 @@ class DashboardView(Screen):
 
         Clock.schedule_once(lambda dt: HelpInfo.help_popup('dashboard_gauge_help', self, arrow_pos='right_mid'), 2.0)
 
-    def _on_alert_msg(self, alert_msg):
+    def _on_alert_msg(self, alert_msg, source):
         msg = alert_msg.get('msg')
         if msg:
             msg = msg.get('msg')
-            self.show_alert('{}'.format(msg), True, 2.0)
+            self.ids.popup_alert.show_alert('{}'.format(msg), source, True, 4.0)
         else:
             Logger.warning('DashboardView: got malformed alert message: {}'.format(alert_msg))
 
