@@ -152,7 +152,8 @@ class FirmwareUpdateView(BaseConfigView):
             else:
                 alertPopup('Error Loading', 'No firmware file selected')
         except Exception as detail:
-            alertPopup('Error Loading', 'Failed to Load Firmware:\n\n' + str(detail))
+            alertPopup('Error Loading', 'Failed to Load Firmware:\n\n{}'.format(detail))
+            Logger.error(traceback.format_exc())
 
         self._restart_json_serial()
         self.ids.fw_progress.value = ''
