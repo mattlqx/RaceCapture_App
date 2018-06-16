@@ -40,6 +40,7 @@ from autosportlabs.racecapture.views.util.alertview import alertPopup
 from asl_f4_loader import fw_update
 from time import sleep
 from threading import Thread
+import traceback
 
 FIRMWARE_UPDATE_VIEW_KV = 'autosportlabs/racecapture/views/configuration/rcp/firmwareupdateview.kv'
 
