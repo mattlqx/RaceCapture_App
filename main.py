@@ -109,6 +109,7 @@ from autosportlabs.racecapture.config.rcpconfig import RcpConfig, VersionConfig
 from autosportlabs.racecapture.databus.databus import DataBusFactory, DataBusPump
 from autosportlabs.racecapture.status.statuspump import StatusPump
 from autosportlabs.racecapture.api.rcpapi import RcpApi
+from autosportlabs.racecapture.api.apicontext import ApiDispatcher
 
 class RaceCaptureApp(App):
 
@@ -631,7 +632,7 @@ class RaceCaptureApp(App):
         self.status_bar.dispatch('on_tele_status', ToolbarView.TELEMETRY_ERROR)
 
     def telemetry_api_msg(self, instance, msg):
-        self._rc_api.inject_message(msg)
+        ApiDispatcher.get_instance().dispatch_msg(msg, instance)
 
     def _on_preference_change(self, instance, section, key, value):
         """Called any time the app preferences are changed

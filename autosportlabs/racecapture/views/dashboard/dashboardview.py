@@ -205,12 +205,20 @@ class PopupAlertView(BoxLayout):
         self.minimize = None
         self.anim = None
         self.timeout = 0
+        self.source = None
+
+    def _send_api_alert_msg(self, msg):
+        self.source.send_api_msg({'msg':{'id':1234, 'pri':1, 'msg':msg, 'src':2}})
+
+    def _send_api_alert_msg_ack(self, msg_id):
+        self.source.send_api_msg({'msgAck':{'id':msg_id}})
 
     def _alert_msg_yes(self):
+        self._send_api_alert_msg('Yes')
         self._hide()
 
-
     def _alert_msg_no(self):
+        self._send_api_alert_msg('No')
         self._hide()
 
     def _hide(self, *args):
@@ -225,10 +233,14 @@ class PopupAlertView(BoxLayout):
         Animation(height=self.height * DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT, duration=1.0, t=DashboardView.TRANSITION_STYLE).start(self)
         Clock.schedule_once(self._hide, self.timeout * 2.0)
 
-    def show_alert(self, message, source, is_high_priority, timeout):
+    def show_alert(self, message, source, is_high_priority, msg_id, timeout):
         self._hide()
         self.timeout = timeout
+        self.source = source
         self.ids.alert_msg.text = message
+
+        self.ids.alert_msg_no.size_hint = (1.0, 1.0) if message.endswith('?') else (0.0, 0.0)
+
         target_height = self.parent.height * (DashboardView.ALERT_BAR_HEIGHT_URGENT_PCT if is_high_priority else DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT)
         Animation(height=target_height, duration=0.5, t=DashboardView.TRANSITION_STYLE).start(self)
 
@@ -241,6 +253,8 @@ class PopupAlertView(BoxLayout):
             self.anim = anim
 
         Clock.schedule_once(self._minimize, timeout)
+
+        self._send_api_alert_msg_ack(msg_id)
 
 
 DASHBOARD_VIEW_KV = """
@@ -417,8 +431,10 @@ class DashboardView(Screen):
     def _on_alert_msg(self, alert_msg, source):
         msg = alert_msg.get('msg')
         if msg:
-            msg = msg.get('msg')
-            self.ids.popup_alert.show_alert('{}'.format(msg), source, True, 4.0)
+            alert_msg = msg.get('msg')
+            pri = msg.get('pri') == 1
+            msg_id = msg.get('id')
+            self.ids.popup_alert.show_alert('{}'.format(alert_msg), source, pri, msg_id, 4.0)
         else:
             Logger.warning('DashboardView: got malformed alert message: {}'.format(alert_msg))
 

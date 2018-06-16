@@ -220,9 +220,6 @@ class RcpApi:
     def _dispatch_message(self, msg_json):
         ApiDispatcher.get_instance().dispatch_msg(msg_json, self)
 
-    def inject_message(self, msg_json):
-        self._dispatch_message(msg_json)
-
     def msg_rx_worker(self):
         Logger.info('RCPAPI: msg_rx_worker starting')
         comms = self.comms

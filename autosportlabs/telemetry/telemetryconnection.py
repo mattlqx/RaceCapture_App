@@ -51,7 +51,8 @@ class TelemetryManager(EventDispatcher):
     data_connected = BooleanProperty(False)
 
     def __init__(self, data_bus, device_id=None, host=None, port=None, **kwargs):
-        self.host = 'telemetry.podium.live'
+        # self.host = 'telemetry.podium.live'
+        self.host = 'localhost'
         self.port = 8080
         self.connection = None
         self._connection_process = None
@@ -104,6 +105,11 @@ class TelemetryManager(EventDispatcher):
         if self.telemetry_enabled and value is not None:
             Logger.info("TelemetryManager: Got channels")
             self.start()
+
+    def send_api_msg(self, msg):
+        json_msg = json.dumps(msg)
+        print('the sjon msg {}'.format(json_msg))
+        self.connection.send_msg(json_msg)
 
     # Event handler for when self.device_id changes, need to restart connection
     def on_device_id(self, instance, value):
@@ -316,7 +322,7 @@ class TelemetryConnection(asynchat.async_chat):
         self._data_bus.add_sample_listener(self._on_sample)
         self._data_bus.addMetaListener(self._on_meta)
         self.set_terminator("\n")
-        Clock.schedule_interval(lambda dt: self._fake_msg(), 5)
+        # Clock.schedule_interval(lambda dt: self._fake_msg(), 10)
 
 
     # Event handler for when RCP sends data to app
