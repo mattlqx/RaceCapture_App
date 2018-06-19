@@ -27,19 +27,43 @@ from kivy.metrics import dp
 from kivy.graphics import Color
 from utils import kvFind
 from fieldlabel import FieldLabel
-from kivy.properties import BoundedNumericProperty, StringProperty, ObjectProperty
+from kivy.properties import BoundedNumericProperty, StringProperty, ObjectProperty, NumericProperty
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge, SingleChannelGauge
 from autosportlabs.racecapture.views.util.viewutils import format_laptime
+from autosportlabs.uix.gauge.gaugeframe import GaugeFrame
+MIN_LAP_TIME = 0
+MAX_LAP_TIME = 99.999
 
-Builder.load_file('autosportlabs/racecapture/views/dashboard/widgets/laptime.kv')
 
-MIN_LAP_TIME=0
-MAX_LAP_TIME=99.999
-    
+from kivy.uix.label import Label
+class FramedLaptime(GaugeFrame):
+    def __init__(self, **kwargs):
+        super(FramedLaptime, self).__init__(**kwargs)
+        Clock.schedule_once(self._init)
+
+    def _init(self, *args):
+        gauge = self.raw_gauge = Laptime()
+        gauge.bind(title=self._on_title)
+
+    def _on_title(self, instance, value):
+        self.title = value
+
 class Laptime(SingleChannelGauge):
-    NULL_LAP_TIME='--:--.---'
+    Builder.load_string("""
+<Laptime>:
+    anchor_x: 'center'
+    anchor_y: 'center'
+    value_size: self.height
+    FieldLabel:
+        text: root.NULL_LAP_TIME
+        id: value
+        font_size: root.font_size
+    """)
+
+    NULL_LAP_TIME = '--:--.---'
     value = BoundedNumericProperty(0, min=MIN_LAP_TIME, max=MAX_LAP_TIME, errorhandler=lambda x: MAX_LAP_TIME if x > MAX_LAP_TIME else MIN_LAP_TIME)
-        
+    font_size = NumericProperty()
+
     def __init__(self, **kwargs):
         super(Laptime, self).__init__(**kwargs)
 
@@ -48,33 +72,46 @@ class Laptime(SingleChannelGauge):
         if view:
             view.text = format_laptime(value)
         self.update_colors()
-        
+
     def on_normal_color(self, instance, value):
         self.valueView.color = value
-        
+
 class CurrentLaptime(Gauge):
+    Builder.load_string("""
+<CurrentLaptime>:
+    anchor_x: 'center'
+    anchor_y: 'center'
+    value_size: self.height
+    FieldLabel:
+        text: root.NULL_LAP_TIME
+        id: value
+        halign: 'center'
+        font_size: root.font_size
+    """)
+
     _FLASH_INTERVAL = 0.25
     _FLASH_COUNT = 10
-    NULL_LAP_TIME='--:--.---'
+    NULL_LAP_TIME = '--:--.---'
     _elapsed_time = 0
     _lap_time = 0
     _predicted_time = 0
     _current_lap = 0
     _lap_count = 0
-    
+
     _new_lap = False
     _flash_count = 0
     _value_view = None
 
     halign = StringProperty(None)
     valign = StringProperty(None)
-    value = ObjectProperty(None)    
-            
+    value = ObjectProperty(None)
+    font_size = NumericProperty()
+
     def on_halign(self, instance, value):
-        self.valueView.halign = value 
-    
+        self.valueView.halign = value
+
     def on_valign(self, instance, value):
-        self.valueView.valign = value 
+        self.valueView.valign = value
 
     def on_normal_color(self, instance, value):
         self.valueView.color = value
@@ -83,7 +120,7 @@ class CurrentLaptime(Gauge):
         view = self.valueView
         if view:
             view.font_size = value
-    
+
     def on_data_bus(self, instance, value):
         data_bus = self.data_bus
         if data_bus:
@@ -96,26 +133,26 @@ class CurrentLaptime(Gauge):
 
     def set_lap_time(self, value):
         self._lap_time = value
-    
+
     def set_elapsed_time(self, value):
         self._elapsed_time = value
         self.update_value()
-    
+
     def set_predicted_time(self, value):
         self._predicted_time = value
         self.update_value()
-    
+
     def set_lap_count(self, value):
         if value > self._lap_count and self._current_lap > 0:
             self._new_lap = True
             self._flash_count = 0
             self.flash_value()
         self._lap_count = value
-    
+
     def set_current_lap(self, value):
         self._current_lap = value
         self.update_value()
-    
+
     def flash_value(self):
         self.value = self._lap_time if self._flash_count % 2 == 0 else ''
         self._flash_count += 1
@@ -123,13 +160,13 @@ class CurrentLaptime(Gauge):
             Clock.schedule_once(lambda dt: self.flash_value(), self._FLASH_INTERVAL)
         else:
             self._new_lap = False
-        
+
     """"
     Display logic:
     if we haven't completed a lap yet, only display elapsed time to give a stopwatch effect
     if we've completed a lap, flash last lap time for 5 seconds,
     then show predicted time, if present in stream. if not present, show last lap time statically
-    """ 
+    """
     def update_value(self):
         if not self._new_lap:
             if self._lap_count == 0:
@@ -139,7 +176,7 @@ class CurrentLaptime(Gauge):
                     self.value = self._predicted_time
                 else:
                     self.value = self._lap_time
-        
+
     @property
     def valueView(self):
         if not self._value_view:
