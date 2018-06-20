@@ -34,8 +34,6 @@ from autosportlabs.uix.gauge.gaugeframe import GaugeFrame
 MIN_LAP_TIME = 0
 MAX_LAP_TIME = 99.999
 
-
-from kivy.uix.label import Label
 class FramedLaptime(GaugeFrame):
     def __init__(self, **kwargs):
         super(FramedLaptime, self).__init__(**kwargs)

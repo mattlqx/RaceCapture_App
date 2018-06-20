@@ -62,16 +62,16 @@ RACE_STATUS_VIEW_KV = """
             
             BoxLayout:
                 orientation: 'horizontal'
-                size_hint_y: 0.6
+                size_hint_y: 0.7
                 BoxLayout:
                     orientation: 'vertical'
                     CurrentLaptime:
-                        size_hint_y: 0.6
+                        size_hint_y: 0.55
                         id: currentlaptime
                         font_size: self.height * 1.0
                         halign: 'right'
                     TimeDelta:
-                        size_hint_y: 0.4
+                        size_hint_y: 0.45
                         id: timedelta
                         font_size: self.height * 1
                         halign: 'right'
@@ -86,7 +86,7 @@ RACE_STATUS_VIEW_KV = """
                     alert_color: [0.2, 0.2, 0.2, 1.0]
                 
             Widget:
-                size_hint_y: 0.25
+                size_hint_y: 0.15
             BoxLayout:
                 orientation: 'horizontal'
                 Widget:
@@ -94,12 +94,9 @@ RACE_STATUS_VIEW_KV = """
                         
                 BoxLayout:
                     orientation: 'vertical'
-                                            
-                    Widget:
-                        size_hint_y: 0.125
-                        
+                                                                   
                     BoxLayout:
-                        size_hint_y: 0.35
+                        size_hint_y: 0.4
                         Widget:
                             size_hint_x: 0.3
                         GaugeFrame:
@@ -115,7 +112,7 @@ RACE_STATUS_VIEW_KV = """
                         size_hint_y: 0.05
                         
                     BoxLayout:
-                        size_hint_y: 0.35
+                        size_hint_y: 0.4
                         Widget:
                             size_hint_x: 0.3                        
                         GaugeFrame:
@@ -126,8 +123,6 @@ RACE_STATUS_VIEW_KV = """
                                 normal_color: [1.0, 1.0 , 0.0, 1.0]
                                 font_size: self.height * 1.0
 
-                    Widget:
-                        size_hint_y: 0.125
     
     
                     

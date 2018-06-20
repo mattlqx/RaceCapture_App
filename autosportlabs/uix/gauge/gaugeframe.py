@@ -20,9 +20,9 @@ GAUGE_FRAME_KV = """
                 texture: root.header.texture
   
         size_hint_y: None
-        height: dp(20)
+        height: dp(25)
         id: title
-        font_size: self.height * 0.7
+        font_size: self.height * 0.8
         text: '{}{}'.format(root.title, '' if root.units is None else ' ({})'.format(root.units))
         halign: 'right'
         padding: (5,5)

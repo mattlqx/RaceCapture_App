@@ -24,6 +24,7 @@ from fieldlabel import FieldLabel
 from kivy.app import Builder
 from utils import kvFind, kvFindClass
 from autosportlabs.racecapture.views.dashboard.widgets.laptime import Laptime
+from autosportlabs.racecapture.views.dashboard.widgets.timedelta import TimeDeltaGraph, TimeDelta
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import SingleChannelGauge, Gauge
 from autosportlabs.racecapture.views.dashboard.dashboardscreen import DashboardScreen
 
@@ -31,13 +32,17 @@ LAPTIME_VIEW_KV = """
 <LaptimeView>:
     BoxLayout:
         orientation: 'vertical'
+        TimeDeltaGraph:
+            id: timedelta_graph
+            channel: 'LapDelta'
+            size_hint_y: 0.15
         CurrentLaptime:
             size_hint_y: 0.3
             rcid: 'curLap'
             halign: 'center'
             normal_color: [1.0, 1.0 , 1.0, 1.0]
         BoxLayout:
-            size_hint_y: 0.55
+            size_hint_y: 0.4
             orientation: 'horizontal'
             AnchorLayout:
                 size_hint_x: 0.25
@@ -121,7 +126,7 @@ class LaptimeView(DashboardScreen):
     def on_enter(self):
         if not self._initialized:
             self._init_screen()
-        super(LaptimeView, self).on_enter()            
+        super(LaptimeView, self).on_enter()
 
     def _init_screen(self):
         dataBus = self._databus
