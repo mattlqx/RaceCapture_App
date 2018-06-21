@@ -23,6 +23,8 @@ kivy.require('1.10.0')
 
 from kivy.uix.label import Label
 from kivy.metrics import sp
+from kivy.app import Builder
+from kivy.clock import Clock
 
 class FieldLabel(Label):
     def __init__(self, **kwargs):
@@ -36,3 +38,33 @@ class FieldLabel(Label):
 
     def width_changed(self, instance, size):
         self.text_size = (size, None)
+
+class AutoShrinkFieldLabel(Label):
+    Builder.load_string("""
+<AutoShrinkFieldLabel>:
+    font_name: "resource/fonts/ASL_regular.ttf"
+    font_size: self.height
+    on_texture: root._change_font_size()
+    on_size: root._change_font_size()
+    #on_width: self._width_changed()
+    shorten: False
+    max_lines: 1
+    """)
+
+    def __init__(self, **kwargs):
+        super(AutoShrinkFieldLabel, self).__init__(**kwargs)
+
+    def _width_changed(self, instance, size):
+        self.text_size = (size, None)
+
+    def on_text(self, instance, value):
+        Clock.schedule_once(self._change_font_size, 0.1)
+
+    def _change_font_size(self, *args):
+        try:
+            if self.texture_size[0] > self.width:  # or v.texture_size[1] > v.height:
+                self.font_size -= 1
+                Clock.schedule_once(self._change_font_size, 0.1)
+        except Exception as e:
+            Logger.warn('Failed to change font size: {}'.format(e))
+

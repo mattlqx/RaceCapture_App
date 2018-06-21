@@ -17,7 +17,7 @@ GAUGE_FRAME_KV = """
             Rectangle:
                 pos: self.pos
                 size: self.size
-                texture: root.header.texture
+                texture: root.header_left.texture if root.halign == 'left' else root.header_right.texture
   
         size_hint_y: None
         height: dp(25)
@@ -26,40 +26,22 @@ GAUGE_FRAME_KV = """
         text: '{}{}'.format(root.title, '' if root.units is None else ' ({})'.format(root.units))
         halign: 'right'
         padding: (5,5)
-
-#    AnchorLayout:
-#        canvas.before:
-#            Color:
-#                rgba: ColorScheme.get_dark_background()
-#            Rectangle:
-#                pos: self.pos
-#                size: self.size
-#        #padding: (1,1)
-#        
-#        AnchorLayout:
-#            canvas.before:
-#                Color:
-#                    rgba: ColorScheme.get_background()
-#                Rectangle:
-#                    pos: self.pos
-#                    size: self.size          
-#            padding: [2,2]
-#            anchor_x: 'center'
-#            anchor_y: 'center'
-#            AnchorLayout:
-#                id: raw_gauge_container
+        halign: root.halign
 """
+
 class GaugeFrame(BoxLayout):
     Builder.load_string(GAUGE_FRAME_KV)
     minval = NumericProperty(0)
     maxval = NumericProperty(100)
+    halign = StringProperty('left')
     value = NumericProperty(0, allownone=True)
     value_type = NumericProperty()
     precision = NumericProperty(0, allownone=True)
     title = StringProperty()
     color_sequence = ObjectProperty()
     units = StringProperty(None, allownone=True)
-    header = CoreImage('resource/gauge/header.png')
+    header_left = CoreImage('resource/gauge/header_left.png')
+    header_right = CoreImage('resource/gauge/header_right.png')
     raw_gauge = ObjectProperty(None, allownone=True)
 
     def __init__(self, **kwargs):

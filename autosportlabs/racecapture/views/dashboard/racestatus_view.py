@@ -28,7 +28,6 @@ from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge
 from autosportlabs.racecapture.views.dashboard.widgets.imugauge import ImuGauge
 from autosportlabs.racecapture.views.dashboard.dashboardscreen import DashboardScreen
 from autosportlabs.racecapture.views.dashboard.widgets.trackmapgauge import TrackMapGauge
-from autosportlabs.racecapture.views.dashboard.widgets.laptime import FramedLaptime
 
 from kivy.core.image import Image as CoreImage
 
@@ -62,7 +61,8 @@ RACE_STATUS_VIEW_KV = """
             
             BoxLayout:
                 orientation: 'horizontal'
-                size_hint_y: 0.7
+                size_hint_y: None
+                height: dp(200)
                 BoxLayout:
                     orientation: 'vertical'
                     CurrentLaptime:
@@ -73,21 +73,23 @@ RACE_STATUS_VIEW_KV = """
                     TimeDelta:
                         size_hint_y: 0.45
                         id: timedelta
-                        font_size: self.height * 1
+                        font_size: self.height * 1.0
                         halign: 'right'
                         channel: 'LapDelta'
 
                 BigNumberView:
                     padding: [dp(10), 0, 0, 0]
                     rcid: 'bignumberview_laptime'
-                    size_hint_x: 0.25
+                    size_hint_x: 0.35
                     channel: 'CurrentLap'
                     warning_color: [0.2, 0.2, 0.2, 1.0]
                     alert_color: [0.2, 0.2, 0.2, 1.0]
                 
             Widget:
-                size_hint_y: 0.15
+                
             BoxLayout:
+                size_hint_y: None
+                height: dp(200)
                 orientation: 'horizontal'
                 Widget:
                     size_hint_x: 0.01
@@ -100,6 +102,7 @@ RACE_STATUS_VIEW_KV = """
                         Widget:
                             size_hint_x: 0.3
                         GaugeFrame:
+                            halign: 'right'
                             Laptime:
                                 channel: 'BestLap'
                                 id: lastlap2
@@ -116,6 +119,7 @@ RACE_STATUS_VIEW_KV = """
                         Widget:
                             size_hint_x: 0.3                        
                         GaugeFrame:
+                            halign: 'right'
                             Laptime:
                                 channel: 'LapTime'
                                 id: lastlap
@@ -131,7 +135,6 @@ RACE_STATUS_VIEW_KV = """
 class RaceStatusView(DashboardScreen):
     Builder.load_string(RACE_STATUS_VIEW_KV)
     track_status = StringProperty('Waiting for track')
-    header = CoreImage('resource/gauge/header.png')
 
     def __init__(self, databus, settings, track_manager, status_pump, **kwargs):
         super(RaceStatusView, self).__init__(**kwargs)

@@ -30,70 +30,52 @@ from autosportlabs.racecapture.views.dashboard.dashboardscreen import DashboardS
 
 LAPTIME_VIEW_KV = """
 <LaptimeView>:
+    padding: (5, 5)
     BoxLayout:
+        #padding: (10,10)
         orientation: 'vertical'
         TimeDeltaGraph:
+            #padding: (5,5)
             id: timedelta_graph
             channel: 'LapDelta'
-            size_hint_y: 0.15
-        CurrentLaptime:
-            size_hint_y: 0.3
-            rcid: 'curLap'
-            halign: 'center'
-            normal_color: [1.0, 1.0 , 1.0, 1.0]
+            size_hint_y: 0.2
         BoxLayout:
-            size_hint_y: 0.4
+            size_hint_y: 0.5
             orientation: 'horizontal'
-            AnchorLayout:
-                size_hint_x: 0.25
-                BigNumberView:
-                    rcid: 'bignumberview_laptime'
-                    size_hint: (0.8, 0.8)
-                    channel: 'CurrentLap'
-                    warning_color: [0.2, 0.2, 0.2, 1.0]
-                    alert_color: [0.2, 0.2, 0.2, 1.0]
-            BoxLayout:
-                orientation: 'vertical'
-                size_hint_x: 0.65
-                BoxLayout:
-                    size_hint_y: 0.1
-                TimeDelta:
-                    size_hint_y: 0.8
-                    rcid: 'delta'
-                    channel: 'LapDelta'
-                    halign: 'right'
-                    valign: 'middle'
-                BoxLayout:
-                    size_hint_y: 0.1
-            BoxLayout:
-                size_hint_x: 0.1
+            CurrentLaptime:
+                rcid: 'curLap'
+                halign: 'center'
+                valign: 'middle'
+                normal_color: [1.0, 1.0 , 1.0, 1.0]
+                    
         BoxLayout:
+            padding: (5, 5)
             orientation: 'horizontal'
-            size_hint_y: 0.15
+            size_hint_y: None
+            height: dp(150)
             spacing: self.height * 0.1
-            FieldLabel:
-                size_hint_x: 0.15
-                font_size: self.height * 0.5
-                halign: 'right'
-                text: 'Best'
-            Laptime:
-                rcid: 'bestLap'
-                channel: 'BestLap'
-                size_hint_x: 0.35
+            GaugeFrame:
                 halign: 'left'
-                normal_color: [1.0, 0.0 , 1.0, 1.0]
-            Laptime:
-                rcid: 'sector'
-                channel: 'SectorTime'
-                size_hint_x: 0.35
+                Laptime:
+                    channel: 'BestLap'
+                    normal_color: [1.0, 0.0 , 1.0, 1.0]
+                    font_size: self.height * 1.0
+                    halign: 'left'
+
+            BigNumberView:
+                size_hint_x: 0.3
+                rcid: 'bignumberview_laptime'
+                channel: 'CurrentLap'
+                warning_color: [0.2, 0.2, 0.2, 1.0]
+                alert_color: [0.2, 0.2, 0.2, 1.0]
+                    
+            GaugeFrame:
                 halign: 'right'
-                normal_color: [1.0, 1.0 , 0.0, 1.0]
-            FieldLabel:
-                size_hint_x: 0.15
-                font_size: self.height * 0.5
-                halign: 'left'
-                rcid: 'sector'
-                text: 'Sector'
+                Laptime:
+                    channel: 'LapTime'
+                    normal_color: [1.0, 1.0 , 0.0, 1.0]
+                    font_size: self.height * 1.0
+                    halign: 'right'
 """
 
 class LaptimeView(DashboardScreen):

@@ -26,25 +26,13 @@ from kivy.clock import Clock
 from kivy.metrics import dp
 from kivy.graphics import Color
 from utils import kvFind
-from fieldlabel import FieldLabel
+from fieldlabel import FieldLabel, AutoShrinkFieldLabel
 from kivy.properties import BoundedNumericProperty, StringProperty, ObjectProperty, NumericProperty
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import Gauge, SingleChannelGauge
 from autosportlabs.racecapture.views.util.viewutils import format_laptime
 from autosportlabs.uix.gauge.gaugeframe import GaugeFrame
 MIN_LAP_TIME = 0
-MAX_LAP_TIME = 99.999
-
-class FramedLaptime(GaugeFrame):
-    def __init__(self, **kwargs):
-        super(FramedLaptime, self).__init__(**kwargs)
-        Clock.schedule_once(self._init)
-
-    def _init(self, *args):
-        gauge = self.raw_gauge = Laptime()
-        gauge.bind(title=self._on_title)
-
-    def _on_title(self, instance, value):
-        self.title = value
+MAX_LAP_TIME = 99.99
 
 class Laptime(SingleChannelGauge):
     Builder.load_string("""
@@ -58,7 +46,7 @@ class Laptime(SingleChannelGauge):
         font_size: root.font_size
     """)
 
-    NULL_LAP_TIME = '--:--.---'
+    NULL_LAP_TIME = '--:--.--'
     value = BoundedNumericProperty(0, min=MIN_LAP_TIME, max=MAX_LAP_TIME, errorhandler=lambda x: MAX_LAP_TIME if x > MAX_LAP_TIME else MIN_LAP_TIME)
     font_size = NumericProperty()
 
@@ -83,13 +71,17 @@ class CurrentLaptime(Gauge):
     FieldLabel:
         text: root.NULL_LAP_TIME
         id: value
-        halign: 'center'
         font_size: root.font_size
+        shorten: False
+        max_lines: 1
+        on_texture: root._change_font_size()
+                
+        
     """)
 
     _FLASH_INTERVAL = 0.25
     _FLASH_COUNT = 10
-    NULL_LAP_TIME = '--:--.---'
+    NULL_LAP_TIME = '--:--.--'
     _elapsed_time = 0
     _lap_time = 0
     _predicted_time = 0
@@ -104,6 +96,18 @@ class CurrentLaptime(Gauge):
     valign = StringProperty(None)
     value = ObjectProperty(None)
     font_size = NumericProperty()
+
+    def _change_font_size(self, *args):
+        w = self.ids.value
+        texture_width = w.texture_size[0]
+        try:
+            if texture_width > w.width:
+                w.font_size -= 1
+                Clock.schedule_once(self._change_font_size, 0.1)
+                return
+
+        except Exception as e:
+            Logger.warn('Failed to change font size: {}'.format(e))
 
     def on_halign(self, instance, value):
         self.valueView.halign = value

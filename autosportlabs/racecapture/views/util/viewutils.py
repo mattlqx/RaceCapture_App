@@ -42,7 +42,7 @@ def format_laptime(time):
     if time == MIN_LAP_TIME:
         return NULL_LAP_TIME
     else:
-        return '{}:{}'.format(int_minute_value, '{0:06.3f}'.format(fraction_minute_value))
+        return '{}:{}'.format(int_minute_value, '{0:05.2f}'.format(fraction_minute_value))
 
 def clock_sequencer(items, start_delay=0.2, spread=0.2):
     start = start_delay

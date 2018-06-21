@@ -28,6 +28,7 @@ from kivy.metrics import dp, sp
 from kivy.graphics import Color
 from utils import kvFind
 from iconbutton import TileIconButton
+from fieldlabel import AutoShrinkFieldLabel, FieldLabel
 from kivy.clock import Clock
 from kivy.logger import Logger
 from kivy.properties import StringProperty, NumericProperty, ObjectProperty
@@ -46,26 +47,23 @@ class BigNumberView(CustomizableGauge):
         rect_color: root.tile_color
     BoxLayout:
         orientation: 'vertical'
-        Label:
+        AutoShrinkFieldLabel:
             id: value
             color: root.title_color
             size_hint_y: 0.8
-            on_texture: root.change_font_size()
-            font_size: self.height
-            font_name: "resource/fonts/ASL_light.ttf"
-        Label:
+            font_size: self.height * root.value_font_scale
+        FieldLabel:
             id: title
-            font_name: "resource/fonts/ASL_light.ttf"
             color: root.title_color
             size_hint_y: 0.1
             font_size: self.height
             text: root.title
+            halign: 'center'
         BoxLayout:
             size_hint_y: 0.1    
     """)
 
-    title_font_size = NumericProperty(DEFAULT_TITLE_FONT_SIZE)
-    value_font_size = NumericProperty(DEFAULT_VALUE_FONT_SIZE)
+    value_font_scale = NumericProperty(1.0)
 
     tile_color = ObjectProperty((0.2, 0.2, 0.2, 1.0))
     value_color = ObjectProperty((1.0, 1.0, 1.0, 1.0))
@@ -96,7 +94,7 @@ class BigNumberView(CustomizableGauge):
         self.ids.bg.rect_color = self.select_alert_color()
 
     def on_channel(self, instance, value):
-        self.valueView.font_size = DEFAULT_VALUE_FONT_SIZE
+        self.valueView.font_size = self.height * self.value_font_scale
         return super(BigNumberView, self).on_channel(instance, value)
 
     def update_title(self, channel, channel_meta):
@@ -104,12 +102,4 @@ class BigNumberView(CustomizableGauge):
             self.title = channel if channel else ''
         except Exception as e:
             Logger.warn('Failed to update digital gauge title: {}'.format(e))
-
-    def change_font_size(self):
-        valueView = self.valueView
-        try:
-            if valueView.texture_size[0] > valueView.width or valueView.texture_size[1] > valueView.height:
-                valueView.font_size -= 1
-        except Exception as e:
-            Logger.warn('Failed to change font size: {}'.format(e))
 

@@ -26,7 +26,7 @@ from kivy.uix.anchorlayout import AnchorLayout
 from kivy.metrics import dp
 from kivy.graphics import Color
 from utils import kvFind
-from fieldlabel import FieldLabel
+from fieldlabel import FieldLabel, AutoShrinkFieldLabel
 from kivy.properties import ListProperty, BoundedNumericProperty, ObjectProperty, BooleanProperty, StringProperty, NumericProperty
 from autosportlabs.racecapture.views.dashboard.widgets.gauge import SingleChannelGauge
 
@@ -38,25 +38,36 @@ DEFAULT_BEHIND_COLOR = [1.0, 0.65, 0.0 , 1.0]
 
 TIME_DELTA_GRAPH_KV = """
 <TimeDeltaGraph>:
+    padding: (0,0)
+    spacing: (0,0)
     orientation: 'horizontal'
     AnchorLayout:
-        size_hint_y: 0.8
-        RelativeLayout:
-            StencilView:
-                size_hint: (None, 1.0)
-                id: stencil
-                canvas.after:
-                    Color:
-                        rgba: root.color
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
-#        FieldLabel:
-#            text: str(root.value)
-#            font_size: min(dp(18), max(1,self.height * 1.0))
-#            color: root.label_color
-#            halign: 'center'
-#            bold: True
+        AnchorLayout:
+            size_hint_y: 0.75
+            RelativeLayout:
+                StencilView:
+                    size_hint: (None, 1.0)
+                    id: stencil
+                    canvas.after:
+                        Color:
+                            rgba: root.color
+                        Rectangle:
+                            pos: self.pos
+                            size: self.size
+        AutoShrinkFieldLabel:
+            canvas.before:
+                Color:
+                    rgba: root.color
+                RoundedRectangle:
+                    pos: self.pos
+                    radius: [self.height * .2,self.height * .2,self.height * .2,self.height * .2]
+                    size: self.size
+            size_hint_x: 0.3
+            id: delta_value
+            text: root.formatted_delta
+            font_size: self.height
+            color: [0,0,0,1]
+            bold: True
 """
 
 class TimeDeltaGraph(SingleChannelGauge):
@@ -67,6 +78,7 @@ class TimeDeltaGraph(SingleChannelGauge):
     maxval = NumericProperty(3.0)
     ahead_color = ObjectProperty(DEFAULT_AHEAD_COLOR)
     behind_color = ObjectProperty(DEFAULT_BEHIND_COLOR)
+    formatted_delta = StringProperty()
 
     def __init__(self, **kwargs):
         super(TimeDeltaGraph, self).__init__(**kwargs)
@@ -101,13 +113,23 @@ class TimeDeltaGraph(SingleChannelGauge):
         width = 0
         x = 0
 
-        center = self.width / 2.0
-        width = abs(pct - 0.5) * self.width
-        x = center - width if value > 0 else center
+        # Draw the bar, extending from either the left or right side of the center label
+        # ========(DELTA)
+        #         (DELTA)========
+        delta_value_width = self.ids.delta_value.width
+        # There seems to be a static 5 pixel offset fo the label,
+        # cannot identify where this is coming from. leave this for now.
+        MYSTERY_PIXEL_OFFSET = 5
+        label_offset = (delta_value_width * 0.5) - MYSTERY_PIXEL_OFFSET
+
+        center = self.width * 0.5
+        width = abs(pct - 0.5) * (self.width - delta_value_width)
+        x = center - width - label_offset if value > 0 else center + label_offset
 
         stencil.width = width
         stencil.x = x
         self.update_delta_color()
+        self.formatted_delta = u'{0:+1.1f}\u2206'.format(value)
 
 
 class TimeDelta(SingleChannelGauge):
@@ -116,7 +138,7 @@ class TimeDelta(SingleChannelGauge):
     anchor_x: 'center'
     anchor_y: 'center'
     FieldLabel:
-        text: '333' #root.NULL_TIME_DELTA    
+        text: root.NULL_TIME_DELTA    
         id: value
         font_size: root.height * 0.8
         color: [0.5, 0.5, 0.5, 1.0]    
