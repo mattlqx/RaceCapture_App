@@ -1,3 +1,6 @@
+==1.12.2==
+* Setup: Resolve firmware update error on certain Windows / OSX 
+instances
 ==1.12.1==
 * Setup: Ensure OBDII and CAN mapping channel settings (units, precision, min/max) are always persisted
 * Setup: Correct and normalize units for channel defaults
