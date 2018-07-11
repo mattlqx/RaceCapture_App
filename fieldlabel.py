@@ -25,6 +25,7 @@ from kivy.uix.label import Label
 from kivy.metrics import sp
 from kivy.app import Builder
 from kivy.clock import Clock
+from kivy.logger import Logger
 
 class FieldLabel(Label):
     def __init__(self, **kwargs):
@@ -62,7 +63,7 @@ class AutoShrinkFieldLabel(Label):
 
     def _change_font_size(self, *args):
         try:
-            if self.texture_size[0] > self.width:  # or v.texture_size[1] > v.height:
+            if self.texture_size[0] > self.width:
                 self.font_size -= 1
                 Clock.schedule_once(self._change_font_size, 0.1)
         except Exception as e:
