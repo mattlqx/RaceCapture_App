@@ -115,7 +115,9 @@ class DashboardFactory(object):
         self._add_screen('rawchannel_view', self.build_raw_channel_view, 'Raw Channels', 'raw_channel_view.png')
         self._add_screen('traction_view', self.build_traction_view, 'Traction', 'traction_view.png')
         self._add_screen('heatmap_view', self.build_heatmap_view, 'Heatmap', 'heatmap_view.png')
-        self._add_screen('racestatus_view', self.build_racestatus_view, 'Race Status', '')
+        
+        # Disabled until ready for use
+        #self._add_screen('racestatus_view', self.build_racestatus_view, 'Race Status', '')
 
     @property
     def available_dashboards(self):
