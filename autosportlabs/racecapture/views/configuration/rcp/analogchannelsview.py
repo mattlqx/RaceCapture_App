@@ -66,6 +66,7 @@ class AnalogChannel(BaseChannelView):
     MAX_SMOOTHING_RANGE = 1000000
     ALPHA_SMOOTHING_FACTOR = 0.0000001
     DISPLAY_SCALING = 0.01
+    MIN_SMOOTHING = 1.0
 
     Builder.load_string("""
 <AnalogChannel>:
@@ -306,7 +307,7 @@ class AnalogChannel(BaseChannelView):
             check_linear.active = False
             check_mapped.active = True
 
-        self.ids.smoothing.value = AnalogChannel.MAX_SMOOTHING_RANGE - (channelConfig.alpha / AnalogChannel.ALPHA_SMOOTHING_FACTOR)
+        self.ids.smoothing.value = 0 if channelConfig.alpha == AnalogChannel.MIN_SMOOTHING else AnalogChannel.MAX_SMOOTHING_RANGE - (channelConfig.alpha / AnalogChannel.ALPHA_SMOOTHING_FACTOR)
         self.ids.linearscaling.text = str(channelConfig.linearScaling)
         self.ids.linearoffset.text = str(channelConfig.linearOffset)
         map_editor = self.ids.map_editor
