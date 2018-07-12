@@ -56,6 +56,7 @@ from autosportlabs.racecapture.views.dashboard.laptimeview import LaptimeView
 from autosportlabs.racecapture.views.dashboard.rawchannelview import RawChannelView
 from autosportlabs.racecapture.views.dashboard.tractionview import TractionView
 from autosportlabs.racecapture.views.dashboard.heatmapview import HeatmapView
+from autosportlabs.racecapture.views.dashboard.racestatus_view import RaceStatusView
 
 
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
@@ -116,6 +117,9 @@ class DashboardFactory(object):
         self._add_screen('traction_view', self.build_traction_view, 'Traction', 'traction_view.png')
         self._add_screen('heatmap_view', self.build_heatmap_view, 'Heatmap', 'heatmap_view.png')
 
+        # Disabled until ready for use
+        # self._add_screen('racestatus_view', self.build_racestatus_view, 'Race Status', '')
+
     @property
     def available_dashboards(self):
         """
@@ -157,12 +161,18 @@ class DashboardFactory(object):
     def build_traction_view(self):
         return TractionView(name='traction_view', databus=self._databus, settings=self._settings)
 
+    def build_racestatus_view(self):
+        return RaceStatusView(name='racestatus_view',
+                              databus=self._databus,
+                              settings=self._settings,
+                              track_manager=self._track_manager,
+                              status_pump=self._status_pump)
+
     def build_heatmap_view(self):
         return HeatmapView(name='heatmap_view', databus=self._databus,
                            settings=self._settings,
                            track_manager=self._track_manager,
                            status_pump=self._status_pump)
-
 
 class PopupAlertView(BoxLayout):
     Builder.load_string("""
