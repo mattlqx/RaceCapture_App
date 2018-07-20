@@ -52,7 +52,7 @@ LAPTIME_VIEW_KV = """
             padding: (5, 5)
             orientation: 'horizontal'
             size_hint_y: None
-            height: dp(150)
+            height: min(300, dp(150))
             spacing: self.height * 0.1
             GaugeFrame:
                 halign: 'left'
