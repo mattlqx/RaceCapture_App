@@ -72,8 +72,8 @@ SELECT_DEVICE_VIEW_KV = """
                         BetterToggleButton:
                             group: 'device'
                             size_hint: (0.45, 0.5)
-                            text: 'RaceCapture/Track'
-                            on_release: root.select_device('RCT')
+                            text: 'RaceCapture/Track MK2'
+                            on_release: root.select_device('RCT_MK2')
 
                 AnchorLayout:
                     Image:
@@ -117,6 +117,20 @@ SELECT_DEVICE_VIEW_KV = """
                             size_hint: (0.45, 0.5)
                             text: 'RaceCapture/Pro MK2'
                             on_release: root.select_device('RCP_MK2')
+
+                AnchorLayout:
+                    Image:
+                        allow_stretch: True
+                        source: 'resource/setup/device_RCT.png'
+                    AnchorLayout:
+                        anchor_x: 'right'
+                        padding: (dp(10), dp(10))
+                        BetterToggleButton:
+                            group: 'device'
+                            size_hint: (0.45, 0.5)
+                            text: 'RaceCapture/Track MK1'
+                            on_release: root.select_device('RCT_MK2')
+
         BoxLayout:
             size_hint_y: None
             height: dp(50)

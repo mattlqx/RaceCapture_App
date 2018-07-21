@@ -257,7 +257,7 @@ class ChannelEditor(BoxLayout):
             maxField.text = str(channel.max)
 
     def on_name(self, instance, value):
-        self.channel.name = value
+        self.channel.name = value.strip()
 
     def on_units(self, instance, value):
         value = value.strip()
