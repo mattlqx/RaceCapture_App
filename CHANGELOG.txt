@@ -1,5 +1,14 @@
+==1.13.0==
+* Dashboard: Improved predictive timer screen visualization
+* Analysis: protect against channel names with trailing or leading whitespace
+* Setup: protect against configuring channel names with trailing or leading whitespace
+* Setup: Add RaceCapture/Track MK2 to setup wizard
+* Setup: Extend range of analog smoothing (requires firmware 2.13.6)
+* Setup: Fix firmware update error for certain Windows / OSX systems
+
 ==1.12.2==
 * Setup: Resolve firmware update error on certain Windows / OSX 
+
 instances
 ==1.12.1==
 * Setup: Ensure OBDII and CAN mapping channel settings (units, precision, min/max) are always persisted
