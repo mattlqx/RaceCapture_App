@@ -87,6 +87,7 @@ class SelectPresetView(InfoView):
 
         # get the device prefix
         device = device.split('_')[0]
+        print('the device {}'.format(device))
         presets = self.preset_manager.get_presets_by_type(device)
 
         if presets is None:

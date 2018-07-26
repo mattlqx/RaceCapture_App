@@ -1279,7 +1279,7 @@ class SDLoggingControlConfig(AutoControlConfig):
 
     def to_json_dict(self):
         json_dict = super(SDLoggingControlConfig, self).to_json_dict()
-        return {'autoLoggerCfg':json_dict}
+        return {'sdLogCtrlCfg':json_dict}
 
 class VersionConfig(object):
     def __init__(self, **kwargs):
@@ -1666,7 +1666,7 @@ class RcpConfig(object):
                 if camera_ctrl_cfg_json:
                     self.camera_control_config.from_json_dict(camera_ctrl_cfg_json)
 
-                sd_logging_ctrl_cfg = rcpJson.get('autoLoggerCfg')
+                sd_logging_ctrl_cfg = rcpJson.get('sdLogCtrlCfg')
                 if sd_logging_ctrl_cfg:
                     self.sd_logging_control_config.from_json_dict(sd_logging_ctrl_cfg)
 
@@ -1700,7 +1700,7 @@ class RcpConfig(object):
                              'obd2Cfg':self.obd2Config.toJson().get('obd2Cfg'),
                              'connCfg':self.connectivityConfig.toJson().get('connCfg'),
                              'wifiCfg': self.wifi_config.to_json(),
-                             'autoLoggerCfg': self.sd_logging_control_config.to_json_dict().get('autoLoggerCfg'),
+                             'sdLogCtrlCfg': self.sd_logging_control_config.to_json_dict().get('sdLogCtrlCfg'),
                              'camCtrlCfg': self.camera_control_config.to_json_dict().get('camCtrlCfg'),
                              'trackCfg':self.trackConfig.toJson().get('trackCfg'),
                              'scriptCfg':self.scriptConfig.toJson().get('scriptCfg'),

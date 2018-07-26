@@ -40,7 +40,7 @@ class Laptime(SingleChannelGauge):
     anchor_x: 'center'
     anchor_y: 'center'
     value_size: self.height
-    FieldLabel:
+    AutoShrinkFieldLabel:
         text: root.NULL_LAP_TIME
         id: value
         font_size: root.font_size

@@ -492,7 +492,7 @@ class DataStore(object):
                 name, units, min, max, samplerate = raw_channels[
                     i - 1].replace('"', '').split('|')
                 channel = DatalogChannel(
-                    name, units, float(min), float(max), int(samplerate), 0)
+                    name.strip(), units.strip(), float(min), float(max), int(samplerate), 0)
                 channels.append(channel)
         except:
             import sys
@@ -807,7 +807,7 @@ class DataStore(object):
             new_channels = []
             for name, meta in channel_metas.iteritems():
                 channel = DatalogChannel(
-                    name, meta.units, meta.min, meta.max, meta.sampleRate, 0)
+                    name.strip(), meta.units.strip(), meta.min, meta.max, meta.sampleRate, 0)
                 if channel.name not in [x.name for x in self._channels]:
                     new_channels.append(channel)
                 session_channels.append(channel)
