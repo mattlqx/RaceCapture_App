@@ -20,7 +20,7 @@
 # have received a copy of the GNU General Public License along with
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "1.12.0"
+__version__ = "1.13.1"
 import sys
 import os
 
@@ -164,14 +164,14 @@ class RaceCaptureApp(App):
         return __version__
 
     @property
-    def user_data_dir( self ):
+    def user_data_dir(self):
         # this is a workaround for a kivy bug in which /sdcard is the hardcoded path for
         # the user dir.  This fails on Android 7.0 systems.
         # this function should be removed when the bug is fixed in kivy.
         if kivy.platform == 'android':
-            from jnius import autoclass 
-            env = autoclass('android.os.Environment') 
-            data_dir = os.path.join(env.getExternalStorageDirectory().getPath(), self.name ) 
+            from jnius import autoclass
+            env = autoclass('android.os.Environment')
+            data_dir = os.path.join(env.getExternalStorageDirectory().getPath(), self.name)
         else:
             data_dir = super(RaceCaptureApp, self).user_data_dir
         return data_dir
@@ -414,6 +414,7 @@ class RaceCaptureApp(App):
                                  status_pump=self._status_pump)
         config_view.bind(on_read_config=self.on_read_config)
         config_view.bind(on_write_config=self.on_write_config)
+        config_view.bind(on_show_main_view=lambda instance, view: self.switchMainView(view))
         self.config_listeners.append(config_view)
         self.tracks_listeners.append(config_view)
         return config_view
@@ -445,10 +446,15 @@ class RaceCaptureApp(App):
         return homepage_view
 
     def build_setup_view(self):
-        setup_view = SetupView(name='setup', settings=self.settings,
+        setup_view = SetupView(name='setup',
+                               track_manager=self.track_manager,
+                               preset_manager=self.preset_manager,
+                               settings=self.settings,
                                databus=self._databus,
                                base_dir=self.base_dir,
-                               rc_api=self._rc_api)
+                               rc_api=self._rc_api,
+                               rc_config=self.rc_config)
+        setup_view.bind(on_setup_complete=lambda x: self._show_preferred_view())
         return setup_view
 
     def init_view_builders(self):
@@ -519,7 +525,6 @@ class RaceCaptureApp(App):
         setup_enabled = self.settings.userPrefs.get_pref_bool('setup', 'setup_enabled')
         if setup_enabled:
             setup_view = self._get_main_screen('setup')
-            setup_view.bind(on_setup_complete=lambda x: self._show_preferred_view())
             self._show_main_view('setup')
         else:
             self._show_preferred_view()
@@ -632,7 +637,7 @@ class RaceCaptureApp(App):
         if token == ('preferences', 'send_telemetry'):
             if value == "1":  # Boolean settings values are 1/0, not True/False
                 if self.rc_config.connectivityConfig.cellConfig.cellEnabled:
-                    alertPopup('Telemetry error', "Turn off RaceCapture's telemetry module for app to stream telemetry.")
+                    alertPopup('Telemetry error', "Disable the telemetry module before enabling app telemetry.")
                 Clock.schedule_once(lambda dt: self._enable_telemetry())
             else:
                 Clock.schedule_once(lambda dt: self._disable_telemetry())

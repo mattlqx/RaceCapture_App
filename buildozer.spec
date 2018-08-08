@@ -19,7 +19,7 @@ source.include_exts = py,png,jpg,kv,atlas,ttf,json,svg,cfg,obj,mtl,glsl,zip,sql
 #source.exclude_exts = spec
 
 # (list) List of directory to exclude (let empty to not exclude anything)
-source.exclude_dirs = tests, bin, .git, install, build_tools
+source.exclude_dirs = tests, bin, .git, install, build_tools, demo_screenshots
 
 # (list) List of exclusions using pattern matching
 #source.exclude_patterns = license,images/*/*.jpg

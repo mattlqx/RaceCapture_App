@@ -435,8 +435,8 @@ class RcpApi:
             Logger.debug('RCPAPI: Tx: ' + cmdStr)
             comms.write_message(cmdStr)
         except Exception as e:
-            Logger.error('RCPAPI: sendCommand exception ' + str(e))
-            Logger.error(traceback.format_exc())
+            Logger.debug(traceback.format_exc())
+            Logger.debug('RCPAPI: sendCommand exception ' + str(e))
             self.recover_connection()
         finally:
             try:
@@ -485,7 +485,7 @@ class RcpApi:
 
             if capabilities.has_gps:
                 cmdSequence.append(RcpCmd('gpsCfg', self.getGpsCfg))
-                
+
             if capabilities.has_imu:
                 cmdSequence.append(RcpCmd('imuCfg', self.getImuCfg))
 

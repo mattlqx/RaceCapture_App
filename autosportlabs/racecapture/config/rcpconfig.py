@@ -450,10 +450,11 @@ class GpsConfig(object):
     GPS_QUALITY_2D = 1
     GPS_QUALITY_3D = 2
     GPS_QUALITY_3D_DGNSS = 3
+    DEFAULT_GPS_SAMPLE_RATE = 10
 
     def __init__(self, **kwargs):
         self.stale = False
-        self.sampleRate = 0
+        self.sampleRate = GpsConfig.DEFAULT_GPS_SAMPLE_RATE
         self.positionEnabled = False
         self.speedEnabled = False
         self.distanceEnabled = False
@@ -844,12 +845,14 @@ class CANMapping(object):
     CAN_MAPPING_TYPE_SIGN_MAGNITUDE = 3
     ID_MASK_DISABLED = 0
     CONVERSION_FILTER_DISABLED = 0
+    SUB_ID_DISABLED = -1
 
     def __init__(self, **kwargs):
         self.bit_mode = False
         self.type = CANMapping.CAN_MAPPING_TYPE_UNSIGNED
         self.can_bus = 0
         self.can_id = 0
+        self.sub_id = CANMapping.SUB_ID_DISABLED
         self.can_mask = CANMapping.ID_MASK_DISABLED
         self.endian = False
         self.offset = 0
@@ -865,6 +868,7 @@ class CANMapping(object):
             self.type = json_dict.get('type', self.type)
             self.can_bus = json_dict.get('bus', self.can_bus)
             self.can_id = json_dict.get('id', self.can_id)
+            self.sub_id = json_dict.get('subId', self.sub_id)
             self.can_mask = json_dict.get('idMask', self.can_mask)
             self.offset = json_dict.get('offset', self.offset)
             self.length = json_dict.get('len', self.length)
@@ -881,6 +885,7 @@ class CANMapping(object):
         json_dict['type'] = self.type
         json_dict['bus'] = self.can_bus
         json_dict['id'] = self.can_id
+        json_dict['subId'] = self.sub_id
         json_dict['idMask'] = self.can_mask
         json_dict['offset'] = self.offset
         json_dict['len'] = self.length
@@ -1274,7 +1279,7 @@ class SDLoggingControlConfig(AutoControlConfig):
 
     def to_json_dict(self):
         json_dict = super(SDLoggingControlConfig, self).to_json_dict()
-        return {'autoLoggerCfg':json_dict}
+        return {'sdLogCtrlCfg':json_dict}
 
 class VersionConfig(object):
     def __init__(self, **kwargs):
@@ -1417,6 +1422,9 @@ class Capabilities(object):
         self.links = LinksCapabilities()
         self.bluetooth_config = True
         self.flags = []
+
+    def has_flag(self, flag):
+        return flag in self.flags
 
     @property
     def has_gps(self):
@@ -1658,7 +1666,7 @@ class RcpConfig(object):
                 if camera_ctrl_cfg_json:
                     self.camera_control_config.from_json_dict(camera_ctrl_cfg_json)
 
-                sd_logging_ctrl_cfg = rcpJson.get('autoLoggerCfg')
+                sd_logging_ctrl_cfg = rcpJson.get('sdLogCtrlCfg')
                 if sd_logging_ctrl_cfg:
                     self.sd_logging_control_config.from_json_dict(sd_logging_ctrl_cfg)
 
@@ -1692,7 +1700,7 @@ class RcpConfig(object):
                              'obd2Cfg':self.obd2Config.toJson().get('obd2Cfg'),
                              'connCfg':self.connectivityConfig.toJson().get('connCfg'),
                              'wifiCfg': self.wifi_config.to_json(),
-                             'autoLoggerCfg': self.sd_logging_control_config.to_json_dict().get('autoLoggerCfg'),
+                             'sdLogCtrlCfg': self.sd_logging_control_config.to_json_dict().get('sdLogCtrlCfg'),
                              'camCtrlCfg': self.camera_control_config.to_json_dict().get('camCtrlCfg'),
                              'trackCfg':self.trackConfig.toJson().get('trackCfg'),
                              'scriptCfg':self.scriptConfig.toJson().get('scriptCfg'),

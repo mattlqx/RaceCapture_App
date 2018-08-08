@@ -158,7 +158,7 @@ IMU_GAUGE_KV = """
         anchor_x: 'left'
         anchor_y: 'center'
         GridLayout:
-            size_hint: (0.3, 0.5)
+            size_hint: (0.45, 0.5)
             spacing: (dp(10), dp(10))
             cols: 2
             ImuLabel:
@@ -186,33 +186,33 @@ IMU_GAUGE_KV = """
         anchor_x: 'right'
         anchor_y: 'center'
         GridLayout:
-            size_hint: (0.3, 0.5)
+            size_hint: (0.45, 0.5)
             spacing: (dp(10), dp(10))
             cols: 2
             BarGraphGauge:
                 id: gyro_yaw
                 orientation: 'right-left'
-                size_hint_x: 0.5
+                size_hint_x: 0.7
             ImuLabel:
                 text: 'Yaw'
                 halign: 'left'
-                size_hint_x: 0.5
+                size_hint_x: 0.3
             BarGraphGauge:
                 id: gyro_pitch
                 orientation: 'right-left'                
-                size_hint_x: 0.5
+                size_hint_x: 0.7
             ImuLabel:
                 text: 'Pitch'
                 halign: 'left'
-                size_hint_x: 0.5
+                size_hint_x: 0.3
             BarGraphGauge:
                 id: gyro_roll
                 orientation: 'right-left'                
-                size_hint_x: 0.5
+                size_hint_x: 0.7
             ImuLabel:
                 text: 'Roll'
                 halign: 'left'
-                size_hint_x: 0.5
+                size_hint_x: 0.3
 """
 
 class ImuGauge(Gauge):
@@ -283,9 +283,6 @@ class ImuGauge(Gauge):
 
     def sensor_formatter(self, value):
         return "" if value is None else self.sensor_format.format(value)
-
-    def on_channel(self, instance, value):
-        self._update_gauge_meta()
 
     def _update_channel_binding(self):
         data_bus = self.data_bus

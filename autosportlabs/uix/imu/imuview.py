@@ -29,10 +29,14 @@ from kivy3 import Scene, Renderer, PerspectiveCamera
 from kivy3.loaders import OBJLoader
 from kivy.core.window import Window
 from kivy.metrics import dp
+from kivy.uix.label import Label
 import os
+from utils import is_ios
 
 class ImuView(BoxLayout):
-    ACCEL_SCALING = 1.0
+    ACCELX_SCALING = 5.0
+    ACCELY_SCALING = 1.0
+    ACCELZ_SCALING = 2.0
     GYRO_SCALING = 1.0
     ZOOM_SCALING = 0.2
     TOUCHWHEEL_ZOOM_MULTIPLIER = 1
@@ -40,7 +44,7 @@ class ImuView(BoxLayout):
     DRAG_CUSTOMIZE_THRESHOLD = 10
 
     position_x = NumericProperty(0)
-    position_y = NumericProperty(-0.15)
+    position_y = NumericProperty(-0.30)
     position_z = NumericProperty(-5.0)
     rotation_x = NumericProperty(-5)
     rotation_y = NumericProperty(180)
@@ -84,6 +88,9 @@ class ImuView(BoxLayout):
     def _setup_object(self):
 
         self.clear_widgets()
+        if is_ios():  # TODO enable this when iOS bug is resolved
+            return
+
         shader_file = resource_find(os.path.join('resource', 'models', 'shaders.glsl'))
         obj_path = resource_find(self.model_path)
 
@@ -110,13 +117,14 @@ class ImuView(BoxLayout):
             # obj.material.shininess = 1.0
 
         self.renderer.render(scene, camera)
-        self.add_widget(self.renderer)
         self.renderer.bind(size=self._adjust_aspect)
+        Clock.schedule_once(lambda dt: self.add_widget(self.renderer))
+
 
     def _adjust_aspect(self, instance, value):
         rsize = self.renderer.size
-        width = rsize[0]
-        height = rsize[1]
+        width = max(1, rsize[0])
+        height = max(1, rsize[1])
         if height == 0:
             return
         self.renderer.camera.aspect = width / float(height)
@@ -258,20 +266,20 @@ class ImuView(BoxLayout):
 
     def on_accel_x(self, instance, value):
         try:
-            self.imu_obj.pos.z = self.position_z + (value * ImuView.ACCEL_SCALING)
+            self.imu_obj.pos.z = self.position_z - (value * ImuView.ACCELX_SCALING)
         except AttributeError:
             pass
 
     def on_accel_y(self, instance, value):
         try:
-            self.imu_obj.pos.x = self.position_x - (value * ImuView.ACCEL_SCALING)
+            self.imu_obj.pos.x = self.position_x + (value * ImuView.ACCELY_SCALING)
         except AttributeError:
             pass
 
     def on_accel_z(self, instance, value):
         try:
             # subtract 1.0 to compensate for gravity
-            self.imu_obj.pos.y = self.position_y + ((value - 1.0) * ImuView.ACCEL_SCALING)
+            self.imu_obj.pos.y = self.position_y - ((value - 1.0) * ImuView.ACCELZ_SCALING)
         except AttributeError:
             pass
 

@@ -211,8 +211,12 @@ class EditorPopup(GridLayout):
         pass
 
 def okPopup(title, msg, answer_callback):
+    def ok_cb(*args):
+        answer_callback(args)
+        popup.dismiss()
+
     content = OkPopup(text=msg)
-    content.bind(on_ok=answer_callback)
+    content.bind(on_ok=ok_cb)
     popup = Popup(title=title,
                     content=content,
                     size_hint=(None, None),
