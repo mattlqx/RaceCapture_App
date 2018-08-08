@@ -69,7 +69,6 @@ TACHOMETER_VIEW_KV = """
                         halign: 'right'
                         valign: 'middle'
                         value: None
-                        size_hint_x: 0.83
                 BoxLayout:
                     size_hint_x: 0.02
         AnchorLayout:

@@ -936,8 +936,8 @@ class Plot(EventDispatcher):
         for x, y in self.points:
             fx = funcx(x)
             fy = funcy(y)
-            if fy == None:
-                # if there's no Y data, give up
+            if fy == None or fx == None:
+                # if there's no X or Y data, give up
                 return
             yield (
                 (fx - xmin) * ratiox + size[0],

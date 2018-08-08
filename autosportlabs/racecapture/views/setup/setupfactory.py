@@ -20,12 +20,15 @@
 from autosportlabs.racecapture.views.setup.introview import IntroView
 from autosportlabs.racecapture.views.setup.selectdeviceview import SelectDeviceView
 from autosportlabs.racecapture.views.setup.selectconnectionview import SelectConnectionView
+from autosportlabs.racecapture.views.setup.selectpresetview import SelectPresetView
+from autosportlabs.racecapture.views.setup.selecttracksview import SelectTracksView
 from autosportlabs.racecapture.views.setup.finishsetupview import FinishSetupView
 from autosportlabs.racecapture.views.setup.dashboardsetupview import DashboardSetupView
 from autosportlabs.racecapture.views.setup.analysissetupview import AnalysisSetupView
 from autosportlabs.racecapture.views.setup.configsetupview import ConfigSetupView
 from autosportlabs.racecapture.views.setup.tourview import TourView
 from autosportlabs.racecapture.views.setup.podiumview import PodiumSetupView
+from autosportlabs.racecapture.views.setup.cellserviceview import CellServiceView
 
 __all__ = 'setup_factory'
 
@@ -38,6 +41,10 @@ def setup_factory(key):
         return SelectDeviceView()
     elif key == 'connection':
         return SelectConnectionView()
+    elif key == 'preset':
+        return SelectPresetView()
+    elif key == 'tracks':
+        return SelectTracksView()
     elif key == 'tour':
         return TourView()
     elif key == 'configsetup':
@@ -50,4 +57,6 @@ def setup_factory(key):
         return FinishSetupView()
     elif key == 'podium':
         return PodiumSetupView()
+    elif key == 'cellservice':
+        return CellServiceView()
     return None

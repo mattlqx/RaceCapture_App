@@ -62,6 +62,12 @@ class AnalogChannelsView(BaseMultiChannelConfigView):
         return rcp_cfg.analogConfig
 
 class AnalogChannel(BaseChannelView):
+    MIN_SMOOTHING_RANGE = 0
+    MAX_SMOOTHING_RANGE = 1000000
+    ALPHA_SMOOTHING_FACTOR = 0.0000001
+    DISPLAY_SCALING = 0.01
+    MIN_SMOOTHING = 1.0
+
     Builder.load_string("""
 <AnalogChannel>:
     orientation: 'horizontal'
@@ -125,8 +131,8 @@ class AnalogChannel(BaseChannelView):
                         halign: 'right'
                     Slider:
                         id: smoothing
-                        min: 0
-                        max: 99
+                        min: root.MIN_SMOOTHING_RANGE
+                        max: root.MAX_SMOOTHING_RANGE
                         on_value: root.on_smoothing(*args)
                     FieldLabel:
                         text: 'More'
@@ -220,15 +226,21 @@ class AnalogChannel(BaseChannelView):
         self.channelConfig = None
 
     def on_smoothing(self, instance, value):
-        self.ids.smoothing_value.text = str(int(value))
-        try:
-            if self.channelConfig:
-                alpha = (100.0 - float(value)) * .01
-                self.channelConfig.alpha = alpha
-                self.channelConfig.stale = True
-                self.dispatch('on_modified', self.channelConfig)
-        except:
-            pass
+        label = ''
+        if value == AnalogChannel.MIN_SMOOTHING_RANGE:
+            label = 'Min'
+        elif value == AnalogChannel.MAX_SMOOTHING_RANGE:
+            label = 'Max'
+        else:
+            label = str(int(value / (AnalogChannel.MAX_SMOOTHING_RANGE * AnalogChannel.DISPLAY_SCALING)))
+
+        self.ids.smoothing_value.text = label
+        if self.channelConfig:
+            alpha = 1.0 if value == 0 else (AnalogChannel.MAX_SMOOTHING_RANGE - float(value)) * AnalogChannel.ALPHA_SMOOTHING_FACTOR
+
+            self.channelConfig.alpha = alpha
+            self.channelConfig.stale = True
+            self.dispatch('on_modified', self.channelConfig)
 
     def on_linear_map_offset(self, instance, value):
         try:
@@ -295,7 +307,7 @@ class AnalogChannel(BaseChannelView):
             check_linear.active = False
             check_mapped.active = True
 
-        self.ids.smoothing.value = 100 - (channelConfig.alpha * 100.0)
+        self.ids.smoothing.value = 0 if channelConfig.alpha == AnalogChannel.MIN_SMOOTHING else AnalogChannel.MAX_SMOOTHING_RANGE - (channelConfig.alpha / AnalogChannel.ALPHA_SMOOTHING_FACTOR)
         self.ids.linearscaling.text = str(channelConfig.linearScaling)
         self.ids.linearoffset.text = str(channelConfig.linearOffset)
         map_editor = self.ids.map_editor
@@ -389,7 +401,7 @@ class AnalogChannel(BaseChannelView):
         content = PresetBrowserView(self.preset_manager, 'analog')
         content.bind(on_preset_selected=preset_selected)
         content.bind(on_preset_close=lambda *args:popup.dismiss())
-        popup = Popup(title='Import a preset', content=content, size_hint=(0.5, 0.75))
+        popup = Popup(title='Import a preset', content=content, size_hint=(0.7, 0.8))
         popup.bind(on_dismiss=popup_dismissed)
         popup.open()
 

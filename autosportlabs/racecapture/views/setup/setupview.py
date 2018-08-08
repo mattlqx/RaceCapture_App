@@ -58,14 +58,21 @@ SETUP_VIEW_KV = """
 <SetupView>:
     BoxLayout:
         orientation: 'horizontal'
-        GridLayout:
-            id: steps
-            cols: 1
+        ScrollContainer:
+            id: steps_scroll
             size_hint_x: 0.25
-            row_default_height: self.height * 0.095
-            row_force_default: True
-            padding: (dp(5), dp(5), dp(2.5), dp(5))
-            spacing: dp(5)
+            do_scroll_x: False
+            do_scroll_y: True
+            bar_width: 0
+            GridLayout:
+                id: steps
+                cols: 1
+                row_default_height: dp(50)
+                row_force_default: True
+                size_hint_y: None
+                padding: (dp(5), dp(5), dp(2.5), dp(5))
+                spacing: dp(5)
+                height: self.minimum_height
         BoxLayout:
             padding: (dp(2.5), dp(5), dp(5), dp(5))
             size_hint_x: 0.75     
@@ -83,8 +90,9 @@ SETUP_VIEW_KV = """
                         title_font_size: self.height * 0.6
                         icon: u'\uf052'
                         size_hint_x: None
-                        size_hint_y: 0.1
-                        width: dp(100)
+                        size_hint_y: None
+                        height: dp(50) 
+                        width: dp(100) 
                         on_release: root.on_skip()
 """
 
@@ -116,13 +124,16 @@ class SetupView(Screen):
     SETUP_COMPLETE_DELAY_SEC = 1.0
     Builder.load_string(SETUP_VIEW_KV)
 
-    def __init__(self, settings, databus, base_dir, rc_api, **kwargs):
+    def __init__(self, track_manager, preset_manager, settings, databus, base_dir, rc_api, rc_config, **kwargs):
         super(SetupView, self).__init__(**kwargs)
         self.register_event_type('on_setup_complete')
+        self._preset_manager = preset_manager
+        self._track_manager = track_manager
         self._settings = settings
         self._base_dir = base_dir
         self._databus = databus
         self._rc_api = rc_api
+        self._rc_config = rc_config
         self._setup_config = None
         self._current_screen = None
         self._current_step = None
@@ -151,6 +162,8 @@ class SetupView(Screen):
         self._setup_config = setup_config
 
     def init_view(self, *args):
+        self._steps = {}
+        self.ids.steps.clear_widgets()
         steps = self._setup_config['steps']
         for step in steps:
             content = SetupItem(title=step['title'], complete=step['complete'])
@@ -159,14 +172,46 @@ class SetupView(Screen):
 
         self._show_next_screen()
 
+    def _adjust_steps(self):
+        # adjust steps based on device capabilities
+        rc_config = self._rc_config
+        if not rc_config.loaded:
+            return
+
+        steps_to_remove = []
+        setup_steps = self._setup_config['steps']
+        for s in setup_steps:
+            requires_flag = s.get('requiresFlag', None)
+            if requires_flag is not None:
+                if not rc_config.capabilities.has_flag(requires_flag):
+                    steps_to_remove.append(s['key'])
+
+        for s in steps_to_remove:
+            self._remove_step(s)
+
+    def _remove_step(self, key):
+        step = self._steps.get(key)
+        if step is not None:
+            del self._steps[key]
+            self.ids.steps.remove_widget(step)
+            setup_steps = self._setup_config['steps']
+            for s in setup_steps:
+                if s['key'] == key:
+                    setup_steps.remove(s)
+                    break
+
     def _show_next_screen(self):
+        self._adjust_steps()
         screen, step = self._select_next_view()
         if screen and step:
             self.ids.screen_manager.switch_to(screen)
             self._current_step = step
             self._current_screen = screen
             screen.bind(on_next=self._on_next_screen)
-            self._steps[step['key']].active = True
+            step = self._steps[step['key']]
+            step.active = True
+            self.ids.steps_scroll.scroll_to(step)
+
         else:
             self._setup_complete(show_next_time=False)
 
@@ -188,9 +233,13 @@ class SetupView(Screen):
 
     def _select_view(self, step):
         screen = setup_factory(step['key'])
-        screen.setup_config = self._setup_config
+        screen.preset_manager = self._preset_manager
+        screen.base_dir = self._base_dir
         screen.rc_api = self._rc_api
         screen.settings = self._settings
+        screen.rc_config = self._rc_config
+        screen.track_manager = self._track_manager
+        screen.setup_config = self._setup_config
         return screen
 
     def _setup_complete(self, show_next_time=False):

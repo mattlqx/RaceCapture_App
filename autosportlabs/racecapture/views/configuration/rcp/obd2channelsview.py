@@ -47,7 +47,7 @@ import copy
 class PIDConfigTab(CANChannelMappingTab):
     PID_MIN = 0
     PID_MAX = 0xFFFFFFFF
-    SUPPORTED_MODES = {1:'01h', 9: '09h', 34:'22h'}
+    SUPPORTED_MODES = {1:'01h', 2:'02h', 3:'03h', 4:'04h', 5:'05h', 9:'09h', 34:'22h'}
     DEFAULT_MODE = '01h'
 
     Builder.load_string("""
@@ -173,7 +173,7 @@ class OBD2ChannelConfigView(CANChannelConfigView):
 
         if not self._is_new and channel_was_customized:
             popup = confirmPopup('Confirm', 'Apply pre-set values for {}?\n\nAny customizations made to this channel will be over-written.'.format(name), _on_answer)
-        else:
+        elif self._is_new:
             _apply_preset()
 
 
@@ -188,10 +188,10 @@ class OBD2ChannelConfigView(CANChannelConfigView):
 
     def load_tabs(self):
         self._current_channel_config = copy.deepcopy(self.channel_cfg)
+
         tabs = [lambda dt: self.can_channel_customization_tab.init_view(self.channel_cfg, self.channels, self.max_sample_rate)]
         if self._mapping_capable:
-            tabs += [lambda dt: self.can_channel_customization_tab.init_view(self.channel_cfg, self.channels, self.max_sample_rate),
-                     lambda dt: self.pid_config_tab.init_view(self.channel_cfg),
+            tabs += [lambda dt: self.pid_config_tab.init_view(self.channel_cfg),
                      lambda dt: self.can_id_tab.init_view(self.channel_cfg),
                      lambda dt: self.can_value_map_tab.init_view(self.channel_cfg),
                      lambda dt: self.can_formula_tab.init_view(self.channel_cfg),
@@ -427,7 +427,7 @@ class OBD2ChannelsView(BaseConfigView):
 
         def _on_answer(instance, answer):
             if answer:
-                self._replace_config(channel, working_channel_cfg)
+                self._replace_config(self.obd2_cfg.pids[channel_index], working_channel_cfg)
                 self.dispatch('on_modified')
                 self.reload_obd2_channel_grid(self.obd2_cfg)
             popup.dismiss()
@@ -510,6 +510,6 @@ class OBD2ChannelsView(BaseConfigView):
         content = PresetBrowserView(self.preset_manager, 'obd2')
         content.bind(on_preset_selected=self._on_preset_selected)
         content.bind(on_preset_close=lambda *args:popup.dismiss())
-        popup = Popup(title='Import a preset configuration', content=content, size_hint=(0.5, 0.75))
+        popup = Popup(title='Import a preset configuration', content=content, size_hint=(0.7, 0.8))
         popup.bind(on_dismiss=popup_dismissed)
         popup.open()
