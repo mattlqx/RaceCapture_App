@@ -43,29 +43,15 @@ class FieldLabel(Label):
 class AutoShrinkFieldLabel(Label):
     Builder.load_string("""
 <AutoShrinkFieldLabel>:
+    _scale: 1. if self.texture_size[0] < self.width else float(self.width) / max(self.texture_size[0], 1)
+    canvas.before:
+        PushMatrix
+        Scale:
+            origin: self.center
+            x: self._scale or 1.
+            y: self._scale or 1.
+    canvas.after:
+        PopMatrix
+
     font_name: "resource/fonts/ASL_regular.ttf"
-    font_size: self.height
-    on_texture: root._change_font_size()
-    on_size: root._change_font_size()
-    #on_width: self._width_changed()
-    shorten: False
-    max_lines: 1
-    """)
-
-    def __init__(self, **kwargs):
-        super(AutoShrinkFieldLabel, self).__init__(**kwargs)
-
-    def _width_changed(self, instance, size):
-        self.text_size = (size, None)
-
-    def on_text(self, instance, value):
-        Clock.schedule_once(self._change_font_size, 0.1)
-
-    def _change_font_size(self, *args):
-        try:
-            if self.texture_size[0] > self.width:
-                self.font_size -= 1
-                Clock.schedule_once(self._change_font_size, 0.1)
-        except Exception as e:
-            Logger.warn('Failed to change font size: {}'.format(e))
-
+""")
