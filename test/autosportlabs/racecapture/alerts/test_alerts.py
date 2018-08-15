@@ -28,41 +28,32 @@ class AlertRuleTest(unittest.TestCase):
     def test_activate_deactivate(self):
         ar = AlertRule(True, 100, 200, 0.1, 0.1)
         self.assertFalse(ar.should_activate(100))
-        self.assertFalse(ar.is_active)
         time.sleep(0.2)
         self.assertTrue(ar.should_activate(100))
-        self.assertTrue(ar.is_active)
 
 
         self.assertFalse(ar.should_activate(90))
         self.assertFalse(ar.should_deactivate(90))
         # should still be active
-        self.assertTrue(ar.is_active)
 
         # wait until the deactivate threhold is tripped
         time.sleep(0.2)
         self.assertFalse(ar.should_activate(90))
         self.assertTrue(ar.should_deactivate(90))
-        self.assertFalse(ar.is_active)
 
     def test_enabled_disabled(self):
         # Test activating a disabled rule
         ar = AlertRule(False, 100, 200, 0.1, 0.1)
         self.assertFalse(ar.should_activate(100))
-        self.assertFalse(ar.is_active)
         time.sleep(0.2)
         self.assertFalse(ar.should_activate(100))
-        self.assertFalse(ar.is_active)
 
         # Test disabling after it's been activated
         ar2 = AlertRule(True, 100, 200, 0.1, 0.1)
         self.assertFalse(ar2.should_activate(100))
-        self.assertFalse(ar2.is_active)
         time.sleep(0.2)
         self.assertTrue(ar2.should_activate(100))
-        self.assertTrue(ar2.is_active)
         ar2.enabled = False
-        self.assertFalse(ar2.is_active)
 
     def test_within_threshold(self):
         ar = AlertRule(True, 100, 200, 1, 1)
@@ -75,35 +66,109 @@ class AlertRuleTest(unittest.TestCase):
 
 class AlertRuleCollectionTest(unittest.TestCase):
 
-    def test_active_alert_single(self):
+    def test_enabled(self):
+        ar = AlertRule(True, 100, 200, 0.1, 0.1)
+        arc = AlertRuleCollection("RPM", False, [ar])
+
+        active, deactive = arc.check_rules(50)
+        self.assertEqual(active, [])
+        self.assertEqual(deactive, [])
+
+        time.sleep(0.2)
+        active, deactive = arc.check_rules(50)
+        self.assertEqual(active, [])
+        self.assertEqual(deactive, [])
+
+        arc.enabled = True
+        active, deactive = arc.check_rules(50)
+        time.sleep(0.2)
+        active, deactive = arc.check_rules(50)
+        self.assertEqual(active, [])
+        self.assertEqual(deactive[0], ar)
+
+    def test_alert_single(self):
         ar = AlertRule(True, 100, 200, 0.1, 0.1)
         arc = AlertRuleCollection("RPM", True, [ar])
 
-        active_rules = arc.get_active_alert_rules(50)
-        self.assertEqual(len(active_rules), 0)
-        active_rules = arc.get_active_alert_rules(100)
-        self.assertEqual(len(active_rules), 0)
-        time.sleep(0.2)
-        active_rules = arc.get_active_alert_rules(100)
-        self.assertEqual(active_rules[0], ar)
+        active, deactive = arc.check_rules(50)
+        self.assertEqual(active, [])
+        self.assertEqual(deactive, [])
 
-    def test_active_alert_multiple(self):
+        time.sleep(0.2)
+
+        active, deactive = arc.check_rules(50)
+        self.assertEqual(active, [])
+        self.assertEqual(deactive[0], ar)
+        self.assertEqual(len(deactive), 1)
+
+        active, deactive = arc.check_rules(150)
+        self.assertEqual(active, [])
+        self.assertEqual(deactive, [])
+
+        time.sleep(0.2)
+
+        active, deactive = arc.check_rules(150)
+        self.assertEqual(active[0], ar)
+        self.assertEqual(len(active), 1)
+        self.assertEqual(deactive, [])
+
+        time.sleep(0.2)
+
+        active, deactive = arc.check_rules(250)
+        self.assertEqual(active, [])
+        self.assertEqual(deactive, [])
+
+        time.sleep(0.2)
+
+        active, deactive = arc.check_rules(250)
+        self.assertEqual(active, [])
+        self.assertEqual(deactive[0], ar)
+        self.assertEqual(len(deactive), 1)
+
+    def test_alert_multiple(self):
         ar1 = AlertRule(True, 100, 200, 0.1, 0.1)
         ar2 = AlertRule(True, 300, 400, 0.1, 0.1)
-        ar3 = AlertRule(True, 300, 400, 0.1, 0.1)
+        ar3 = AlertRule(True, 500, 600, 0.1, 0.1)
         arc = AlertRuleCollection("RPM", True, [ar1, ar2, ar3])
 
-        active_rules = arc.get_active_alert_rules(50)
-        self.assertEqual(len(active_rules), 0)
-        time.sleep(0.2)
-        active_rules = arc.get_active_alert_rules(50)
+        active, deactive = arc.check_rules(50)
+        self.assertEqual(active, [])
+        self.assertEqual(deactive, [])
 
-        self.assertEqual(len(active_rules), 0)
-        active_rules = arc.get_active_alert_rules(100)
-        self.assertEqual(len(active_rules), 0)
         time.sleep(0.2)
-        active_rules = arc.get_active_alert_rules(100)
-        self.assertEqual(active_rules[0], ar1)
+        active, deactive = arc.check_rules(50)
+        self.assertEqual(active, [])
+        self.assertEqual(deactive[0], ar1)
+        self.assertEqual(deactive[1], ar2)
+        self.assertEqual(deactive[2], ar3)
+        self.assertEqual(len(deactive), 3)
+
+        active, deactive = arc.check_rules(100)
+        self.assertEqual(active, [])
+        self.assertEqual(deactive[0], ar2)
+        self.assertEqual(deactive[1], ar3)
+        self.assertEqual(len(deactive), 2)
+
+        time.sleep(0.2)
+        active, deactive = arc.check_rules(100)
+        self.assertEqual(active[0], ar1)
+        self.assertEqual(len(active), 1)
+        self.assertEqual(deactive[0], ar2)
+        self.assertEqual(deactive[1], ar3)
+        self.assertEqual(len(deactive), 2)
+
+        active, deactive = arc.check_rules(300)
+        self.assertEqual(active, [])
+        self.assertEqual(deactive[0], ar3)
+        self.assertEqual(len(deactive), 1)
+
+        time.sleep(0.2)
+        active, deactive = arc.check_rules(300)
+        self.assertEqual(active[0], ar2)
+        self.assertEqual(len(active), 1)
+        self.assertEqual(deactive[0], ar1)
+        self.assertEqual(deactive[1], ar3)
+        self.assertEqual(len(deactive), 2)
 
 
 def main():
