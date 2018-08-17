@@ -335,7 +335,7 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
         
         #content.bind(on_channel_customization_close=self.on_channel_customization_close)
         rules = [AlertRule(True, 100, 200, 0, 0, ColorAlertAction([1,1,1])),
-                 AlertRule(True, 200,300, 0, 0, PopupAlertAction('Alert!', 'triangle', [1,0,0]))
+                 AlertRule(True, 200,300, 0, 0, PopupAlertAction('Oil Pressure', 'triangle', [1,0,0]))
             ]
         alert_rules = AlertRuleCollection('', True, rules)
         content = AlertRulesView(alert_rules)

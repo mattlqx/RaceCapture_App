@@ -13,7 +13,7 @@ class AlertRuleSummaryView(BoxLayout):
     Builder.load_string("""
 <AlertRuleSummaryView>:
     orientation: 'horizontal'
-    size_hint_y: 'None'
+    size_hint_y: None
     height: dp(30)
     FieldLabel:
         id: range

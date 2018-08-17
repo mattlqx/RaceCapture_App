@@ -157,4 +157,4 @@ class PopupAlertAction(object):
         
     @property
     def title(self):
-        return 'Popup {}'.format(self.message)
+        return 'Popup: "{}"'.format(self.message)
