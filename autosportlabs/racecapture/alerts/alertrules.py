@@ -26,7 +26,7 @@ low and high threshold value (inclusive) as well as the timing
 activation / deactivation thresholds used for triggering
 """
 class AlertRule(object):
-    def __init__(self, enabled, low_threshold, high_threshold, activate_sec, deactivate_sec):
+    def __init__(self, enabled, low_threshold, high_threshold, activate_sec, deactivate_sec, alert_action):
         """
         :param bool enabled: Set to True if the rule is enabled
         :param float low_threshold: the low range of the threshold
@@ -39,6 +39,7 @@ class AlertRule(object):
         self.high_threshold = high_threshold
         self.activate_sec = activate_sec
         self.deactivate_sec = deactivate_sec
+        self.alert_action = alert_action
 
         self.activate_start = None
         self.deactivate_start = None
@@ -135,6 +136,10 @@ class ColorAlertAction(object):
         :param array color_rgb: array of R,G,B values
         """
         self.color_rgb = color_rgb
+        
+    @property
+    def title(self):
+        return 'Set Color'
 
 """
 Describes an alert action that takes the form of a popup message
@@ -149,3 +154,7 @@ class PopupAlertAction(object):
         self.message = message
         self.shape = shape
         self.color_rgb = color_rgb
+        
+    @property
+    def title(self):
+        return 'Popup {}'.format(self.message)

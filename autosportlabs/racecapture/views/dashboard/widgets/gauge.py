@@ -36,6 +36,9 @@ from kivy.logger import Logger
 from autosportlabs.racecapture.settings.prefs import Range
 from autosportlabs.racecapture.views.channels.channelselectview import ChannelSelectDialog
 from autosportlabs.racecapture.views.channels.channelcustomizationview import ChannelCustomizationView
+from autosportlabs.racecapture.views.alerts.alerteditor import AlertRulesView
+from autosportlabs.racecapture.alerts.alertrules import AlertRule, AlertRuleCollection, ColorAlertAction, PopupAlertAction
+
 from autosportlabs.racecapture.views.popup.centeredbubble import CenteredBubble
 from autosportlabs.racecapture.data.channels import *
 from autosportlabs.racecapture.views.util.viewutils import format_laptime
@@ -328,9 +331,15 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
         self._dismiss_popup()
 
     def showChannelConfigDialog(self):
-        content = ChannelCustomizationView(settings=self.settings, channel=self.channel)
-        content.bind(on_channel_customization_close=self.on_channel_customization_close)
-
+        #content = ChannelCustomizationView(settings=self.settings, channel=self.channel)
+        
+        #content.bind(on_channel_customization_close=self.on_channel_customization_close)
+        rules = [AlertRule(True, 100, 200, 0, 0, ColorAlertAction([1,1,1])),
+                 AlertRule(True, 200,300, 0, 0, PopupAlertAction('Alert!', 'triangle', [1,0,0]))
+            ]
+        alert_rules = AlertRuleCollection('', True, rules)
+        content = AlertRulesView(alert_rules)
+        
         popup = Popup(title='Customize {}'.format(self.channel), content=content, size_hint=(0.6, 0.8))
         popup.bind(on_dismiss=self.popup_dismissed)
         popup.open()
