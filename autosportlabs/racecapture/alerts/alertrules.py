@@ -26,7 +26,7 @@ low and high threshold value (inclusive) as well as the timing
 activation / deactivation thresholds used for triggering
 """
 class AlertRule(object):
-    def __init__(self, enabled, low_threshold, high_threshold, activate_sec, deactivate_sec, alert_action):
+    def __init__(self, enabled, low_threshold, high_threshold, activate_sec, deactivate_sec, alert_actions=[]):
         """
         :param bool enabled: Set to True if the rule is enabled
         :param float low_threshold: the low range of the threshold
@@ -39,7 +39,7 @@ class AlertRule(object):
         self.high_threshold = high_threshold
         self.activate_sec = activate_sec
         self.deactivate_sec = deactivate_sec
-        self.alert_action = alert_action
+        self.alert_actions = alert_actions
 
         self.activate_start = None
         self.deactivate_start = None
@@ -158,3 +158,27 @@ class PopupAlertAction(object):
     @property
     def title(self):
         return 'Popup: "{}"'.format(self.message)
+    
+class LedAlertAction(object):
+    def __init__(self, color_rgb):
+        """
+        :param array color_rgb: array of R,G,B values
+        """
+        self.color_rgb = color_rgb
+        
+    @property
+    def title(self):
+        return 'Set Alert LED'
+    
+
+class ShiftLightAlertAction(object):
+    def __init__(self, color_rgb):
+        """
+        :param array color_rgb: array of R,G,B values
+        """
+        self.color_rgb = color_rgb
+        
+    @property
+    def title(self):
+        return 'Set Shift Light'
+    

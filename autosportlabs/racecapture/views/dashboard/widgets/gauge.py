@@ -37,7 +37,7 @@ from autosportlabs.racecapture.settings.prefs import Range
 from autosportlabs.racecapture.views.channels.channelselectview import ChannelSelectDialog
 from autosportlabs.racecapture.views.channels.channelcustomizationview import ChannelCustomizationView
 from autosportlabs.racecapture.views.alerts.alerteditor import AlertRulesView
-from autosportlabs.racecapture.alerts.alertrules import AlertRule, AlertRuleCollection, ColorAlertAction, PopupAlertAction
+from autosportlabs.racecapture.alerts.alertrules import AlertRule, AlertRuleCollection, ColorAlertAction, PopupAlertAction, ShiftLightAlertAction, LedAlertAction
 
 from autosportlabs.racecapture.views.popup.centeredbubble import CenteredBubble
 from autosportlabs.racecapture.data.channels import *
@@ -334,13 +334,14 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
         #content = ChannelCustomizationView(settings=self.settings, channel=self.channel)
         
         #content.bind(on_channel_customization_close=self.on_channel_customization_close)
-        rules = [AlertRule(True, 100, 200, 0, 0, ColorAlertAction([1,1,1])),
-                 AlertRule(True, 200,300, 0, 0, PopupAlertAction('Oil Pressure', 'triangle', [1,0,0]))
+        rules = [AlertRule(True, 5000, 7000, 0, 0, [ColorAlertAction([1,1,1]), ShiftLightAlertAction([1,1,0])]),
+                 AlertRule(True, 7000, 7500, 0, 0, [ColorAlertAction([1,1,1]), ShiftLightAlertAction([1,0,0])]),
+                 AlertRule(True, 9000, 10000, 0, 0, [PopupAlertAction('Over Rev', 'triangle', [1,0,0])]),                 
             ]
         alert_rules = AlertRuleCollection('', True, rules)
         content = AlertRulesView(alert_rules)
         
-        popup = Popup(title='Customize {}'.format(self.channel), content=content, size_hint=(0.6, 0.8))
+        popup = Popup(title='Customize {}'.format(self.channel), content=content, size_hint=(0.7, 0.8))
         popup.bind(on_dismiss=self.popup_dismissed)
         popup.open()
         self._popup = popup

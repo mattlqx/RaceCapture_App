@@ -67,6 +67,10 @@ class ColorScheme(object):
         return get_color_from_hex("FFFFFF")
 
     @staticmethod
+    def get_disabled_primary_text():
+        return get_color_from_hex("202020")
+
+    @staticmethod
     def get_secondary_text():
         return get_color_from_hex("727272")
 
