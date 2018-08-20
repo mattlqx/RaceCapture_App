@@ -6,7 +6,8 @@ from kivy.uix.switch import Switch
 from fieldlabel import FieldLabel
 from iconbutton import IconButton
 from kivy.app import Builder
-from kivy.properties import BooleanProperty
+from kivy.properties import BooleanProperty, ObjectProperty
+from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.racecapture.views.util.alertview import confirmPopup
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
@@ -36,12 +37,12 @@ class AlertRuleSummaryView(BoxLayout):
     IconButton:
         size_hint_x: 0.1        
         text: u'\uf063'
-        color: ColorScheme.get_disabled_primary_text() if root.is_last else ColorScheme.get_light_primary_text()
+        disabled: root.is_last
         on_release: root.dispatch('on_move_down', root._alertrule)    
     IconButton:
         size_hint_x: 0.1
-        text: u'\uf062'        
-        color: ColorScheme.get_disabled_primary_text() if root.is_first else ColorScheme.get_light_primary_text()
+        text: u'\uf062'
+        disabled: root.is_first        
         on_release: root.dispatch('on_move_up', root._alertrule)
     IconButton:
         size_hint_x: 0.1        
@@ -89,43 +90,43 @@ class AlertRuleSummaryView(BoxLayout):
     def on_move_up(self, rule):
         pass
     
-
-class AlertRulesView(BoxLayout):
+class AlertRuleList(Screen):
+    alertrule_collection = ObjectProperty()
     Builder.load_string("""
-<AlertRulesView>:
-    ScreenManager:
-        Screen:
-            name: "rule_list"
-            ScrollContainer:
-                canvas.before:
-                    Color:
-                        rgba: 0.05, 0.05, 0.05, 1
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size                
-                id: scroller
-                size_hint_y: 0.95
-                do_scroll_x:False
-                do_scroll_y:True
-                GridLayout:
-                    id: rules_grid
-                    padding: [dp(5), dp(5)]                        
-                    spacing: [dp(0), dp(10)]
-                    size_hint_y: None
-                    height: max(self.minimum_height, scroller.height)
-                    cols: 1
-        Screen:
-            name: 'alert_action_group'
+<AlertRuleList>:
+    ScrollContainer:
+        canvas.before:
+            Color:
+                rgba: 0.05, 0.05, 0.05, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size                
+        id: scroller
+        size_hint_y: 0.95
+        do_scroll_x:False
+        do_scroll_y:True
+        GridLayout:
+            id: rules_grid
+            padding: [dp(5), dp(5)]                        
+            spacing: [dp(0), dp(10)]
+            size_hint_y: None
+            height: max(self.minimum_height, scroller.height)
+            cols: 1
     """)
     
-    def __init__(self, alertrule_collection, **kwargs):
-        super(AlertRulesView, self).__init__(**kwargs)
-        self._alertrule_collection = alertrule_collection
+    def __init__(self, **kwargs):
+        super(AlertRuleList, self).__init__(**kwargs)
+        self.register_event_type('on_select')  
+    
+    def on_select(self, value):
+        pass
+    
+    def on_alertrule_collection(self, instance, value):
         self._refresh_view()
         
     def _refresh_view(self):
         grid = self.ids.rules_grid
-        rules = self._alertrule_collection
+        rules = self.alertrule_collection
         
         grid.clear_widgets()
         is_first = True
@@ -147,10 +148,10 @@ class AlertRulesView(BoxLayout):
         print('rule modified {}'.format(value))
         
     def _on_select_rule(self, instance, value):
-        print('rule selected {}'.format(value))
+        self.dispatch('on_select', value)
         
     def _on_move_rule_up(self, instance, value):
-        rules = self._alertrule_collection.alert_rules
+        rules = self.alertrule_collection.alert_rules
         current_index = rules.index(value)
         if current_index == 0:
             return
@@ -159,7 +160,7 @@ class AlertRulesView(BoxLayout):
         self._refresh_view()
         
     def _on_move_rule_down(self, instance, value):
-        rules = self._alertrule_collection.alert_rules
+        rules = self.alertrule_collection.alert_rules
         current_index = rules.index(value)
         if current_index == len(rules) - 1:
             return
@@ -170,15 +171,83 @@ class AlertRulesView(BoxLayout):
     def _on_delete_rule(self, instance, value):
         
         popup = None
-
         def confirm_delete(instance, delete):
             if delete:
-                rules = self._alertrule_collection.alert_rules
+                rules = self.alertrule_collection.alert_rules
                 rules.remove(value)
                 self._refresh_view()
             popup.dismiss()
 
-        popup = confirmPopup('Delete', 'Delete Group {}-{}?'.format(value.low_threshold, value.high_threshold), confirm_delete)
+        popup = confirmPopup('Delete', 'Delete Group {}-{}?'.format(value.low_threshold, value.high_threshold), confirm_delete)        
+
+class AlertActionList(Screen):
+    alertrule_collection = ObjectProperty()
+    Builder.load_string("""
+<AlertActionList>:
+    ScrollContainer:
+        canvas.before:
+            Color:
+                rgba: 0.05, 0.05, 0.05, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size                
+        id: scroller
+        size_hint_y: 0.95
+        do_scroll_x:False
+        do_scroll_y:True
+        GridLayout:
+            id: grid
+            padding: [dp(5), dp(5)]                        
+            spacing: [dp(0), dp(10)]
+            size_hint_y: None
+            height: max(self.minimum_height, scroller.height)
+            cols: 1
+    """)
+
+    def __init__(self, **kwargs):
+        super(AlertActionList, self).__init__(**kwargs)
+        self.register_event_type('on_close')
+
+    def on_close(self):
+        pass
+    
+    def on_enter(self, *args):
+        from kivy.clock import Clock
+        Clock.schedule_once(lambda dt: self.dispatch('on_close'), 1.0)
+
+class AlertRulesView(BoxLayout):
+    Builder.load_string("""
+<AlertRulesView>:
+    ScreenManager:
+        id: screen_manager
+        AlertRuleList:
+            name: "rule_list"
+            id: rule_list
+        AlertActionList:
+            name: 'group_list'
+            id: group_list
+    """)
+    
+    def __init__(self, alertrule_collection, **kwargs):
+        super(AlertRulesView, self).__init__(**kwargs)
+        self.ids.screen_manager.transition = SlideTransition()
+        self._alertrule_collection = alertrule_collection
+        self.ids.rule_list.bind(on_select=self._on_rule_select)
+        self.ids.rule_list.alertrule_collection = alertrule_collection
+        
+        self.ids.group_list.bind(on_close=self._on_close_group)
+        
+    def _on_rule_select(self, instance, value):
+        sm = self.ids.screen_manager
+        sm.transition.direction = 'up' 
+        sm.current = 'group_list'
+    
+    def _on_close_group(self, instance):
+        sm = self.ids.screen_manager
+        sm.transition.direction = 'down' 
+        sm.current = 'rule_list'
+        
+
         
         
     
