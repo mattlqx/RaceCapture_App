@@ -331,6 +331,7 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
         self._dismiss_popup()
 
     def showChannelConfigDialog(self):
+                    
         #content = ChannelCustomizationView(settings=self.settings, channel=self.channel)
         
         #content.bind(on_channel_customization_close=self.on_channel_customization_close)
@@ -339,10 +340,11 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
                  AlertRule(True, 9000, 10000, 0, 0, [PopupAlertAction('Over Rev', 'triangle', [1,0,0])]),                 
             ]
         alert_rules = AlertRuleCollection('', True, rules)
-        content = AlertRulesView(alert_rules)
+        content = AlertRulesView(alert_rules, channel=self.channel)
         
         popup = Popup(title='Customize {}'.format(self.channel), content=content, size_hint=(0.7, 0.8))
         popup.bind(on_dismiss=self.popup_dismissed)
+        content.bind(title=lambda i,t: setattr(popup, 'title', t))
         popup.open()
         self._popup = popup
         self._dismiss_customization_popup_trigger()

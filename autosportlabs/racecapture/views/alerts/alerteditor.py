@@ -6,7 +6,7 @@ from kivy.uix.switch import Switch
 from fieldlabel import FieldLabel
 from iconbutton import IconButton
 from kivy.app import Builder
-from kivy.properties import BooleanProperty, ObjectProperty
+from kivy.properties import BooleanProperty, ObjectProperty, StringProperty
 from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.racecapture.views.util.alertview import confirmPopup
@@ -180,42 +180,152 @@ class AlertRuleList(Screen):
 
         popup = confirmPopup('Delete', 'Delete Group {}-{}?'.format(value.low_threshold, value.high_threshold), confirm_delete)        
 
+class AlertActionSummaryView(BoxLayout):
+    Builder.load_string("""
+<AlertActionSummaryView>:
+    size_hint_y: None
+    height: dp(30)
+    FieldLabel:
+        id: title
+        size_hint_x: 0.8
+        
+    IconButton:
+        size_hint_x: 0.1        
+        text: u'\uf044'
+        on_release: root.dispatch('on_edit', root._alertaction)
+
+    IconButton:
+        size_hint_x: 0.1        
+        text: u'\uf014'
+        on_release: root.dispatch('on_delete', root._alertaction)    
+    """)
+    
+    def __init__(self, alertaction, **kwargs):
+        super(AlertActionSummaryView, self).__init__(**kwargs)
+        self._alertaction = alertaction
+        self.register_event_type('on_edit')
+        self.register_event_type('on_delete')
+        self._refresh_view()
+    
+    def _refresh_view(self):
+        aa = self._alertaction
+        self.ids.title.text = aa.title
+        
+    def on_edit(self, alertaction):
+        pass
+    
+    def on_delete(self, alertaction):
+        pass
+
 class AlertActionList(Screen):
-    alertrule_collection = ObjectProperty()
+    alertaction_collection = ObjectProperty()
     Builder.load_string("""
 <AlertActionList>:
-    ScrollContainer:
-        canvas.before:
-            Color:
-                rgba: 0.05, 0.05, 0.05, 1
-            Rectangle:
-                pos: self.pos
-                size: self.size                
-        id: scroller
-        size_hint_y: 0.95
-        do_scroll_x:False
-        do_scroll_y:True
-        GridLayout:
-            id: grid
-            padding: [dp(5), dp(5)]                        
-            spacing: [dp(0), dp(10)]
+    BoxLayout:
+        orientation: 'vertical'
+        ScrollContainer:
+            canvas.before:
+                Color:
+                    rgba: 0.05, 0.05, 0.05, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size                
+            id: scroller
+            size_hint_y: 0.95
+            do_scroll_x:False
+            do_scroll_y:True
+            GridLayout:
+                id: grid
+                padding: [dp(5), dp(5)]                        
+                spacing: [dp(0), dp(10)]
+                size_hint_y: None
+                height: max(self.minimum_height, scroller.height)
+                cols: 1
+        BoxLayout:
             size_hint_y: None
-            height: max(self.minimum_height, scroller.height)
-            cols: 1
+            height: dp(60)
+            IconButton:
+                text: u'\uf00d'
+                color: ColorScheme.get_primary()            
+                on_press: root.dispatch('on_close')                
     """)
 
     def __init__(self, **kwargs):
         super(AlertActionList, self).__init__(**kwargs)
         self.register_event_type('on_close')
+        self.register_event_type('on_edit_action')
 
+    def on_alertaction_collection(self, instance, value):
+        self._refresh_view()
+    
+    def _refresh_view(self):
+        grid = self.ids.grid
+        actions = self.alertaction_collection
+        
+        grid.clear_widgets()
+        for action in actions:
+            view = AlertActionSummaryView(action)
+            view.bind(on_edit=self._on_edit_action)
+            view.bind(on_delete=self._on_delete_action)
+            
+            grid.add_widget(view)
+ 
     def on_close(self):
         pass
     
+    def on_edit_action(self, action):
+        pass
+    
     def on_enter(self, *args):
-        from kivy.clock import Clock
-        Clock.schedule_once(lambda dt: self.dispatch('on_close'), 1.0)
+        pass
+    
+    def _on_edit_action(self, instance, action):
+        self.dispatch('on_edit_action', action)
+    
+    def _on_delete_action(self, instance, action):
+        popup = None
+        def confirm_delete(instance, delete):
+            if delete:
+                actions = self.alertaction_collection
+                actions.remove(action)
+                self._refresh_view()
+            popup.dismiss()
+
+        popup = confirmPopup('Delete', 'Delete Action {}?'.format(action.title), confirm_delete)      
+
+class AlertActionEditor(Screen):
+    Builder.load_string("""
+<AlertActionEditor>:
+    BoxLayout:
+        orientation: 'vertical'
+        FieldLabel:
+            text: 'action editor'
+        BoxLayout:
+            size_hint_y: None
+            height: dp(60)
+            IconButton:
+                text: u'\uf00d'
+                color: ColorScheme.get_primary()            
+                on_press: root.dispatch('on_close')
+""")    
+    alertaction = ObjectProperty()
+    
+    def __init__(self, **kwargs):
+        super(AlertActionEditor, self).__init__(**kwargs)
+        self.register_event_type('on_close')
+        
+    def on_alert_action(self, instance, value):
+        pass
+    
+    def on_close(self):
+        pass
 
 class AlertRulesView(BoxLayout):
+    title = StringProperty()
+    channel = StringProperty()
+    current_alertrule = ObjectProperty(allownone=True)
+    current_action = ObjectProperty(allownone=True)
+    
     Builder.load_string("""
 <AlertRulesView>:
     ScreenManager:
@@ -226,26 +336,64 @@ class AlertRulesView(BoxLayout):
         AlertActionList:
             name: 'group_list'
             id: group_list
+        AlertActionEditor:
+            name: 'action_editor'
+            id: action_editor
     """)
     
     def __init__(self, alertrule_collection, **kwargs):
         super(AlertRulesView, self).__init__(**kwargs)
         self.ids.screen_manager.transition = SlideTransition()
         self._alertrule_collection = alertrule_collection
+        
         self.ids.rule_list.bind(on_select=self._on_rule_select)
         self.ids.rule_list.alertrule_collection = alertrule_collection
-        
+
+        self.ids.group_list.bind(on_edit_action=self._on_edit_action)        
         self.ids.group_list.bind(on_close=self._on_close_group)
         
-    def _on_rule_select(self, instance, value):
+        self.ids.action_editor.bind(on_close=self._on_close_action_editor)
+        
+    def _refresh_title(self):
+        ar = self.current_alertrule
+        value_range = '' if ar is None else ': {} - {}'.format(ar.low_threshold, ar.high_threshold)
+        
+        a = self.current_action
+        action = '' if a is None else ': {}'.format(a.title)
+        self.title = 'Customize {} {} {}'.format(self.channel, value_range, action)
+        
+    def on_current_alertrule(self, instance, value):
+        self._refresh_title()
+        
+    def on_current_action(self, instance, value):
+        self._refresh_title()
+        
+    def _on_rule_select(self, instance, alertrule):
         sm = self.ids.screen_manager
-        sm.transition.direction = 'up' 
+        sm.transition.direction = 'up'
+        self.ids.group_list.alertaction_collection = alertrule.alert_actions 
         sm.current = 'group_list'
+        self.current_alertrule = alertrule
     
     def _on_close_group(self, instance):
         sm = self.ids.screen_manager
         sm.transition.direction = 'down' 
         sm.current = 'rule_list'
+        self.current_alertrule = None
+    
+    def _on_close_action_editor(self, instance):
+        sm = self.ids.screen_manager
+        sm.transition.direction = 'down' 
+        sm.current = 'group_list'
+        self.current_action = None
+        
+    def _on_edit_action(self, instance, alertaction):
+        sm = self.ids.screen_manager
+        sm.transition.direction = 'up'
+        self.ids.action_editor.alertaction = alertaction 
+        sm.current = 'action_editor'
+        self.current_action = alertaction
+        
         
 
         
