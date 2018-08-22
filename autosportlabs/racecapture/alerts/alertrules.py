@@ -98,14 +98,13 @@ class AlertRule(object):
 Describes a collection of rules for a specified channel
 """
 class AlertRuleCollection(object):
-    def __init__(self, channel_name, enabled, alert_rules=[]):
+    def __init__(self, channel_name, alert_rules=[]):
         """
         :param string channel_name: The name of the channel the rules will be applied against
         :param bool enabled: True if this rule collection is enabled
         :param array alert_rules: The array of rules to use 
         """
         self.channel_name = channel_name
-        self.enabled = enabled
         self.alert_rules = alert_rules
 
     def check_rules(self, value):
@@ -118,67 +117,11 @@ class AlertRuleCollection(object):
         active_rules = []
         deactive_rules = []
 
-        if self.enabled:
-            for r in self.alert_rules:
-                if r.should_activate(value):
-                    active_rules.append(r)
-                if r.should_deactivate(value):
-                    deactive_rules.append(r)
+        for r in self.alert_rules:
+            if r.should_activate(value):
+                active_rules.append(r)
+            if r.should_deactivate(value):
+                deactive_rules.append(r)
 
         return active_rules, deactive_rules
 
-"""
-Describes an an alert action that specifies a color to activate
-"""
-class ColorAlertAction(object):
-    def __init__(self, color_rgb):
-        """
-        :param array color_rgb: array of R,G,B values
-        """
-        self.color_rgb = color_rgb
-        
-    @property
-    def title(self):
-        return 'Set Color'
-
-"""
-Describes an alert action that takes the form of a popup message
-"""
-class PopupAlertAction(object):
-    def __init__(self, message, shape, color_rgb):
-        """
-        :param string message: The message to display
-        :param string shape: the name of the shape to display('triangle', 'octagon'). if None, no shape will be displayed
-        :param array color_rgb: array of R,G,B values
-        """
-        self.message = message
-        self.shape = shape
-        self.color_rgb = color_rgb
-        
-    @property
-    def title(self):
-        return 'Popup: "{}"'.format(self.message)
-    
-class LedAlertAction(object):
-    def __init__(self, color_rgb):
-        """
-        :param array color_rgb: array of R,G,B values
-        """
-        self.color_rgb = color_rgb
-        
-    @property
-    def title(self):
-        return 'Set Alert LED'
-    
-
-class ShiftLightAlertAction(object):
-    def __init__(self, color_rgb):
-        """
-        :param array color_rgb: array of R,G,B values
-        """
-        self.color_rgb = color_rgb
-        
-    @property
-    def title(self):
-        return 'Set Shift Light'
-    

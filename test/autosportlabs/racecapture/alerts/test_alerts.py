@@ -66,29 +66,9 @@ class AlertRuleTest(unittest.TestCase):
 
 class AlertRuleCollectionTest(unittest.TestCase):
 
-    def test_enabled(self):
-        ar = AlertRule(True, 100, 200, 0.1, 0.1)
-        arc = AlertRuleCollection("RPM", False, [ar])
-
-        active, deactive = arc.check_rules(50)
-        self.assertEqual(active, [])
-        self.assertEqual(deactive, [])
-
-        time.sleep(0.2)
-        active, deactive = arc.check_rules(50)
-        self.assertEqual(active, [])
-        self.assertEqual(deactive, [])
-
-        arc.enabled = True
-        active, deactive = arc.check_rules(50)
-        time.sleep(0.2)
-        active, deactive = arc.check_rules(50)
-        self.assertEqual(active, [])
-        self.assertEqual(deactive[0], ar)
-
     def test_alert_single(self):
         ar = AlertRule(True, 100, 200, 0.1, 0.1)
-        arc = AlertRuleCollection("RPM", True, [ar])
+        arc = AlertRuleCollection("RPM", [ar])
 
         active, deactive = arc.check_rules(50)
         self.assertEqual(active, [])
@@ -129,7 +109,7 @@ class AlertRuleCollectionTest(unittest.TestCase):
         ar1 = AlertRule(True, 100, 200, 0.1, 0.1)
         ar2 = AlertRule(True, 300, 400, 0.1, 0.1)
         ar3 = AlertRule(True, 500, 600, 0.1, 0.1)
-        arc = AlertRuleCollection("RPM", True, [ar1, ar2, ar3])
+        arc = AlertRuleCollection("RPM", [ar1, ar2, ar3])
 
         active, deactive = arc.check_rules(50)
         self.assertEqual(active, [])
