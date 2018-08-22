@@ -3,11 +3,14 @@ kivy.require('1.10.0')
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.switch import Switch
+from kivy.uix.slider import Slider
 from fieldlabel import FieldLabel
 from iconbutton import IconButton
 from kivy.app import Builder
+from valuefield import NumericValueField
+
 from kivy.properties import BooleanProperty, ObjectProperty, StringProperty
-from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
+from kivy.uix.screenmanager import ScreenManager, Screen, RiseInTransition, SlideTransition
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.racecapture.views.util.alertview import confirmPopup
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
@@ -224,6 +227,37 @@ class AlertActionList(Screen):
 <AlertActionList>:
     BoxLayout:
         orientation: 'vertical'
+        BoxLayout:
+            size_hint_y: None
+            height: dp(60)
+            padding: (dp(10), dp(10))
+            spacing: dp(10)
+            FieldLabel:
+                text: 'Range'
+                size_hint_x: 0.3
+            ScreenManager:
+                id: low_range_screen
+                Screen:
+                    name: 'show'
+                    FloatValueField:
+                        id: low_range
+                Screen:
+                    name: 'hide'
+            Spinner:
+                id: range_option
+                values: ['-','up to','and up']
+                font_size: self.height * .7
+                font_name: "resource/fonts/ASL_light.ttf"
+                size_hint_x: 0.5
+                on_text: root._on_range_option_selected(*args)
+            ScreenManager:
+                id: high_range_screen
+                Screen:
+                    name: 'show'
+                    FloatValueField:
+                        id: high_range
+                Screen:
+                    name: 'hide'
         ScrollContainer:
             canvas.before:
                 Color:
@@ -256,10 +290,25 @@ class AlertActionList(Screen):
         self.register_event_type('on_close')
         self.register_event_type('on_edit_action')
 
+    def _on_range_option_selected(self, instance, value):
+        show_low_range = value == '-' or value == 'and up'
+        show_high_range = value == '-' or value == 'up to'
+
+        low_screen = self.ids.low_range_screen
+        high_screen = self.ids.high_range_screen
+
+        low_screen.transition.direction = 'up' if show_low_range else 'down'
+        low_screen.transition.direction = 'down' if show_low_range else 'up'
+
+        low_screen.current = 'show' if show_low_range else 'hide'
+        high_screen.current = 'show' if show_high_range else 'hide'
+
     def on_alertaction_collection(self, instance, value):
         self.refresh_view()
 
     def refresh_view(self):
+        self.ids.low_range_screen.transition = SlideTransition(direction='up')
+        self.ids.high_range_screen.transition = SlideTransition(direction='up')
         grid = self.ids.grid
         actions = self.alertaction_collection
 
