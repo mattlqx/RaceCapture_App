@@ -161,7 +161,7 @@ class AlertRuleList(Screen):
             return
 
         rules.insert(current_index - 1, rules.pop(current_index))
-        self._refresh_view()
+        self.refresh_view()
 
     def _on_move_rule_down(self, instance, value):
         rules = self.alertrule_collection.alert_rules
@@ -170,7 +170,7 @@ class AlertRuleList(Screen):
             return
 
         rules.insert(current_index + 1, rules.pop(current_index))
-        self._refresh_view()
+        self.refresh_view()
 
     def _on_delete_rule(self, instance, value):
 
@@ -179,7 +179,7 @@ class AlertRuleList(Screen):
             if delete:
                 rules = self.alertrule_collection.alert_rules
                 rules.remove(value)
-                self._refresh_view()
+                self.refresh_view()
             popup.dismiss()
 
         popup = confirmPopup('Delete', 'Delete Group {}-{}?'.format(value.low_threshold, value.high_threshold), confirm_delete)
@@ -222,7 +222,7 @@ class AlertActionSummaryView(BoxLayout):
         pass
 
 class AlertActionList(Screen):
-    alertaction_collection = ObjectProperty()
+    alertrule = ObjectProperty()
     Builder.load_string("""
 <AlertActionList>:
     BoxLayout:
@@ -236,11 +236,12 @@ class AlertActionList(Screen):
                 text: 'Range'
                 size_hint_x: 0.3
             ScreenManager:
-                id: low_range_screen
+                id: low_threshold_screen
                 Screen:
                     name: 'show'
                     FloatValueField:
-                        id: low_range
+                        id: low_threshold
+                        on_text: root._on_low_threshold(*args)
                 Screen:
                     name: 'hide'
             Spinner:
@@ -251,11 +252,12 @@ class AlertActionList(Screen):
                 size_hint_x: 0.5
                 on_text: root._on_range_option_selected(*args)
             ScreenManager:
-                id: high_range_screen
+                id: high_threshold_screen
                 Screen:
                     name: 'show'
                     FloatValueField:
-                        id: high_range
+                        id: high_threshold
+                        on_text: root._on_high_threshold(*args)
                 Screen:
                     name: 'hide'
         ScrollContainer:
@@ -291,26 +293,41 @@ class AlertActionList(Screen):
         self.register_event_type('on_edit_action')
 
     def _on_range_option_selected(self, instance, value):
-        show_low_range = value == '-' or value == 'and up'
-        show_high_range = value == '-' or value == 'up to'
+        show_low_threshold = value == '-' or value == 'and up'
+        show_high_threshold = value == '-' or value == 'up to'
+        low_threshold = self.ids.low_threshold
+        high_threshold = self.ids.high_threshold
+        
+        low_screen = self.ids.low_threshold_screen
+        high_screen = self.ids.high_threshold_screen
 
-        low_screen = self.ids.low_range_screen
-        high_screen = self.ids.high_range_screen
+        low_screen.transition.direction = 'up' if show_low_threshold else 'down'
+        low_screen.transition.direction = 'down' if show_low_threshold else 'up'
 
-        low_screen.transition.direction = 'up' if show_low_range else 'down'
-        low_screen.transition.direction = 'down' if show_low_range else 'up'
+        low_screen.current = 'show' if show_low_threshold else 'hide'
+        high_screen.current = 'show' if show_high_threshold else 'hide'
+        
+        if not show_low_threshold:
+            low_threshold.text = ''
+            
+        if not show_high_threshold:
+            high_threshold.text = ''
 
-        low_screen.current = 'show' if show_low_range else 'hide'
-        high_screen.current = 'show' if show_high_range else 'hide'
-
-    def on_alertaction_collection(self, instance, value):
+    def _on_high_threshold(self, instance, value):
+        self.alertrule.high_threshold = value
+        
+    def _on_low_threshold(self, instance, value):
+        self.alertrule.low_threshold = value
+        
+    def on_alertrule(self, instance, value):
         self.refresh_view()
 
     def refresh_view(self):
-        self.ids.low_range_screen.transition = SlideTransition(direction='up')
-        self.ids.high_range_screen.transition = SlideTransition(direction='up')
+        self.ids.low_threshold_screen.transition = SlideTransition(direction='up')
+        self.ids.high_threshold_screen.transition = SlideTransition(direction='up')
         grid = self.ids.grid
-        actions = self.alertaction_collection
+        alertrule = self.alertrule
+        actions = alertrule.alert_actions
 
         grid.clear_widgets()
         for action in actions:
@@ -319,6 +336,9 @@ class AlertActionList(Screen):
             view.bind(on_delete=self._on_delete_action)
 
             grid.add_widget(view)
+            
+        self.ids.low_threshold.text = str(alertrule.low_threshold)
+        self.ids.high_threshold.text = str(alertrule.high_threshold)
 
     def on_close(self):
         pass
@@ -336,9 +356,9 @@ class AlertActionList(Screen):
         popup = None
         def confirm_delete(instance, delete):
             if delete:
-                actions = self.alertaction_collection
+                actions = self.alertrule.alert_actions
                 actions.remove(action)
-                self._refresh_view()
+                self.refresh_view()
             popup.dismiss()
 
         popup = confirmPopup('Delete', 'Delete Action {}?'.format(action.title), confirm_delete)
@@ -424,7 +444,7 @@ class AlertRulesView(BoxLayout):
     def _on_rule_select(self, instance, alertrule):
         sm = self.ids.screen_manager
         sm.transition.direction = 'up'
-        self.ids.group_list.alertaction_collection = alertrule.alert_actions
+        self.ids.group_list.alertrule = alertrule
         sm.current = 'group_list'
         self.current_alertrule = alertrule
 
