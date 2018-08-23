@@ -336,8 +336,8 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
         # content = ChannelCustomizationView(settings=self.settings, channel=self.channel)
 
         # content.bind(on_channel_customization_close=self.on_channel_customization_close)
-        rules = [AlertRule(True, AlertRule.RANGE_LESS_THAN_EQUAL, None, 7000, 0, 0, [ColorAlertAction([1, 1, 1]), ShiftLightAlertAction([1, 1, 0])]),
-                 AlertRule(True, AlertRule.RANGE_BETWEEN, 7000, 7500, 0, 0, [ColorAlertAction([1, 1, 1]), ShiftLightAlertAction([1, 0, 0])]),
+        rules = [AlertRule(True, AlertRule.RANGE_LESS_THAN_EQUAL, None, 7000, 0, 0, [ColorAlertAction([1, 1, 1]), ShiftLightAlertAction(0, [1, 1, 0])]),
+                 AlertRule(True, AlertRule.RANGE_BETWEEN, 7000, 7500, 0, 0, [ColorAlertAction([1, 1, 1]), ShiftLightAlertAction(0, [1, 0, 0])]),
                  AlertRule(True, AlertRule.RANGE_BETWEEN, 9000, 10000, 0, 0, [PopupAlertAction('Over Rev', 'triangle', [1, 0, 0])]),
                  AlertRule(True, AlertRule.RANGE_GREATHER_THAN_EQUAL, 10000, None, 0, 0, [LedAlertAction('left', 1, [1, 0, 0])]),
             ]

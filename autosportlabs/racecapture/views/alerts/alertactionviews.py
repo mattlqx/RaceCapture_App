@@ -213,9 +213,69 @@ class LedAlertActionEditorView(BaseAlertActionEditorView):
 class ShiftLightAlertActionEditorView(BaseAlertActionEditorView):
     Builder.load_string("""
 <ShiftLightAlertActionEditorView>:
+    BoxLayout:
+        size_hint_x: 0.8
+        orientation: 'vertical'
+        spacing: dp(10)
+        Widget:
+
+        BoxLayout:
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(40)
+            FieldLabel:
+                text: 'Flash'
+                halign: 'right'
+            MappedSpinner:
+                value_map: {0:'Solid', 1:'1Hz', 5:'5Hz', 10:'10Hz'}
+                id: flash_rate
+                on_text: root._on_flash_rate(*args)
+                
+        BoxLayout:
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(40)
+            FieldLabel:
+                text: 'Color'
+                halign: 'right'
+            AnchorLayout:
+                ColorBlock:
+                    id: led_color
+                    on_press: root._on_select_color(*args)
+        Widget:
+                        
     FieldLabel:
-        text: 'shift light'
+        text: 'Preview here'
+        halign: 'center'
     """)
+
+    def __init__(self, **kwargs):
+        super(ShiftLightAlertActionEditorView, self).__init__(**kwargs)
+        self._refresh_view()
+
+    def _refresh_view(self):
+        alertaction = self.alertaction
+        self.ids.flash_rate.setFromValue(alertaction.flash_rate)
+        c = alertaction.color_rgb
+        self.ids.led_color.color = [c[0], c[1], c[2], 1.0]
+    
+    def _on_flash_rate(self, instance, value):
+        try:
+            self.alertaction.flash_rate = instance.getValueFromKey(value)
+        except NoneType:
+            pass
+    
+    def _on_select_color(self, instance):
+        def color_selected(instance, c):
+            self.alertaction.color_rgb = [c[0], c[1], c[2], 1.0]
+            self.ids.led_color.color = [c[0], c[1], c[2], 1.0]
+            popup.dismiss()
+
+        c = self.alertaction.color_rgb
+        content = ColorPickerView(color=[c[0], c[1], c[2], 1.0])
+        content.bind(on_color_selected=color_selected)
+        popup = Popup(title="Select Color", content=content, size_hint=(0.4, 0.6))
+        popup.open()
 
 class AlertActionEditorFactory(object):
 
