@@ -343,8 +343,11 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
             ]
         alert_rules = AlertRuleCollection('', rules)
         content = AlertRulesView(alert_rules, channel=self.channel)
+        content.min_value = self.min
+        content.max_value = self.max
+        content.precision = self.precision
 
-        popup = Popup(title='Customize {}'.format(self.channel), content=content, size_hint=(0.7, 0.8))
+        popup = Popup(title='Customize {}'.format(self.channel), content=content, size_hint=(0.75, 0.9))
         popup.bind(on_dismiss=self.popup_dismissed)
         content.bind(title=lambda i, t: setattr(popup, 'title', t))
         popup.open()

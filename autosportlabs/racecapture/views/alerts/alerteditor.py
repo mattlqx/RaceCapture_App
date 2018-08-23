@@ -9,12 +9,13 @@ from iconbutton import IconButton
 from kivy.app import Builder
 from valuefield import NumericValueField
 
-from kivy.properties import BooleanProperty, ObjectProperty, StringProperty
+from kivy.properties import BooleanProperty, ObjectProperty, StringProperty, NumericProperty
 from kivy.uix.screenmanager import ScreenManager, Screen, RiseInTransition, SlideTransition
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.racecapture.views.util.alertview import confirmPopup
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.racecapture.views.alerts.alertactionviews import AlertActionEditorFactory
+from autosportlabs.uix.button.betterbutton import BetterButton
 
 class AlertRuleSummaryView(BoxLayout):
     is_first = BooleanProperty(False)
@@ -221,45 +222,145 @@ class AlertActionSummaryView(BoxLayout):
     def on_delete(self, alertaction):
         pass
 
+class SpinValueField(BoxLayout):
+    value = NumericProperty(0.0)
+    step_value = NumericProperty(1.0)
+    min_value = NumericProperty(0.0)
+    max_value = NumericProperty(100.0)
+    value_format = StringProperty('{:.0f}')
+
+    Builder.load_string("""
+<SpinValueField>:
+    BetterButton:
+        width: dp(30)
+        size_hint_x: None
+        text: '-'
+        font_size: self.height * 0.7
+        on_press: root._increment(-root.step_value)
+        
+    FieldLabel:
+        text: root.value_format.format(root.value)
+        halign: 'center'
+        underline: True
+        
+    BetterButton:
+        width: dp(30)
+        size_hint_x: None
+        text: '+'
+        font_size: self.height * 0.7
+        on_press: root._increment(root.step_value)
+    """)
+
+    def _increment(self, step_value):
+        self.value = max(self.min_value, min(self.max_value, self.value + step_value))
+
+    def on_step_value(self, instance, value):
+        # guess the number of digits of precision
+        if self.step_value % 1 == 0:
+            self.value_format = '{:.0f}'
+        elif self.step_value % 0.1 == 0:
+            self.value_format = '{:.1f}'
+        else:
+            self.value_format = '{:.2f}'
+
 class AlertActionList(Screen):
     alertrule = ObjectProperty()
+    min_value = NumericProperty()
+    max_value = NumericProperty()
+    precision = NumericProperty()
     Builder.load_string("""
 <AlertActionList>:
     BoxLayout:
         orientation: 'vertical'
         BoxLayout:
             size_hint_y: None
-            height: dp(60)
-            padding: (dp(10), dp(10))
-            spacing: dp(10)
+            height: dp(40)
+            padding: (0, dp(2))
             FieldLabel:
-                text: 'Range'
-                size_hint_x: 0.3
-            ScreenManager:
-                id: low_threshold_screen
-                Screen:
-                    name: 'show'
-                    FloatValueField:
-                        id: low_threshold
-                        on_text: root._on_low_threshold(*args)
-                Screen:
-                    name: 'hide'
-            Spinner:
-                id: range_option
-                values: ['-','up to','and up']
-                font_size: self.height * .7
-                font_name: "resource/fonts/ASL_light.ttf"
-                size_hint_x: 0.5
-                on_text: root._on_range_option_selected(*args)
-            ScreenManager:
-                id: high_threshold_screen
-                Screen:
-                    name: 'show'
-                    FloatValueField:
-                        id: high_threshold
-                        on_text: root._on_high_threshold(*args)
-                Screen:
-                    name: 'hide'
+                text: 'Active Range'
+                halign: 'right'
+                padding: (dp(5), 0)
+                size_hint_x: 0.4
+            BoxLayout:
+                ScreenManager:
+                    id: low_threshold_screen
+                    Screen:
+                        name: 'show'
+                        SpinValueField:
+                            id: low_threshold
+                            on_value: root._on_low_threshold(*args)
+                            min_value: root.min_value
+                            max_value: root.max_value
+                    Screen:
+                        name: 'hide'
+                AnchorLayout:
+                    Spinner:
+                        id: range_option
+                        size_hint_x: 0.9
+                        values: ['to','up to','and up']
+                        font_size: self.height * .7
+                        font_name: "resource/fonts/ASL_light.ttf"
+                        on_text: root._on_range_option_selected(*args)
+                ScreenManager:
+                    id: high_threshold_screen
+                    Screen:
+                        name: 'show'
+                        SpinValueField:
+                            id: high_threshold
+                            on_value: root._on_high_threshold(*args)
+                            min_value: root.min_value
+                            max_value: root.max_value
+                    Screen:
+                        name: 'hide'
+                    
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: dp(80)
+            BoxLayout:
+                size_hint_y: None
+                height: dp(40)
+                padding: (0, dp(2))
+                FieldLabel:
+                    text: 'Active After'
+                    size_hint_x: 0.4
+                    halign: 'right'
+                    padding: (dp(5), 0)
+                BoxLayout:
+                    SpinValueField:
+                        size_hint_x: 0.33
+                        id: activate_sec
+                        on_value: root._on_activate_sec(*args)
+                    FieldLabel:
+                        padding: (dp(5), 0)
+                        size_hint_x: 0.33
+                        text: 'sec.'
+                        halign: 'left'
+                    Widget:
+                        size_hint_x: 0.33
+
+            BoxLayout:
+                size_hint_y: None
+                height: dp(40)
+                padding: (0, dp(2))
+                FieldLabel:
+                    text: 'Deactive After'
+                    size_hint_x: 0.4                    
+                    halign: 'right'
+                    padding: (dp(5), 0)
+                BoxLayout:
+                    SpinValueField:
+                        size_hint_x: 0.33
+                        id: deactivate_sec
+                        on_value: root._on_deactivate_sec(*args)
+                    FieldLabel:
+                        padding: (dp(5), 0)
+                        size_hint_x: 0.33
+                        text: 'sec.'
+                        halign: 'left'
+                    Widget:
+                        size_hint_x: 0.33
+            
         ScrollContainer:
             canvas.before:
                 Color:
@@ -292,33 +393,62 @@ class AlertActionList(Screen):
         self.register_event_type('on_close')
         self.register_event_type('on_edit_action')
 
+    def on_max_value(self, instance, value):
+        self._update_range_step()
+
+    def on_min_value(self, instance, value):
+        self._update_range_step()
+
+    def _update_range_step(self):
+        step = (self.max_value - self.min_value) / 100.0
+        self.ids.high_threshold.step_value = self.ids.low_threshold.step_value = step
+
+
     def _on_range_option_selected(self, instance, value):
-        show_low_threshold = value == '-' or value == 'and up'
-        show_high_threshold = value == '-' or value == 'up to'
+        show_low_threshold = value == 'to' or value == 'and up'
+        show_high_threshold = value == 'to' or value == 'up to'
         low_threshold = self.ids.low_threshold
         high_threshold = self.ids.high_threshold
-        
+
         low_screen = self.ids.low_threshold_screen
         high_screen = self.ids.high_threshold_screen
 
         low_screen.transition.direction = 'up' if show_low_threshold else 'down'
-        low_screen.transition.direction = 'down' if show_low_threshold else 'up'
+        high_screen.transition.direction = 'up' if show_high_threshold else 'down'
 
         low_screen.current = 'show' if show_low_threshold else 'hide'
         high_screen.current = 'show' if show_high_threshold else 'hide'
-        
+
         if not show_low_threshold:
             low_threshold.text = ''
-            
+
         if not show_high_threshold:
             high_threshold.text = ''
 
+    def _on_activate_sec(self, instance, value):
+        try:
+            self.alertrule.activate_sec = value
+        except NoneType:
+            pass
+
+    def _on_deactivate_sec(self, instance, value):
+        try:
+            self.alertrule.deactivate_sec = value
+        except NoneType:
+            pass
+
     def _on_high_threshold(self, instance, value):
-        self.alertrule.high_threshold = value
-        
+        try:
+            self.alertrule.high_threshold = value
+        except NoneType:
+            pass
+
     def _on_low_threshold(self, instance, value):
-        self.alertrule.low_threshold = value
-        
+        try:
+            self.alertrule.low_threshold = value
+        except NoneType:
+            pass
+
     def on_alertrule(self, instance, value):
         self.refresh_view()
 
@@ -336,9 +466,12 @@ class AlertActionList(Screen):
             view.bind(on_delete=self._on_delete_action)
 
             grid.add_widget(view)
-            
-        self.ids.low_threshold.text = str(alertrule.low_threshold)
-        self.ids.high_threshold.text = str(alertrule.high_threshold)
+
+        self.ids.low_threshold.value = alertrule.low_threshold
+        self.ids.high_threshold.value = alertrule.high_threshold
+        self.ids.activate_sec.value = alertrule.activate_sec
+        self.ids.deactivate_sec.value = alertrule.deactivate_sec
+
 
     def on_close(self):
         pass
@@ -396,6 +529,9 @@ class AlertActionEditor(Screen):
 class AlertRulesView(BoxLayout):
     title = StringProperty()
     channel = StringProperty()
+    min_value = NumericProperty()
+    max_value = NumericProperty()
+    precision = NumericProperty()
     current_alertrule = ObjectProperty(allownone=True)
     current_action = ObjectProperty(allownone=True)
 
@@ -409,6 +545,9 @@ class AlertRulesView(BoxLayout):
         AlertActionList:
             name: 'group_list'
             id: group_list
+            min_value: root.min_value
+            max_value: root.max_value
+            precision: root.precision
         AlertActionEditor:
             name: 'action_editor'
             id: action_editor
