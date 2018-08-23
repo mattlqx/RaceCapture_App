@@ -26,7 +26,7 @@ from autosportlabs.racecapture.alerts.alertrules import AlertRule, AlertRuleColl
 class AlertRuleTest(unittest.TestCase):
 
     def test_activate_deactivate(self):
-        ar = AlertRule(True, 100, 200, 0.1, 0.1)
+        ar = AlertRule(True, AlertRule.RANGE_BETWEEN, 100, 200, 0.1, 0.1)
         self.assertFalse(ar.should_activate(100))
         time.sleep(0.2)
         self.assertTrue(ar.should_activate(100))
@@ -43,20 +43,20 @@ class AlertRuleTest(unittest.TestCase):
 
     def test_enabled_disabled(self):
         # Test activating a disabled rule
-        ar = AlertRule(False, 100, 200, 0.1, 0.1)
+        ar = AlertRule(False, AlertRule.RANGE_BETWEEN, 100, 200, 0.1, 0.1)
         self.assertFalse(ar.should_activate(100))
         time.sleep(0.2)
         self.assertFalse(ar.should_activate(100))
 
         # Test disabling after it's been activated
-        ar2 = AlertRule(True, 100, 200, 0.1, 0.1)
+        ar2 = AlertRule(True, AlertRule.RANGE_BETWEEN, 100, 200, 0.1, 0.1)
         self.assertFalse(ar2.should_activate(100))
         time.sleep(0.2)
         self.assertTrue(ar2.should_activate(100))
         ar2.enabled = False
 
     def test_within_threshold(self):
-        ar = AlertRule(True, 100, 200, 1, 1)
+        ar = AlertRule(True, AlertRule.RANGE_BETWEEN, 100, 200, 1, 1)
         self.assertTrue(ar.is_within_threshold(100))
         self.assertTrue(ar.is_within_threshold(150))
         self.assertTrue(ar.is_within_threshold(200))
@@ -67,7 +67,7 @@ class AlertRuleTest(unittest.TestCase):
 class AlertRuleCollectionTest(unittest.TestCase):
 
     def test_alert_single(self):
-        ar = AlertRule(True, 100, 200, 0.1, 0.1)
+        ar = AlertRule(True, AlertRule.RANGE_BETWEEN, 100, 200, 0.1, 0.1)
         arc = AlertRuleCollection("RPM", [ar])
 
         active, deactive = arc.check_rules(50)
@@ -106,9 +106,9 @@ class AlertRuleCollectionTest(unittest.TestCase):
         self.assertEqual(len(deactive), 1)
 
     def test_alert_multiple(self):
-        ar1 = AlertRule(True, 100, 200, 0.1, 0.1)
-        ar2 = AlertRule(True, 300, 400, 0.1, 0.1)
-        ar3 = AlertRule(True, 500, 600, 0.1, 0.1)
+        ar1 = AlertRule(True, AlertRule.RANGE_BETWEEN, 100, 200, 0.1, 0.1)
+        ar2 = AlertRule(True, AlertRule.RANGE_BETWEEN, 300, 400, 0.1, 0.1)
+        ar3 = AlertRule(True, AlertRule.RANGE_BETWEEN, 500, 600, 0.1, 0.1)
         arc = AlertRuleCollection("RPM", [ar1, ar2, ar3])
 
         active, deactive = arc.check_rules(50)

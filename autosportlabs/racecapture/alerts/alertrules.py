@@ -26,15 +26,21 @@ low and high threshold value (inclusive) as well as the timing
 activation / deactivation thresholds used for triggering
 """
 class AlertRule(object):
-    def __init__(self, enabled, low_threshold, high_threshold, activate_sec, deactivate_sec, alert_actions=[]):
+    RANGE_BETWEEN = '-'
+    RANGE_LESS_THAN_EQUAL = '<='
+    RANGE_GREATHER_THAN_EQUAL = '>='
+    
+    def __init__(self, enabled, range_type, low_threshold, high_threshold, activate_sec, deactivate_sec, alert_actions=[]):
         """
         :param bool enabled: Set to True if the rule is enabled
+        :param string range_type: The type of Range - AlertRule.RANGE_BETWEEN, AlertRule.RANGE_LESS_THAN_EQUAL, AlertRule.RANGE_GREATHER_THAN_EQUAL
         :param float low_threshold: the low range of the threshold
         :param float high_threshold: the high range of the threshold
         :param float activate_sec: the number of seconds before the rule is activated
         :param float deactivate_sec: the number of seconds before the rule is deactivated
         """
         self.enabled = enabled
+        self.range_type = range_type
         self.low_threshold = low_threshold
         self.high_threshold = high_threshold
         self.activate_sec = activate_sec

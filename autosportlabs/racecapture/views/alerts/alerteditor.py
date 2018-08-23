@@ -15,7 +15,9 @@ from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.racecapture.views.util.alertview import confirmPopup
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.racecapture.views.alerts.alertactionviews import AlertActionEditorFactory
+from autosportlabs.racecapture.alerts.alertrules import AlertRule
 from autosportlabs.uix.button.betterbutton import BetterButton
+from mappedspinner import MappedSpinner
 
 class AlertRuleSummaryView(BoxLayout):
     is_first = BooleanProperty(False)
@@ -50,7 +52,7 @@ class AlertRuleSummaryView(BoxLayout):
         disabled: root.is_first        
         on_release: root.dispatch('on_move_up', root._alertrule)
     IconButton:
-        size_hint_x: 0.1        
+        size_hint_x: 0.1
         text: u'\uf014'
         on_release: root.dispatch('on_delete', root._alertrule)    
 """)
@@ -66,7 +68,10 @@ class AlertRuleSummaryView(BoxLayout):
 
     def _refresh_view(self):
         ar = self._alertrule
-        self.ids.range.text = '{} - {}'.format(ar.low_threshold, ar.high_threshold)
+        range_type = ar.range_type
+        self.ids.range.text = '{} {} {}'.format('' if ar.low_threshold is None else ar.low_threshold,
+                                                '-' if range_type == AlertRule.RANGE_BETWEEN else '->',  
+                                                '' if ar.high_threshold is None else ar.high_threshold)
         actions = ar.alert_actions
         actions_len = len(ar.alert_actions)
         action_title = actions[0].title if actions_len == 1 else '(Multiple Actions)' if actions_len > 1 else '(No Actions)'
@@ -269,6 +274,7 @@ class AlertActionList(Screen):
     max_value = NumericProperty()
     precision = NumericProperty()
     Builder.load_string("""
+#:import AlertRule autosportlabs.racecapture.alerts.alertrules.AlertRule
 <AlertActionList>:
     BoxLayout:
         orientation: 'vertical'
@@ -294,13 +300,13 @@ class AlertActionList(Screen):
                     Screen:
                         name: 'hide'
                 AnchorLayout:
-                    Spinner:
-                        id: range_option
+                    MappedSpinner:
+                        id: range_type
                         size_hint_x: 0.9
-                        values: ['to','up to','and up']
+                        value_map: {AlertRule.RANGE_BETWEEN:'to',AlertRule.RANGE_LESS_THAN_EQUAL:'up to',AlertRule.RANGE_GREATHER_THAN_EQUAL:'and up'}
                         font_size: self.height * .7
                         font_name: "resource/fonts/ASL_light.ttf"
-                        on_text: root._on_range_option_selected(*args)
+                        on_text: root._on_range_type_selected(*args)
                 ScreenManager:
                     id: high_threshold_screen
                     Screen:
@@ -402,11 +408,12 @@ class AlertActionList(Screen):
     def _update_range_step(self):
         step = (self.max_value - self.min_value) / 100.0
         self.ids.high_threshold.step_value = self.ids.low_threshold.step_value = step
-
-
-    def _on_range_option_selected(self, instance, value):
-        show_low_threshold = value == 'to' or value == 'and up'
-        show_high_threshold = value == 'to' or value == 'up to'
+    
+    def _on_range_type_selected(self, instance, value):
+        value = instance.getValueFromKey(value)
+        self.alertrule.range_type = value
+        show_low_threshold = value == AlertRule.RANGE_BETWEEN or value == AlertRule.RANGE_GREATHER_THAN_EQUAL
+        show_high_threshold = value == AlertRule.RANGE_BETWEEN or value == AlertRule.RANGE_LESS_THAN_EQUAL
         low_threshold = self.ids.low_threshold
         high_threshold = self.ids.high_threshold
 
@@ -419,11 +426,8 @@ class AlertActionList(Screen):
         low_screen.current = 'show' if show_low_threshold else 'hide'
         high_screen.current = 'show' if show_high_threshold else 'hide'
 
-        if not show_low_threshold:
-            low_threshold.text = ''
-
-        if not show_high_threshold:
-            high_threshold.text = ''
+        self.alertrule.low_threshold = None if not show_low_threshold else low_threshold.value
+        self.alertrule.high_threshold = None if not show_high_threshold else high_threshold.value
 
     def _on_activate_sec(self, instance, value):
         try:
@@ -467,10 +471,11 @@ class AlertActionList(Screen):
 
             grid.add_widget(view)
 
-        self.ids.low_threshold.value = alertrule.low_threshold
-        self.ids.high_threshold.value = alertrule.high_threshold
+        self.ids.low_threshold.value = self.min_value if alertrule.low_threshold is None else alertrule.low_threshold
+        self.ids.high_threshold.value = self.max_value if alertrule.high_threshold is None else alertrule.high_threshold
         self.ids.activate_sec.value = alertrule.activate_sec
         self.ids.deactivate_sec.value = alertrule.deactivate_sec
+        self.ids.range_type.setFromValue(alertrule.range_type)
 
 
     def on_close(self):
