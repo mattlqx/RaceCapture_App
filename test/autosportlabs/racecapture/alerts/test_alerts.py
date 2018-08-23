@@ -63,6 +63,17 @@ class AlertRuleTest(unittest.TestCase):
 
         self.assertFalse(ar.is_within_threshold(99))
         self.assertFalse(ar.is_within_threshold(201))
+        
+        ar.range_type = AlertRule.RANGE_LESS_THAN_EQUAL
+        self.assertTrue(ar.is_within_threshold(5))
+        self.assertTrue(ar.is_within_threshold(200))
+        self.assertFalse(ar.is_within_threshold(300))
+        
+        ar.range_type = AlertRule.RANGE_GREATHER_THAN_EQUAL
+        self.assertFalse(ar.is_within_threshold(50))
+        self.assertTrue(ar.is_within_threshold(100))
+        self.assertTrue(ar.is_within_threshold(300))
+        
 
 class AlertRuleCollectionTest(unittest.TestCase):
 

@@ -98,7 +98,15 @@ class AlertRule(object):
         :return: True if the value is within the threshold
         :rtype bool 
         """
-        return value <= self.high_threshold and value >= self.low_threshold
+        if self.range_type == AlertRule.RANGE_BETWEEN:
+            return value <= self.high_threshold and value >= self.low_threshold
+        elif self.range_type == AlertRule.RANGE_GREATHER_THAN_EQUAL:
+            return value >= self.low_threshold
+        elif self.range_type == AlertRule.RANGE_LESS_THAN_EQUAL:
+            return value <= self.high_threshold
+        else:
+            return False
+            
 
 """
 Describes a collection of rules for a specified channel
