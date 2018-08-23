@@ -9,6 +9,7 @@ from autosportlabs.racecapture.alerts.alertactions import *
 from autosportlabs.racecapture.views.color.colorpickerview import ColorPickerView
 from autosportlabs.racecapture.views.color.colorpickerview import ColorBlock
 from autosportlabs.uix.textwidget import FieldInput
+from mappedspinner import MappedSpinner
 import re
 
 class BaseAlertActionEditorView(BoxLayout):
@@ -69,8 +70,8 @@ class PopupAlertActionEditorView(BaseAlertActionEditorView):
             FieldLabel:
                 text: 'Shape'
                 halign: 'right'
-            Spinner:
-                values: ['None', 'Triangle', 'Octagon']
+            MappedSpinner:
+                value_map: {None:'None', 'triangle':'Triangle', 'octagon':'Octagon'}
                 id: popup_shape
                 on_text: root._on_popup_shape(*args)
                 
@@ -92,8 +93,6 @@ class PopupAlertActionEditorView(BaseAlertActionEditorView):
         halign: 'center'
     """)
 
-    shape_map = {None:'None', 'triangle':'Triangle', 'octagon':'Octagon'}
-
     def __init__(self, **kwargs):
         super(PopupAlertActionEditorView, self).__init__(**kwargs)
         self._refresh_view()
@@ -101,7 +100,7 @@ class PopupAlertActionEditorView(BaseAlertActionEditorView):
     def _refresh_view(self):
         alertaction = self.alertaction
         self.ids.popup_message.text = alertaction.message
-        self.ids.popup_shape.text = PopupAlertActionEditorView.shape_map.get(alertaction.shape, 'None')
+        self.ids.popup_shape.setFromValue(alertaction.shape)
         c = alertaction.color_rgb
         self.ids.popup_color.color = [c[0], c[1], c[2], 1.0]
 
@@ -112,8 +111,7 @@ class PopupAlertActionEditorView(BaseAlertActionEditorView):
         self.alertaction.message = value
 
     def _on_popup_shape(self, instance, value):
-        map = PopupAlertActionEditorView.shape_map
-        self.alertaction.shape = map.keys()[map.values().index(value)]
+        self.alertaction.shape = instance.getValueFromKey(value)
 
     def _on_select_color(self, instance):
         def color_selected(instance, c):
@@ -130,9 +128,87 @@ class PopupAlertActionEditorView(BaseAlertActionEditorView):
 class LedAlertActionEditorView(BaseAlertActionEditorView):
     Builder.load_string("""
 <LedAlertActionEditorView>:
+    BoxLayout:
+        size_hint_x: 0.8
+        orientation: 'vertical'
+        spacing: dp(10)
+        Widget:
+        BoxLayout:
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(40)
+            FieldLabel:
+                text: 'LED'
+                halign: 'right'
+            MappedSpinner:
+                value_map: {'left':'Left', 'right':'Right'}
+                id: led_position
+                on_text: root._on_led_position(*args)
+
+        BoxLayout:
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(40)
+            FieldLabel:
+                text: 'Flash'
+                halign: 'right'
+            MappedSpinner:
+                value_map: {0:'Solid', 1:'1Hz', 5:'5Hz', 10:'10Hz'}
+                id: flash_rate
+                on_text: root._on_flash_rate(*args)
+                
+        BoxLayout:
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(40)
+            FieldLabel:
+                text: 'Color'
+                halign: 'right'
+            AnchorLayout:
+                ColorBlock:
+                    id: led_color
+                    on_press: root._on_select_color(*args)
+        Widget:
+                        
     FieldLabel:
-        text: 'LED'
+        text: 'Preview here'
+        halign: 'center'
     """)
+
+    def __init__(self, **kwargs):
+        super(LedAlertActionEditorView, self).__init__(**kwargs)
+        self._refresh_view()
+
+    def _refresh_view(self):
+        alertaction = self.alertaction
+        self.ids.led_position.setFromValue(alertaction.led_position)
+        self.ids.flash_rate.setFromValue(alertaction.flash_rate)
+        c = alertaction.color_rgb
+        self.ids.led_color.color = [c[0], c[1], c[2], 1.0]
+
+    def _on_led_position(self, instance, value):
+        try:
+            self.alertaction.led_position = instance.getValueFromKey(value)
+        except NoneType:
+            pass
+    
+    def _on_flash_rate(self, instance, value):
+        try:
+            self.alertaction.flash_rate = instance.getValueFromKey(value)
+        except NoneType:
+            pass
+    
+    def _on_select_color(self, instance):
+        def color_selected(instance, c):
+            self.alertaction.color_rgb = [c[0], c[1], c[2], 1.0]
+            self.ids.led_color.color = [c[0], c[1], c[2], 1.0]
+            popup.dismiss()
+
+        c = self.alertaction.color_rgb
+        content = ColorPickerView(color=[c[0], c[1], c[2], 1.0])
+        content.bind(on_color_selected=color_selected)
+        popup = Popup(title="Select Color", content=content, size_hint=(0.4, 0.6))
+        popup.open()
 
 class ShiftLightAlertActionEditorView(BaseAlertActionEditorView):
     Builder.load_string("""

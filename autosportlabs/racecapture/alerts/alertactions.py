@@ -51,10 +51,14 @@ class PopupAlertAction(object):
         return 'Popup: "{}"'.format(self.message)
 
 class LedAlertAction(object):
-    def __init__(self, color_rgb):
+    def __init__(self, led_position, flash_rate, color_rgb):
         """
+        :param string led_position: The position of the led('left', 'right')
+        :param integer flash_rate: The Rate of flash in Hz. 0 = solid (no flash)
         :param array color_rgb: array of R,G,B values
         """
+        self.led_position = led_position
+        self.flash_rate = flash_rate
         self.color_rgb = color_rgb
 
     @property
