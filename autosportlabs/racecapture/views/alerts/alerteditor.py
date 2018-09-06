@@ -22,6 +22,7 @@ from mappedspinner import MappedSpinner
 class AlertRuleSummaryView(BoxLayout):
     is_first = BooleanProperty(False)
     is_last = BooleanProperty(False)
+    precision = NumericProperty(0)
 
     Builder.load_string("""
 <ClickLabel@ButtonBehavior+FieldLabel>
@@ -69,14 +70,18 @@ class AlertRuleSummaryView(BoxLayout):
     def _refresh_view(self):
         ar = self._alertrule
         range_type = ar.range_type
-        self.ids.range.text = '{} {} {}'.format('' if ar.low_threshold is None else ar.low_threshold,
-                                                '-' if range_type == AlertRule.RANGE_BETWEEN else '->',  
-                                                '' if ar.high_threshold is None else ar.high_threshold)
+        self.ids.range.text = '{} {} {}'.format('' if ar.low_threshold is None else self._format_range(ar.low_threshold),
+                                                '-' if range_type == AlertRule.RANGE_BETWEEN else '->',
+                                                '' if ar.high_threshold is None else self._format_range(ar.high_threshold))
         actions = ar.alert_actions
         actions_len = len(ar.alert_actions)
         action_title = actions[0].title if actions_len == 1 else '(Multiple Actions)' if actions_len > 1 else '(No Actions)'
         self.ids.type.text = action_title
         self.ids.enabled.active = ar.enabled is True
+
+    def _format_range(self, value):
+        value_format = '{{:.{}f}}'.format(self.precision)
+        return value_format.format(value)
 
     def on_select(self, rule):
         pass
@@ -102,6 +107,7 @@ class AlertRuleSummaryView(BoxLayout):
 
 class AlertRuleList(Screen):
     alertrule_collection = ObjectProperty()
+    precision = NumericProperty()
     Builder.load_string("""
 <AlertRuleList>:
     ScrollContainer:
@@ -143,6 +149,7 @@ class AlertRuleList(Screen):
         view = None
         for rule in rules.alert_rules:
             view = AlertRuleSummaryView(rule)
+            view.precision = self.precision
             view.bind(on_select=self._on_select_rule)
             view.bind(on_move_up=self._on_move_rule_up)
             view.bind(on_move_down=self._on_move_rule_down)
@@ -408,7 +415,7 @@ class AlertActionList(Screen):
     def _update_range_step(self):
         step = (self.max_value - self.min_value) / 100.0
         self.ids.high_threshold.step_value = self.ids.low_threshold.step_value = step
-    
+
     def _on_range_type_selected(self, instance, value):
         value = instance.getValueFromKey(value)
         self.alertrule.range_type = value
@@ -547,6 +554,7 @@ class AlertRulesView(BoxLayout):
         AlertRuleList:
             name: "rule_list"
             id: rule_list
+            precision: root.precision
         AlertActionList:
             name: 'group_list'
             id: group_list

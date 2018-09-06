@@ -336,10 +336,10 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
         # content = ChannelCustomizationView(settings=self.settings, channel=self.channel)
 
         # content.bind(on_channel_customization_close=self.on_channel_customization_close)
-        rules = [AlertRule(True, AlertRule.RANGE_LESS_THAN_EQUAL, None, 7000, 0, 0, [ColorAlertAction([1, 1, 1]), ShiftLightAlertAction(0, [1, 1, 0])]),
-                 AlertRule(True, AlertRule.RANGE_BETWEEN, 7000, 7500, 0, 0, [ColorAlertAction([1, 1, 1]), ShiftLightAlertAction(0, [1, 0, 0])]),
-                 AlertRule(True, AlertRule.RANGE_BETWEEN, 9000, 10000, 0, 0, [PopupAlertAction('Over Rev', 'triangle', [1, 0, 0])]),
-                 AlertRule(True, AlertRule.RANGE_GREATHER_THAN_EQUAL, 10000, None, 0, 0, [LedAlertAction('left', 1, [1, 0, 0])]),
+        rules = [AlertRule(True, AlertRule.RANGE_LESS_THAN_EQUAL, None, 3000, 0, 0, [ShiftLightAlertAction(0, [0, 1, 0])]),
+                 AlertRule(True, AlertRule.RANGE_BETWEEN, 3000, 5000, 0, 0, [ColorAlertAction([1, 1, 0]), ShiftLightAlertAction(0, [1, 1, 0])]),
+                 AlertRule(True, AlertRule.RANGE_BETWEEN, 5000, 8000, 0, 0, [ColorAlertAction([1, 0, 0]), ShiftLightAlertAction(5, [1, 0, 0])]),
+                 AlertRule(True, AlertRule.RANGE_GREATHER_THAN_EQUAL, 8000, None, 0, 0, [PopupAlertAction('Over Rev', 'triangle', [1, 0, 0]), LedAlertAction('left', 10, [1, 0, 0])]),
             ]
         alert_rules = AlertRuleCollection('', rules)
         content = AlertRulesView(alert_rules, channel=self.channel)
@@ -352,7 +352,7 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
         content.bind(title=lambda i, t: setattr(popup, 'title', t))
         popup.open()
         self._popup = popup
-        self._dismiss_customization_popup_trigger()
+        # self._dismiss_customization_popup_trigger()
 
     def channel_selected(self, instance, value):
         if self.channel:
