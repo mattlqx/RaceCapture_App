@@ -29,8 +29,8 @@ class AlertRule(object):
     RANGE_BETWEEN = '-'
     RANGE_LESS_THAN_EQUAL = '<='
     RANGE_GREATHER_THAN_EQUAL = '>='
-    
-    def __init__(self, enabled, range_type, low_threshold, high_threshold, activate_sec, deactivate_sec, alert_actions=[]):
+
+    def __init__(self, enabled, range_type, low_threshold, high_threshold, activate_sec=0, deactivate_sec=0, alert_actions=[]):
         """
         :param bool enabled: Set to True if the rule is enabled
         :param string range_type: The type of Range - AlertRule.RANGE_BETWEEN, AlertRule.RANGE_LESS_THAN_EQUAL, AlertRule.RANGE_GREATHER_THAN_EQUAL
@@ -106,7 +106,7 @@ class AlertRule(object):
             return value <= self.high_threshold
         else:
             return False
-            
+
 
 """
 Describes a collection of rules for a specified channel
@@ -120,6 +120,9 @@ class AlertRuleCollection(object):
         """
         self.channel_name = channel_name
         self.alert_rules = alert_rules
+
+    def append(self, alertrule):
+        self.alert_rules.append(alertrule)
 
     def check_rules(self, value):
         """

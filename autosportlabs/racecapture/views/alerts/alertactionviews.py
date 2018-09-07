@@ -1,4 +1,5 @@
 import kivy
+from kivy.uix.behaviors.button import ButtonBehavior
 kivy.require('1.10.0')
 from kivy.app import Builder
 from kivy.uix.boxlayout import BoxLayout
@@ -89,7 +90,7 @@ class PopupAlertActionEditorView(BaseAlertActionEditorView):
         Widget:
                         
     FieldLabel:
-        text: 'Preview here'
+        text: ''
         halign: 'center'
     """)
 
@@ -171,7 +172,7 @@ class LedAlertActionEditorView(BaseAlertActionEditorView):
         Widget:
                         
     FieldLabel:
-        text: 'Preview here'
+        text: ''
         halign: 'center'
     """)
 
@@ -191,13 +192,13 @@ class LedAlertActionEditorView(BaseAlertActionEditorView):
             self.alertaction.led_position = instance.getValueFromKey(value)
         except NoneType:
             pass
-    
+
     def _on_flash_rate(self, instance, value):
         try:
             self.alertaction.flash_rate = instance.getValueFromKey(value)
         except NoneType:
             pass
-    
+
     def _on_select_color(self, instance):
         def color_selected(instance, c):
             self.alertaction.color_rgb = [c[0], c[1], c[2], 1.0]
@@ -245,7 +246,7 @@ class ShiftLightAlertActionEditorView(BaseAlertActionEditorView):
         Widget:
                         
     FieldLabel:
-        text: 'Preview here'
+        text: ''
         halign: 'center'
     """)
 
@@ -258,13 +259,13 @@ class ShiftLightAlertActionEditorView(BaseAlertActionEditorView):
         self.ids.flash_rate.setFromValue(alertaction.flash_rate)
         c = alertaction.color_rgb
         self.ids.led_color.color = [c[0], c[1], c[2], 1.0]
-    
+
     def _on_flash_rate(self, instance, value):
         try:
             self.alertaction.flash_rate = instance.getValueFromKey(value)
         except NoneType:
             pass
-    
+
     def _on_select_color(self, instance):
         def color_selected(instance, c):
             self.alertaction.color_rgb = [c[0], c[1], c[2], 1.0]
@@ -287,5 +288,49 @@ class AlertActionEditorFactory(object):
               }
 
     @staticmethod
-    def create_editor(action):
-        return AlertActionEditorFactory.factory[action.__class__.__name__](action)
+    def create_editor(alertaction):
+        return AlertActionEditorFactory.factory[alertaction.__class__.__name__](alertaction)
+
+class BaseAlertActionPreviewView(BoxLayout):
+    alertaction = ObjectProperty()
+
+    @classmethod
+    def new_instance(cls, action):
+        return cls(alertaction=action)
+
+class TitleAlertActionPreviewView(BaseAlertActionEditorView):
+    Builder.load_string("""
+<TitleAlertActionPreviewView>:
+    FieldLabel:
+        text: root.alertaction.title
+    """)
+
+class ColorAlertActionPreviewView(BaseAlertActionEditorView):
+    Builder.load_string("""
+<ColorAlertActionPreviewView>:
+    FieldLabel:
+        text: root.alertaction.title
+        size_hint_x: None
+        width: dp(200)
+    Widget:
+        canvas.before:
+            Color:
+                rgba: [root.alertaction.color_rgb[0], root.alertaction.color_rgb[1], root.alertaction.color_rgb[2], 1.0]
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        size_hint_x: None
+        width: dp(20)
+    """)
+
+class AlertActionPreviewFactory(object):
+    factory = {
+            ColorAlertAction.__name__:ColorAlertActionPreviewView.new_instance,
+            PopupAlertAction.__name__:ColorAlertActionPreviewView.new_instance,
+            LedAlertAction.__name__:ColorAlertActionPreviewView.new_instance,
+            ShiftLightAlertAction.__name__:ColorAlertActionPreviewView.new_instance
+        }
+
+    @staticmethod
+    def create_preview(alertaction):
+        return AlertActionPreviewFactory.factory[alertaction.__class__.__name__](alertaction)

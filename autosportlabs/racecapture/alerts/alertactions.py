@@ -72,10 +72,17 @@ class ShiftLightAlertAction(object):
         :param integer flash_rate: The Rate of flash in Hz. 0 = solid (no flash)        
         :param array color_rgb: array of R,G,B values
         """
-        self.flash_rate = flash_rate        
+        self.flash_rate = flash_rate
         self.color_rgb = color_rgb
 
     @property
     def title(self):
         return 'Set Shift Light'
 
+def get_alertaction_default_collection():
+    return [
+        PopupAlertAction(message='Alert', shape=None, color_rgb=[1, 0, 0]),
+        ColorAlertAction(color_rgb=[1, 0, 0]),
+        ShiftLightAlertAction(flash_rate=0, color_rgb=[1, 0, 0]),
+        LedAlertAction(led_position='left', flash_rate=0, color_rgb=[1, 0, 0])
+        ]

@@ -45,11 +45,11 @@ Builder.load_string('''
         height: '44sp'
         spacing: '5sp'
         Button:
-            text: root.choice1
-            on_release: root.dispatch('on_answer', True)
-        Button:
             text: root.choice2
             on_release: root.dispatch('on_answer', False)
+        Button:
+            text: root.choice1
+            on_release: root.dispatch('on_answer', True)
 
 <ConfirmPopup>:
     cols:1
@@ -61,12 +61,12 @@ Builder.load_string('''
         height: '44sp'
         spacing: '5sp'
         IconButton:
-            text: u'\uf00c'
-            on_press: root.dispatch('on_answer', True)
-        IconButton:
             text: u'\uf00d'
             color: ColorScheme.get_primary()            
             on_release: root.dispatch('on_answer', False)
+        IconButton:
+            text: u'\uf00c'
+            on_press: root.dispatch('on_answer', True)
             
 <OkPopup>:
     cols:1
@@ -93,13 +93,13 @@ Builder.load_string('''
         cols: 2
         size_hint_y: 0.15
         IconButton:
-            id: ok
-            text: u'\uf00c'
-            on_press: root.dispatch('on_answer', True)
-        IconButton:
             text: u'\uf00d'
             color: ColorScheme.get_primary()            
             on_release: root.dispatch('on_answer', False)
+        IconButton:
+            id: ok
+            text: u'\uf00c'
+            on_press: root.dispatch('on_answer', True)
             
 <ProgressPopup>:
     cols:1

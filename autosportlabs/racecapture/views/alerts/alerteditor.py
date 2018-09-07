@@ -4,6 +4,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.switch import Switch
 from kivy.uix.slider import Slider
+from kivy.metrics import dp
 from fieldlabel import FieldLabel
 from iconbutton import IconButton
 from kivy.app import Builder
@@ -14,10 +15,40 @@ from kivy.uix.screenmanager import ScreenManager, Screen, RiseInTransition, Slid
 from autosportlabs.racecapture.theme.color import ColorScheme
 from autosportlabs.racecapture.views.util.alertview import confirmPopup
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
-from autosportlabs.racecapture.views.alerts.alertactionviews import AlertActionEditorFactory
+from autosportlabs.racecapture.views.alerts.alertactionviews import AlertActionEditorFactory, AlertActionPreviewFactory
 from autosportlabs.racecapture.alerts.alertrules import AlertRule
 from autosportlabs.uix.button.betterbutton import BetterButton
+from autosportlabs.uix.itemselector.itemselectorview import ItemSelectorView, ItemSelectionRef
 from mappedspinner import MappedSpinner
+from autosportlabs.racecapture.views.util.alertview import editor_popup
+from autosportlabs.racecapture.alerts.alertactions import get_alertaction_default_collection
+
+class AddItemView(BoxLayout):
+    title = StringProperty('')
+    Builder.load_string("""
+<AddItemView>:
+    orientation: 'vertical'
+    size_hint_y: None
+    height: dp(80)
+    IconButton:
+        size_hint_y: None
+        height: dp(50)
+        text: u'\uf055'
+        color: ColorScheme.get_accent()
+        on_release: root.dispatch('on_select')
+    FieldLabel:
+        text: root.title
+        halign: 'center'
+        size_hint_y: None
+        height: dp(30)
+    """)
+
+    def __init__(self, **kwargs):
+        super(AddItemView, self).__init__(**kwargs)
+        self.register_event_type('on_select')
+
+    def on_select(self, *args):
+        pass
 
 class AlertRuleSummaryView(BoxLayout):
     is_first = BooleanProperty(False)
@@ -25,18 +56,20 @@ class AlertRuleSummaryView(BoxLayout):
     precision = NumericProperty(0)
 
     Builder.load_string("""
-<ClickLabel@ButtonBehavior+FieldLabel>
+<ClickAnchorLayout@ButtonBehavior+AnchorLayout>
+<ClickFieldLabel@ButtonBehavior+FieldLabel>
 
 <AlertRuleSummaryView>:
     orientation: 'horizontal'
     size_hint_y: None
     height: dp(30)
-    FieldLabel:
+    ClickFieldLabel:
         id: range
-        size_hint_x: 0.25
-    ClickLabel:
+        size_hint_x: 0.20
+        on_press: root.dispatch('on_select', root._alertrule)
+    ClickAnchorLayout:
         id: type
-        size_hint_x: 0.25
+        size_hint_x: 0.30
         on_press: root.dispatch('on_select', root._alertrule)
     Switch:
         id: enabled
@@ -75,8 +108,13 @@ class AlertRuleSummaryView(BoxLayout):
                                                 '' if ar.high_threshold is None else self._format_range(ar.high_threshold))
         actions = ar.alert_actions
         actions_len = len(ar.alert_actions)
-        action_title = actions[0].title if actions_len == 1 else '(Multiple Actions)' if actions_len > 1 else '(No Actions)'
-        self.ids.type.text = action_title
+        if actions_len == 1:
+            preview_widget = AlertActionPreviewFactory.create_preview(actions[0])
+        else:
+            preview_widget = FieldLabel(text='(Multiple Actions)' if actions_len > 1 else '(No Actions)', halign='left')
+
+        self.ids.type.add_widget(preview_widget)
+
         self.ids.enabled.active = ar.enabled is True
 
     def _format_range(self, value):
@@ -140,26 +178,41 @@ class AlertRuleList(Screen):
     def on_alertrule_collection(self, instance, value):
         self.refresh_view()
 
+    def _append_alertrule_summary(self, rule):
+        view = AlertRuleSummaryView(rule)
+        view.precision = self.precision
+        view.bind(on_select=self._on_select_rule)
+        view.bind(on_move_up=self._on_move_rule_up)
+        view.bind(on_move_down=self._on_move_rule_down)
+        view.bind(on_delete=self._on_delete_rule)
+        view.bind(on_modified=self._on_modified_rule)
+        self.ids.rules_grid.add_widget(view)
+
+        return view
+
     def refresh_view(self):
         grid = self.ids.rules_grid
-        rules = self.alertrule_collection
+        rules = self.alertrule_collection.alert_rules
 
         grid.clear_widgets()
         is_first = True
         view = None
-        for rule in rules.alert_rules:
-            view = AlertRuleSummaryView(rule)
-            view.precision = self.precision
-            view.bind(on_select=self._on_select_rule)
-            view.bind(on_move_up=self._on_move_rule_up)
-            view.bind(on_move_down=self._on_move_rule_down)
-            view.bind(on_delete=self._on_delete_rule)
-            view.bind(on_modified=self._on_modified_rule)
+        for rule in rules:
+            view = self._append_alertrule_summary(rule)
             view.is_first = is_first
             is_first = False
-            grid.add_widget(view)
         if view is not None:
             view.is_last = True
+
+        add_item = AddItemView(title='' if len(rules) > 0 else 'Add new Rule')
+        add_item.bind(on_select=self._add_new_rule)
+        grid.add_widget(add_item)
+
+    def  _add_new_rule(self, *args):
+        alertrule = AlertRule(enabled=True, range_type=AlertRule.RANGE_BETWEEN, low_threshold=0, high_threshold=100)
+        self.alertrule_collection.append(alertrule)
+        self.refresh_view()
+        self.dispatch('on_select', alertrule)
 
     def _on_modified_rule(self, instance, value):
         pass
@@ -199,12 +252,15 @@ class AlertRuleList(Screen):
 
 class AlertActionSummaryView(BoxLayout):
     Builder.load_string("""
+<ClickAnchorLayout@ButtonBehavior+AnchorLayout>
+
 <AlertActionSummaryView>:
     size_hint_y: None
     height: dp(30)
-    FieldLabel:
+    ClickAnchorLayout:
         id: title
         size_hint_x: 0.8
+        on_press: root.dispatch('on_edit', root._alertaction)
         
     IconButton:
         size_hint_x: 0.1        
@@ -226,7 +282,8 @@ class AlertActionSummaryView(BoxLayout):
 
     def _refresh_view(self):
         aa = self._alertaction
-        self.ids.title.text = aa.title
+        preview = AlertActionPreviewFactory.create_preview(aa)
+        self.ids.title.add_widget(preview)
 
     def on_edit(self, alertaction):
         pass
@@ -373,7 +430,7 @@ class AlertActionList(Screen):
                         halign: 'left'
                     Widget:
                         size_hint_x: 0.33
-            
+
         ScrollContainer:
             canvas.before:
                 Color:
@@ -392,13 +449,16 @@ class AlertActionList(Screen):
                 size_hint_y: None
                 height: max(self.minimum_height, scroller.height)
                 cols: 1
-        BoxLayout:
+    
+        AnchorLayout:
             size_hint_y: None
             height: dp(60)
+            anchor_x: 'right'
             IconButton:
-                text: u'\uf00d'
-                color: ColorScheme.get_primary()            
-                on_press: root.dispatch('on_close')                
+                text: "\357\200\214"
+                #size_hint_x: None
+                #width: dp(60)
+                on_press: root.dispatch('on_close')
     """)
 
     def __init__(self, **kwargs):
@@ -463,20 +523,26 @@ class AlertActionList(Screen):
     def on_alertrule(self, instance, value):
         self.refresh_view()
 
+    def _append_alertaction_view(self, alertaction):
+        view = AlertActionSummaryView(alertaction)
+        view.bind(on_edit=self._on_edit_action)
+        view.bind(on_delete=self._on_delete_action)
+        self.ids.grid.add_widget(view)
+
     def refresh_view(self):
         self.ids.low_threshold_screen.transition = SlideTransition(direction='up')
         self.ids.high_threshold_screen.transition = SlideTransition(direction='up')
         grid = self.ids.grid
         alertrule = self.alertrule
-        actions = alertrule.alert_actions
+        alertactions = alertrule.alert_actions
 
         grid.clear_widgets()
-        for action in actions:
-            view = AlertActionSummaryView(action)
-            view.bind(on_edit=self._on_edit_action)
-            view.bind(on_delete=self._on_delete_action)
+        for alertaction in alertactions:
+            self._append_alertaction_view(alertaction)
 
-            grid.add_widget(view)
+        add_item = AddItemView(title='' if len(alertactions) > 0 else 'Add new Action')
+        add_item.bind(on_select=self._add_new_action)
+        grid.add_widget(add_item)
 
         self.ids.low_threshold.value = self.min_value if alertrule.low_threshold is None else alertrule.low_threshold
         self.ids.high_threshold.value = self.max_value if alertrule.high_threshold is None else alertrule.high_threshold
@@ -484,6 +550,25 @@ class AlertActionList(Screen):
         self.ids.deactivate_sec.value = alertrule.deactivate_sec
         self.ids.range_type.setFromValue(alertrule.range_type)
 
+    def _add_new_action(self, *args):
+        def popup_dismissed(instance, result):
+            if result:
+                alertaction = instance.content.selected_item.key
+                self.alertrule.alert_actions.append(alertaction)
+                self.dispatch('on_edit_action', alertaction)
+                self.refresh_view()
+            popup.dismiss()
+
+        alertaction_prototypes = get_alertaction_default_collection()
+
+        items = [ItemSelectionRef(title=alertaction.title, image_source=None, key=alertaction) for alertaction in alertaction_prototypes]
+
+        view = ItemSelectorView(item_references=items)
+
+        popup = editor_popup('Select Action', view,
+                             popup_dismissed,
+                             size=(dp(700), dp(500)),
+                             auto_dismiss_time=10)
 
     def on_close(self):
         pass
@@ -516,12 +601,15 @@ class AlertActionEditor(Screen):
         orientation: 'vertical'
         BoxLayout:
             id: editor_container
-        BoxLayout:
+            
+        AnchorLayout:
             size_hint_y: None
             height: dp(60)
+            anchor_x: 'right'
             IconButton:
-                text: u'\uf00d'
-                color: ColorScheme.get_primary()            
+                text: "\357\200\214"
+                #size_hint_x: None
+                #width: dp(60)
                 on_press: root.dispatch('on_close')
 """)
     alertaction = ObjectProperty()
