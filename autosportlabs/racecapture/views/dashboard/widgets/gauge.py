@@ -161,9 +161,6 @@ class SingleChannelGauge(Gauge):
             self._update_display(channel_meta)
             self.update_title(channel, channel_meta)
 
-    def update_channel_ranges(self):
-        pass
-
     def _update_gauge_meta(self):
         try:
             if self.settings:
@@ -270,18 +267,6 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
         except:
             pass
 
-    def _get_warn_prefs_key(self, channel):
-        return '{}.warn'.format(self.channel)
-
-    def _get_alert_prefs_key(self, channel):
-        return '{}.alert'.format(self.channel)
-
-    def update_channel_ranges(self):
-        channel = self.channel
-        user_prefs = self.settings.userPrefs
-        self.warning = user_prefs.get_range_alert(self._get_warn_prefs_key(channel), self.warning)
-        self.alert = user_prefs.get_range_alert(self._get_alert_prefs_key(channel), self.alert)
-
     def removeChannel(self):
         self._remove_customization_bubble()
         channel = self.channel
@@ -299,13 +284,8 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
         self.showChannelSelectDialog()
 
     def select_alert_color(self):
-        value = self.value
-        color = self.normal_color
-        if self.alert and self.alert.is_in_range(value):
-            color = self.alert.color
-        elif self.warning and self.warning.is_in_range(value):
-            color = self.warning.color
-        return color
+        color = self.alert_engine.select_color(self.channel)
+        return self.normal_color if color is None else color
 
     def update_colors(self):
         view = self.valueView
