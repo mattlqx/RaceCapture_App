@@ -29,6 +29,7 @@ from kivy.logger import Logger
 from kivy.clock import Clock
 from kivy.properties import StringProperty, NumericProperty
 from utils import kvFindClass
+from kivy.animation import Animation
 from kivy.uix.carousel import Carousel
 from kivy.uix.settings import SettingsWithNoMenu
 from kivy.uix.modalview import ModalView
@@ -115,9 +116,9 @@ class DashboardFactory(object):
         self._add_screen('rawchannel_view', self.build_raw_channel_view, 'Raw Channels', 'raw_channel_view.png')
         self._add_screen('traction_view', self.build_traction_view, 'Traction', 'traction_view.png')
         self._add_screen('heatmap_view', self.build_heatmap_view, 'Heatmap', 'heatmap_view.png')
-        
+
         # Disabled until ready for use
-        #self._add_screen('racestatus_view', self.build_racestatus_view, 'Race Status', '')
+        # self._add_screen('racestatus_view', self.build_racestatus_view, 'Race Status', '')
 
     @property
     def available_dashboards(self):
@@ -173,6 +174,99 @@ class DashboardFactory(object):
                            track_manager=self._track_manager,
                            status_pump=self._status_pump)
 
+class PopupAlertView(BoxLayout):
+    Builder.load_string("""
+<PopupAlertView>:
+    size_hint_x: None
+    width: dp(600)
+    #width: min(dp(600), root.width * 0.7)
+    pos_hint:{"center_x":0.5}
+    id: alertbar
+    canvas.before:
+        Color:
+            rgba: (1,0,0,0.8)
+        Rectangle:
+            size: self.size
+            pos: self.pos
+    size_hint_y: None
+    height: 0
+    orientation: 'vertical'
+    BoxLayout:
+        size_hint_y: 0.5
+        FieldLabel:
+            id: alert_msg
+            halign: 'center'
+            text: 'fff'
+            font_size: min(dp(90), self.height)
+    BoxLayout:
+        size_hint_y: 0.5
+        IconButton:
+            text: u'\uf00c'
+            id: alert_msg_yes
+            on_press: root._alert_msg_yes()
+        IconButton:
+            text: u'\uf00d'
+            id: alert_msg_no
+            on_press: root._alert_msg_no()
+    """)
+
+    def __init__(self, **kwargs):
+        super(PopupAlertView, self).__init__(**kwargs)
+        self.minimize = None
+        self.anim = None
+        self.timeout = 0
+        self.source = None
+
+    def _send_api_alert_msg(self, msg):
+        self.source.send_api_msg({'msg':{'id':1234, 'pri':1, 'msg':msg, 'src':2}})
+
+    def _send_api_alert_msg_ack(self, msg_id):
+        self.source.send_api_msg({'msgAck':{'id':msg_id}})
+
+    def _alert_msg_yes(self):
+        self._send_api_alert_msg('Yes')
+        self._hide()
+
+    def _alert_msg_no(self):
+        self._send_api_alert_msg('No')
+        self._hide()
+
+    def _hide(self, *args):
+        Clock.unschedule(self._hide)
+        if self.minimize is not None:
+            Clock.unschedule(self._minimize)
+        Animation(height=0, duration=0.5).start(self)
+        if self.anim is not None:
+            self.anim.repeat = False
+
+    def _minimize(self, *args):
+        Animation(height=self.height * DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT, duration=1.0, t=DashboardView.TRANSITION_STYLE).start(self)
+        Clock.schedule_once(self._hide, self.timeout * 2.0)
+
+    def show_alert(self, message, source, is_high_priority, msg_id, timeout):
+        self._hide()
+        self.timeout = timeout
+        self.source = source
+        self.ids.alert_msg.text = message
+
+        self.ids.alert_msg_no.size_hint = (1.0, 1.0) if message.endswith('?') else (0.0, 0.0)
+
+        target_height = self.parent.height * (DashboardView.ALERT_BAR_HEIGHT_URGENT_PCT if is_high_priority else DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT)
+        Animation(height=target_height, duration=0.5, t=DashboardView.TRANSITION_STYLE).start(self)
+
+        self.anim = None
+        if is_high_priority:
+            anim = Animation(color=(1, 1, 1, 0), duration=0.2) + Animation(color=(1, 1, 1, 0), duration=0.2)
+            anim += Animation(color=(1, 1, 1, 1), duration=0.2) + Animation(color=(1, 1, 1, 1), duration=0.2)
+            anim.repeat = True
+            anim.start(self.ids.alert_msg)
+            self.anim = anim
+
+        Clock.schedule_once(self._minimize, timeout)
+
+        self._send_api_alert_msg_ack(msg_id)
+
+
 DASHBOARD_VIEW_KV = """
 <DashboardView>:
     AnchorLayout:
@@ -188,7 +282,8 @@ DASHBOARD_VIEW_KV = """
                 size_hint_y: 0.90
                 loop: True
             BoxLayout:
-                size_hint_y: 0.10
+                size_hint_y: None
+                height: dp(50)
                 orientation: 'horizontal'
                 IconButton:
                     color: [1.0, 1.0, 1.0, 1.0]
@@ -221,6 +316,17 @@ DASHBOARD_VIEW_KV = """
                 halign: 'left'
                 color: [1.0, 1.0, 1.0, 0.2]
                 on_press: root.on_preferences()
+        AnchorLayout:
+            anchor_x: 'center'
+            anchor_y: 'bottom'
+            
+            BoxLayout:
+                orientation: 'vertical'
+                PopupAlertView:
+                    id: popup_alert
+                BoxLayout:
+                    size_hint_y: None
+                    height: dp(50)
 """
 
 class DashboardView(Screen):
@@ -232,6 +338,11 @@ class DashboardView(Screen):
     _POPUP_DISMISS_TIMEOUT_LONG = 60.0
     AUTO_CONFIGURE_WAIT_PERIOD_DAYS = 1
     Builder.load_string(DASHBOARD_VIEW_KV)
+    ALERT_BAR_HEIGHT_URGENT_PCT = 0.7
+    ALERT_BAR_HEIGHT_NORMAL_PCT = 0.25
+    ALERT_BAR_GROW_RATE = dp(20)
+    ALERT_BAR_UPDATE_INTERVAL = 0.02
+    TRANSITION_STYLE = 'in_out_expo'
 
     def __init__(self, status_pump, track_manager, rc_api, rc_config, databus, settings, **kwargs):
         self._initialized = False
@@ -254,6 +365,7 @@ class DashboardView(Screen):
         self._track_config = None
         self._gps_sample = GpsSample()
         status_pump.add_listener(self.status_updated)
+        self.alert_bar_height = 0
 
     def status_updated(self, status):
         """
@@ -321,9 +433,20 @@ class DashboardView(Screen):
             self._race_setup()
 
         self._rc_api.add_connect_listener(self._on_rc_connect)
+        self._rc_api.addListener('msg', self._on_alert_msg)
         self._initialized = True
 
         Clock.schedule_once(lambda dt: HelpInfo.help_popup('dashboard_gauge_help', self, arrow_pos='right_mid'), 2.0)
+
+    def _on_alert_msg(self, alert_msg, source):
+        msg = alert_msg.get('msg')
+        if msg:
+            alert_msg = msg.get('msg')
+            pri = msg.get('pri') == 1
+            msg_id = msg.get('id')
+            self.ids.popup_alert.show_alert('{}'.format(alert_msg), source, pri, msg_id, 4.0)
+        else:
+            Logger.warning('DashboardView: got malformed alert message: {}'.format(alert_msg))
 
     def _update_screens(self, new_screens):
         """

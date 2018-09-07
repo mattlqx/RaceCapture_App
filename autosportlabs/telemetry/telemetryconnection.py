@@ -51,7 +51,8 @@ class TelemetryManager(EventDispatcher):
     data_connected = BooleanProperty(False)
 
     def __init__(self, data_bus, device_id=None, host=None, port=None, **kwargs):
-        self.host = 'telemetry.podium.live'
+        # self.host = 'telemetry.podium.live'
+        self.host = 'localhost'
         self.port = 8080
         self.connection = None
         self._connection_process = None
@@ -68,6 +69,7 @@ class TelemetryManager(EventDispatcher):
         self.register_event_type('on_config_written')
         self.register_event_type('on_error')
         self.register_event_type('on_auth_error')
+        self.register_event_type('on_api_msg')
 
         self._data_bus = data_bus
         self.device_id = device_id
@@ -103,6 +105,11 @@ class TelemetryManager(EventDispatcher):
         if self.telemetry_enabled and value is not None:
             Logger.info("TelemetryManager: Got channels")
             self.start()
+
+    def send_api_msg(self, msg):
+        json_msg = json.dumps(msg)
+        print('the sjon msg {}'.format(json_msg))
+        self.connection.send_msg(json_msg)
 
     # Event handler for when self.device_id changes, need to restart connection
     def on_device_id(self, instance, value):
@@ -188,7 +195,7 @@ class TelemetryManager(EventDispatcher):
         Logger.info("TelemetryManager: starting connection")
         self.dispatch('on_connecting', "Connecting to Podium")
         self.connection = TelemetryConnection(self.host, self.port, self.device_id,
-                                              self.channels, self._data_bus, self.status)
+                                              self.channels, self._data_bus, self.status, self.api_msg)
         self._connection_process = threading.Thread(target=self.connection.run)
         self._connection_process.daemon = True
         self._connection_process.start()
@@ -245,6 +252,9 @@ class TelemetryManager(EventDispatcher):
                              TelemetryConnection.ERROR_UNKNOWN_MESSAGE]:
             self.dispatch('on_error', msg)
 
+    def api_msg(self, data):
+        self.dispatch('on_api_msg', data)
+
     def on_connecting(self, *args):
         pass
 
@@ -261,6 +271,9 @@ class TelemetryManager(EventDispatcher):
         pass
 
     def on_auth_error(self, *args):
+        pass
+
+    def on_api_msg(self, *args):
         pass
 
 # Handles connecting to RCL, auth, sending data
@@ -281,7 +294,7 @@ class TelemetryConnection(asynchat.async_chat):
 
     SAMPLE_INTERVAL = 0.1
 
-    def __init__(self, host, port, device_id, channel_metas, data_bus, update_status_cb):
+    def __init__(self, host, port, device_id, channel_metas, data_bus, update_status_cb, api_msg_cb):
         asynchat.async_chat.__init__(self)
 
         self.status = self.STATUS_UNINITIALIZED
@@ -304,10 +317,13 @@ class TelemetryConnection(asynchat.async_chat):
         self.device_id = device_id
         self._data_bus = data_bus
         self._update_status = update_status_cb
+        self._api_msg_cb = api_msg_cb
 
         self._data_bus.add_sample_listener(self._on_sample)
         self._data_bus.addMetaListener(self._on_meta)
         self.set_terminator("\n")
+        # Clock.schedule_interval(lambda dt: self._fake_msg(), 10)
+
 
     # Event handler for when RCP sends data to app
     def _on_sample(self, sample):
@@ -368,6 +384,7 @@ class TelemetryConnection(asynchat.async_chat):
         # set to 3 seconds as the default is 30s, which means our code wouldn't
         # see a disconnect until 30s after it happens
         asyncore.loop(timeout=3)
+
 
     def handle_connect(self):
         Logger.info("TelemetryConnection: got connect")
@@ -478,11 +495,16 @@ class TelemetryConnection(asynchat.async_chat):
                                     self.ERROR_AUTHENTICATING)
                 self.end()
         else:
-            Logger.error("TelemetryConnection: unknown message. Msg: " + str(msg_object))
-            self._update_status("error", "Unknown telemetry message", self.ERROR_UNKNOWN_MESSAGE)
+            # treat it like an API message
+            self._api_msg_cb(msg_object)
 
-        if "message" in msg_object:
-            Logger.debug("TelemetryConnection: got message: " + msg_object["message"])
+#        if "message" in msg_object:
+#            Logger.info("TelemetryConnection: got message: " + msg_object["message"])
+
+    fake = 0
+    def _fake_msg(self):
+        self.fake += 1
+        self._handle_msg({'msg':{'id':1234, 'pri':1, 'msg':'PIT NAO {}'.format(self.fake), 'src':1}})
 
     def _send_auth(self):
         Logger.debug("TelemetryConnection: sending auth")

@@ -109,6 +109,7 @@ from autosportlabs.racecapture.config.rcpconfig import RcpConfig, VersionConfig
 from autosportlabs.racecapture.databus.databus import DataBusFactory, DataBusPump
 from autosportlabs.racecapture.status.statuspump import StatusPump
 from autosportlabs.racecapture.api.rcpapi import RcpApi
+from autosportlabs.racecapture.api.apicontext import ApiDispatcher
 
 class RaceCaptureApp(App):
 
@@ -597,14 +598,15 @@ class RaceCaptureApp(App):
 
         telemetry_enabled = True if self.settings.userPrefs.get_pref('preferences', 'send_telemetry') == "1" else False
 
-        self._telemetry_connection = TelemetryManager(self._databus, host=host, telemetry_enabled=telemetry_enabled)
-        self.config_listeners.append(self._telemetry_connection)
-        self._telemetry_connection.bind(on_connecting=self.telemetry_connecting)
-        self._telemetry_connection.bind(on_connected=self.telemetry_connected)
-        self._telemetry_connection.bind(on_disconnected=self.telemetry_disconnected)
-        self._telemetry_connection.bind(on_streaming=self.telemetry_streaming)
-        self._telemetry_connection.bind(on_error=self.telemetry_error)
-        self._telemetry_connection.bind(on_auth_error=self.telemetry_auth_error)
+        tc = self._telemetry_connection = TelemetryManager(self._databus, host=host, telemetry_enabled=telemetry_enabled)
+        self.config_listeners.append(tc)
+        tc.bind(on_connecting=self.telemetry_connecting)
+        tc.bind(on_connected=self.telemetry_connected)
+        tc.bind(on_disconnected=self.telemetry_disconnected)
+        tc.bind(on_streaming=self.telemetry_streaming)
+        tc.bind(on_error=self.telemetry_error)
+        tc.bind(on_auth_error=self.telemetry_auth_error)
+        tc.bind(on_api_msg=self.telemetry_api_msg)
 
     def telemetry_connecting(self, instance, msg):
         self.status_bar.dispatch('on_tele_status', ToolbarView.TELEMETRY_CONNECTING)
@@ -628,6 +630,9 @@ class RaceCaptureApp(App):
     def telemetry_error(self, instance, msg):
         self.showActivity(msg)
         self.status_bar.dispatch('on_tele_status', ToolbarView.TELEMETRY_ERROR)
+
+    def telemetry_api_msg(self, instance, msg):
+        ApiDispatcher.get_instance().dispatch_msg(msg, instance)
 
     def _on_preference_change(self, instance, section, key, value):
         """Called any time the app preferences are changed
