@@ -59,6 +59,7 @@ from autosportlabs.racecapture.views.dashboard.heatmapview import HeatmapView
 from autosportlabs.racecapture.views.dashboard.racestatus_view import RaceStatusView
 
 
+from autosportlabs.racecapture.alerts.alertengine import AlertEngine
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.help.helpmanager import HelpInfo
@@ -75,6 +76,15 @@ from autosportlabs.racecapture.views.dashboard.laptimeview import LaptimeView
 from autosportlabs.racecapture.views.dashboard.rawchannelview import RawChannelView
 
 
+class DashboardState(object):
+    def __init__(self, **kwargs):
+        self._gauge_colors = {}
+
+    def get_gauge_color(self, channel):
+        return self._gauge_colors.get(channel)
+
+    def clear_channel_color(self):
+        self._gauge_colors.pop(channel, None)
 
 class DashboardFactory(object):
     """
@@ -82,14 +92,19 @@ class DashboardFactory(object):
     Screens are instances of DashboardScreen
     Screens are referenced and managed by their key name. 
     """
-    def __init__(self, databus, settings, track_manager, status_pump, **kwargs):
+    def __init__(self, dashboard_state, databus, settings, track_manager, status_pump, **kwargs):
         self._view_builders = OrderedDict()
         self._view_previews = OrderedDict()
         self._databus = databus
         self._settings = settings
         self._track_manager = track_manager
         self._status_pump = status_pump
+        self._dashboard_state = dashboard_state
         self._init_factory()
+        self._gauge_colors = {}
+
+    def get_gauge_color(self, channel):
+        return self._gauge_colors.get(channel)
 
     def create_screen(self, key):
         """
@@ -138,28 +153,28 @@ class DashboardFactory(object):
         return self._view_previews.get(key)
 
     def build_5x_gauge_view(self):
-        return GaugeView5x(name='5x_gauge_view', databus=self._databus, settings=self._settings)
+        return GaugeView5x(name='5x_gauge_view', gauge_state=self._dashboard_state, databus=self._databus, settings=self._settings)
 
     def build_3x_gauge_view(self):
-        return GaugeView3x(name='3x_gauge_view', databus=self._databus, settings=self._settings)
+        return GaugeView3x(name='3x_gauge_view', gauge_state=self._dashboard_state, databus=self._databus, settings=self._settings)
 
     def build_2x_gauge_view(self):
-        return GaugeView2x(name='2x_gauge_view', databus=self._databus, settings=self._settings)
+        return GaugeView2x(name='2x_gauge_view', gauge_state=self._dashboard_state, databus=self._databus, settings=self._settings)
 
     def build_8x_gauge_view(self):
-        return GaugeView8x(name='8x_gauge_view', databus=self._databus, settings=self._settings)
+        return GaugeView8x(name='8x_gauge_view', gauge_state=self._dashboard_state, databus=self._databus, settings=self._settings)
 
     def build_tachometer_view(self):
-        return TachometerView(name='tach_view', databus=self._databus, settings=self._settings)
+        return TachometerView(name='tach_view', gauge_state=self._dashboard_state, databus=self._databus, settings=self._settings)
 
     def build_laptime_view(self):
-        return LaptimeView(name='laptime_view', databus=self._databus, settings=self._settings)
+        return LaptimeView(name='laptime_view', gauge_state=self._dashboard_state, databus=self._databus, settings=self._settings)
 
     def build_raw_channel_view(self):
-        return RawChannelView(name='rawchannel_view', databus=self._databus, settings=self._settings)
+        return RawChannelView(name='rawchannel_view', gauge_state=self._dashboard_state, databus=self._databus, settings=self._settings)
 
     def build_traction_view(self):
-        return TractionView(name='traction_view', databus=self._databus, settings=self._settings)
+        return TractionView(name='traction_view', gauge_state=self._dashboard_state, databus=self._databus, settings=self._settings)
 
     def build_racestatus_view(self):
         return RaceStatusView(name='racestatus_view',
@@ -347,7 +362,10 @@ class DashboardView(Screen):
     def __init__(self, status_pump, track_manager, rc_api, rc_config, databus, settings, **kwargs):
         self._initialized = False
         super(DashboardView, self).__init__(**kwargs)
-        self._dashboard_factory = DashboardFactory(databus, settings, track_manager, status_pump)
+
+        dashboard_state = self._dashboard_state = DashboardState()
+        self._alert_engine = AlertEngine(self._dashboard_state)
+        self._dashboard_factory = DashboardFactory(dashboard_state, databus, settings, track_manager, status_pump)
         self.register_event_type('on_tracks_updated')
         self.register_event_type('on_config_updated')
         self.register_event_type('on_config_written')
@@ -366,6 +384,8 @@ class DashboardView(Screen):
         self._gps_sample = GpsSample()
         status_pump.add_listener(self.status_updated)
         self.alert_bar_height = 0
+
+
 
     def status_updated(self, status):
         """

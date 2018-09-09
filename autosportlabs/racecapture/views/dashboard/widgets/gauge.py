@@ -284,7 +284,7 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
         self.showChannelSelectDialog()
 
     def select_alert_color(self):
-        color = self.alert_engine.select_color(self.channel)
+        color = self._gauge_state.get_gauge_color(self.channel)
         return self.normal_color if color is None else color
 
     def update_colors(self):
@@ -313,13 +313,13 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
 
     def showChannelConfigDialog(self):
 
-        # content = ChannelCustomizationView(settings=self.settings, channel=self.channel)
-
-        # content.bind(on_channel_customization_close=self.on_channel_customization_close)
-        rules = [AlertRule(True, AlertRule.RANGE_LESS_THAN_EQUAL, None, 3000, 0, 0, [ShiftLightAlertAction(0, [0, 1, 0])]),
-                 AlertRule(True, AlertRule.RANGE_BETWEEN, 3000, 5000, 0, 0, [ColorAlertAction([1, 1, 0]), ShiftLightAlertAction(0, [1, 1, 0])]),
-                 AlertRule(True, AlertRule.RANGE_BETWEEN, 5000, 8000, 0, 0, [ColorAlertAction([1, 0, 0]), ShiftLightAlertAction(5, [1, 0, 0])]),
-                 AlertRule(True, AlertRule.RANGE_GREATHER_THAN_EQUAL, 8000, None, 0, 0, [PopupAlertAction('Over Rev', 'triangle', [1, 0, 0]), LedAlertAction('left', 10, [1, 0, 0])]),
+#        rules = [AlertRule(True, AlertRule.RANGE_LESS_THAN_EQUAL, None, 3000, 0, 0, [ShiftLightAlertAction(0, [0, 1, 0])]),
+#                 AlertRule(True, AlertRule.RANGE_BETWEEN, 3000, 5000, 0, 0, [ColorAlertAction([1, 1, 0]), ShiftLightAlertAction(0, [1, 1, 0])]),
+#                 AlertRule(True, AlertRule.RANGE_BETWEEN, 5000, 8000, 0, 0, [ColorAlertAction([1, 0, 0]), ShiftLightAlertAction(5, [1, 0, 0])]),
+#                 AlertRule(True, AlertRule.RANGE_GREATHER_THAN_EQUAL, 8000, None, 0, 0, [PopupAlertAction('Over Rev', 'triangle', [1, 0, 0]), LedAlertAction('left', 10, [1, 0, 0])]),
+#            ]
+        rules = [
+            AlertRule(True, AlertRule.RANGE_BETWEEN, 0, 10000, 0, 0, [ColorAlertAction([1, 0, 0])]),
             ]
         alert_rules = AlertRuleCollection('', rules)
         content = AlertRulesView(alert_rules, channel=self.channel)

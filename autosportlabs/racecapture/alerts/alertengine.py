@@ -20,17 +20,45 @@
 
 class AlertEngine(object):
 
-    def __init__(self, **kwargs):
-        """ 
-        Map of AlertRuleCollection by channel name
-        """
+    def __init__(self, dashboard_state, **kwargs):
+        self.dashboard_state = dashboard_state
+        # Map of AlertRuleCollection by channel name
         self.rule_collections = {}
 
-        def check_rules(channel, value):
+        self.alert_controllers = {}
+
+        def process_rules(channel, value):
             alertrule_collection = self.rule_collections.get(channel)
 
-            if rules is None:
-                return None, None
+            if alertrule_collection is None:
+                # no rules defined for this channel
+                return
 
-            return alertrule_collection.check_rules(value)
+            # check what might be activated or deactivated
+            active_rules, deactive_rules = alertrule_collection.check_rules(value)
+
+            for rule in active_rules:
+                for alertaction in rule.alert_actions:
+                    if not alertaction.is_active:
+                        # trigger the action once
+                        controller = self._get_alert_controller(alertaction)
+                        controller.activate(alertaction)
+                        alertaction.is_active = True
+
+            for rule in deactive_rules:
+                for alertaction in rule.alert_actions:
+                    if alertaction.is_active:
+                        # disable the action once
+                        controller = self._get_alert_controller(alertaction)
+                        controller.deactivate(alertaction)
+                        alertaction.is_active = False
+
+        def _get_alert_controller(self, alertaction):
+            name = alertaction.__class__.___name__
+            controller = self.alert_controllers.get(name)
+            if controller is None:
+                controller = AlertActionControllerFactory.create_controller(dashboard_state)
+                self.alert_controllers.set(dashboard_state)
+
+            return controller
 
