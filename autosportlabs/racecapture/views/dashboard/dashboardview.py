@@ -83,7 +83,7 @@ class DashboardState(object):
     def get_gauge_color(self, channel):
         return self._gauge_colors.get(channel)
 
-    def clear_channel_color(self):
+    def clear_channel_color(self, channel):
         self._gauge_colors.pop(channel, None)
 
 class DashboardFactory(object):
@@ -102,7 +102,7 @@ class DashboardFactory(object):
         self._dashboard_state = dashboard_state
         self._init_factory()
         self._gauge_colors = {}
-
+        
     def get_gauge_color(self, channel):
         return self._gauge_colors.get(channel)
 
@@ -358,6 +358,7 @@ class DashboardView(Screen):
     ALERT_BAR_GROW_RATE = dp(20)
     ALERT_BAR_UPDATE_INTERVAL = 0.02
     TRANSITION_STYLE = 'in_out_expo'
+    ALERT_ENGINE_INTERVAL = 0.1
 
     def __init__(self, status_pump, track_manager, rc_api, rc_config, databus, settings, **kwargs):
         self._initialized = False
@@ -384,8 +385,21 @@ class DashboardView(Screen):
         self._gps_sample = GpsSample()
         status_pump.add_listener(self.status_updated)
         self.alert_bar_height = 0
+        self._start_alert_engine()
+        self._current_sample = None
+        
+    def _start_alert_engine(self):
+        self._databus.add_sample_listener(self._on_sample)
+        Clock.schedule_interval(self._check_alerts, DashboardView.ALERT_ENGINE_INTERVAL)
 
-
+    def _on_sample(self, sample):
+        self._current_sample = sample
+        
+    def _check_alerts(self, *args):
+        current_sample = self._current_sample
+        if current_sample is not None:
+            for channel, value in current_sample:            
+                self._alert_engine.check(channel, value)
 
     def status_updated(self, status):
         """
