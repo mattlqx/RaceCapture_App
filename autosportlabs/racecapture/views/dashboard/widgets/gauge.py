@@ -77,6 +77,7 @@ class Gauge(AnchorLayout):
     title_size = NumericProperty(0)
     title = StringProperty('')
     data_bus = ObjectProperty(None)
+    dashboard_state = ObjectProperty(None)
     title_color = ObjectProperty(DEFAULT_NORMAL_COLOR)
     normal_color = ObjectProperty(DEFAULT_NORMAL_COLOR)
 
@@ -168,7 +169,6 @@ class SingleChannelGauge(Gauge):
                 self._update_display(channel_meta)
                 self.update_title(self.channel, channel_meta)
                 self._update_channel_binding()
-                self.update_channel_ranges()
         except Exception as e:
             Logger.error('Gauge: Error setting channel {}: {}'.format(self.channel, str(e)))
 
@@ -284,8 +284,11 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
         self.showChannelSelectDialog()
 
     def select_alert_color(self):
-        color = self._gauge_state.get_gauge_color(self.channel)
-        return self.normal_color if color is None else color
+        try:
+            color = self.dashboard_state.get_gauge_color(self.channel)
+            return self.normal_color if color is None else color
+        except:
+            return self.normal_color
 
     def update_colors(self):
         view = self.valueView

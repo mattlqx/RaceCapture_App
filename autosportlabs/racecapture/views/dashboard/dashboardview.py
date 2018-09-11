@@ -102,7 +102,7 @@ class DashboardFactory(object):
         self._dashboard_state = dashboard_state
         self._init_factory()
         self._gauge_colors = {}
-        
+
     def get_gauge_color(self, channel):
         return self._gauge_colors.get(channel)
 
@@ -387,18 +387,18 @@ class DashboardView(Screen):
         self.alert_bar_height = 0
         self._start_alert_engine()
         self._current_sample = None
-        
+
     def _start_alert_engine(self):
         self._databus.add_sample_listener(self._on_sample)
         Clock.schedule_interval(self._check_alerts, DashboardView.ALERT_ENGINE_INTERVAL)
 
     def _on_sample(self, sample):
         self._current_sample = sample
-        
+
     def _check_alerts(self, *args):
         current_sample = self._current_sample
         if current_sample is not None:
-            for channel, value in current_sample:            
+            for channel, value in current_sample:
                 self._alert_engine.check(channel, value)
 
     def status_updated(self, status):
@@ -432,12 +432,14 @@ class DashboardView(Screen):
     def _init_global_gauges(self):
         databus = self._databus
         settings = self._settings
+        dashboard_state = self._dashboard_state
 
         activeGauges = list(kvFindClass(self, Gauge))
 
         for gauge in activeGauges:
             gauge.settings = settings
             gauge.data_bus = databus
+            gauge.dashboard_state = dashboard_state
 
     def _init_view(self):
         databus = self._databus
