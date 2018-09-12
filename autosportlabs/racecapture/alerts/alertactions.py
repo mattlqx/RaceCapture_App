@@ -58,9 +58,9 @@ class ColorAlertAction(BaseAlertAction):
         '''
         return {'color_alertaction':{'color':self.color_rgb}}
 
-    def __eq__(self, other):    
+    def __eq__(self, other):
         if isinstance(other, ColorAlertAction):
-            return (self.color_rgb == other.color_rgb) 
+            return (self.color_rgb == other.color_rgb)
         return False
 
     @staticmethod
@@ -81,12 +81,12 @@ class ColorAlertAction(BaseAlertAction):
         :type d dict
         :return ColorAlertAction object
         '''
-        
+
         aa = d.get('color_alertaction')
         if aa is None:
             return None
-        
-        return ColorAlertAction(color_rgb=aa.get('color', BaseAlertAction.DEFAULT_COLOR))    
+
+        return ColorAlertAction(color_rgb=aa.get('color', BaseAlertAction.DEFAULT_COLOR))
 
 """
 Describes an alert action that takes the form of a popup message
@@ -107,14 +107,14 @@ class PopupAlertAction(ColorAlertAction):
     @property
     def title(self):
         return 'Popup: "{}"'.format(self.message)
-    
+
 
     def to_dict(self):
         '''
         Get dictionary representation of object
         :return dict
         '''
-        return {'popup_alertaction':{'message':self.message,'shape':self.shape,'color':self.color_rgb}}
+        return {'popup_alertaction':{'message':self.message, 'shape':self.shape, 'color':self.color_rgb}}
 
 
     @staticmethod
@@ -135,20 +135,20 @@ class PopupAlertAction(ColorAlertAction):
         :type d dict
         :return PopupAlertAction object
         '''
-        
+
         aa = d.get('popup_alertaction')
         if aa is None:
             return None
-        
-        return PopupAlertAction(message=aa.get('message',''), 
-                                shape=aa.get('shape',None), 
-                                color_rgb=aa.get('color', BaseAlertAction.DEFAULT_COLOR))    
 
-    def __eq__(self, other):    
+        return PopupAlertAction(message=aa.get('message', ''),
+                                shape=aa.get('shape', None),
+                                color_rgb=aa.get('color', BaseAlertAction.DEFAULT_COLOR))
+
+    def __eq__(self, other):
         if isinstance(other, PopupAlertAction):
             return (self.message == other.message and
                     self.shape == other.shape and
-                    self.color_rgb == other.color_rgb) 
+                    self.color_rgb == other.color_rgb)
         return False
 
 class LedAlertAction(ColorAlertAction):
@@ -173,7 +173,7 @@ class LedAlertAction(ColorAlertAction):
         Get dictionary representation of object
         :return dict
         '''
-        return {'led_alertaction':{'led_position': self.led_position, 
+        return {'led_alertaction':{'led_position': self.led_position,
                                    'flash_rate': self.flash_rate,
                                    'color':self.color_rgb}}
 
@@ -195,20 +195,20 @@ class LedAlertAction(ColorAlertAction):
         :type d dict
         :return LedAlertAction object
         '''
-        
+
         aa = d.get('led_alertaction')
         if aa is None:
             return None
-        
-        return LedAlertAction(led_position=aa.get('led_position',0),  
-                                flash_rate=aa.get('flash_rate',0),
-                                color_rgb=aa.get('color', BaseAlertAction.DEFAULT_COLOR))    
+
+        return LedAlertAction(led_position=aa.get('led_position', 0),
+                                flash_rate=aa.get('flash_rate', 0),
+                                color_rgb=aa.get('color', BaseAlertAction.DEFAULT_COLOR))
 
     def __eq__(self, other):
         if isinstance(other, LedAlertAction):
             return (self.led_position == other.led_position and
                     self.flash_rate == other.flash_rate and
-                    self.color_rgb == other.color_rgb) 
+                    self.color_rgb == other.color_rgb)
         return False
 
 class ShiftLightAlertAction(ColorAlertAction):
@@ -225,13 +225,13 @@ class ShiftLightAlertAction(ColorAlertAction):
     @property
     def title(self):
         return 'Set Shift Light'
-    
+
     def to_dict(self):
         '''
         Get dictionary representation of object
         :return dict
         '''
-        return {'shiftlight_alertaction':{'flash_rate': self.flash_rate, 
+        return {'shiftlight_alertaction':{'flash_rate': self.flash_rate,
                                           'color':self.color_rgb}}
 
     @staticmethod
@@ -252,18 +252,18 @@ class ShiftLightAlertAction(ColorAlertAction):
         :type d dict
         :return ShiftLightAlertAction object
         '''
-        
+
         aa = d.get('shiftlight_alertaction')
         if aa is None:
             return None
-        
-        return ShiftLightAlertAction(flash_rate=aa.get('flash_rate',0),  
-                                color_rgb=aa.get('color', BaseAlertAction.DEFAULT_COLOR))    
-    
-    def __eq__(self, other):    
+
+        return ShiftLightAlertAction(flash_rate=aa.get('flash_rate', 0),
+                                color_rgb=aa.get('color', BaseAlertAction.DEFAULT_COLOR))
+
+    def __eq__(self, other):
         if isinstance(other, ShiftLightAlertAction):
             return (self.flash_rate == other.flash_rate and
-                    self.color_rgb == other.color_rgb) 
+                    self.color_rgb == other.color_rgb)
         return False
 
 def get_alertaction_default_collection():
@@ -276,10 +276,10 @@ def get_alertaction_default_collection():
 
 class AlertActionFactory(object):
     factory = {
-            ColorAlertAction.__name__:ColorAlertAction.from_dict,
-            PopupAlertAction.__name__:PopupAlertAction.from_dict,
-            LedAlertAction.__name__:LedAlertAction.from_dict,
-            ShiftLightAlertAction.__name__:ShiftLightAlertAction.from_dict
+            ColorAlertAction.name:ColorAlertAction.from_dict,
+            PopupAlertAction.name:PopupAlertAction.from_dict,
+            LedAlertAction.name:LedAlertAction.from_dict,
+            ShiftLightAlertAction.name:ShiftLightAlertAction.from_dict
         }
 
     @staticmethod

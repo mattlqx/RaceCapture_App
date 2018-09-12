@@ -156,7 +156,7 @@ class AlertRule(object):
         aa_d = d.get('alert_actions')
         if aa_d is not None:
             for aa in aa_d:
-                name = aa.get('name')
+                name = next(iter(aa))
                 if name is not None:
                     alertactions.append(AlertActionFactory.create_alertaction_from_dict(name, aa))
 
@@ -168,15 +168,15 @@ class AlertRule(object):
                          deactivate_sec=d['deactivate_sec'],
                          alert_actions=alertactions)
 
-    def __eq__(self, other):    
+    def __eq__(self, other):
         if isinstance(other, AlertRule):
-            return (self.enabled == other.enabled and 
-                        self.range_type == other.range_type and 
-                        self.low_threshold == other.low_threshold and 
+            return (self.enabled == other.enabled and
+                        self.range_type == other.range_type and
+                        self.low_threshold == other.low_threshold and
                         self.high_threshold == other.high_threshold and
                         self.activate_sec == other.activate_sec and
                         self.deactivate_sec == other.deactivate_sec and
-                        self.alert_actions == self.alert_actions) 
+                        self.alert_actions == self.alert_actions)
         return False
 
     def __ne__(self, other):
@@ -251,6 +251,7 @@ class AlertRuleCollection(object):
         :type d dict
         :return AlertRuleCollection object
         '''
+
         alertrules = []
         ar_d = d.get('alert_rules')
         if ar_d is not None:

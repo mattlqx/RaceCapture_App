@@ -306,35 +306,23 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
         self._popup = popup
         self._dismiss_customization_popup_trigger()
 
-    def on_channel_customization_close(self, instance, warn_range, alert_range, *args):
-        try:
-            self.warning = warn_range
-            self.alert = alert_range
-        except Exception as e:
-            Logger.error("Gauge: Error customizing channel: " + str(e))
-        self._dismiss_popup()
-
     def showChannelConfigDialog(self):
 
-#        rules = [AlertRule(True, AlertRule.RANGE_LESS_THAN_EQUAL, None, 3000, 0, 0, [ShiftLightAlertAction(0, [0, 1, 0])]),
-#                 AlertRule(True, AlertRule.RANGE_BETWEEN, 3000, 5000, 0, 0, [ColorAlertAction([1, 1, 0]), ShiftLightAlertAction(0, [1, 1, 0])]),
-#                 AlertRule(True, AlertRule.RANGE_BETWEEN, 5000, 8000, 0, 0, [ColorAlertAction([1, 0, 0]), ShiftLightAlertAction(5, [1, 0, 0])]),
-#                 AlertRule(True, AlertRule.RANGE_GREATHER_THAN_EQUAL, 8000, None, 0, 0, [PopupAlertAction('Over Rev', 'triangle', [1, 0, 0]), LedAlertAction('left', 10, [1, 0, 0])]),
-#            ]
-        rules = [
-            AlertRule(True, AlertRule.RANGE_BETWEEN, 0, 10000, 0, 0, [ColorAlertAction([1, 0, 0])]),
-            ]
-        alert_rules = AlertRuleCollection('', rules)
-        content = AlertRulesView(alert_rules, channel=self.channel)
+        def popup_dismissed(instance):
+            self.settings.userPrefs.set_alertrules(self.channel, alertrules)
+
+        alertrules = self.settings.userPrefs.get_alertrules(self.channel)
+
+        content = AlertRulesView(alertrules, channel=self.channel)
         content.min_value = self.min
         content.max_value = self.max
         content.precision = self.precision
 
         popup = Popup(title='Customize {}'.format(self.channel), content=content, size_hint=(0.75, 0.9))
-        popup.bind(on_dismiss=self.popup_dismissed)
+        popup.bind(on_dismiss=popup_dismissed)
         content.bind(title=lambda i, t: setattr(popup, 'title', t))
         popup.open()
-        self._popup = popup
+        # self._popup = popup
         # self._dismiss_customization_popup_trigger()
 
     def channel_selected(self, instance, value):
