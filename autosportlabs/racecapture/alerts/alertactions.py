@@ -231,7 +231,7 @@ class ShiftLightAlertAction(ColorAlertAction):
         Get dictionary representation of object
         :return dict
         '''
-        return {'shiftlight_alertaction':{'flash_rate': self.led_position, 
+        return {'shiftlight_alertaction':{'flash_rate': self.flash_rate, 
                                           'color':self.color_rgb}}
 
     @staticmethod
@@ -273,8 +273,6 @@ def get_alertaction_default_collection():
         ShiftLightAlertAction(flash_rate=0, color_rgb=BaseAlertAction.DEFAULT_COLOR),
         LedAlertAction(led_position='left', flash_rate=0, color_rgb=BaseAlertAction.DEFAULT_COLOR)
         ]
-
-
 
 class AlertActionFactory(object):
     factory = {

@@ -21,6 +21,7 @@
 import unittest
 import time
 from autosportlabs.racecapture.alerts.alertrules import AlertRule, AlertRuleCollection
+from autosportlabs.racecapture.alerts.alertactions import *
 
 
 class AlertRuleTest(unittest.TestCase):
@@ -164,7 +165,7 @@ class AlertRuleCollectionTest(unittest.TestCase):
 
     def test_serialize(self):
         
-        actions1 = []
+        actions1 = get_alertaction_default_collection()
         rules = [AlertRule(enabled=True, range_type=AlertRule.RANGE_BETWEEN, low_threshold=1, high_threshold=2, activate_sec=3, deactivate_sec=4, alert_actions=actions1)]
         arc = AlertRuleCollection(channel_name='RPM', alert_rules=rules)
         #serialize to and from JSON
