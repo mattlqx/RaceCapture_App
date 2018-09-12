@@ -25,6 +25,7 @@ Describes a rule for an individual alert. Defines the sensor channel
 low and high threshold value (inclusive) as well as the timing 
 activation / deactivation thresholds used for triggering
 """
+from autosportlabs.racecapture.alerts.alertactions import AlertActionFactory
 class AlertRule(object):
     RANGE_BETWEEN = '-'
     RANGE_LESS_THAN_EQUAL = '<='
@@ -107,6 +108,63 @@ class AlertRule(object):
         else:
             return False
 
+    def to_json(self):
+        '''
+        Serialize to a json string
+        :return string 
+        '''
+        return json.dumps(self.to_dict())
+
+    def to_dict(self):
+        '''
+        Get dictionary representation of object
+        :return dict
+        '''
+        alert_actions_array = []
+        for aa in self.alert_actions:
+            alert_actions_array.append(aa.to_dict())
+
+        return {'range_type': self.range_type,
+                'low_threshold': self.low_threshold,
+                'high_threshold': self.high_threshold,
+                'activate_sec': self.activate_sec,
+                'deactivate_sec': self.deactivate_sec,
+                'alert_actions': alert_actions_array}
+
+    @staticmethod
+    def from_json(j):
+        '''
+        Factory method to create an instance from JSON
+        :param range_json JSON string
+        :type range_json string
+        :return Range object
+        '''
+        range_dict = json.loads(j)
+        return AlertRule.from_dict(range_dict)
+
+    @staticmethod
+    def from_dict(d):
+        '''
+        Factory method to create an instance from a dict
+        :param range_dict dict representing Range object
+        :type range_dict dict
+        :return AlertRule object
+        '''
+        alertactions = []
+        aa_d = d.get('alert_actions')
+        if aa_d is not None:
+            for aa in aa_d:
+                aa_name = aa.get('name')
+                if aa_name is not None:
+                    alertactions.append(AlertActionFactory.from_dict(name, aa))
+
+
+        return AlertRule(range_type=d['range_type'],
+                         low_threshold=d['low_threshold'],
+                         high_threshold=d['high_threshold'],
+                         activate_sec=d['activate_sec'],
+                         deactivate_sec=d['deactivate_sec'],
+                         alertactions=alertactions)
 
 """
 Describes a collection of rules for a specified channel
@@ -142,3 +200,47 @@ class AlertRuleCollection(object):
 
         return active_rules, deactive_rules
 
+    def to_json(self):
+        '''
+        Serialize to a json string
+        :return string 
+        '''
+        return json.dumps(self.to_dict())
+
+    def to_dict(self):
+        '''
+        Get dictionary representation of object
+        :return dict
+        '''
+        alertrules_array = []
+        for ar in self.alert_rules:
+            alertrules_array.append(ar.to_dict)
+
+        return {'channel': self.channel_name, 'alert_rules':alertrules_array}
+
+    @staticmethod
+    def from_json(j):
+        '''
+        Factory method to create an instance from JSON
+        :param j JSON string
+        :type j string
+        :return AlertRuleCollection object
+        '''
+        d = json.loads(j)
+        return AlertRuleCollection.from_dict(d)
+
+    @staticmethod
+    def from_dict(d):
+        '''
+        Factory method to create an instance from a dict
+        :param d dict representing AlertRuleCollection object
+        :type d dict
+        :return AlertRuleCollection object
+        '''
+        alert_rules = []
+        ar_d = d.get('alert_rules')
+        if ar_d is not None:
+            for ar in ar_d:
+                alert_rules.append(AlertRule.from_dict(ar))
+
+        return AlertRuleCollection(channel_name=d['channel'], alert_rules=alert_rules)

@@ -153,28 +153,28 @@ class DashboardFactory(object):
         return self._view_previews.get(key)
 
     def build_5x_gauge_view(self):
-        return GaugeView5x(name='5x_gauge_view', gauge_state=self._dashboard_state, databus=self._databus, settings=self._settings)
+        return GaugeView5x(name='5x_gauge_view', databus=self._databus, settings=self._settings)
 
     def build_3x_gauge_view(self):
-        return GaugeView3x(name='3x_gauge_view', gauge_state=self._dashboard_state, databus=self._databus, settings=self._settings)
+        return GaugeView3x(name='3x_gauge_view', databus=self._databus, settings=self._settings)
 
     def build_2x_gauge_view(self):
-        return GaugeView2x(name='2x_gauge_view', gauge_state=self._dashboard_state, databus=self._databus, settings=self._settings)
+        return GaugeView2x(name='2x_gauge_view', databus=self._databus, settings=self._settings)
 
     def build_8x_gauge_view(self):
-        return GaugeView8x(name='8x_gauge_view', gauge_state=self._dashboard_state, databus=self._databus, settings=self._settings)
+        return GaugeView8x(name='8x_gauge_view', databus=self._databus, settings=self._settings)
 
     def build_tachometer_view(self):
-        return TachometerView(name='tach_view', gauge_state=self._dashboard_state, databus=self._databus, settings=self._settings)
+        return TachometerView(name='tach_view', databus=self._databus, settings=self._settings)
 
     def build_laptime_view(self):
-        return LaptimeView(name='laptime_view', gauge_state=self._dashboard_state, databus=self._databus, settings=self._settings)
+        return LaptimeView(name='laptime_view', databus=self._databus, settings=self._settings)
 
     def build_raw_channel_view(self):
-        return RawChannelView(name='rawchannel_view', gauge_state=self._dashboard_state, databus=self._databus, settings=self._settings)
+        return RawChannelView(name='rawchannel_view', databus=self._databus, settings=self._settings)
 
     def build_traction_view(self):
-        return TractionView(name='traction_view', gauge_state=self._dashboard_state, databus=self._databus, settings=self._settings)
+        return TractionView(name='traction_view', databus=self._databus, settings=self._settings)
 
     def build_racestatus_view(self):
         return RaceStatusView(name='racestatus_view',
@@ -398,8 +398,8 @@ class DashboardView(Screen):
     def _check_alerts(self, *args):
         current_sample = self._current_sample
         if current_sample is not None:
-            for channel, value in current_sample:
-                self._alert_engine.check(channel, value)
+            for channel, value in current_sample.iteritems():
+                self._alert_engine.process_rules(channel, value)
 
     def status_updated(self, status):
         """

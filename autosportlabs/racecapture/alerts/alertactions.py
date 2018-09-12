@@ -26,6 +26,8 @@ Describes an an alert action that specifies a color to activate
 """
 
 class ColorAlertAction(object):
+    name = 'color_alertaction'
+
     def __init__(self, color_rgb, **kwargs):
         super(ColorAlertAction, self).__init__(**kwargs)
         """
@@ -41,6 +43,8 @@ class ColorAlertAction(object):
 Describes an alert action that takes the form of a popup message
 """
 class PopupAlertAction(ColorAlertAction):
+    name = 'popup_alertaction'
+
     def __init__(self, color_rgb, message, shape, **kwargs):
         """
         :param string message: The message to display
@@ -56,6 +60,8 @@ class PopupAlertAction(ColorAlertAction):
         return 'Popup: "{}"'.format(self.message)
 
 class LedAlertAction(ColorAlertAction):
+    name = 'led_alertaction'
+
     def __init__(self, color_rgb, led_position, flash_rate, **kwargs):
         """
         :param string led_position: The position of the led('left', 'right')
@@ -72,6 +78,8 @@ class LedAlertAction(ColorAlertAction):
 
 
 class ShiftLightAlertAction(ColorAlertAction):
+    name = 'shiftlight_alertaction'
+
     def __init__(self, color_rgb, flash_rate, **kwargs):
         """
         :param integer flash_rate: The Rate of flash in Hz. 0 = solid (no flash)        
@@ -91,3 +99,18 @@ def get_alertaction_default_collection():
         ShiftLightAlertAction(flash_rate=0, color_rgb=[1, 0, 0]),
         LedAlertAction(led_position='left', flash_rate=0, color_rgb=[1, 0, 0])
         ]
+
+
+
+class AlertActionFactory(object):
+    factory = {
+            ColorAlertAction.__name__:ColorAlertAction.from_dict,
+            PopupAlertAction.__name__:PopupAlertAction.from_dict,
+            LedAlertAction.__name__:LedAlertAction.from_dict,
+            ShiftLightAlertAction.__name__:ShiftLightAlertAction.from_dict
+        }
+
+    @staticmethod
+    def create_alertaction_from_dict(name, dict):
+        return AlertActionFactory.factory[name](dict)
+

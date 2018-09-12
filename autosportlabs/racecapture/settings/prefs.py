@@ -102,7 +102,8 @@ class UserPrefs(EventDispatcher):
     DEFAULT_DASHBOARD_SCREENS = ['5x_gauge_view', 'laptime_view', 'tach_view', 'rawchannel_view']
     DEFAULT_PREFS_DICT = {'range_alerts': {},
                           'gauge_settings':{},
-                          'screens':DEFAULT_DASHBOARD_SCREENS}
+                          'screens':DEFAULT_DASHBOARD_SCREENS,
+                          'alert_rules': {}}
 
     DEFAULT_ANALYSIS_CHANNELS = ['Speed']
 
@@ -408,13 +409,16 @@ class UserPrefs(EventDispatcher):
         '''
         Serialize preferences to json
         '''
-        data = {'range_alerts': {}, 'gauge_settings':{}, 'screens': []}
+        data = {'range_alerts': {}, 'gauge_settings':{}, 'screens': [], 'alert_rules': {}}
 
         for name, range_alert in self._prefs_dict["range_alerts"].iteritems():
             data["range_alerts"][name] = range_alert.to_dict()
 
         for id, channel in self._prefs_dict["gauge_settings"].iteritems():
             data["gauge_settings"][id] = channel
+
+        for name, alert_rules in self._prefs_dict['alert_rules'].iteritems():
+            data['alert_rules'][name] = alert_rules.to_dict()
 
         data['screens'] = self._prefs_dict['screens']
 

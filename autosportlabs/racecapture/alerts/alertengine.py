@@ -29,38 +29,38 @@ class AlertEngine(object):
 
         self.alert_controllers = {}
 
-        def process_rules(channel, value):
-            alertrule_collection = self.rule_collections.get(channel)
+    def process_rules(self, channel, value):
+        alertrule_collection = self.rule_collections.get(channel)
 
-            if alertrule_collection is None:
-                # no rules defined for this channel
-                return
+        if alertrule_collection is None:
+            # no rules defined for this channel
+            return
 
-            # check what might be activated or deactivated
-            active_rules, deactive_rules = alertrule_collection.check_rules(value)
+        # check what might be activated or deactivated
+        active_rules, deactive_rules = alertrule_collection.check_rules(value)
 
-            for rule in active_rules:
-                for alertaction in rule.alert_actions:
-                    if not alertaction.is_active:
-                        # trigger the action once
-                        controller = self._get_alert_controller(alertaction)
-                        controller.activate(alertaction)
-                        alertaction.is_active = True
+        for rule in active_rules:
+            for alertaction in rule.alert_actions:
+                if not alertaction.is_active:
+                    # trigger the action once
+                    controller = self._get_alert_controller(alertaction)
+                    controller.activate(alertaction)
+                    alertaction.is_active = True
 
-            for rule in deactive_rules:
-                for alertaction in rule.alert_actions:
-                    if alertaction.is_active:
-                        # disable the action once
-                        controller = self._get_alert_controller(alertaction)
-                        controller.deactivate(alertaction)
-                        alertaction.is_active = False
+        for rule in deactive_rules:
+            for alertaction in rule.alert_actions:
+                if alertaction.is_active:
+                    # disable the action once
+                    controller = self._get_alert_controller(alertaction)
+                    controller.deactivate(alertaction)
+                    alertaction.is_active = False
 
-        def _get_alert_controller(self, alertaction):
-            name = alertaction.__class__.___name__
-            controller = self.alert_controllers.get(name)
-            if controller is None:
-                controller = AlertActionControllerFactory.create_controller(dashboard_state)
-                self.alert_controllers.set(dashboard_state)
+    def _get_alert_controller(self, alertaction):
+        name = alertaction.__class__.___name__
+        controller = self.alert_controllers.get(name)
+        if controller is None:
+            controller = AlertActionControllerFactory.create_controller(dashboard_state)
+            self.alert_controllers.set(dashboard_state)
 
-            return controller
+        return controller
 

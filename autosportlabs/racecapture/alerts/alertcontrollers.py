@@ -76,5 +76,5 @@ class AlertActionControllerFactory(BaseAlertActionController):
         }
 
     @staticmethod
-    def create_controller(dashboard_state):
+    def create_controller(alertaction, dashboard_state):
         return AlertActionControllerFactory.factory[alertaction.__class__.__name__](dashboard_state)

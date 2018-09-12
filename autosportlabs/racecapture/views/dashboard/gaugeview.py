@@ -32,9 +32,8 @@ from autosportlabs.racecapture.views.dashboard.widgets.digitalgauge import Digit
 from autosportlabs.racecapture.views.dashboard.dashboardscreen import DashboardScreen
 
 class GaugeView(DashboardScreen):
-    def __init__(self, dashboard, databus, settings, **kwargs):
+    def __init__(self, databus, settings, **kwargs):
         super(GaugeView, self).__init__(**kwargs)
-        self._dashboard = dashboard
         self._databus = databus
         self._settings = settings
         self._initialized = False
