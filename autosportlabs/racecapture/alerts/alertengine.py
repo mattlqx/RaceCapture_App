@@ -43,7 +43,7 @@ class AlertEngine(object):
             for alertaction in rule.alert_actions:
                 if not alertaction.is_active:
                     # trigger the action once
-                    controller = self._get_alert_controller(alertaction)
+                    controller = self._get_alert_controller(self.dashboard_state, alertaction)
                     controller.activate(alertaction)
                     alertaction.is_active = True
 
@@ -51,11 +51,11 @@ class AlertEngine(object):
             for alertaction in rule.alert_actions:
                 if alertaction.is_active:
                     # disable the action once
-                    controller = self._get_alert_controller(alertaction)
+                    controller = self._get_alert_controller(self.dashboard_state, alertaction)
                     controller.deactivate(alertaction)
                     alertaction.is_active = False
 
-    def _get_alert_controller(self, alertaction):
+    def _get_alert_controller(self, dashboard_state, alertaction):
         name = alertaction.__class__.___name__
         controller = self.alert_controllers.get(name)
         if controller is None:

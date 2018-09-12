@@ -25,7 +25,9 @@ Describes a rule for an individual alert. Defines the sensor channel
 low and high threshold value (inclusive) as well as the timing 
 activation / deactivation thresholds used for triggering
 """
+import json
 from autosportlabs.racecapture.alerts.alertactions import AlertActionFactory
+
 class AlertRule(object):
     RANGE_BETWEEN = '-'
     RANGE_LESS_THAN_EQUAL = '<='
@@ -120,27 +122,27 @@ class AlertRule(object):
         Get dictionary representation of object
         :return dict
         '''
-        alert_actions_array = []
+        alert_actions = []
         for aa in self.alert_actions:
-            alert_actions_array.append(aa.to_dict())
+            alert_actions.append(aa.to_dict())
 
-        return {'range_type': self.range_type,
+        return {'enabled':self.enabled,
+                'range_type': self.range_type,
                 'low_threshold': self.low_threshold,
                 'high_threshold': self.high_threshold,
                 'activate_sec': self.activate_sec,
                 'deactivate_sec': self.deactivate_sec,
-                'alert_actions': alert_actions_array}
+                'alert_actions': alert_actions}
 
     @staticmethod
     def from_json(j):
         '''
         Factory method to create an instance from JSON
-        :param range_json JSON string
-        :type range_json string
-        :return Range object
+        :param j JSON string
+        :type j string
+        :return AlertRule object
         '''
-        range_dict = json.loads(j)
-        return AlertRule.from_dict(range_dict)
+        return AlertRule.from_dict(json.loads(j))
 
     @staticmethod
     def from_dict(d):
@@ -154,18 +156,31 @@ class AlertRule(object):
         aa_d = d.get('alert_actions')
         if aa_d is not None:
             for aa in aa_d:
-                aa_name = aa.get('name')
-                if aa_name is not None:
-                    alertactions.append(AlertActionFactory.from_dict(name, aa))
+                name = aa.get('name')
+                if name is not None:
+                    alertactions.append(AlertActionFactory.create_alertaction_from_dict(name, aa))
 
-
-        return AlertRule(range_type=d['range_type'],
+        return AlertRule(enabled=d['enabled'],
+                         range_type=d['range_type'],
                          low_threshold=d['low_threshold'],
                          high_threshold=d['high_threshold'],
                          activate_sec=d['activate_sec'],
                          deactivate_sec=d['deactivate_sec'],
-                         alertactions=alertactions)
+                         alert_actions=alertactions)
 
+    def __eq__(self, other):    
+        if isinstance(other, AlertRule):
+            return (self.enabled == other.enabled and 
+                        self.range_type == other.range_type and 
+                        self.low_threshold == other.low_threshold and 
+                        self.high_threshold == other.high_threshold and
+                        self.activate_sec == other.activate_sec and
+                        self.deactivate_sec == other.deactivate_sec and
+                        self.alert_actions == self.alert_actions) 
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 """
 Describes a collection of rules for a specified channel
 """
@@ -212,11 +227,11 @@ class AlertRuleCollection(object):
         Get dictionary representation of object
         :return dict
         '''
-        alertrules_array = []
+        alertrules = []
         for ar in self.alert_rules:
-            alertrules_array.append(ar.to_dict)
+            alertrules.append(ar.to_dict())
 
-        return {'channel': self.channel_name, 'alert_rules':alertrules_array}
+        return {'channel': self.channel_name, 'alert_rules':alertrules}
 
     @staticmethod
     def from_json(j):
@@ -226,8 +241,7 @@ class AlertRuleCollection(object):
         :type j string
         :return AlertRuleCollection object
         '''
-        d = json.loads(j)
-        return AlertRuleCollection.from_dict(d)
+        return AlertRuleCollection.from_dict(json.loads(j))
 
     @staticmethod
     def from_dict(d):
@@ -237,10 +251,10 @@ class AlertRuleCollection(object):
         :type d dict
         :return AlertRuleCollection object
         '''
-        alert_rules = []
+        alertrules = []
         ar_d = d.get('alert_rules')
         if ar_d is not None:
             for ar in ar_d:
-                alert_rules.append(AlertRule.from_dict(ar))
+                alertrules.append(AlertRule.from_dict(ar))
 
-        return AlertRuleCollection(channel_name=d['channel'], alert_rules=alert_rules)
+        return AlertRuleCollection(channel_name=d['channel'], alert_rules=alertrules)

@@ -162,6 +162,24 @@ class AlertRuleCollectionTest(unittest.TestCase):
         self.assertEqual(len(deactive), 2)
 
 
+    def test_serialize(self):
+        
+        actions1 = []
+        rules = [AlertRule(enabled=True, range_type=AlertRule.RANGE_BETWEEN, low_threshold=1, high_threshold=2, activate_sec=3, deactivate_sec=4, alert_actions=actions1)]
+        arc = AlertRuleCollection(channel_name='RPM', alert_rules=rules)
+        #serialize to and from JSON
+        arc2 = AlertRuleCollection.from_json(arc.to_json())
+        
+        self.assertEqual(arc2.channel_name, arc.channel_name)
+        
+        rules2 = arc2.alert_rules        
+        rules_len = len(rules)
+        
+        for i in range (0,rules_len):
+            r1 = rules[i]
+            r2 = rules2[i]
+            self.assertEqual(r1,r2)        
+    
 def main():
     unittest.main()
 
