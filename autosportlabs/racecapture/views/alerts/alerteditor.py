@@ -209,7 +209,11 @@ class AlertRuleList(Screen):
         grid.add_widget(add_item)
 
     def  _add_new_rule(self, *args):
-        alertrule = AlertRule(enabled=True, range_type=AlertRule.RANGE_BETWEEN, low_threshold=0, high_threshold=100)
+        alertrule = AlertRule(enabled=True,
+                              range_type=AlertRule.RANGE_BETWEEN,
+                              low_threshold=0,
+                              high_threshold=100,
+                              alert_actions=[])
         self.alertrule_collection.append(alertrule)
         self.refresh_view()
         self.dispatch('on_select', alertrule)
