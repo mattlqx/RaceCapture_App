@@ -55,7 +55,7 @@ class PopupAlertActionController(BaseAlertActionController):
         super(PopupAlertActionController, self).__init__(dashboard_state, **kwargs)
 
     def activate(self, alertaction, channel):
-        self.dashboard_state.set_alert(channel, alertaction.message)
+        self.dashboard_state.set_alert(channel, alertaction.message, alertaction.color_rgb, alertaction.shape)
 
     def deactivate(self, alertaction, channel):
         self.dashboard_state.clear_alert(channel)

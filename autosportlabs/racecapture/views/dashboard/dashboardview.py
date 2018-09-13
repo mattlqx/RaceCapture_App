@@ -27,7 +27,7 @@ from kivy.app import Builder
 from kivy.core.window import Window, Keyboard
 from kivy.logger import Logger
 from kivy.clock import Clock
-from kivy.properties import StringProperty, NumericProperty, ObjectProperty
+from kivy.properties import StringProperty, NumericProperty, ObjectProperty, ListProperty
 from utils import kvFindClass
 from kivy.animation import Animation
 from kivy.uix.carousel import Carousel
@@ -90,8 +90,8 @@ class DashboardState(object):
     def clear_channel_color(self, channel):
         self._gauge_colors.pop(channel, None)
 
-    def set_alert(self, channel, message):
-        self._active_alerts[channel] = message
+    def set_alert(self, channel, message, color=[1.0, 0.0, 0.0, 1.0], shape=None):
+        self._active_alerts[channel] = (message, color, shape)
 
     def clear_alert(self, channel):
         self._active_alerts.pop(channel, None)
@@ -238,10 +238,18 @@ class AlertScreen(Screen):
     key = StringProperty()
     popup_alert_view = ObjectProperty()
     source = ObjectProperty(None)
-    
+    color = ListProperty()
+    shape = StringProperty(allownone=True)
+
     Builder.load_string("""
 <AlertScreen>
     BoxLayout:
+        canvas.before:
+            Color:
+                rgba: root.color
+            Rectangle:
+                size: self.size
+                pos: self.pos
         orientation: 'vertical'
         FieldLabel:
             size_hint_y: 0.5
@@ -269,7 +277,7 @@ class AlertScreen(Screen):
         Clock.schedule_once(self._init_view)
 
     def _init_view(self, *args):
-        self.ids.alert_msg_no.size_hint = (1.0, 1.0) if self.message.endswith('?') else (0.0, 0.0)        
+        self.ids.alert_msg_no.size_hint = (1.0, 1.0) if self.message.endswith('?') else (0.0, 0.0)
 
     def refresh_timeout(self):
         self.hide_trigger.cancel()
@@ -294,12 +302,6 @@ class PopupAlertView(BoxLayout):
     #width: min(dp(600), root.width * 0.7)
     pos_hint:{"center_x":0.5}
     id: alertbar
-    canvas.before:
-        Color:
-            rgba: (1,0,0,0.8)
-        Rectangle:
-            size: self.size
-            pos: self.pos
     size_hint_y: None
     height: 0
     orientation: 'vertical'
@@ -314,7 +316,7 @@ class PopupAlertView(BoxLayout):
         self.anim = None
         self._current_screens = {}
         Clock.schedule_interval(self._show_next_screen, 2.0)
-        
+
     def _show_next_screen(self, *args):
         next_screen = self.ids.screens.next()
         if next_screen is not None:
@@ -360,7 +362,7 @@ class PopupAlertView(BoxLayout):
         if not bool(self._current_screens):
             self._hide()
 
-    def add_alert(self, key, message, source, is_high_priority, msg_id, timeout):
+    def add_alert(self, key, message, color, shape, source, is_high_priority, msg_id, timeout):
 
         current_screen = self._current_screens.get(key)
         if current_screen is not None:
@@ -371,10 +373,12 @@ class PopupAlertView(BoxLayout):
                              key=key,
                              message=message,
                              source=source,
+                             shape=shape,
                              is_high_priority=is_high_priority,
                              msg_id=msg_id,
                              timeout=timeout,
-                             popup_alert_view=self)
+                             popup_alert_view=self,
+                             color=color)
 
         self._current_screens[key] = screen
         self.ids.screens.add_widget(screen)
@@ -525,8 +529,15 @@ class DashboardView(Screen):
         dashboard_state = self._dashboard_state
         active_alerts = dashboard_state.get_alerts()
 
-        for channel, message in active_alerts.iteritems():
-            self.ids.popup_alert.add_alert(channel, '{}'.format(message), None, True, 0, 1.0)
+        for channel, alert_info in active_alerts.iteritems():
+            self.ids.popup_alert.add_alert(key=channel,
+                                           message='{}'.format(alert_info[0]),
+                                           color=alert_info[1],
+                                           shape=alert_info[2],
+                                           source=None,
+                                           is_high_priority=True,
+                                           msg_id=0,
+                                           timeout=1.0)
 
     def status_updated(self, status):
         """
