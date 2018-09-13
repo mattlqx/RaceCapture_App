@@ -20,7 +20,7 @@ from autosportlabs.racecapture.alerts.alertrules import AlertRule
 from autosportlabs.uix.button.betterbutton import BetterButton
 from autosportlabs.uix.itemselector.itemselectorview import ItemSelectorView, ItemSelectionRef
 from mappedspinner import MappedSpinner
-from autosportlabs.racecapture.views.util.alertview import editor_popup
+from autosportlabs.racecapture.views.util.alertview import editor_popup, number_editor_popup
 from autosportlabs.racecapture.alerts.alertactions import get_alertaction_default_collection
 
 class AddItemView(BoxLayout):
@@ -252,7 +252,10 @@ class AlertRuleList(Screen):
                 self.refresh_view()
             popup.dismiss()
 
-        popup = confirmPopup('Delete', 'Delete Group {}-{}?'.format(value.low_threshold, value.high_threshold), confirm_delete)
+        high = value.high_threshold
+        low = value.low_threshold
+        symbol = '-' if high and low else '->'
+        popup = confirmPopup('Delete', 'Delete Group {} {} {}?'.format('' if low is None else low, symbol, '' if high is None else high), confirm_delete)
 
 class AlertActionSummaryView(BoxLayout):
     Builder.load_string("""
@@ -303,6 +306,7 @@ class SpinValueField(BoxLayout):
     value_format = StringProperty('{:.0f}')
 
     Builder.load_string("""
+<ClickFieldLabel@ButtonBehavior+FieldLabel>
 <SpinValueField>:
     BetterButton:
         width: dp(30)
@@ -311,10 +315,11 @@ class SpinValueField(BoxLayout):
         font_size: self.height * 0.7
         on_press: root._increment(-root.step_value)
         
-    FieldLabel:
+    ClickFieldLabel:
         text: root.value_format.format(root.value)
         halign: 'center'
         underline: True
+        on_press: root._on_value_edit()
         
     BetterButton:
         width: dp(30)
@@ -335,6 +340,14 @@ class SpinValueField(BoxLayout):
             self.value_format = '{:.1f}'
         else:
             self.value_format = '{:.2f}'
+
+    def _on_value_edit(self, *args):
+        def popup_dismissed(instance, result):
+            if result:
+                self.value = instance.value
+            popup.dismiss()
+
+        popup = number_editor_popup('Edit Range', 'Set the value for this range', self.value, self.min_value, self.max_value, popup_dismissed)
 
 class AlertActionList(Screen):
     alertrule = ObjectProperty()
@@ -507,22 +520,28 @@ class AlertActionList(Screen):
             pass
 
     def _on_deactivate_sec(self, instance, value):
-        try:
-            self.alertrule.deactivate_sec = value
-        except NoneType:
-            pass
+        self.alertrule.deactivate_sec = value
 
     def _on_high_threshold(self, instance, value):
-        try:
-            self.alertrule.high_threshold = value
-        except NoneType:
-            pass
+        self.alertrule.high_threshold = value
+        self._auto_adjust_range()
 
     def _on_low_threshold(self, instance, value):
-        try:
-            self.alertrule.low_threshold = value
-        except NoneType:
-            pass
+        self.alertrule.low_threshold = value
+        self._auto_adjust_range()
+
+    def _auto_adjust_range(self):
+        low = self.alertrule.low_threshold
+        high = self.alertrule.high_threshold
+        range_type = self.alertrule.range_type
+        if range_type == AlertRule.RANGE_BETWEEN:
+            if low >= high:
+                high = low
+
+        if low is not None:
+            self.ids.low_threshold.value = low
+        if high is not None:
+            self.ids.high_threshold.value = high
 
     def on_alertrule(self, instance, value):
         self.refresh_view()
