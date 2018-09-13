@@ -27,7 +27,7 @@ from kivy.app import Builder
 from kivy.core.window import Window, Keyboard
 from kivy.logger import Logger
 from kivy.clock import Clock
-from kivy.properties import StringProperty, NumericProperty
+from kivy.properties import StringProperty, NumericProperty, ObjectProperty
 from utils import kvFindClass
 from kivy.animation import Animation
 from kivy.uix.carousel import Carousel
@@ -232,6 +232,31 @@ class DashboardFactory(object):
                            track_manager=self._track_manager,
                            status_pump=self._status_pump)
 
+class AlertScreen(Screen):
+    message = StringProperty()
+    timeout = NumericProperty()
+    key = StringProperty()
+    popup_alert_view = ObjectProperty()
+    Builder.load_string("""
+<AlertScreen>
+    FieldLabel:
+        text: root.message
+        id: alert_msg
+        halign: 'center'
+        font_size: min(dp(90), self.height)
+    """)
+
+    def __init__(self, **kwargs):
+        super(AlertScreen, self).__init__(**kwargs)
+        self.hide_trigger = Clock.create_trigger(self._hide, self.timeout)
+
+    def refresh_timeout(self):
+        self.hide_trigger.cancel()
+        self.hide_trigger()
+
+    def _hide(self, *args):
+        self.popup_alert_view.remove_alert(self.key)
+
 class PopupAlertView(BoxLayout):
     Builder.load_string("""
 <PopupAlertView>:
@@ -251,11 +276,8 @@ class PopupAlertView(BoxLayout):
     orientation: 'vertical'
     BoxLayout:
         size_hint_y: 0.5
-        FieldLabel:
-            id: alert_msg
-            halign: 'center'
-            text: 'fff'
-            font_size: min(dp(90), self.height)
+        ScreenManager:
+            id: screens
     BoxLayout:
         size_hint_y: 0.5
         IconButton:
@@ -272,16 +294,15 @@ class PopupAlertView(BoxLayout):
         super(PopupAlertView, self).__init__(**kwargs)
         self.minimize = None
         self.anim = None
-        self.timeout = 0
-        self.source = None
+        self._current_screens = {}
 
-    def _send_api_alert_msg(self, msg):
-        if self.source is not None:
-            self.source.send_api_msg({'msg':{'id':1234, 'pri':1, 'msg':msg, 'src':2}})
+    def _send_api_alert_msg(self, source, msg):
+        if source is not None:
+            source.send_api_msg({'msg':{'id':1234, 'pri':1, 'msg':msg, 'src':2}})
 
-    def _send_api_alert_msg_ack(self, msg_id):
-        if self.source is not None:
-            self.source.send_api_msg({'msgAck':{'id':msg_id}})
+    def _send_api_alert_msg_ack(self, source, msg_id):
+        if source is not None:
+            source.send_api_msg({'msgAck':{'id':msg_id}})
 
     def _alert_msg_yes(self):
         self._send_api_alert_msg('Yes')
@@ -301,35 +322,57 @@ class PopupAlertView(BoxLayout):
 
     def _minimize(self, *args):
         Animation(height=self.height * DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT, duration=1.0, t=DashboardView.TRANSITION_STYLE).start(self)
-        Clock.schedule_once(self._hide, self.timeout * 2.0)
 
     def hide_alert(self, key):
         if key == self.key:
             self._hide()
 
-    def show_alert(self, key, message, source, is_high_priority, msg_id, timeout):
+    def remove_alert(self, key):
+        screen = self._current_screens.pop(key, None)
+        if screen is None:
+            return
+
+        self.ids.screens.clear_widgets([screen])
+        if not bool(self._current_screens):
+            self._hide()
+
+    def add_alert(self, key, message, source, is_high_priority, msg_id, timeout):
+
+        current_screen = self._current_screens.get(key)
+        if current_screen is not None:
+            current_screen.refresh_timeout()
+            return
+
+        screen = AlertScreen(name=key,
+                             key=key,
+                             message=message,
+                             source=source,
+                             is_high_priority=is_high_priority,
+                             msg_id=msg_id,
+                             timeout=timeout,
+                             popup_alert_view=self)
+
+        self._current_screens[key] = screen
+        self.ids.screens.add_widget(screen)
+
+        self._show_alert()
+        self._send_api_alert_msg_ack(source, msg_id)
+
+    def _show_alert(self):
         self._hide()
-        self._key = key
-        self.timeout = timeout
-        self.source = source
-        self.ids.alert_msg.text = message
 
-        self.ids.alert_msg_no.size_hint = (1.0, 1.0) if message.endswith('?') else (0.0, 0.0)
+        self.ids.alert_msg_no.size_hint = (1.0, 1.0)  # if message.endswith('?') else (0.0, 0.0)
 
-        target_height = self.parent.height * (DashboardView.ALERT_BAR_HEIGHT_URGENT_PCT if is_high_priority else DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT)
+        target_height = self.parent.height * (DashboardView.ALERT_BAR_HEIGHT_URGENT_PCT)  # if is_high_priority else DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT)
         Animation(height=target_height, duration=0.5, t=DashboardView.TRANSITION_STYLE).start(self)
 
         self.anim = None
-        if is_high_priority:
-            anim = Animation(color=(1, 1, 1, 0), duration=0.2) + Animation(color=(1, 1, 1, 0), duration=0.2)
-            anim += Animation(color=(1, 1, 1, 1), duration=0.2) + Animation(color=(1, 1, 1, 1), duration=0.2)
-            anim.repeat = True
-            anim.start(self.ids.alert_msg)
-            self.anim = anim
-
-        Clock.schedule_once(self._minimize, timeout)
-
-        self._send_api_alert_msg_ack(msg_id)
+        # if is_high_priority:
+         #   anim = Animation(color=(1, 1, 1, 0), duration=0.2) + Animation(color=(1, 1, 1, 0), duration=0.2)
+          #  anim += Animation(color=(1, 1, 1, 1), duration=0.2) + Animation(color=(1, 1, 1, 1), duration=0.2)
+           # anim.repeat = True
+            # anim.start(self.ids.alert_msg)
+            # self.anim = anim
 
 
 DASHBOARD_VIEW_KV = """
@@ -459,7 +502,7 @@ class DashboardView(Screen):
         active_alerts = dashboard_state.get_alerts()
 
         for channel, message in active_alerts.iteritems():
-            self.ids.popup_alert.show_alert(channel, '{}'.format(message), None, True, 0, 4.0)
+            self.ids.popup_alert.add_alert(channel, '{}'.format(message), None, True, 0, 1.0)
 
     def status_updated(self, status):
         """
@@ -542,7 +585,7 @@ class DashboardView(Screen):
             alert_msg = msg.get('msg')
             pri = msg.get('pri') == 1
             msg_id = msg.get('id')
-            self.ids.popup_alert.show_alert('podium', '{}'.format(alert_msg), source, pri, msg_id, 4.0)
+            self.ids.popup_alert.add_alert('podium', '{}'.format(alert_msg), source, pri, msg_id, 4.0)
         else:
             Logger.warning('DashboardView: got malformed alert message: {}'.format(alert_msg))
 
