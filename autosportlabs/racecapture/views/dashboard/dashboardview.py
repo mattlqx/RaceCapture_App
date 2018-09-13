@@ -237,18 +237,39 @@ class AlertScreen(Screen):
     timeout = NumericProperty()
     key = StringProperty()
     popup_alert_view = ObjectProperty()
+    source = ObjectProperty(None)
+    
     Builder.load_string("""
 <AlertScreen>
-    FieldLabel:
-        text: root.message
-        id: alert_msg
-        halign: 'center'
-        font_size: min(dp(90), self.height)
+    BoxLayout:
+        orientation: 'vertical'
+        FieldLabel:
+            size_hint_y: 0.5
+            text: root.message
+            id: alert_msg
+            halign: 'center'
+            font_size: min(dp(90), self.height)
+            
+        BoxLayout:
+            size_hint_y: 0.5
+            IconButton:
+                text: u'\uf00c'
+                id: alert_msg_yes
+                on_press: root._alert_msg_yes()
+            IconButton:
+                text: u'\uf00d'
+                id: alert_msg_no
+                on_press: root._alert_msg_no()
+            
     """)
 
     def __init__(self, **kwargs):
         super(AlertScreen, self).__init__(**kwargs)
         self.hide_trigger = Clock.create_trigger(self._hide, self.timeout)
+        Clock.schedule_once(self._init_view)
+
+    def _init_view(self, *args):
+        self.ids.alert_msg_no.size_hint = (1.0, 1.0) if self.message.endswith('?') else (0.0, 0.0)        
 
     def refresh_timeout(self):
         self.hide_trigger.cancel()
@@ -256,6 +277,14 @@ class AlertScreen(Screen):
 
     def _hide(self, *args):
         self.popup_alert_view.remove_alert(self.key)
+
+    def _alert_msg_yes(self):
+        self.popup_alert_view._send_api_alert_msg(self.source, 'Yes')
+        self._hide()
+
+    def _alert_msg_no(self):
+        self.popup_alert_view._send_api_alert_msg(self.source, 'No')
+        self._hide()
 
 class PopupAlertView(BoxLayout):
     Builder.load_string("""
@@ -275,19 +304,8 @@ class PopupAlertView(BoxLayout):
     height: 0
     orientation: 'vertical'
     BoxLayout:
-        size_hint_y: 0.5
         ScreenManager:
             id: screens
-    BoxLayout:
-        size_hint_y: 0.5
-        IconButton:
-            text: u'\uf00c'
-            id: alert_msg_yes
-            on_press: root._alert_msg_yes()
-        IconButton:
-            text: u'\uf00d'
-            id: alert_msg_no
-            on_press: root._alert_msg_no()
     """)
 
     def __init__(self, **kwargs):
@@ -295,6 +313,12 @@ class PopupAlertView(BoxLayout):
         self.minimize = None
         self.anim = None
         self._current_screens = {}
+        Clock.schedule_interval(self._show_next_screen, 2.0)
+        
+    def _show_next_screen(self, *args):
+        next_screen = self.ids.screens.next()
+        if next_screen is not None:
+            self.ids.screens.current = next_screen
 
     def _send_api_alert_msg(self, source, msg):
         if source is not None:
@@ -361,7 +385,7 @@ class PopupAlertView(BoxLayout):
     def _show_alert(self):
         self._hide()
 
-        self.ids.alert_msg_no.size_hint = (1.0, 1.0)  # if message.endswith('?') else (0.0, 0.0)
+#        self.ids.alert_msg_no.size_hint = (1.0, 1.0)  # if message.endswith('?') else (0.0, 0.0)
 
         target_height = self.parent.height * (DashboardView.ALERT_BAR_HEIGHT_URGENT_PCT)  # if is_high_priority else DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT)
         Animation(height=target_height, duration=0.5, t=DashboardView.TRANSITION_STYLE).start(self)
