@@ -57,7 +57,7 @@ class AlertRule(object):
     def __repr__(self):
         return 'AlertRule: ({}-{}) ({}sec/{}sec) ({})'.format(self.low_threshold, self.high_threshold, self.activate_sec, self.deactivate_sec, 'enabled' if self.enabled else 'disabled')
 
-    def should_activate(self, value):
+    def should_activate(self, value, time_ref):
         """ Test for alert activation, sets the is_active property if active
         :param float value: The value to test
         :return: True if the alert rule is activated
@@ -71,12 +71,12 @@ class AlertRule(object):
             return False
 
         if not self.activate_start:
-            self.activate_start = datetime.now()
+            self.activate_start = time_ref
             return False
 
-        return (datetime.now() - self.activate_start).total_seconds() > self.activate_sec
+        return int((time_ref - self.activate_start).total_seconds()) >= self.activate_sec
 
-    def should_deactivate(self, value):
+    def should_deactivate(self, value, time_ref):
         """ Test for alert de-activation
         :param float value: The value to test
         :return: True if the alert rule is de-activated
@@ -90,10 +90,10 @@ class AlertRule(object):
             return False
 
         if not self.deactivate_start:
-            self.deactivate_start = datetime.now()
+            self.deactivate_start = time_ref
             return False
 
-        return (datetime.now() - self.deactivate_start).total_seconds() > self.deactivate_sec
+        return int((time_ref - self.deactivate_start).total_seconds()) >= self.deactivate_sec
 
     def is_within_threshold(self, value):
         """ Test if the value is within the alert threshold
@@ -207,10 +207,11 @@ class AlertRuleCollection(object):
         active_rules = []
         deactive_rules = []
 
+        time_ref = datetime.now()
         for r in self.alert_rules:
-            if r.should_activate(value):
+            if r.should_activate(value, time_ref):
                 active_rules.append(r)
-            if r.should_deactivate(value):
+            if r.should_deactivate(value, time_ref):
                 deactive_rules.append(r)
 
         return active_rules, deactive_rules
