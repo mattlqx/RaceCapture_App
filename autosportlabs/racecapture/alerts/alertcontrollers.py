@@ -26,7 +26,7 @@ class BaseAlertActionController(object):
     def new_instance(cls, dashboard_state):
         return cls(dashboard_state=dashboard_state)
 
-    def __init__(self, **kwargs):
+    def __init__(self, dashboard_state, **kwargs):
         self.dashboard_state = dashboard_state
 
     def activate(self, alertaction, channel):
@@ -53,6 +53,12 @@ class PopupAlertActionController(BaseAlertActionController):
 
     def __init__(self, dashboard_state, **kwargs):
         super(PopupAlertActionController, self).__init__(dashboard_state, **kwargs)
+
+    def activate(self, alertaction, channel):
+        self.dashboard_state.set_alert(channel, alertaction.message)
+
+    def deactivate(self, alertaction, channel):
+        self.dashboard_state.clear_alert(channel)
 
 
 class LedAlertActionController(BaseAlertActionController):

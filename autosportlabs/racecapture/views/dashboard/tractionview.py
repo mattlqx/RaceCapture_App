@@ -55,11 +55,12 @@ TRACTION_VIEW_KV = """
 class TractionView(DashboardScreen):
     Builder.load_string(TRACTION_VIEW_KV)
 
-    def __init__(self, databus, settings, **kwargs):
+    def __init__(self, databus, settings, dashboard_state, **kwargs):
         super(TractionView, self).__init__(**kwargs)
         self.register_event_type('on_tracks_updated')
         self._databus = databus
         self._settings = settings
+        self._dashboard_state = dashboard_state
         self._initialized = False
 
     def init_view(self):

@@ -79,12 +79,29 @@ from autosportlabs.racecapture.views.dashboard.rawchannelview import RawChannelV
 class DashboardState(object):
     def __init__(self, **kwargs):
         self._gauge_colors = {}
+        self._active_alerts = {}
+
+    def set_channel_color(self, channel, color):
+        self._gauge_colors[channel] = color
 
     def get_gauge_color(self, channel):
         return self._gauge_colors.get(channel)
 
     def clear_channel_color(self, channel):
         self._gauge_colors.pop(channel, None)
+
+    def set_alert(self, channel, message):
+        self._active_alerts[channel] = message
+
+    def clear_alert(self, channel):
+        self._active_alerts.pop(channel, None)
+
+    def get_alerts(self):
+        return self._active_alerts
+
+    def clear_channel_states(self, channel):
+        self._gauge_colors.pop(channel, None)
+        self._active_alerts.pop(channel, None)
 
 class DashboardFactory(object):
     """
@@ -153,39 +170,65 @@ class DashboardFactory(object):
         return self._view_previews.get(key)
 
     def build_5x_gauge_view(self):
-        return GaugeView5x(name='5x_gauge_view', databus=self._databus, settings=self._settings)
+        return GaugeView5x(name='5x_gauge_view',
+                           databus=self._databus,
+                           settings=self._settings,
+                           dashboard_state=self._dashboard_state)
 
     def build_3x_gauge_view(self):
-        return GaugeView3x(name='3x_gauge_view', databus=self._databus, settings=self._settings)
+        return GaugeView3x(name='3x_gauge_view',
+                           databus=self._databus,
+                           settings=self._settings,
+                           dashboard_state=self._dashboard_state)
 
     def build_2x_gauge_view(self):
-        return GaugeView2x(name='2x_gauge_view', databus=self._databus, settings=self._settings)
+        return GaugeView2x(name='2x_gauge_view',
+                           databus=self._databus,
+                           settings=self._settings,
+                           dashboard_state=self._dashboard_state)
 
     def build_8x_gauge_view(self):
-        return GaugeView8x(name='8x_gauge_view', databus=self._databus, settings=self._settings)
+        return GaugeView8x(name='8x_gauge_view',
+                           databus=self._databus,
+                           settings=self._settings,
+                           dashboard_state=self._dashboard_state)
 
     def build_tachometer_view(self):
-        return TachometerView(name='tach_view', databus=self._databus, settings=self._settings)
+        return TachometerView(name='tach_view',
+                              databus=self._databus,
+                              settings=self._settings,
+                              dashboard_state=self._dashboard_state)
 
     def build_laptime_view(self):
-        return LaptimeView(name='laptime_view', databus=self._databus, settings=self._settings)
+        return LaptimeView(name='laptime_view',
+                           databus=self._databus,
+                           settings=self._settings,
+                           dashboard_state=self._dashboard_state)
 
     def build_raw_channel_view(self):
-        return RawChannelView(name='rawchannel_view', databus=self._databus, settings=self._settings)
+        return RawChannelView(name='rawchannel_view',
+                              databus=self._databus,
+                              settings=self._settings,
+                              dashboard_state=self._dashboard_state)
 
     def build_traction_view(self):
-        return TractionView(name='traction_view', databus=self._databus, settings=self._settings)
+        return TractionView(name='traction_view',
+                            databus=self._databus,
+                            settings=self._settings,
+                            dashboard_state=self._dashboard_state)
 
     def build_racestatus_view(self):
         return RaceStatusView(name='racestatus_view',
                               databus=self._databus,
                               settings=self._settings,
+                              dashboard_state=self._dashboard_state,
                               track_manager=self._track_manager,
                               status_pump=self._status_pump)
 
     def build_heatmap_view(self):
         return HeatmapView(name='heatmap_view', databus=self._databus,
                            settings=self._settings,
+                           dashboard_state=self._dashboard_state,
                            track_manager=self._track_manager,
                            status_pump=self._status_pump)
 
@@ -233,10 +276,12 @@ class PopupAlertView(BoxLayout):
         self.source = None
 
     def _send_api_alert_msg(self, msg):
-        self.source.send_api_msg({'msg':{'id':1234, 'pri':1, 'msg':msg, 'src':2}})
+        if self.source is not None:
+            self.source.send_api_msg({'msg':{'id':1234, 'pri':1, 'msg':msg, 'src':2}})
 
     def _send_api_alert_msg_ack(self, msg_id):
-        self.source.send_api_msg({'msgAck':{'id':msg_id}})
+        if self.source is not None:
+            self.source.send_api_msg({'msgAck':{'id':msg_id}})
 
     def _alert_msg_yes(self):
         self._send_api_alert_msg('Yes')
@@ -258,8 +303,13 @@ class PopupAlertView(BoxLayout):
         Animation(height=self.height * DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT, duration=1.0, t=DashboardView.TRANSITION_STYLE).start(self)
         Clock.schedule_once(self._hide, self.timeout * 2.0)
 
-    def show_alert(self, message, source, is_high_priority, msg_id, timeout):
+    def hide_alert(self, key):
+        if key == self.key:
+            self._hide()
+
+    def show_alert(self, key, message, source, is_high_priority, msg_id, timeout):
         self._hide()
+        self._key = key
         self.timeout = timeout
         self.source = source
         self.ids.alert_msg.text = message
@@ -390,16 +440,26 @@ class DashboardView(Screen):
 
     def _start_alert_engine(self):
         self._databus.add_sample_listener(self._on_sample)
+
         Clock.schedule_interval(self._check_alerts, DashboardView.ALERT_ENGINE_INTERVAL)
 
     def _on_sample(self, sample):
         self._current_sample = sample
 
     def _check_alerts(self, *args):
+        prefs = self._settings.userPrefs
         current_sample = self._current_sample
         if current_sample is not None:
             for channel, value in current_sample.iteritems():
-                self._alert_engine.process_rules(channel, value)
+                alertrules = prefs.get_alertrules(channel)
+                self._alert_engine.process_rules(alertrules, channel, value)
+
+
+        dashboard_state = self._dashboard_state
+        active_alerts = dashboard_state.get_alerts()
+
+        for channel, message in active_alerts.iteritems():
+            self.ids.popup_alert.show_alert(channel, '{}'.format(message), None, True, 0, 4.0)
 
     def status_updated(self, status):
         """
@@ -444,6 +504,7 @@ class DashboardView(Screen):
     def _init_view(self):
         databus = self._databus
         settings = self._settings
+        dashboard_state = self._dashboard_state
 
         self._init_global_gauges()
 
@@ -458,6 +519,7 @@ class DashboardView(Screen):
         for gauge in gauges:
             gauge.settings = settings
             gauge.data_bus = databus
+            gauge.dashboard_state = dashboard_state
 
         # Initialize our alert type widgets
         self._alert_widgets['pit_stop'] = PitstopTimerView(databus, 'Pit Stop')
@@ -480,7 +542,7 @@ class DashboardView(Screen):
             alert_msg = msg.get('msg')
             pri = msg.get('pri') == 1
             msg_id = msg.get('id')
-            self.ids.popup_alert.show_alert('{}'.format(alert_msg), source, pri, msg_id, 4.0)
+            self.ids.popup_alert.show_alert('podium', '{}'.format(alert_msg), source, pri, msg_id, 4.0)
         else:
             Logger.warning('DashboardView: got malformed alert message: {}'.format(alert_msg))
 

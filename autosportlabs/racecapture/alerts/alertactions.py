@@ -20,7 +20,7 @@
 import json
 
 class BaseAlertAction(object):
-    DEFAULT_COLOR = [1.0, 0.0, 0.0]
+    DEFAULT_COLOR = [1.0, 0.0, 0.0, 1.0]
     def __init__(self):
         self.is_active = False
 
