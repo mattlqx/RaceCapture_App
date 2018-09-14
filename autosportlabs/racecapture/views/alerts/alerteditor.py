@@ -589,10 +589,12 @@ class AlertActionList(Screen):
     def _add_new_action(self, *args):
         def popup_dismissed(instance, result):
             if result:
-                alertaction = instance.content.selected_item.key
-                self.alertrule.alert_actions.append(alertaction)
-                self.dispatch('on_edit_action', alertaction)
-                self.refresh_view()
+                selected = instance.content.selected_item
+                if selected is not None:
+                    alertaction = selected.key
+                    self.alertrule.alert_actions.append(alertaction)
+                    self.dispatch('on_edit_action', alertaction)
+                    self.refresh_view()
             popup.dismiss()
 
         alertaction_prototypes = get_alertaction_default_collection()
