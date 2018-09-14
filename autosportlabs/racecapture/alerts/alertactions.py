@@ -38,6 +38,7 @@ class BaseAlertAction(object):
 Describes an an alert action that specifies a color to activate
 """
 class ColorAlertAction(BaseAlertAction):
+    PREVIEW_IMAGE = 'resource/alerts/color_alertaction_preview.jpg'
     name = 'color_alertaction'
 
     def __init__(self, color_rgb, **kwargs):
@@ -92,6 +93,7 @@ class ColorAlertAction(BaseAlertAction):
 Describes an alert action that takes the form of a popup message
 """
 class PopupAlertAction(ColorAlertAction):
+    PREVIEW_IMAGE = 'resource/alerts/popup_alertaction_preview.jpg'
     name = 'popup_alertaction'
 
     def __init__(self, color_rgb, message, shape, **kwargs):
@@ -155,6 +157,7 @@ class PopupAlertAction(ColorAlertAction):
         return False
 
 class LedAlertAction(ColorAlertAction):
+    PREVIEW_IMAGE = 'resource/alerts/led_alertaction_preview.jpg'
     name = 'led_alertaction'
 
     def __init__(self, color_rgb, led_position, flash_rate, **kwargs):
@@ -215,6 +218,7 @@ class LedAlertAction(ColorAlertAction):
         return False
 
 class ShiftLightAlertAction(ColorAlertAction):
+    PREVIEW_IMAGE = 'resource/alerts/shiftlight_alertaction_preview.jpg'
     name = 'shiftlight_alertaction'
 
     def __init__(self, color_rgb, flash_rate, **kwargs):

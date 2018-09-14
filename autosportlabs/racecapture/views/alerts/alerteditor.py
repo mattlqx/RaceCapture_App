@@ -599,7 +599,7 @@ class AlertActionList(Screen):
 
         alertaction_prototypes = get_alertaction_default_collection()
 
-        items = [ItemSelectionRef(title=alertaction.title, image_source=None, key=alertaction) for alertaction in alertaction_prototypes]
+        items = [ItemSelectionRef(title=alertaction.title, image_source=alertaction.PREVIEW_IMAGE, key=alertaction) for alertaction in alertaction_prototypes]
 
         view = ItemSelectorView(item_references=items)
 
