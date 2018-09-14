@@ -104,6 +104,9 @@ class PopupAlertAction(ColorAlertAction):
         self.message = message
         self.shape = shape
 
+        # hold the state of when the user will squelch an active popup
+        self.is_squelched = False
+
     @property
     def title(self):
         return 'Popup: "{}"'.format(self.message)

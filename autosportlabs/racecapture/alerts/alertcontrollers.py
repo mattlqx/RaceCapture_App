@@ -42,10 +42,10 @@ class ColorAlertActionController(BaseAlertActionController):
         super(ColorAlertActionController, self).__init__(dashboard_state, **kwargs)
 
     def activate(self, alertaction, channel):
-        self.dashboard_state.set_channel_color(channel, alertaction.color_rgb)
+        self.dashboard_state.set_channel_color(channel, alertaction)
 
     def deactivate(self, alertaction, channel):
-        self.dashboard_state.clear_channel_color(channel, alertaction.color_rgb)
+        self.dashboard_state.clear_channel_color(channel, alertaction)
 
 
 class PopupAlertActionController(BaseAlertActionController):
@@ -54,10 +54,12 @@ class PopupAlertActionController(BaseAlertActionController):
         super(PopupAlertActionController, self).__init__(dashboard_state, **kwargs)
 
     def activate(self, alertaction, channel):
-        self.dashboard_state.set_alert(channel, alertaction.message, alertaction.color_rgb, alertaction.shape)
+        # reset if alert was previously squelched, so it pops up again
+        alertaction.is_squelched = False
+        self.dashboard_state.set_popupalert(channel, alertaction)
 
     def deactivate(self, alertaction, channel):
-        self.dashboard_state.clear_alert(channel)
+        self.dashboard_state.clear_popupalert(channel, alertaction)
 
 
 class LedAlertActionController(BaseAlertActionController):

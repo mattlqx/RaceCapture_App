@@ -146,6 +146,7 @@ class AlertRuleSummaryView(BoxLayout):
 class AlertRuleList(Screen):
     alertrule_collection = ObjectProperty()
     precision = NumericProperty()
+    min_value = NumericProperty()
     Builder.load_string("""
 <AlertRuleList>:
     ScrollContainer:
@@ -208,11 +209,21 @@ class AlertRuleList(Screen):
         add_item.bind(on_select=self._add_new_rule)
         grid.add_widget(add_item)
 
-    def  _add_new_rule(self, *args):
+    def _get_next_rule_low_threshold(self):
+        # as a convenience, find the highest threshold set
+        # so they can easily create congruent ranges
+        rules = self.alertrule_collection.alert_rules
+        low_threshold = self.min_value
+        for rule in rules:
+            low_threshold = max(rule.high_threshold, low_threshold)
+
+        return low_threshold
+
+    def _add_new_rule(self, *args):
         alertrule = AlertRule(enabled=True,
-                              range_type=AlertRule.RANGE_BETWEEN,
-                              low_threshold=0,
-                              high_threshold=100,
+                              range_type=AlertRule.RANGE_GREATHER_THAN_EQUAL,
+                              low_threshold=self._get_next_rule_low_threshold(),
+                              high_threshold=None,
                               alert_actions=[])
         self.alertrule_collection.append(alertrule)
         self.refresh_view()
@@ -666,6 +677,7 @@ class AlertRulesView(BoxLayout):
             name: "rule_list"
             id: rule_list
             precision: root.precision
+            min_value: root.min_value
         AlertActionList:
             name: 'group_list'
             id: group_list

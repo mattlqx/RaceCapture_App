@@ -81,25 +81,27 @@ class DashboardState(object):
         self._gauge_colors = {}
         self._active_alerts = {}
 
-    def set_channel_color(self, channel, color):
-        self._gauge_colors[channel] = color
+    def set_channel_color(self, channel, color_alertaction):
+        self._gauge_colors[channel] = color_alertaction
 
     def get_gauge_color(self, channel):
         return self._gauge_colors.get(channel)
 
-    def clear_channel_color(self, channel, color):
-        if color == self._gauge_colors.get(channel):
+    def clear_channel_color(self, channel, color_alertaction):
+        if color_alertaction == self._gauge_colors.get(channel):
             # ensure we're removing *this* color, not
             # clearing another color by accident.
             self._gauge_colors.pop(channel, None)
 
-    def set_alert(self, channel, message, color=[1.0, 0.0, 0.0, 1.0], shape=None):
-        self._active_alerts[channel] = (message, color, shape)
+    def set_popupalert(self, channel, popup_alertaction):
+        self._active_alerts[channel] = popup_alertaction
 
-    def clear_alert(self, channel):
-        self._active_alerts.pop(channel, None)
+    def clear_popupalert(self, channel, popup_alertaction):
+        if popup_alertaction == self._active_alerts.get(channel):
+            # ensure we're removing *this* popup_alertaction, not
+            self._active_alerts.pop(channel, None)
 
-    def get_alerts(self):
+    def get_popupalerts(self):
         return self._active_alerts
 
     def clear_channel_states(self, channel):
@@ -236,13 +238,12 @@ class DashboardFactory(object):
                            status_pump=self._status_pump)
 
 class AlertScreen(Screen):
-    message = StringProperty()
+    popup_alertaction = ObjectProperty()
+
     timeout = NumericProperty()
     key = StringProperty()
     popup_alert_view = ObjectProperty()
     source = ObjectProperty(None)
-    color = ListProperty()
-    shape = StringProperty(allownone=True)
     high_priority = BooleanProperty()
     background_color = ListProperty()
     shape_color = ListProperty()
@@ -272,7 +273,7 @@ class AlertScreen(Screen):
             size_hint_y: 0.8
             id: alert_container
             FieldLabel:
-                text: root.message
+                text: root.popup_alertaction.message
                 id: alert_msg
                 halign: 'center'
                 font_size: min(dp(90), self.height)
@@ -296,11 +297,12 @@ class AlertScreen(Screen):
         Clock.schedule_once(self._init_view)
         self.anim = None
 
-    def on_color(self, instance, value):
+    def on_popup_alertaction(self, instance, value):
+        self._update_shape()
         self._update_colors()
 
     def _init_view(self, *args):
-        self.ids.alert_msg_yes.size_hint = (1.0, 1.0) if self.message.endswith('?') else (0.0, 0.0)
+        self.ids.alert_msg_yes.size_hint = (1.0, 1.0) if self.popup_alertaction.message.endswith('?') else (0.0, 0.0)
         self.ids.alert_container.bind(size=self._update_shape)
 
         if self.high_priority:
@@ -310,13 +312,22 @@ class AlertScreen(Screen):
             anim.start(self.ids.alert_msg)
             self.anim = anim
 
+    def _update_colors(self):
+        color = self.popup_alertaction.color_rgb
+        dim_color = [color[0] * 0.5, color[1] * 0.5, color[2] * 0.5, 1.0]
+        bright_color = color
+        shape = self.popup_alertaction.shape
+
+        self.shape_color = bright_color if shape is not None else dim_color
+        self.background_color = bright_color if shape is None else dim_color
+
     def _update_shape(self, *args):
         if len(args) != 2:
             return
         ac = self.ids.alert_container
         size = ac.size
         pos = ac.pos
-        shape = self.shape
+        shape = self.popup_alertaction.shape
         if shape is None:
             self.shape_vertices = []
             self.shape_indices = []
@@ -364,23 +375,12 @@ class AlertScreen(Screen):
         if self.anim is not None:
            self.anim.repeat = False
 
-    def _update_colors(self):
-        color = self.color
-        dim_color = [color[0] * 0.5, color[1] * 0.5, color[2] * 0.5, 1.0]
-        bright_color = self.color
-
-        self.shape_color = bright_color if self.shape is not None else dim_color
-        self.background_color = bright_color if self.shape is None else dim_color
-
-    def on_shape(self, instance, value):
-        self._update_shape()
-        self._update_colors()
-
     def refresh_timeout(self):
         self.hide_trigger.cancel()
         self.hide_trigger()
 
     def _hide(self, *args):
+        self.popup_alertaction.is_squelched = True
         self.popup_alert_view.remove_alert(self.key)
 
     def _alert_msg_yes(self):
@@ -451,7 +451,8 @@ class PopupAlertView(BoxLayout):
             # remove the screen immediately
             self.ids.screens.clear_widgets([screen])
 
-    def add_alert(self, key, message, color, shape, source, high_priority, msg_id, timeout):
+
+    def add_alert(self, key, popup_alertaction, source, high_priority, msg_id, timeout,):
         current_screen = self._current_screens.get(key)
         if current_screen is not None:
             current_screen.refresh_timeout()
@@ -459,14 +460,12 @@ class PopupAlertView(BoxLayout):
 
         screen = AlertScreen(name=key,
                              key=key,
-                             message=message,
                              source=source,
-                             shape=shape,
                              high_priority=high_priority,
                              msg_id=msg_id,
                              timeout=timeout,
                              popup_alert_view=self,
-                             color=color)
+                             popup_alertaction=popup_alertaction)
 
         self._current_screens[key] = screen
         self.ids.screens.add_widget(screen)
@@ -603,17 +602,16 @@ class DashboardView(Screen):
 
 
         dashboard_state = self._dashboard_state
-        active_alerts = dashboard_state.get_alerts()
+        active_alerts = dashboard_state.get_popupalerts()
 
-        for channel, alert_info in active_alerts.iteritems():
-            self.ids.popup_alert.add_alert(key=channel,
-                                           message='{}'.format(alert_info[0]),
-                                           color=alert_info[1],
-                                           shape=alert_info[2],
-                                           source=None,
-                                           high_priority=False,
-                                           msg_id=0,
-                                           timeout=1.0)
+        for channel, popup_alertaction in active_alerts.iteritems():
+            if not popup_alertaction.is_squelched:
+                self.ids.popup_alert.add_alert(key=channel,
+                                               source=None,
+                                               high_priority=False,
+                                               msg_id=0,
+                                               timeout=1.0,
+                                               popup_alertaction=popup_alertaction)
 
     def status_updated(self, status):
         """

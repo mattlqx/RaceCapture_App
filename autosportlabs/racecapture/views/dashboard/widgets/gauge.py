@@ -286,7 +286,7 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
     def select_alert_color(self):
         try:
             color = self.dashboard_state.get_gauge_color(self.channel)
-            return self.normal_color if color is None else color
+            return self.normal_color if color is None else color.color_rgb
         except:
             return self.normal_color
 
