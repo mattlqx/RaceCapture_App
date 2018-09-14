@@ -42,11 +42,10 @@ class ColorAlertActionController(BaseAlertActionController):
         super(ColorAlertActionController, self).__init__(dashboard_state, **kwargs)
 
     def activate(self, alertaction, channel):
-        color = alertaction.color_rgb
-        self.dashboard_state.set_channel_color(channel, color)
+        self.dashboard_state.set_channel_color(channel, alertaction.color_rgb)
 
     def deactivate(self, alertaction, channel):
-        self.dashboard_state.clear_channel_color(channel)
+        self.dashboard_state.clear_channel_color(channel, alertaction.color_rgb)
 
 
 class PopupAlertActionController(BaseAlertActionController):

@@ -68,13 +68,13 @@ from autosportlabs.racecapture.theme.color import ColorScheme
 from fieldlabel import FieldLabel
 from collections import OrderedDict
 from copy import copy
+import math
 
 # Dashboard screens
 from autosportlabs.racecapture.views.dashboard.gaugeview import GaugeView2x, GaugeView3x, GaugeView5x, GaugeView8x
 from autosportlabs.racecapture.views.dashboard.tachometerview import TachometerView
 from autosportlabs.racecapture.views.dashboard.laptimeview import LaptimeView
 from autosportlabs.racecapture.views.dashboard.rawchannelview import RawChannelView
-
 
 class DashboardState(object):
     def __init__(self, **kwargs):
@@ -87,8 +87,11 @@ class DashboardState(object):
     def get_gauge_color(self, channel):
         return self._gauge_colors.get(channel)
 
-    def clear_channel_color(self, channel):
-        self._gauge_colors.pop(channel, None)
+    def clear_channel_color(self, channel, color):
+        if color == self._gauge_colors.get(channel):
+            # ensure we're removing *this* color, not
+            # clearing another color by accident.
+            self._gauge_colors.pop(channel, None)
 
     def set_alert(self, channel, message, color=[1.0, 0.0, 0.0, 1.0], shape=None):
         self._active_alerts[channel] = (message, color, shape)
@@ -241,15 +244,27 @@ class AlertScreen(Screen):
     color = ListProperty()
     shape = StringProperty(allownone=True)
 
+    background_color = ListProperty()
+    shape_color = ListProperty()
+    shape_vertices = ListProperty()
+    shape_indices = ListProperty()
+
     Builder.load_string("""
 <AlertScreen>
     BoxLayout:
         canvas.before:
             Color:
-                rgba: root.color
+                rgba: root.background_color
             Rectangle:
                 size: self.size
                 pos: self.pos
+            Color:
+                rgba: root.shape_color
+            Mesh:
+                vertices: root.shape_vertices
+                indices: root.shape_indices
+                mode: 'triangle_fan'
+            
         orientation: 'vertical'
         FieldLabel:
             size_hint_y: 0.5
@@ -275,9 +290,64 @@ class AlertScreen(Screen):
         super(AlertScreen, self).__init__(**kwargs)
         self.hide_trigger = Clock.create_trigger(self._hide, self.timeout)
         Clock.schedule_once(self._init_view)
+        self.bind(size=self._update_shape)
+
+    def on_color(self, instance, value):
+        self._update_colors()
 
     def _init_view(self, *args):
         self.ids.alert_msg_no.size_hint = (1.0, 1.0) if self.message.endswith('?') else (0.0, 0.0)
+
+    def _update_shape(self, *args):
+        shape = self.shape
+        if shape is None:
+            self.shape_vertices = []
+            self.shape_indices = []
+        elif shape == 'triangle':
+            # calculate points for a centered triangle
+            center = (self.width / 2, self.height / 2)
+            length = self.height * 1
+            size_half = length / 2
+            triangle_height = size_half * math.sqrt(3)
+            x = center[0] - size_half
+            y = center[1] - triangle_height / 2
+            self.shape_vertices = [x, y, 0, 0, center[0], y + triangle_height, 0, 0, x + length, y, 0, 0]
+            self.shape_indices = [0, 1, 2]
+        elif shape == 'octagon':
+            # calculate points for a centered octagon
+            center = (self.width / 2, self.height / 2)
+            length = self.height * .9
+            size_half = length / 2
+            size_13rd = length / 3
+            size_23rds = size_13rd * 2
+            x = center[0] - size_half
+            y = center[1] - size_half
+            self.shape_vertices = [x + size_13rd, y, 0, 0,
+                                   x, y + size_13rd, 0, 0,
+                                   x, y + size_23rds, 0, 0,
+                                   x + size_13rd, y + length, 0, 0,
+                                   x + size_23rds, y + length, 0, 0,
+                                   x + length, y + size_23rds, 0, 0,
+                                   x + length, y + size_13rd, 0, 0,
+                                   x + size_23rds, y, 0, 0
+                                   ]
+            self.shape_indices = [0, 1, 2, 3, 4, 5, 6, 7]
+        else:
+            self.shape_vertices = []
+            self.shape_indices = []
+
+
+    def _update_colors(self):
+        color = self.color
+        dim_color = [color[0] * 0.5, color[1] * 0.5, color[2] * 0.5, 1.0]
+        bright_color = self.color
+
+        self.shape_color = bright_color if self.shape is not None else dim_color
+        self.background_color = bright_color if self.shape is None else dim_color
+
+    def on_shape(self, instance, value):
+        self._update_shape()
+        self._update_colors()
 
     def refresh_timeout(self):
         self.hide_trigger.cancel()
