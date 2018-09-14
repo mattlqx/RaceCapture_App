@@ -325,6 +325,7 @@ class SpinValueField(BoxLayout):
         text: '-'
         font_size: self.height * 0.7
         on_press: root._increment(-root.step_value)
+        disabled: root.value <= root.min_value
         
     ClickFieldLabel:
         text: root.value_format.format(root.value)
@@ -338,6 +339,7 @@ class SpinValueField(BoxLayout):
         text: '+'
         font_size: self.height * 0.7
         on_press: root._increment(root.step_value)
+        disabled: root.value >= root.max_value
     """)
 
     def _increment(self, step_value):
