@@ -27,7 +27,7 @@ from kivy.app import Builder
 from kivy.core.window import Window, Keyboard
 from kivy.logger import Logger
 from kivy.clock import Clock
-from kivy.properties import StringProperty, NumericProperty, ObjectProperty, ListProperty
+from kivy.properties import StringProperty, NumericProperty, ObjectProperty, ListProperty, BooleanProperty
 from utils import kvFindClass
 from kivy.animation import Animation
 from kivy.uix.carousel import Carousel
@@ -243,7 +243,7 @@ class AlertScreen(Screen):
     source = ObjectProperty(None)
     color = ListProperty()
     shape = StringProperty(allownone=True)
-
+    high_priority = BooleanProperty()
     background_color = ListProperty()
     shape_color = ListProperty()
     shape_vertices = ListProperty()
@@ -252,37 +252,41 @@ class AlertScreen(Screen):
     Builder.load_string("""
 <AlertScreen>
     BoxLayout:
+            
+        orientation: 'vertical'
         canvas.before:
             Color:
                 rgba: root.background_color
             Rectangle:
                 size: self.size
                 pos: self.pos
-            Color:
-                rgba: root.shape_color
-            Mesh:
-                vertices: root.shape_vertices
-                indices: root.shape_indices
-                mode: 'triangle_fan'
-            
-        orientation: 'vertical'
-        FieldLabel:
-            size_hint_y: 0.5
-            text: root.message
-            id: alert_msg
-            halign: 'center'
-            font_size: min(dp(90), self.height)
+        
+        AnchorLayout:
+            canvas.before:
+                Color:
+                    rgba: root.shape_color
+                Mesh:
+                    vertices: root.shape_vertices
+                    indices: root.shape_indices
+                    mode: 'triangle_fan'
+            size_hint_y: 0.8
+            id: alert_container
+            FieldLabel:
+                text: root.message
+                id: alert_msg
+                halign: 'center'
+                font_size: min(dp(90), self.height)
             
         BoxLayout:
-            size_hint_y: 0.5
-            IconButton:
-                text: u'\uf00c'
-                id: alert_msg_yes
-                on_press: root._alert_msg_yes()
+            size_hint_y: 0.2
             IconButton:
                 text: u'\uf00d'
                 id: alert_msg_no
                 on_press: root._alert_msg_no()
+            IconButton:
+                text: u'\uf00c'
+                id: alert_msg_yes
+                on_press: root._alert_msg_yes()
             
     """)
 
@@ -290,38 +294,51 @@ class AlertScreen(Screen):
         super(AlertScreen, self).__init__(**kwargs)
         self.hide_trigger = Clock.create_trigger(self._hide, self.timeout)
         Clock.schedule_once(self._init_view)
-        self.bind(size=self._update_shape)
+        self.anim = None
 
     def on_color(self, instance, value):
         self._update_colors()
 
     def _init_view(self, *args):
-        self.ids.alert_msg_no.size_hint = (1.0, 1.0) if self.message.endswith('?') else (0.0, 0.0)
+        self.ids.alert_msg_yes.size_hint = (1.0, 1.0) if self.message.endswith('?') else (0.0, 0.0)
+        self.ids.alert_container.bind(size=self._update_shape)
+
+        if self.high_priority:
+            anim = Animation(color=(1, 1, 1, 0), duration=0.2) + Animation(color=(1, 1, 1, 0), duration=0.2)
+            anim += Animation(color=(1, 1, 1, 1), duration=0.2) + Animation(color=(1, 1, 1, 1), duration=0.2)
+            anim.repeat = True
+            anim.start(self.ids.alert_msg)
+            self.anim = anim
 
     def _update_shape(self, *args):
+        if len(args) != 2:
+            return
+        ac = self.ids.alert_container
+        size = ac.size
+        pos = ac.pos
         shape = self.shape
         if shape is None:
             self.shape_vertices = []
             self.shape_indices = []
         elif shape == 'triangle':
             # calculate points for a centered triangle
-            center = (self.width / 2, self.height / 2)
-            length = self.height * 1
+            center = (size[0] / 2, size[1] / 2)
+            length = size[1] * 1
             size_half = length / 2
             triangle_height = size_half * math.sqrt(3)
-            x = center[0] - size_half
-            y = center[1] - triangle_height / 2
+            x = center[0] - size_half + pos[0]
+            y = center[1] - triangle_height / 2 + pos[1]
             self.shape_vertices = [x, y, 0, 0, center[0], y + triangle_height, 0, 0, x + length, y, 0, 0]
             self.shape_indices = [0, 1, 2]
         elif shape == 'octagon':
             # calculate points for a centered octagon
-            center = (self.width / 2, self.height / 2)
-            length = self.height * .9
+            center = (size[0] / 2, size[1] / 2)
+            length = size[1] * .9
             size_half = length / 2
             size_13rd = length / 3
             size_23rds = size_13rd * 2
-            x = center[0] - size_half
-            y = center[1] - size_half
+            x = center[0] - size_half + pos[0]
+            y = center[1] - size_half + pos[1]
             self.shape_vertices = [x + size_13rd, y, 0, 0,
                                    x, y + size_13rd, 0, 0,
                                    x, y + size_23rds, 0, 0,
@@ -336,6 +353,16 @@ class AlertScreen(Screen):
             self.shape_vertices = []
             self.shape_indices = []
 
+    def on_enter(self):
+        if self.anim is not None:
+            self.anim.start(self.ids.alert_msg)
+
+    def on_leave(self):
+        self.stop_screen()
+
+    def stop_screen(self):
+        if self.anim is not None:
+           self.anim.repeat = False
 
     def _update_colors(self):
         color = self.color
@@ -367,8 +394,8 @@ class AlertScreen(Screen):
 class PopupAlertView(BoxLayout):
     Builder.load_string("""
 <PopupAlertView>:
-    size_hint_x: None
-    width: dp(600)
+    size_hint_x: 0.6
+    #width: dp(600)
     #width: min(dp(600), root.width * 0.7)
     pos_hint:{"center_x":0.5}
     id: alertbar
@@ -383,7 +410,6 @@ class PopupAlertView(BoxLayout):
     def __init__(self, **kwargs):
         super(PopupAlertView, self).__init__(**kwargs)
         self.minimize = None
-        self.anim = None
         self._current_screens = {}
         Clock.schedule_interval(self._show_next_screen, 2.0)
 
@@ -396,44 +422,36 @@ class PopupAlertView(BoxLayout):
         if source is not None:
             source.send_api_msg({'msg':{'id':1234, 'pri':1, 'msg':msg, 'src':2}})
 
-    def _send_api_alert_msg_ack(self, source, msg_id):
+    def send_api_alert_msg_ack(self, source, msg_id):
         if source is not None:
             source.send_api_msg({'msgAck':{'id':msg_id}})
 
-    def _alert_msg_yes(self):
-        self._send_api_alert_msg('Yes')
-        self._hide()
-
-    def _alert_msg_no(self):
-        self._send_api_alert_msg('No')
-        self._hide()
-
-    def _hide(self, *args):
-        Clock.unschedule(self._hide)
+    def _hide(self, screen):
         if self.minimize is not None:
             Clock.unschedule(self._minimize)
-        Animation(height=0, duration=0.5).start(self)
-        if self.anim is not None:
-            self.anim.repeat = False
+        a = Animation(height=0, duration=0.5)
+        a.bind(on_complete=lambda x, y: self.ids.screens.clear_widgets([screen]))
+        a.start(self)
 
     def _minimize(self, *args):
-        Animation(height=self.height * DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT, duration=1.0, t=DashboardView.TRANSITION_STYLE).start(self)
-
-    def hide_alert(self, key):
-        if key == self.key:
-            self._hide()
+        a = Animation(height=self.height * DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT, duration=1.0, t=DashboardView.TRANSITION_STYLE).start(self)
 
     def remove_alert(self, key):
         screen = self._current_screens.pop(key, None)
         if screen is None:
             return
 
-        self.ids.screens.clear_widgets([screen])
+        screen.stop_screen()
+
         if not bool(self._current_screens):
-            self._hide()
+            # if there no other screens showing, defer until
+            # hide animation is complete
+            self._hide(screen)
+        else:
+            # remove the screen immediately
+            self.ids.screens.clear_widgets([screen])
 
-    def add_alert(self, key, message, color, shape, source, is_high_priority, msg_id, timeout):
-
+    def add_alert(self, key, message, color, shape, source, high_priority, msg_id, timeout):
         current_screen = self._current_screens.get(key)
         if current_screen is not None:
             current_screen.refresh_timeout()
@@ -444,7 +462,7 @@ class PopupAlertView(BoxLayout):
                              message=message,
                              source=source,
                              shape=shape,
-                             is_high_priority=is_high_priority,
+                             high_priority=high_priority,
                              msg_id=msg_id,
                              timeout=timeout,
                              popup_alert_view=self,
@@ -454,23 +472,11 @@ class PopupAlertView(BoxLayout):
         self.ids.screens.add_widget(screen)
 
         self._show_alert()
-        self._send_api_alert_msg_ack(source, msg_id)
+        self.send_api_alert_msg_ack(source, msg_id)
 
     def _show_alert(self):
-        self._hide()
-
-#        self.ids.alert_msg_no.size_hint = (1.0, 1.0)  # if message.endswith('?') else (0.0, 0.0)
-
         target_height = self.parent.height * (DashboardView.ALERT_BAR_HEIGHT_URGENT_PCT)  # if is_high_priority else DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT)
         Animation(height=target_height, duration=0.5, t=DashboardView.TRANSITION_STYLE).start(self)
-
-        self.anim = None
-        # if is_high_priority:
-         #   anim = Animation(color=(1, 1, 1, 0), duration=0.2) + Animation(color=(1, 1, 1, 0), duration=0.2)
-          #  anim += Animation(color=(1, 1, 1, 1), duration=0.2) + Animation(color=(1, 1, 1, 1), duration=0.2)
-           # anim.repeat = True
-            # anim.start(self.ids.alert_msg)
-            # self.anim = anim
 
 
 DASHBOARD_VIEW_KV = """
@@ -544,7 +550,7 @@ class DashboardView(Screen):
     _POPUP_DISMISS_TIMEOUT_LONG = 60.0
     AUTO_CONFIGURE_WAIT_PERIOD_DAYS = 1
     Builder.load_string(DASHBOARD_VIEW_KV)
-    ALERT_BAR_HEIGHT_URGENT_PCT = 0.7
+    ALERT_BAR_HEIGHT_URGENT_PCT = 0.8
     ALERT_BAR_HEIGHT_NORMAL_PCT = 0.25
     ALERT_BAR_GROW_RATE = dp(20)
     ALERT_BAR_UPDATE_INTERVAL = 0.02
@@ -605,7 +611,7 @@ class DashboardView(Screen):
                                            color=alert_info[1],
                                            shape=alert_info[2],
                                            source=None,
-                                           is_high_priority=True,
+                                           high_priority=False,
                                            msg_id=0,
                                            timeout=1.0)
 
