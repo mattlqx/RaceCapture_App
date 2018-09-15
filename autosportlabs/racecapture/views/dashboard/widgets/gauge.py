@@ -310,6 +310,7 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
 
         def popup_dismissed(instance):
             self.settings.userPrefs.set_alertrules(self.channel, alertrules)
+            self.dashboard_state.clear_channel_states(self.channel)
 
         alertrules = self.settings.userPrefs.get_alertrules(self.channel)
 

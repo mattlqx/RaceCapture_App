@@ -105,8 +105,13 @@ class DashboardState(object):
         return self._active_alerts
 
     def clear_channel_states(self, channel):
-        self._gauge_colors.pop(channel, None)
-        self._active_alerts.pop(channel, None)
+        color_alertaction = self._gauge_colors.pop(channel, None)
+        if color_alertaction is not None:
+            color_alertaction.is_active = False
+
+        popup_alertaction = self._active_alerts.pop(channel, None)
+        if popup_alertaction is not None:
+            popup_alertaction.is_active = False
 
 class DashboardFactory(object):
     """
