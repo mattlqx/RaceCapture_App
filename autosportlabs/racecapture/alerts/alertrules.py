@@ -168,7 +168,7 @@ class AlertRule(object):
                          deactivate_sec=d['deactivate_sec'],
                          alert_actions=alertactions)
 
-    def __eq__(self, other):
+    def value_equals(self, other):
         if isinstance(other, AlertRule):
             return (self.enabled == other.enabled and
                         self.range_type == other.range_type and
@@ -179,8 +179,6 @@ class AlertRule(object):
                         self.alert_actions == self.alert_actions)
         return False
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
 """
 Describes a collection of rules for a specified channel
 """

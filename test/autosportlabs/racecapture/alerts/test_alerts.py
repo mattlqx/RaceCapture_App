@@ -20,6 +20,7 @@
 
 import unittest
 import time
+from datetime import datetime
 from autosportlabs.racecapture.alerts.alertrules import AlertRule, AlertRuleCollection
 from autosportlabs.racecapture.alerts.alertactions import *
 
@@ -28,32 +29,33 @@ class AlertRuleTest(unittest.TestCase):
 
     def test_activate_deactivate(self):
         ar = AlertRule(True, AlertRule.RANGE_BETWEEN, 100, 200, 0.1, 0.1)
-        self.assertFalse(ar.should_activate(100))
+
+        self.assertFalse(ar.should_activate(100, datetime.now()))
         time.sleep(0.2)
-        self.assertTrue(ar.should_activate(100))
+        self.assertTrue(ar.should_activate(100, datetime.now()))
 
 
-        self.assertFalse(ar.should_activate(90))
-        self.assertFalse(ar.should_deactivate(90))
+        self.assertFalse(ar.should_activate(90, datetime.now()))
+        self.assertFalse(ar.should_deactivate(90, datetime.now()))
         # should still be active
 
         # wait until the deactivate threhold is tripped
         time.sleep(0.2)
-        self.assertFalse(ar.should_activate(90))
-        self.assertTrue(ar.should_deactivate(90))
+        self.assertFalse(ar.should_activate(90, datetime.now()))
+        self.assertTrue(ar.should_deactivate(90, datetime.now()))
 
     def test_enabled_disabled(self):
         # Test activating a disabled rule
         ar = AlertRule(False, AlertRule.RANGE_BETWEEN, 100, 200, 0.1, 0.1)
-        self.assertFalse(ar.should_activate(100))
+        self.assertFalse(ar.should_activate(100, datetime.now()))
         time.sleep(0.2)
-        self.assertFalse(ar.should_activate(100))
+        self.assertFalse(ar.should_activate(100, datetime.now()))
 
         # Test disabling after it's been activated
         ar2 = AlertRule(True, AlertRule.RANGE_BETWEEN, 100, 200, 0.1, 0.1)
-        self.assertFalse(ar2.should_activate(100))
+        self.assertFalse(ar2.should_activate(100, datetime.now()))
         time.sleep(0.2)
-        self.assertTrue(ar2.should_activate(100))
+        self.assertTrue(ar2.should_activate(100, datetime.now()))
         ar2.enabled = False
 
     def test_within_threshold(self):
@@ -129,6 +131,7 @@ class AlertRuleCollectionTest(unittest.TestCase):
 
         time.sleep(0.2)
         active, deactive = arc.check_rules(50)
+        print('{} {}'.format(active, deactive))
         self.assertEqual(active, [])
         self.assertEqual(deactive[0], ar1)
         self.assertEqual(deactive[1], ar2)
@@ -179,7 +182,7 @@ class AlertRuleCollectionTest(unittest.TestCase):
         for i in range (0, rules_len):
             r1 = rules[i]
             r2 = rules2[i]
-            self.assertEqual(r1, r2)
+            self.assertTrue(r1.value_equals(r2))
 
 def main():
     unittest.main()

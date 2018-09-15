@@ -31,9 +31,6 @@ class BaseAlertAction(object):
         '''
         return json.dumps(self.to_dict())
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
 """
 Describes an an alert action that specifies a color to activate
 """
@@ -59,7 +56,7 @@ class ColorAlertAction(BaseAlertAction):
         '''
         return {'color_alertaction':{'color':self.color_rgb}}
 
-    def __eq__(self, other):
+    def value_equals(self, other):
         if isinstance(other, ColorAlertAction):
             return (self.color_rgb == other.color_rgb)
         return False
@@ -149,7 +146,7 @@ class PopupAlertAction(ColorAlertAction):
                                 shape=aa.get('shape', None),
                                 color_rgb=aa.get('color', BaseAlertAction.DEFAULT_COLOR))
 
-    def __eq__(self, other):
+    def value_equals(self, other):
         if isinstance(other, PopupAlertAction):
             return (self.message == other.message and
                     self.shape == other.shape and
@@ -210,7 +207,7 @@ class LedAlertAction(ColorAlertAction):
                                 flash_rate=aa.get('flash_rate', 0),
                                 color_rgb=aa.get('color', BaseAlertAction.DEFAULT_COLOR))
 
-    def __eq__(self, other):
+    def value_equals(self, other):
         if isinstance(other, LedAlertAction):
             return (self.led_position == other.led_position and
                     self.flash_rate == other.flash_rate and
@@ -267,7 +264,7 @@ class ShiftLightAlertAction(ColorAlertAction):
         return ShiftLightAlertAction(flash_rate=aa.get('flash_rate', 0),
                                 color_rgb=aa.get('color', BaseAlertAction.DEFAULT_COLOR))
 
-    def __eq__(self, other):
+    def value_equals(self, other):
         if isinstance(other, ShiftLightAlertAction):
             return (self.flash_rate == other.flash_rate and
                     self.color_rgb == other.color_rgb)
