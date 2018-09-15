@@ -195,7 +195,7 @@ class AlertRuleCollection(object):
     def append(self, alertrule):
         self.alert_rules.append(alertrule)
 
-    def check_rules(self, value):
+    def check_rules(self, value, time_ref=None):
         """
         Get a set of rules that should be active for the specified value
         :param float value: The value to test
@@ -205,7 +205,8 @@ class AlertRuleCollection(object):
         active_rules = []
         deactive_rules = []
 
-        time_ref = datetime.now()
+        if time_ref is None:
+            time_ref = datetime.now()
         for r in self.alert_rules:
             if r.should_activate(value, time_ref):
                 active_rules.append(r)

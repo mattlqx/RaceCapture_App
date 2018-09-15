@@ -20,7 +20,7 @@
 
 import unittest
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from autosportlabs.racecapture.alerts.alertrules import AlertRule, AlertRuleCollection
 from autosportlabs.racecapture.alerts.alertactions import *
 
@@ -28,34 +28,36 @@ from autosportlabs.racecapture.alerts.alertactions import *
 class AlertRuleTest(unittest.TestCase):
 
     def test_activate_deactivate(self):
-        ar = AlertRule(True, AlertRule.RANGE_BETWEEN, 100, 200, 0.1, 0.1)
+        ar = AlertRule(True, AlertRule.RANGE_BETWEEN, 100, 200, 1, 1)
 
-        self.assertFalse(ar.should_activate(100, datetime.now()))
-        time.sleep(0.2)
-        self.assertTrue(ar.should_activate(100, datetime.now()))
+        timeref = datetime.now()
+        self.assertFalse(ar.should_activate(100, timeref))
+        timeref += timedelta(seconds=2)
+        self.assertTrue(ar.should_activate(100, timeref))
 
 
-        self.assertFalse(ar.should_activate(90, datetime.now()))
-        self.assertFalse(ar.should_deactivate(90, datetime.now()))
+        self.assertFalse(ar.should_activate(90, timeref))
+        self.assertFalse(ar.should_deactivate(90, timeref))
         # should still be active
 
         # wait until the deactivate threhold is tripped
-        time.sleep(0.2)
-        self.assertFalse(ar.should_activate(90, datetime.now()))
-        self.assertTrue(ar.should_deactivate(90, datetime.now()))
+        timeref += timedelta(seconds=2)
+        self.assertFalse(ar.should_activate(90, timeref))
+        self.assertTrue(ar.should_deactivate(90, timeref))
 
     def test_enabled_disabled(self):
         # Test activating a disabled rule
-        ar = AlertRule(False, AlertRule.RANGE_BETWEEN, 100, 200, 0.1, 0.1)
-        self.assertFalse(ar.should_activate(100, datetime.now()))
-        time.sleep(0.2)
-        self.assertFalse(ar.should_activate(100, datetime.now()))
+        ar = AlertRule(False, AlertRule.RANGE_BETWEEN, 100, 200, 1, 1)
+        timeref = datetime.now()
+        self.assertFalse(ar.should_activate(100, timeref))
+        timeref += timedelta(seconds=2)
+        self.assertFalse(ar.should_activate(100, timeref))
 
         # Test disabling after it's been activated
-        ar2 = AlertRule(True, AlertRule.RANGE_BETWEEN, 100, 200, 0.1, 0.1)
-        self.assertFalse(ar2.should_activate(100, datetime.now()))
-        time.sleep(0.2)
-        self.assertTrue(ar2.should_activate(100, datetime.now()))
+        ar2 = AlertRule(True, AlertRule.RANGE_BETWEEN, 100, 200, 1, 1)
+        self.assertFalse(ar2.should_activate(100, timeref))
+        timeref += timedelta(seconds=2)
+        self.assertTrue(ar2.should_activate(100, timeref))
         ar2.enabled = False
 
     def test_within_threshold(self):
@@ -81,84 +83,85 @@ class AlertRuleTest(unittest.TestCase):
 class AlertRuleCollectionTest(unittest.TestCase):
 
     def test_alert_single(self):
-        ar = AlertRule(True, AlertRule.RANGE_BETWEEN, 100, 200, 0.1, 0.1)
+        ar = AlertRule(True, AlertRule.RANGE_BETWEEN, 100, 200, 1, 1)
         arc = AlertRuleCollection("RPM", [ar])
 
-        active, deactive = arc.check_rules(50)
+        timeref = datetime.now()
+        active, deactive = arc.check_rules(50, timeref)
         self.assertEqual(active, [])
         self.assertEqual(deactive, [])
 
-        time.sleep(0.2)
+        timeref += timedelta(seconds=2)
 
-        active, deactive = arc.check_rules(50)
+        active, deactive = arc.check_rules(50, timeref)
         self.assertEqual(active, [])
         self.assertEqual(deactive[0], ar)
         self.assertEqual(len(deactive), 1)
 
-        active, deactive = arc.check_rules(150)
+        active, deactive = arc.check_rules(150, timeref)
         self.assertEqual(active, [])
         self.assertEqual(deactive, [])
 
-        time.sleep(0.2)
+        timeref += timedelta(seconds=2)
 
-        active, deactive = arc.check_rules(150)
+        active, deactive = arc.check_rules(150, timeref)
         self.assertEqual(active[0], ar)
         self.assertEqual(len(active), 1)
         self.assertEqual(deactive, [])
 
-        time.sleep(0.2)
+        timeref += timedelta(seconds=2)
 
-        active, deactive = arc.check_rules(250)
+        active, deactive = arc.check_rules(250, timeref)
         self.assertEqual(active, [])
         self.assertEqual(deactive, [])
 
-        time.sleep(0.2)
+        timeref += timedelta(seconds=2)
 
-        active, deactive = arc.check_rules(250)
+        active, deactive = arc.check_rules(250, timeref)
         self.assertEqual(active, [])
         self.assertEqual(deactive[0], ar)
         self.assertEqual(len(deactive), 1)
 
     def test_alert_multiple(self):
-        ar1 = AlertRule(True, AlertRule.RANGE_BETWEEN, 100, 200, 0.1, 0.1)
-        ar2 = AlertRule(True, AlertRule.RANGE_BETWEEN, 300, 400, 0.1, 0.1)
-        ar3 = AlertRule(True, AlertRule.RANGE_BETWEEN, 500, 600, 0.1, 0.1)
+        ar1 = AlertRule(True, AlertRule.RANGE_BETWEEN, 100, 200, 1, 1)
+        ar2 = AlertRule(True, AlertRule.RANGE_BETWEEN, 300, 400, 1, 1)
+        ar3 = AlertRule(True, AlertRule.RANGE_BETWEEN, 500, 600, 1, 1)
         arc = AlertRuleCollection("RPM", [ar1, ar2, ar3])
 
-        active, deactive = arc.check_rules(50)
+        timeref = datetime.now()
+        active, deactive = arc.check_rules(50, timeref)
         self.assertEqual(active, [])
         self.assertEqual(deactive, [])
 
-        time.sleep(0.2)
-        active, deactive = arc.check_rules(50)
-        print('{} {}'.format(active, deactive))
+        timeref += timedelta(seconds=2)
+        active, deactive = arc.check_rules(50, timeref)
         self.assertEqual(active, [])
         self.assertEqual(deactive[0], ar1)
         self.assertEqual(deactive[1], ar2)
         self.assertEqual(deactive[2], ar3)
         self.assertEqual(len(deactive), 3)
 
-        active, deactive = arc.check_rules(100)
+        active, deactive = arc.check_rules(100, timeref)
         self.assertEqual(active, [])
         self.assertEqual(deactive[0], ar2)
         self.assertEqual(deactive[1], ar3)
         self.assertEqual(len(deactive), 2)
 
-        time.sleep(0.2)
-        active, deactive = arc.check_rules(100)
+        timeref += timedelta(seconds=2)
+        active, deactive = arc.check_rules(100, timeref)
         self.assertEqual(active[0], ar1)
         self.assertEqual(len(active), 1)
         self.assertEqual(deactive[0], ar2)
         self.assertEqual(deactive[1], ar3)
         self.assertEqual(len(deactive), 2)
 
-        active, deactive = arc.check_rules(300)
+        active, deactive = arc.check_rules(300, timeref)
         self.assertEqual(active, [])
         self.assertEqual(deactive[0], ar3)
         self.assertEqual(len(deactive), 1)
 
-        time.sleep(0.2)
-        active, deactive = arc.check_rules(300)
+        timeref += timedelta(seconds=2)
+        active, deactive = arc.check_rules(300, timeref)
         self.assertEqual(active[0], ar2)
         self.assertEqual(len(active), 1)
         self.assertEqual(deactive[0], ar1)
