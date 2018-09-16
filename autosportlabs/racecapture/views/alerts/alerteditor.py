@@ -23,6 +23,7 @@ from mappedspinner import MappedSpinner
 from autosportlabs.racecapture.views.util.alertview import editor_popup, number_editor_popup
 from autosportlabs.racecapture.alerts.alertactions import get_alertaction_default_collection
 from autosportlabs.uix.layout.sections import ClickAnchorLayout
+from autosportlabs.uix.toast.kivytoast import toast
 
 class AddItemView(BoxLayout):
     title = StringProperty('')
@@ -142,6 +143,7 @@ class AlertRuleSummaryView(BoxLayout):
         pass
 
 class AlertRuleList(Screen):
+    MAX_RULES = 10
     alertrule_collection = ObjectProperty()
     precision = NumericProperty()
     min_value = NumericProperty()
@@ -203,9 +205,10 @@ class AlertRuleList(Screen):
         if view is not None:
             view.is_last = True
 
-        add_item = AddItemView(title='' if len(rules) > 0 else 'Add new Rule')
-        add_item.bind(on_select=self._add_new_rule)
-        grid.add_widget(add_item)
+        if len(rules) < AlertRuleList.MAX_RULES:
+            add_item = AddItemView(title='' if len(rules) > 0 else 'Add new Rule')
+            add_item.bind(on_select=self._add_new_rule)
+            grid.add_widget(add_item)
 
     def _get_next_rule_low_threshold(self):
         # as a convenience, find the highest threshold set
@@ -359,6 +362,7 @@ class SpinValueField(BoxLayout):
         popup = number_editor_popup('Edit Range', 'Set the value for this range', self.value, self.min_value, self.max_value, popup_dismissed)
 
 class AlertActionList(Screen):
+    MAX_ALERTACTIONS = 10
     alertrule = ObjectProperty()
     min_value = NumericProperty()
     max_value = NumericProperty()
@@ -572,9 +576,10 @@ class AlertActionList(Screen):
         for alertaction in alertactions:
             self._append_alertaction_view(alertaction)
 
-        add_item = AddItemView(title='' if len(alertactions) > 0 else 'Add new Action')
-        add_item.bind(on_select=self._add_new_action)
-        grid.add_widget(add_item)
+        if len(alertactions) < AlertActionList.MAX_ALERTACTIONS:
+            add_item = AddItemView(title='' if len(alertactions) > 0 else 'Add new Action')
+            add_item.bind(on_select=self._add_new_action)
+            grid.add_widget(add_item)
 
         self.ids.low_threshold.value = self.min_value if alertrule.low_threshold is None else alertrule.low_threshold
         self.ids.high_threshold.value = self.max_value if alertrule.high_threshold is None else alertrule.high_threshold
@@ -593,16 +598,18 @@ class AlertActionList(Screen):
                     self.refresh_view()
             popup.dismiss()
 
-        alertaction_prototypes = get_alertaction_default_collection()
+        alertaction_prototypes = get_alertaction_default_collection(exclude_filter=self.alertrule.alert_actions)
 
         items = [ItemSelectionRef(title=alertaction.title, image_source=alertaction.PREVIEW_IMAGE, key=alertaction) for alertaction in alertaction_prototypes]
 
-        view = ItemSelectorView(item_references=items)
-
-        popup = editor_popup('Select Action', view,
-                             popup_dismissed,
-                             size=(dp(700), dp(500)),
-                             auto_dismiss_time=10)
+        if len(items) == 0:
+            toast('No more actions available')
+        else:
+            view = ItemSelectorView(item_references=items)
+            popup = editor_popup('Select Action', view,
+                                 popup_dismissed,
+                                 size=(dp(700), dp(500)),
+                                 auto_dismiss_time=10)
 
     def on_close(self):
         pass

@@ -270,13 +270,22 @@ class ShiftLightAlertAction(ColorAlertAction):
                     self.color_rgb == other.color_rgb)
         return False
 
-def get_alertaction_default_collection():
-    return [
+def get_alertaction_default_collection(exclude_filter=[]):
+    alertaction_prototypes = [
         PopupAlertAction(message='Alert', shape=None, color_rgb=BaseAlertAction.DEFAULT_COLOR),
         ColorAlertAction(color_rgb=BaseAlertAction.DEFAULT_COLOR),
         ShiftLightAlertAction(flash_rate=0, color_rgb=BaseAlertAction.DEFAULT_COLOR),
         LedAlertAction(led_position='left', flash_rate=0, color_rgb=BaseAlertAction.DEFAULT_COLOR)
         ]
+
+    # filter out items from the exclude_filter
+    remove = []
+    for aa in alertaction_prototypes:
+        for f in exclude_filter:
+            if aa.__class__.__name__ == f.__class__.__name__:
+                remove.append(aa)
+
+    return [a for a in alertaction_prototypes if a not in remove]
 
 class AlertActionFactory(object):
     factory = {

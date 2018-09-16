@@ -63,6 +63,7 @@ class PopupAlertActionEditorView(BaseAlertActionEditorView):
             FieldInput:
                 id: popup_message
                 on_text: root._on_popup_message(*args)
+                input_filter: lambda text, from_undo: text[:15 - len(self.text)]
 
         BoxLayout:
             spacing: dp(10)
