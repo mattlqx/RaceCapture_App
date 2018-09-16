@@ -8,7 +8,7 @@ from kivy.metrics import dp
 from fieldlabel import FieldLabel, ClickFieldLabel
 from iconbutton import IconButton
 from kivy.app import Builder
-from valuefield import NumericValueField
+from kivy.core.window import Window
 
 from kivy.properties import BooleanProperty, ObjectProperty, StringProperty, NumericProperty
 from kivy.uix.screenmanager import ScreenManager, Screen, RiseInTransition, SlideTransition
@@ -24,6 +24,7 @@ from autosportlabs.racecapture.views.util.alertview import editor_popup, number_
 from autosportlabs.racecapture.alerts.alertactions import get_alertaction_default_collection
 from autosportlabs.uix.layout.sections import ClickAnchorLayout
 from autosportlabs.uix.toast.kivytoast import toast
+from valuefield import NumericValueField
 
 class AddItemView(BoxLayout):
     title = StringProperty('')
@@ -64,28 +65,28 @@ class AlertRuleSummaryView(BoxLayout):
     height: dp(30)
     ClickFieldLabel:
         id: range
-        size_hint_x: 0.20
+        size_hint_x: 0.29
         on_press: root.dispatch('on_select', root._alertrule)
     ClickAnchorLayout:
         id: type
-        size_hint_x: 0.30
+        size_hint_x: 0.39
         on_press: root.dispatch('on_select', root._alertrule)
     Switch:
         id: enabled
         size_hint_x: 0.2
         on_active: root.on_enable_disable()
     IconButton:
-        size_hint_x: 0.1        
+        size_hint_x: 0.07
         text: u'\uf063'
         disabled: root.is_last
         on_release: root.dispatch('on_move_down', root._alertrule)    
     IconButton:
-        size_hint_x: 0.1
+        size_hint_x: 0.07
         text: u'\uf062'
         disabled: root.is_first        
         on_release: root.dispatch('on_move_up', root._alertrule)
     IconButton:
-        size_hint_x: 0.1
+        size_hint_x: 0.07
         text: u'\uf014'
         on_release: root.dispatch('on_delete', root._alertrule)    
 """)
@@ -277,13 +278,16 @@ class AlertActionSummaryView(BoxLayout):
     height: dp(30)
     ClickAnchorLayout:
         id: title
-        size_hint_x: 0.8
+        size_hint_x: 0.9
         on_press: root.dispatch('on_edit', root._alertaction)
-        
-    IconButton:
-        size_hint_x: 0.1        
-        text: u'\uf044'
-        on_release: root.dispatch('on_edit', root._alertaction)
+ 
+# TODO re-enable this when we can do drag / drop on alert rules, so 
+# we can save space by removing the up/down arrow buttons. 
+# and add an edit button to the alert rules list        
+#    IconButton:
+#        size_hint_x: 0.1        
+#        text: u'\uf044'
+#        on_release: root.dispatch('on_edit', root._alertaction)
 
     IconButton:
         size_hint_x: 0.1        
@@ -329,7 +333,7 @@ class SpinValueField(BoxLayout):
     ClickFieldLabel:
         text: root.value_format.format(root.value)
         halign: 'center'
-        underline: True
+        #underline: True
         on_press: root._on_value_edit()
         
     BetterButton:
@@ -608,7 +612,8 @@ class AlertActionList(Screen):
             view = ItemSelectorView(item_references=items)
             popup = editor_popup('Select Action', view,
                                  popup_dismissed,
-                                 size=(dp(700), dp(500)),
+                                 size_hint=(None, None),
+                                 size=(min(Window.width, dp(700)), min(Window.height,dp(400))),
                                  auto_dismiss_time=10)
 
     def on_close(self):

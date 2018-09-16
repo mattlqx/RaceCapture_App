@@ -270,21 +270,6 @@ class ProgressPopup(GridLayout):
             self.ids.ok_cancel.color = ColorScheme.get_light_primary_text()
             self.ids.ok_cancel.text = u'\uf00c'
 
-
-def number_editor_popup(title, msg, value, min_value, max_value, answer_callback):
-    content = NumberEditorPopup(msg=msg,
-                                value=value,
-                                min_value=min_value,
-                                max_value=max_value)
-    content.bind(on_ok_cancel=answer_callback)
-    popup = Popup(title=title,
-                    content=content,
-                    size_hint=(None, None),
-                    size=(dp(400), dp(300)),
-                    auto_dismiss=False)
-    popup.open()
-    return popup
-
 class NumberEditorPopup(GridLayout):
     Builder.load_string("""
 <NumberEditorPopup>:
@@ -292,7 +277,7 @@ class NumberEditorPopup(GridLayout):
     padding: (dp(10), dp(10))
     FieldLabel:
         text: root.msg
-        size_hint_y: 0.4
+        size_hint_y: 0.45
         id: msg
     FloatValueField:
         text: root.formatted_value
@@ -302,7 +287,7 @@ class NumberEditorPopup(GridLayout):
     GridLayout:
         id: buttons
         cols: 2
-        size_hint_y: 0.3
+        size_hint_y: 0.25
         IconButton:
             text: u'\uf00d'
             color: ColorScheme.get_primary()            
@@ -339,4 +324,19 @@ class NumberEditorPopup(GridLayout):
         self.ids.value.background_color = ColorScheme.get_normal_background() if is_valid else ColorScheme.get_error_background()
         self.ids.msg.text = self.msg if is_valid else 'Valid range is {} - {}'.format(autoformat_number(self.min_value), autoformat_number(self.max_value))
         self.ids.ok.disabled = not is_valid
+        
+def number_editor_popup(title, msg, value, min_value, max_value, answer_callback):
+    content = NumberEditorPopup(msg=msg,
+                                value=value,
+                                min_value=min_value,
+                                max_value=max_value)
+    content.bind(on_ok_cancel=answer_callback)
+    popup = Popup(title=title,
+                    content=content,
+                    size_hint=(None, None),
+                    size=(dp(400), dp(300)),
+                    auto_dismiss=False)
+    popup.open()
+    return popup
+        
 

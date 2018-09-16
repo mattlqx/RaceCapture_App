@@ -41,6 +41,7 @@ from autosportlabs.racecapture.alerts.alertactions import ColorAlertAction, Popu
 from autosportlabs.racecapture.views.popup.centeredbubble import CenteredBubble
 from autosportlabs.racecapture.data.channels import *
 from autosportlabs.racecapture.views.util.viewutils import format_laptime
+from kivy.core.window import Window
 
 DEFAULT_NORMAL_COLOR = [1.0, 1.0 , 1.0, 1.0]
 
@@ -315,7 +316,10 @@ class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
         content.max_value = self.max
         content.precision = self.precision
 
-        popup = Popup(title='Customize {}'.format(self.channel), content=content, size_hint=(0.75, 0.9))
+        popup = Popup(title='Customize {}'.format(self.channel), 
+                      content=content, 
+                      size=(min(Window.width, dp(700)), min(Window.height,dp(400))),
+                      size_hint=(None,None))
         popup.bind(on_dismiss=popup_dismissed)
         content.bind(title=lambda i, t: setattr(popup, 'title', t))
         popup.open()
