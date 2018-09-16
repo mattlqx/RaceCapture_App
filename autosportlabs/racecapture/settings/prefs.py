@@ -32,70 +32,6 @@ from utils import is_android, is_ios, is_mobile_platform
 from copy import copy
 from autosportlabs.racecapture.alerts.alertrules import AlertRuleCollection
 
-class Range(EventDispatcher):
-    '''
-    Represents a object to manage ranges to facilitate warning / alert functions
-    '''
-    DEFAULT_WARN_COLOR = [1.0, 0.84, 0.0, 1.0]
-    DEFAULT_ALERT_COLOR = [1.0, 0.0, 0.0, 1.0]
-    max = NumericProperty(None)
-    min = NumericProperty(None)
-    color = ListProperty([1.0, 1.0, 1.0, 1.0])
-
-    def __init__(self, minimum=None, maximum=None, **kwargs):
-        self.min = minimum
-        self.max = maximum
-        self.color = kwargs.get('color', self.color)
-
-    def is_in_range(self, value):
-        '''
-        Query if value is in range
-        :param value value to compare
-        :type float
-        :return bool if value is in range
-        '''
-        min = self.min
-        max = self.max
-        return (min is not None and max is not None) and self.min <= value <= self.max
-
-    def to_json(self):
-        '''
-        Serialize to a json string
-        :return string 
-        '''
-        return json.dumps(self.to_dict())
-
-    def to_dict(self):
-        '''
-        Get dictionary representation of object
-        :return dict
-        '''
-        return {'min': self.min,
-                'max': self.max,
-                'color': self.color
-                }
-
-    @staticmethod
-    def from_json(range_json):
-        '''
-        Factory method to create an instance from JSON
-        :param range_json JSON string
-        :type range_json string
-        :return Range object
-        '''
-        range_dict = json.loads(range_json)
-        return Range.from_dict(range_dict)
-
-    @staticmethod
-    def from_dict(range_dict):
-        '''
-        Factory method to create an instance from a dict
-        :param range_dict dict representing Range object
-        :type range_dict dict
-        :return Range object
-        '''
-        return Range(minimum=range_dict['min'], maximum=range_dict['max'], color=range_dict['color'])
-
 class UserPrefs(EventDispatcher):
     '''
     A class to manage user preferences for the RaceCapture app
@@ -279,10 +215,6 @@ class UserPrefs(EventDispatcher):
             with open(self.prefs_file, 'r') as data:
                 content = data.read()
                 content_dict = json.loads(content)
-
-                if content_dict.has_key("range_alerts"):
-                    for name, settings in content_dict["range_alerts"].iteritems():
-                        self._prefs_dict["range_alerts"][name] = Range.from_dict(settings)
 
                 if content_dict.has_key("gauge_settings"):
                     for id, channel in content_dict["gauge_settings"].iteritems():

@@ -19,6 +19,7 @@
 # this code. If not, see <http://www.gnu.org/licenses/>.
 
 import kivy
+from kivy.uix.behaviors.button import ButtonBehavior
 kivy.require('1.10.0')
 
 from kivy.uix.label import Label
@@ -39,6 +40,9 @@ class FieldLabel(Label):
 
     def width_changed(self, instance, size):
         self.text_size = (size, None)
+
+class ClickFieldLabel(ButtonBehavior, FieldLabel):
+    pass
 
 class AutoShrinkFieldLabel(Label):
     Builder.load_string("""

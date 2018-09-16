@@ -85,7 +85,6 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.presets.presetmanager import PresetManager
     from autosportlabs.racecapture.menu.homepageview import HomePageView
     from autosportlabs.racecapture.settings.systemsettings import SystemSettings
-    from autosportlabs.racecapture.settings.prefs import Range
     from autosportlabs.racecapture.config.rcpconfig import Track
     from autosportlabs.racecapture.config.rcpconfig import Capabilities
     from autosportlabs.telemetry.telemetryconnection import TelemetryManager

@@ -33,9 +33,7 @@ from utils import kvFind, kvquery, dist
 from functools import partial
 from kivy.app import Builder
 from kivy.logger import Logger
-from autosportlabs.racecapture.settings.prefs import Range
 from autosportlabs.racecapture.views.channels.channelselectview import ChannelSelectDialog
-from autosportlabs.racecapture.views.channels.channelcustomizationview import ChannelCustomizationView
 from autosportlabs.racecapture.views.alerts.alerteditor import AlertRulesView
 from autosportlabs.racecapture.alerts.alertrules import AlertRule, AlertRuleCollection
 from autosportlabs.racecapture.alerts.alertactions import ColorAlertAction, PopupAlertAction, ShiftLightAlertAction, LedAlertAction
@@ -247,8 +245,6 @@ class SingleChannelGauge(Gauge):
 class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
     _popup = None
     _customizeGaugeBubble = None
-    warning = ObjectProperty(Range())
-    alert = ObjectProperty(Range())
     min = NumericProperty(DEFAULT_MIN)
     max = NumericProperty(DEFAULT_MAX)
     _dismiss_customization_popup_trigger = None

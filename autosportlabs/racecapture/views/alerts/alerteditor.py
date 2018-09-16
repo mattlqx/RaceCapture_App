@@ -5,7 +5,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.switch import Switch
 from kivy.uix.slider import Slider
 from kivy.metrics import dp
-from fieldlabel import FieldLabel
+from fieldlabel import FieldLabel, ClickFieldLabel
 from iconbutton import IconButton
 from kivy.app import Builder
 from valuefield import NumericValueField
@@ -22,6 +22,7 @@ from autosportlabs.uix.itemselector.itemselectorview import ItemSelectorView, It
 from mappedspinner import MappedSpinner
 from autosportlabs.racecapture.views.util.alertview import editor_popup, number_editor_popup
 from autosportlabs.racecapture.alerts.alertactions import get_alertaction_default_collection
+from autosportlabs.uix.layout.sections import ClickAnchorLayout
 
 class AddItemView(BoxLayout):
     title = StringProperty('')
@@ -56,9 +57,6 @@ class AlertRuleSummaryView(BoxLayout):
     precision = NumericProperty(0)
 
     Builder.load_string("""
-<ClickAnchorLayout@ButtonBehavior+AnchorLayout>
-<ClickFieldLabel@ButtonBehavior+FieldLabel>
-
 <AlertRuleSummaryView>:
     orientation: 'horizontal'
     size_hint_y: None
@@ -270,7 +268,6 @@ class AlertRuleList(Screen):
 
 class AlertActionSummaryView(BoxLayout):
     Builder.load_string("""
-<ClickAnchorLayout@ButtonBehavior+AnchorLayout>
 
 <AlertActionSummaryView>:
     size_hint_y: None
@@ -317,7 +314,6 @@ class SpinValueField(BoxLayout):
     value_format = StringProperty('{:.0f}')
 
     Builder.load_string("""
-<ClickFieldLabel@ButtonBehavior+FieldLabel>
 <SpinValueField>:
     BetterButton:
         width: dp(30)
