@@ -43,7 +43,7 @@ class ColorAlertAction(BaseAlertAction):
         """
         :param array color_rgb: array of R,G,B values
         """
-        self.color_rgb = color_rgb
+        self.color_rgb = BaseAlertAction.DEFAULT_COLOR if color_rgb is None else color_rgb
 
     @property
     def title(self):
@@ -93,7 +93,7 @@ class PopupAlertAction(ColorAlertAction):
     PREVIEW_IMAGE = 'resource/alerts/popup_alertaction_preview.jpg'
     name = 'popup_alertaction'
 
-    def __init__(self, color_rgb, message, shape, **kwargs):
+    def __init__(self, message, shape=None, color_rgb=None, **kwargs):
         """
         :param string message: The message to display
         :param string shape: the name of the shape to display('triangle', 'octagon'). if None, no shape will be displayed

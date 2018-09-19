@@ -60,6 +60,7 @@ from autosportlabs.racecapture.views.dashboard.racestatus_view import RaceStatus
 
 
 from autosportlabs.racecapture.alerts.alertengine import AlertEngine
+from autosportlabs.racecapture.alerts.alertactions import PopupAlertAction
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
 from autosportlabs.widgets.scrollcontainer import ScrollContainer
 from autosportlabs.help.helpmanager import HelpInfo
@@ -694,12 +695,13 @@ class DashboardView(Screen):
         Clock.schedule_once(lambda dt: HelpInfo.help_popup('dashboard_gauge_help', self, arrow_pos='right_mid'), 2.0)
 
     def _on_alert_msg(self, alert_msg, source):
+
         msg = alert_msg.get('msg')
         if msg:
             alert_msg = msg.get('msg')
             pri = msg.get('pri') == 1
             msg_id = msg.get('id')
-            self.ids.popup_alert.add_alert('podium', '{}'.format(alert_msg), source, pri, msg_id, 4.0)
+            self.ids.popup_alert.add_alert('podium', PopupAlertAction(message=alert_msg), source, pri, msg_id, 4.0)
         else:
             Logger.warning('DashboardView: got malformed alert message: {}'.format(alert_msg))
 
