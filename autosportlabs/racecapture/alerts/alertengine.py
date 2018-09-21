@@ -28,6 +28,10 @@ class AlertEngine(object):
 
         self.alert_controllers = {}
 
+    def send_api_msg(self, *args):
+        # NOOP
+        pass
+
     def process_rules(self, alertrules, channel, value):
 
         if alertrules is None:

@@ -51,7 +51,8 @@ class TelemetryManager(EventDispatcher):
     data_connected = BooleanProperty(False)
 
     def __init__(self, data_bus, device_id=None, host=None, port=None, **kwargs):
-        self.host = 'telemetry.podium.live'
+        self.host = "localhost"
+        # self.host = 'telemetry.podium.live'
         self.port = 8080
         self.connection = None
         self._connection_process = None
@@ -107,7 +108,6 @@ class TelemetryManager(EventDispatcher):
 
     def send_api_msg(self, msg):
         json_msg = json.dumps(msg)
-        print('the sjon msg {}'.format(json_msg))
         self.connection.send_msg(json_msg)
 
     # Event handler for when self.device_id changes, need to restart connection
