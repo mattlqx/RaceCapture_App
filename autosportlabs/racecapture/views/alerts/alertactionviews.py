@@ -24,7 +24,7 @@ class ColorAlertActionEditorView(BaseAlertActionEditorView):
     Builder.load_string("""
 <ColorAlertActionEditorView>:
     BoxLayout:
-        size_hint_x: 0.8
+        size_hint_x: 0.6
     
         AnchorLayout:
             ColorBlock:
@@ -32,6 +32,7 @@ class ColorAlertActionEditorView(BaseAlertActionEditorView):
                 id: selected_color
         
     ColorWheel:
+        size_hint_x: 0.4
         id: color_wheel
         on_color: root._select_color(*args)
     """)
@@ -49,7 +50,7 @@ class PopupAlertActionEditorView(BaseAlertActionEditorView):
     Builder.load_string("""
 <PopupAlertActionEditorView>:
     BoxLayout:
-        size_hint_x: 0.8
+        size_hint_x: 0.6
         orientation: 'vertical'
         spacing: dp(10)
         Widget:
@@ -63,7 +64,7 @@ class PopupAlertActionEditorView(BaseAlertActionEditorView):
             FieldInput:
                 id: popup_message
                 on_text: root._on_popup_message(*args)
-                input_filter: lambda text, from_undo: text[:15 - len(self.text)]
+                input_filter: lambda text, from_undo: text[:16 - len(self.text)]
 
         BoxLayout:
             spacing: dp(10)
@@ -93,6 +94,7 @@ class PopupAlertActionEditorView(BaseAlertActionEditorView):
     FieldLabel:
         text: ''
         halign: 'center'
+        size_hint_x: 0.4
     """)
 
     def __init__(self, **kwargs):
@@ -131,7 +133,7 @@ class LedAlertActionEditorView(BaseAlertActionEditorView):
     Builder.load_string("""
 <LedAlertActionEditorView>:
     BoxLayout:
-        size_hint_x: 0.8
+        size_hint_x: 0.6
         orientation: 'vertical'
         spacing: dp(10)
         Widget:
@@ -171,8 +173,9 @@ class LedAlertActionEditorView(BaseAlertActionEditorView):
                     id: led_color
                     on_press: root._on_select_color(*args)
         Widget:
-                        
+
     FieldLabel:
+        size_hint_x: 0.4
         text: ''
         halign: 'center'
     """)
@@ -216,7 +219,7 @@ class ShiftLightAlertActionEditorView(BaseAlertActionEditorView):
     Builder.load_string("""
 <ShiftLightAlertActionEditorView>:
     BoxLayout:
-        size_hint_x: 0.8
+        size_hint_x: 0.6
         orientation: 'vertical'
         spacing: dp(10)
         Widget:
@@ -247,6 +250,7 @@ class ShiftLightAlertActionEditorView(BaseAlertActionEditorView):
         Widget:
                         
     FieldLabel:
+        size_hint_x: 0.4
         text: ''
         halign: 'center'
     """)
