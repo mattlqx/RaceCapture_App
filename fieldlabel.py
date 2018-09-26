@@ -51,7 +51,6 @@ class AutoShrinkFieldLabel(Label):
     font_size: self.height
     on_texture: root._change_font_size()
     on_size: root._change_font_size()
-    #on_width: self._width_changed()
     shorten: False
     max_lines: 1
     """)

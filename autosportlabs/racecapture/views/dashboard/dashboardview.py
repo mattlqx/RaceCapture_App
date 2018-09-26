@@ -310,7 +310,7 @@ class AlertScreen(Screen):
     def _init_view(self, *args):
         is_question = self.popup_alertaction.message.endswith('?')
         self.ids.alert_msg_yes.size_hint = (1.0, 1.0) if is_question else (0, 0)
-        self.ack_msg = 'No' if is_question else 'OK'
+        self.ack_msg = 'NO' if is_question else 'OK'
 
         self.ids.alert_container.bind(size=self._update_shape)
 
@@ -389,7 +389,7 @@ class AlertScreen(Screen):
         self.popup_alert_view.remove_alert(self.key)
 
     def _alert_msg_yes(self):
-        self.popup_alert_view.send_api_alert_msg(self.source, 'Yes')
+        self.popup_alert_view.send_api_alert_msg(self.source, 'YES')
         self._hide()
 
     def _alert_msg_no(self):
@@ -399,9 +399,8 @@ class AlertScreen(Screen):
 class PopupAlertView(BoxLayout):
     Builder.load_string("""
 <PopupAlertView>:
-    size_hint_x: 0.6
-    #width: dp(600)
-    #width: min(dp(600), root.width * 0.7)
+    size_hint_x: None
+    width: dp(600)
     pos_hint:{"center_x":0.5}
     id: alertbar
     size_hint_y: None
@@ -412,6 +411,8 @@ class PopupAlertView(BoxLayout):
             id: screens
     """)
 
+    MSG_CHAR_WIDTH = 60
+    MIN_POPUP_WIDTH = dp(600)
     def __init__(self, **kwargs):
         super(PopupAlertView, self).__init__(**kwargs)
         self.minimize = None
@@ -420,6 +421,12 @@ class PopupAlertView(BoxLayout):
         self.minimize_trigger = Clock.create_trigger(self._minimize, 4.0)
 
 
+    def _adjust_width(self):
+        min_width = PopupAlertView.MIN_POPUP_WIDTH
+        for screen in self._current_screens.itervalues():
+            min_width = max(min_width, len(screen.popup_alertaction.message) * PopupAlertView.MSG_CHAR_WIDTH)
+        self.width = min(min_width, Window.width)
+
     def _show_next_screen(self, *args):
         next_screen = self.ids.screens.next()
         if next_screen is not None:
@@ -427,11 +434,11 @@ class PopupAlertView(BoxLayout):
 
     def send_api_alert_msg(self, source, msg):
         if source is not None:
-            source.send_api_msg({'msg':{'id':1234, 'pri':1, 'msg':msg, 'src':2}})
+            source.send_api_msg({'alertmessage':{'id':1234, 'priority':1, 'message':msg}})
 
     def send_api_alert_msg_ack(self, source, msg_id):
         if source is not None:
-            source.send_api_msg({'msgAck':{'id':msg_id}})
+            source.send_api_msg({'alertmsgAck':{'id':msg_id}})
 
     def _hide(self, screen):
         if self.minimize is not None:
@@ -445,6 +452,7 @@ class PopupAlertView(BoxLayout):
 
     def remove_alert(self, key):
         screen = self._current_screens.pop(key, None)
+        self._adjust_width()
         if screen is None:
             return
 
@@ -478,6 +486,7 @@ class PopupAlertView(BoxLayout):
 
         self._current_screens[key] = screen
         self.ids.screens.add_widget(screen)
+        self.ids.screens.current = screen.name
 
         self._show_alert()
         self.send_api_alert_msg_ack(source, msg_id)
@@ -485,7 +494,7 @@ class PopupAlertView(BoxLayout):
         # reset the minimize timer
         self.minimize_trigger.cancel()
         self.minimize_trigger()
-
+        self._adjust_width()
 
     def _show_alert(self):
         target_height = self.parent.height * (DashboardView.ALERT_BAR_HEIGHT_URGENT_PCT)  # if is_high_priority else DashboardView.ALERT_BAR_HEIGHT_NORMAL_PCT)
@@ -710,21 +719,21 @@ class DashboardView(Screen):
             self._race_setup()
 
         self._rc_api.add_connect_listener(self._on_rc_connect)
-        self._rc_api.addListener('msg', self._on_alert_msg)
+        self._rc_api.addListener('alertmessage', self._on_alertmessage)
         self._initialized = True
 
         Clock.schedule_once(lambda dt: HelpInfo.help_popup('dashboard_gauge_help', self, arrow_pos='right_mid'), 2.0)
 
-    def _on_alert_msg(self, alert_msg, source):
+    def _on_alertmessage(self, alertmessage, source):
 
-        msg = alert_msg.get('msg')
+        msg = alertmessage.get('alertmessage')
         if msg:
-            alert_msg = msg.get('msg')
-            pri = msg.get('pri') == 1
+            alertmessage = msg.get('message')
+            pri = msg.get('priority') == 1
             msg_id = msg.get('id')
-            self.ids.popup_alert.add_alert('podium_{}'.format(msg_id), PopupAlertAction(message=alert_msg), source, pri, msg_id, 4.0)
+            self.ids.popup_alert.add_alert('podium_{}'.format(msg_id), PopupAlertAction(message=alertmessage), source, pri, msg_id, 4.0)
         else:
-            Logger.warning('DashboardView: got malformed alert message: {}'.format(alert_msg))
+            Logger.warning('DashboardView: got malformed alert message: {}'.format(alertmessage))
 
     def _update_screens(self, new_screens):
         """
