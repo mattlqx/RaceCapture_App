@@ -407,6 +407,9 @@ class RcpApi:
         """
         return lambda dt: callback(*args)
 
+    def send_api_msg(self, msg):
+        self.sendCommand(msg)
+
     def sendCommand(self, cmd):
         try:
             self.sendCommandLock.acquire()

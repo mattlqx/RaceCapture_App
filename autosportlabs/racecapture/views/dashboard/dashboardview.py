@@ -434,7 +434,7 @@ class PopupAlertView(BoxLayout):
 
     def send_api_alert_msg(self, source, msg):
         if source is not None:
-            source.send_api_msg({'alertmessage':{'id':1234, 'priority':1, 'message':msg}})
+            source.send_api_msg({'alertmsgReply':{'priority':1, 'message':msg}})
 
     def send_api_alert_msg_ack(self, source, msg_id):
         if source is not None:
