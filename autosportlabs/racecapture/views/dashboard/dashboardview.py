@@ -601,6 +601,7 @@ class DashboardView(Screen):
         self.register_event_type('on_config_updated')
         self.register_event_type('on_config_written')
         self._screens = []
+        self._current_screen = None
         self._loaded_screens = {}
         self._status_pump = status_pump
         self._databus = databus
@@ -767,6 +768,7 @@ class DashboardView(Screen):
 
         # clear all of the dashboard screens from the outer container
         for screen in loaded_screens.values():
+            self._exit_screen(screen)
             parent = screen.parent
             if parent is not None:
                 parent.remove_widget(screen)
@@ -977,18 +979,27 @@ class DashboardView(Screen):
         for listener in listeners:
             listener.user_preferences_updated(self._settings.userPrefs)
 
-    def _exit_screen(self):
-        slide_screen = self.ids.carousel.current_slide
-        if (slide_screen.children) > 0:
-            slide_screen.children[0].on_exit()
+    def _exit_screen(self, screen=None):
+        if screen is None:
+            screen = self.ids.carousel.current_slide
+        if (screen.children) > 0:
+            screen.children[0].on_exit()
+
+    def _pre_enter_screen(self, screen):
+        if screen is not None and len(screen.children) > 0:
+            screen.children[0].on_enter()
 
     def on_nav_left(self):
         self._exit_screen()
-        self.ids.carousel.load_previous()
+        previous = self.ids.carousel.previous_slide
+        self._pre_enter_screen(previous)
+        self.ids.carousel.load_slide(previous)
 
     def on_nav_right(self):
         self._exit_screen()
-        self.ids.carousel.load_next()
+        next = self.ids.carousel.next_slide
+        self._pre_enter_screen(next)
+        self.ids.carousel.load_slide(next)
 
     def _check_load_screen(self, slide_screen):
         # checks the current slide if we need to build the dashboard
@@ -1010,12 +1021,17 @@ class DashboardView(Screen):
                 view = self._dashboard_factory.create_screen(screen_key)
             slide_screen.add_widget(view)
             self._loaded_screens[screen_key] = view
-            view.on_enter()
+        slide_screen.children[0].on_enter()
 
     def on_current_slide(self, slide_screen):
         if self._initialized == True:
             self._check_load_screen(slide_screen)
             view = slide_screen.children[0]
+
+            if self._current_screen is not None:
+                self._exit_screen(self._current_screen)
+            self._current_screen = slide_screen
+
             self._settings.userPrefs.set_pref('dashboard_preferences', 'last_dash_screen', view.name)
 
     def _show_screen(self, screen_name):

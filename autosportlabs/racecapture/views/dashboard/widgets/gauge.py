@@ -79,6 +79,7 @@ class Gauge(AnchorLayout):
     dashboard_state = ObjectProperty(None)
     title_color = ObjectProperty(DEFAULT_NORMAL_COLOR)
     normal_color = ObjectProperty(DEFAULT_NORMAL_COLOR)
+    visible = BooleanProperty(True)
 
     def __init__(self, **kwargs):
         super(Gauge, self).__init__(**kwargs)
@@ -118,12 +119,6 @@ class Gauge(AnchorLayout):
             Logger.error('Gauge: Failed to update gauge title & units ' + str(e) + ' ' + str(title))
 
     def on_channel_meta(self, channel_metas):
-        pass
-
-    def on_hide(self):
-        pass
-
-    def on_show(self):
         pass
 
 class SingleChannelGauge(Gauge):
@@ -235,7 +230,8 @@ class SingleChannelGauge(Gauge):
             dataBus.addMetaListener(self.on_channel_meta)
 
     def setValue(self, value):
-        self.value = value
+        if self.visible is True:
+            self.value = value
 
 class CustomizableGauge(ButtonBehavior, SingleChannelGauge):
     _popup = None
