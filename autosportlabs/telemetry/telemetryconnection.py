@@ -320,8 +320,6 @@ class TelemetryConnection(asynchat.async_chat):
         self._data_bus.add_sample_listener(self._on_sample)
         self._data_bus.addMetaListener(self._on_meta)
         self.set_terminator("\n")
-        # Clock.schedule_interval(lambda dt: self._fake_msg(), 10)
-
 
     # Event handler for when RCP sends data to app
     def _on_sample(self, sample):
@@ -495,11 +493,6 @@ class TelemetryConnection(asynchat.async_chat):
         else:
             # treat it like an API message
             self._api_msg_cb(msg_object)
-
-    fake = 0
-    def _fake_msg(self):
-        self.fake += 1
-        self._handle_msg({'msg':{'id':1234, 'pri':1, 'msg':'PIT NAO {}'.format(self.fake), 'src':1}})
 
     def _send_auth(self):
         Logger.debug("TelemetryConnection: sending auth")
