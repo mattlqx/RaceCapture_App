@@ -496,9 +496,6 @@ class TelemetryConnection(asynchat.async_chat):
             # treat it like an API message
             self._api_msg_cb(msg_object)
 
-#        if "message" in msg_object:
-#            Logger.info("TelemetryConnection: got message: " + msg_object["message"])
-
     fake = 0
     def _fake_msg(self):
         self.fake += 1
