@@ -1,5 +1,7 @@
 ==1.14.0==
-
+* Dashboard: New alert rules for dashboard supporting colors and popup alerts
+* Dashboard: Enable pit-to-car alerts
+* Dashboard: Improve UI performance by not updating screens that are hidden
 
 ==1.13.2==
 * Core: Improve auto-scaling of labels to fit different aspect ratio screens
