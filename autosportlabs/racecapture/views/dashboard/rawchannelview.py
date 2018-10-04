@@ -130,7 +130,7 @@ class RawChannelView(DashboardScreen):
 
     def _add_gauge(self, channelMeta):
         channel = channelMeta.name
-        gauge = RawGauge(rcid=None, dataBus=self._databus, settings=self._settings, targetchannel=channel)
+        gauge = RawGauge(rcid=None, dataBus=self._databus, settings=self._settings, targetchannel=channel, dashboard_state=self._dashboard_state)
         grid = self.ids.grid
         gauge.precision = channelMeta.precision
 

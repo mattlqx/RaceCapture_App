@@ -59,6 +59,7 @@ from autosportlabs.racecapture.views.dashboard.heatmapview import HeatmapView
 from autosportlabs.racecapture.views.dashboard.racestatus_view import RaceStatusView
 
 
+from autosportlabs.telemetry.telemetryconnection import TelemetryManager
 from autosportlabs.racecapture.alerts.alertengine import AlertEngine
 from autosportlabs.racecapture.alerts.alertactions import PopupAlertAction
 from autosportlabs.racecapture.geo.geopoint import GeoPoint
@@ -83,16 +84,25 @@ class DashboardState(object):
         self._active_alerts = {}
 
     def set_channel_color(self, channel, color_alertaction):
-        self._gauge_colors[channel] = color_alertaction
+        color_stack = self._gauge_colors.get(channel)
+        if color_stack is None:
+            self._gauge_colors[channel] = [color_alertaction]
+        else:
+            color_stack.insert(0, color_alertaction)
 
     def get_gauge_color(self, channel):
-        return self._gauge_colors.get(channel)
+        color_stack = self._gauge_colors.get(channel)
+        return next(iter(color_stack), None) if color_stack is not None else None
 
     def clear_channel_color(self, channel, color_alertaction):
-        if color_alertaction == self._gauge_colors.get(channel):
-            # ensure we're removing *this* color, not
-            # clearing another color by accident.
-            self._gauge_colors.pop(channel, None)
+        color_stack = self._gauge_colors.get(channel)
+        if color_stack is None:
+            return
+
+        for aa in color_stack:
+            if aa == color_alertaction:
+                color_stack.remove(aa)
+                return
 
     def set_popupalert(self, channel, popup_alertaction):
         self._active_alerts[channel] = popup_alertaction
@@ -106,9 +116,10 @@ class DashboardState(object):
         return self._active_alerts
 
     def clear_channel_states(self, channel):
-        color_alertaction = self._gauge_colors.pop(channel, None)
-        if color_alertaction is not None:
-            color_alertaction.is_active = False
+        color_stack = self._gauge_colors.pop(channel, None)
+        if color_stack is not None:
+            for aa in color_stack:
+                aa.is_active = False
 
         popup_alertaction = self._active_alerts.pop(channel, None)
         if popup_alertaction is not None:
@@ -433,11 +444,11 @@ class PopupAlertView(BoxLayout):
             self.ids.screens.current = next_screen
 
     def send_api_alert_msg(self, source, msg):
-        if source is not None:
+        if isinstance(source, TelemetryManager):
             source.send_api_msg({'alertmsgReply':{'priority':1, 'message':msg}})
 
     def send_api_alert_msg_ack(self, source, msg_id):
-        if source is not None:
+        if isinstance(source, TelemetryManager):
             source.send_api_msg({'alertmsgAck':{'id':msg_id}})
 
     def _hide(self, screen):

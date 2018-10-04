@@ -72,6 +72,7 @@ class TractionView(DashboardScreen):
         for gauge in gauges:
             gauge.settings = settings
             gauge.data_bus = data_bus
+            gauge.dashboard_state = self._dashboard_state
         self._initialized = True
 
         self.ids.imu_gauge.zoom = 0.5

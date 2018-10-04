@@ -142,6 +142,7 @@ class HeatmapView(DashboardScreen):
         for gauge in gauges:
             gauge.settings = settings
             gauge.data_bus = data_bus
+            gauge.dashboard_state = self._dashboard_state
         self._initialized = True
 
     def on_tracks_updated(self, trackmanager):

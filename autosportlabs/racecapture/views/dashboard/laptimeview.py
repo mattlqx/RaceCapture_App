@@ -95,6 +95,7 @@ class LaptimeView(DashboardScreen):
         gauges = self.findActiveGauges(SingleChannelGauge)
 
         for gauge in gauges:
+            gauge.dashboard_state = self._dashboard_state
             channel = gauge.channel
             if channel:
                 channelMeta = channelMetas.get(channel)

@@ -115,6 +115,7 @@ class TachometerView(DashboardScreen):
         for gauge in gauges:
             gauge.settings = settings
             gauge.data_bus = dataBus
+            gauge.dashboard_state = self._dashboard_state
 
         self._initialized = True
 

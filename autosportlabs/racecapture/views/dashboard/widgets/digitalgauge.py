@@ -33,8 +33,8 @@ DEFAULT_BACKGROUND_COLOR = [0, 0, 0, 0]
 
 class DigitalGauge(CustomizableGauge):
 
-    alert_background_color = ObjectProperty(DEFAULT_BACKGROUND_COLOR)        
-    
+    alert_background_color = ObjectProperty(DEFAULT_BACKGROUND_COLOR)
+
     def __init__(self, **kwargs):
         super(DigitalGauge, self).__init__(**kwargs)
         self.normal_color = DEFAULT_BACKGROUND_COLOR
@@ -46,4 +46,5 @@ class DigitalGauge(CustomizableGauge):
             print('Failed to update digital gauge title ' + str(e))
 
     def update_colors(self):
-        self.alert_background_color = self.select_alert_color()
+        alert_color = self.select_alert_color()
+        self.alert_background_color = DEFAULT_BACKGROUND_COLOR if alert_color is None else alert_color
