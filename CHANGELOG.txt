@@ -1,3 +1,6 @@
+==1.14.0==
+
+
 ==1.13.2==
 * Core: Improve auto-scaling of labels to fit different aspect ratio screens
 * Status: Improve labels on Status view
