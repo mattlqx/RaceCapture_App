@@ -991,15 +991,15 @@ class DashboardView(Screen):
 
     def on_nav_left(self):
         self._exit_screen()
-        previous = self.ids.carousel.previous_slide
-        self._pre_enter_screen(previous)
-        self.ids.carousel.load_slide(previous)
+        carousel = self.ids.carousel
+        self._pre_enter_screen(carousel.previous_slide)
+        carousel.load_previous()
 
     def on_nav_right(self):
         self._exit_screen()
-        next = self.ids.carousel.next_slide
-        self._pre_enter_screen(next)
-        self.ids.carousel.load_slide(next)
+        carousel = self.ids.carousel
+        self._pre_enter_screen(carousel.next_slide)
+        self.ids.carousel.load_next()
 
     def _check_load_screen(self, slide_screen):
         # checks the current slide if we need to build the dashboard
