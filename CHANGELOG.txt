@@ -1,3 +1,6 @@
+==1.14.1==
+* Dashboard: Fix issue around saving screen settings
+
 ==1.14.0==
 * Dashboard: New alert rules for dashboard supporting colors and popup alerts
 * Dashboard: Enable pit-to-car alerts

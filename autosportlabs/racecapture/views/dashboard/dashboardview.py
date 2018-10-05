@@ -768,7 +768,6 @@ class DashboardView(Screen):
 
         # clear all of the dashboard screens from the outer container
         for screen in loaded_screens.values():
-            self._exit_screen(screen)
             parent = screen.parent
             if parent is not None:
                 parent.remove_widget(screen)
@@ -982,7 +981,7 @@ class DashboardView(Screen):
     def _exit_screen(self, screen=None):
         if screen is None:
             screen = self.ids.carousel.current_slide
-        if (screen.children) > 0:
+        if len(screen.children) > 0:
             screen.children[0].on_exit()
 
     def _pre_enter_screen(self, screen):
