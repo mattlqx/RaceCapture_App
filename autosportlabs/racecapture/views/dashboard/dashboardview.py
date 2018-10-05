@@ -444,12 +444,10 @@ class PopupAlertView(BoxLayout):
             self.ids.screens.current = next_screen
 
     def send_api_alert_msg(self, source, msg):
-        if isinstance(source, TelemetryManager):
-            source.send_api_msg({'alertmsgReply':{'priority':1, 'message':msg}})
+        source.send_api_msg({'alertmsgReply':{'priority':1, 'message':msg}})
 
     def send_api_alert_msg_ack(self, source, msg_id):
-        if isinstance(source, TelemetryManager):
-            source.send_api_msg({'alertmsgAck':{'id':msg_id}})
+        source.send_api_msg({'alertmsgAck':{'id':msg_id}})
 
     def _hide(self, screen):
         if self.minimize is not None:

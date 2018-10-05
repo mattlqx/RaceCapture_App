@@ -1,3 +1,6 @@
+==1.14.2==
+* Dashboard: fix issue where pit-to-car alerts were not ack'ing or replying with cellular telemetry. 
+
 ==1.14.1==
 * Dashboard: Fix issue around saving screen settings
 
