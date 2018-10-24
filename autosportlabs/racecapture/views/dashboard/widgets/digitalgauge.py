@@ -72,4 +72,5 @@ class DigitalGauge(CustomizableGauge):
             print('Failed to update digital gauge title ' + str(e))
 
     def update_colors(self):
-        self.alert_background_color = self.select_alert_color()
+        alert_color = self.select_alert_color()
+        self.alert_background_color = DEFAULT_BACKGROUND_COLOR if alert_color is None else alert_color
