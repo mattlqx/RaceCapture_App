@@ -66,6 +66,22 @@ class ChannelMeta(object):
         self.sampleRate = int(json.get('sr', self.sampleRate))
         self.type = int(json.get('type', self.type))
 
+    def toJson(self):
+        return unicode(json.dumps(
+            {
+                'name': self.name,
+                'units': self.units,
+                'min': self.min,
+                'max': self.max,
+                'precision': self.precision,
+                'sampleRate': self.sampleRate,
+                'type': self.type
+            }
+        ))
+
+    def __unicode__(self):
+        return self.name
+
 
 class ChannelMetaCollection(object):
     channel_metas = []

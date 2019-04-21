@@ -92,6 +92,7 @@ if __name__ == '__main__':
     from autosportlabs.racecapture.views.analysis.analysisdata import CachingAnalysisDatastore
     from autosportlabs.racecapture.data.sessionrecorder import SessionRecorder
     from autosportlabs.uix.toast.kivytoast import toast
+    from autosportlabs.racecapture.api.rcprpc import RaceCaptureRPC
     if not is_mobile_platform():
         kivy.config.Config.set ('input', 'mouse', 'mouse,multitouch_on_demand')
 
@@ -279,6 +280,7 @@ class RaceCaptureApp(App):
         self.track_manager.init(None, self._init_tracks_success, self._init_tracks_error)
         self.preset_manager.init(None, self._init_presets_success, self._init_presets_error)
         self._init_datastore()
+        self._init_rpc_api()
 
     def _init_datastore(self):
         def _init_datastore(dstore_path):
@@ -288,6 +290,22 @@ class RaceCaptureApp(App):
         dstore_path = self.settings.userPrefs.datastore_location
         Logger.info("RaceCaptureApp:Datastore Path:" + str(dstore_path))
         t = Thread(target=_init_datastore, args=(dstore_path,))
+        t.daemon = True
+        t.start()
+
+    def _init_rpc_api(self):
+        def _init_rpc_api(app):
+            s = zerorpc.Server(RaceCaptureRPC(app))
+            s.bind("tcp://0.0.0.0:4242")
+            s.run()
+
+        import zerorpc
+        zrpc_log = logging.getLogger('zerorpc.core')
+        for handler in Logger.handlers:
+            zrpc_log.addHandler(handler)
+
+        Logger.info("RPC API: Starting server")
+        t = Thread(target=_init_rpc_api, args=(self,))
         t.daemon = True
         t.start()
 
